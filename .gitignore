@@ -26,3 +26,5 @@ game/export_presets.cfg
 *.db-journal
 *.db-shm
 *.db-wal
+*.sqlite
+

@@ -1,0 +1,16 @@
+{
+  "walkSpeedMph": 15.0,
+  "wallSecondsPerGameMinute": 2.0,
+  "tileMeters": 16.0,
+  "visitRadiusMeters": 75.0,
+  "visitDwellSeconds": 120,
+  "corridorRevealMeters": 60.0,
+  "homeFuzzMeters": 300.0,
+  "deathCacheDecayGameDays": 3,
+  "colonyGrowthTickGameDays": 1,
+  "familiarityTiers": {
+    "1": "known",
+    "3": "familiar",
+    "10": "mastered"
+  }
+}

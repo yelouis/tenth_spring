@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TenthSpringTest">
+  <trk>
+    <name>Errand Day Track</name>
+    <trkseg>
+      <!-- Dwell 1: Home (Start at 09:00:00 UTC, dwell for 3 mins / 180s) -->
+      <trkpt lat="37.774900" lon="-122.419400">
+        <time>2026-07-21T09:00:00Z</time>
+      </trkpt>
+      <trkpt lat="37.774910" lon="-122.419410">
+        <time>2026-07-21T09:01:00Z</time>
+      </trkpt>
+      <trkpt lat="37.774890" lon="-122.419390">
+        <time>2026-07-21T09:03:00Z</time>
+      </trkpt>
+
+      <!-- Corridor movement to Grocery Store -->
+      <trkpt lat="37.775500" lon="-122.418500">
+        <time>2026-07-21T09:05:00Z</time>
+      </trkpt>
+      <trkpt lat="37.776500" lon="-122.417500">
+        <time>2026-07-21T09:08:00Z</time>
+      </trkpt>
+
+      <!-- Dwell 2: Grocery Store (Arrive 09:10:00 UTC, dwell for 3 mins / 180s) -->
+      <trkpt lat="37.777000" lon="-122.417000">
+        <time>2026-07-21T09:10:00Z</time>
+      </trkpt>
+      <trkpt lat="37.777010" lon="-122.417010">
+        <time>2026-07-21T09:11:30Z</time>
+      </trkpt>
+      <trkpt lat="37.776990" lon="-122.416990">
+        <time>2026-07-21T09:13:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

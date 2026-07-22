@@ -1,0 +1,22 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; but for loadable features such as autoloads, it can be edited.
+
+config_version=5
+
+[application]
+
+config/name="Tenth Spring"
+config/description="A post-apocalyptic survival strategy game powered by real-world geography."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "Forward Plus")
+
+[autoload]
+
+Config="*res://autoloads/config.gd"
+DB="*res://autoloads/db.gd"
+SyncServer="*res://autoloads/sync_server.gd"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
