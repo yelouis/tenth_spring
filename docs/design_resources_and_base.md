@@ -16,17 +16,31 @@ OSM tags map to `PlaceCategory`, which drives loot tables and map iconography:
 | `bigbox` | mall, department_store | Jackpot mixed | High zombie density |
 | `park` | park, forest, allotments | Forage food, wood | Low danger |
 | `civic` | school, library, office | Paper, misc | Maps intel bonus |
+| `landmark` | national_park, monument, attraction, stadium, viewpoint | **Unique boss drop** | Trophy, rare crafting |
 | `ruin` | unmapped buildings | Small mixed | — |
 | `home` | player-designated | — (safehouse) | — |
 
-Loot rolls scale with `dangerTier` — the frontier pays better. `bigbox` is the designed risk/reward spike.
+Loot rolls scale with `dangerTier` — the frontier pays better. `bigbox` is the designed risk/reward spike. `landmark` sites gate the game's rarest loot behind an apex boss (see `design_threats_and_colonies.md` §3).
+
+### Loot scales with horde difficulty, not just distance
+
+Beyond the site's baseline `dangerTier`, the *specific horde you defeat* raises the payout. A **horde** is a grouped encounter with a difficulty score:
+
+```
+hordeDifficulty = f(size, tierMix, biomeModifier, isNight)
+```
+
+- Clearing a raid site rolls its loot on a table whose quality is boosted by the **hardest horde you actually beat** there — so choosing to fight a big night-time Brute pack instead of sneaking past is a real risk/reward lever, on top of distance.
+- Extraction still respects carry capacity: a fat horde-difficulty roll can exceed what you can haul, forcing choices (see `design_expeditions_and_survival.md` §1).
+- **Landmark bosses** roll on a dedicated `landmark_loot` table of unique, named, non-craftable items — the top of the whole economy, available only from landmark apexes and only once per cooldown.
 
 ## 2. Item Taxonomy
 
-`ItemClass = { food, water, meds, fuel, parts, tools, weapon, armor, fabric, chemical, wood, special }`
+`ItemClass = { food, water, meds, fuel, parts, tools, weapon, armor, fabric, chemical, wood, special, unique }`
 - **Consumption**: food/water drain on a survival meter per game-hour awake (gentle in v1.0 — hunger weakens, never kills).
 - **Weapons** degrade with use; brutes accelerate degradation (their role as gear-checks).
-- **`special`**: apex-drop crafting components gating top recipes.
+- **`special`**: colony-apex crafting components gating top recipes.
+- **`unique`**: named, non-craftable landmark-boss drops (signature weapons/armor + display trophies). One-of-a-kind identity rewards; the reason to make a pilgrimage to a far-off famous place.
 
 ## 3. Fuel & Vehicles (Fuel = Reach)
 
@@ -46,6 +60,7 @@ Loot rolls scale with `dangerTier` — the frontier pays better. `bigbox` is the
 - No resource may be granted by any real-world event: not steps, not visits, not streaks. Enforced at the API level — the location subsystem literally has no write path into inventory tables.
 
 ## 6. Files (PC game)
-* `game/config/poi_mapping` — OSM tag → category table (single source of truth).
-* `game/config/loot_tables` — category × dangerTier rolls.
+* `game/config/poi_mapping` — OSM tag → category table (single source of truth; includes `landmark`).
+* `game/config/loot_tables` — category × dangerTier × hordeDifficulty rolls.
+* `game/config/landmark_loot` — unique named drops per landmark boss.
 * `game/systems/crafting`, `game/systems/base_defense`, `game/systems/vehicle`.

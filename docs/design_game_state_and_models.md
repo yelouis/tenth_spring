@@ -17,6 +17,7 @@ The fog atom. A cell is a ~256 m square (16×16 tiles at `tileMeters = 16`).
 * `cellX`, `cellY` (int): global grid coordinates (Web-Mercator-derived).
 * `revealState` (PlaceRevealState): `unknown | known | cleared` — cells use `known` when corridor/visit-revealed; `cleared` is place-level, mirrored here for region queries.
 * `tileBlob` (Uint8List): synthesized tile indices (deterministic; regenerable — cache, not source of truth).
+* `biome` (Biome): dominant land-use biome (residential/downtown/industrial/retail/parkland/waterfront/institutional/wilds); selects the enemy variant skins spawned here (`design_threats_and_colonies.md` §1.1). Deterministic from OSM.
 * `firstRevealedAt` (int), `worldSeed`-salted `cellSeed` (int).
 
 ## 3. Place Node (`PlaceNode`)
@@ -29,7 +30,11 @@ A raid-able real-world location.
 * `revealState` (PlaceRevealState).
 * `visitCount` (int), `lastRealVisitAt` (int) → derived `intelLevel` (IntelLevel).
 * `lootState` (LootState): `untouched | partial | stripped | regrown` — loot regrowth is slow and driven by colony proximity, never by real-world visits.
-* `dangerTier` (int 1–5): computed from distance-to-home, urban density, colony proximity (see `design_threats_and_colonies.md`).
+* `dangerTier` (int 1–5): computed from distance-to-home, urban density, colony proximity (see `design_threats_and_colonies.md`); `landmark` sites are fixed at 5.
+* `isLandmark` (bool): famous-place flag (national park, monument, stadium…). When true, `bossState` is populated.
+* `bossState` (BossState?): `{bossId, defeated, respawnAtGameDay}` — the fixed, non-spreading landmark apex and its long-cooldown respawn. Null on non-landmark places.
+
+A cell's `Biome` (residential/downtown/industrial/retail/parkland/waterfront/institutional/wilds) lives on `MapCell` (§2) and selects the enemy variant skins spawned in that cell.
 
 ## 4. Player Profile & Inventory
 

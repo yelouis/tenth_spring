@@ -37,7 +37,7 @@ Set a generation after the collapse: nature has swallowed the streets, the citie
 | `docs/e2e_testing_journeys.md` | Manual end-to-end test journeys |
 | `docs/ongoing_general_errors.md` | Engineering history, resolved issues, open decisions |
 
-## Stack (Decision 0 — working assumption, revisit before Phase 1)
+## Stack (confirmed 2026-07-21 — Decision 1)
 
 - **PC game: Godot 4** (Steam export, first-class 2D tilemaps/autotiling, pixel-perfect rendering). SQLite for saves; Steam Cloud optionally syncs the *game save*, never raw location traces.
 - **Companion app: Flutter** (matches the Gaslight toolchain) — location capture + read-only map view + sync only. No gameplay.

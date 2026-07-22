@@ -36,7 +36,8 @@ All gameplay constants live in one PC-side config file (`game/config/tuning`) so
 **Goal:** Turn real geography into the tile overworld.
 - **OSM Ingestion** — Overpass queries for POIs + street/park/water geometry inside revealed cells; cache responses locally.
 - **Intel Ceremony** — the sync-time reveal moment: fog peels, place chips stamp in, the day's route draws itself (this is the game's loot-box beat; phone shows names only).
-- **POI → Place mapping** — apply the category table in `design_resources_and_base.md` (grocery→food, pharmacy→meds, hardware→parts, gas→fuel, home→safehouse).
+- **POI → Place mapping** — apply the category table in `design_resources_and_base.md` (grocery→food, pharmacy→meds, hardware→parts, gas→fuel, home→safehouse, landmark→boss site).
+- **Biome + landmark tagging** — assign each cell a `Biome` from dominant land use and flag `isLandmark` POIs (national parks, monuments, stadiums) for boss seeding (`design_world_generation.md` §3).
 - **Tile Synthesis** — deterministic real-geometry → tile-grid conversion (`tileMeters`), D/P-style autotiling (grass/road/water/tree/building edges).
 - **Two-Fog Rendering** — Unknown (black), Known (grey silhouette + "?" chip), Cleared (full color).
 
@@ -48,15 +49,16 @@ All gameplay constants live in one PC-side config file (`game/config/tuning`) so
 
 ## Phase 4: Expeditions & Loot
 **Goal:** The moment-to-moment raid loop (see `design_expeditions_and_survival.md`).
-- Site maps (interiors) generated per PlaceNode; scavenge/noise/extract loop; loot tables by POI category.
+- Site maps (interiors) generated per PlaceNode; scavenge/noise/extract loop; loot tables by POI category **and horde difficulty** (harder hordes → better rolls).
 - Familiarity effects: mastered places start with interior pre-mapped and reduced ambush rolls.
 - Death: drop `DeathCache` at the death site; map/knowledge persist; recovery runs.
 
 ## Phase 5: Threats & Colonies
 **Goal:** A world that pushes back (see `design_threats_and_colonies.md`).
-- Shambler / Stalker / Brute tiers; power scaling by distance-from-home, urban density, and night.
+- Shambler / Stalker / Brute tiers; **biome variant skins** (tier × biome matrix) for location-themed enemies; power scaling by distance-from-home, urban density, and night.
 - Colony lifecycle: seed in dense POIs → grow on `colonyGrowthTickGameDays` → spill into cleared cells → raid the safehouse.
 - Colony assault dungeons: apex zombie, region pacification reward.
+- **Landmark bosses**: fixed named apexes at famous places (tier 5, non-spreading, long respawn) dropping `unique` loot — the pilgrimage reward for reaching far-off real landmarks.
 
 ## Phase 6: Base & Resource Economy
 **Goal:** Give all that loot somewhere to matter.

@@ -1,5 +1,28 @@
-# Claude Code local settings (personal, not shared)
+# Claude & Agent local settings
 .claude/settings.local.json
+.gemini/
 
 # macOS
 .DS_Store
+
+# Flutter / Dart
+companion/.dart_tool/
+companion/.flutter-plugins
+companion/.flutter-plugins-dependencies
+companion/.packages
+companion/.pub-cache/
+companion/.pub/
+companion/build/
+companion/ios/Pods/
+companion/ios/Runner.xcworkspace/
+companion/ios/Runner.xcodeproj/project.xcworkspace/
+companion/ios/Runner.xcodeproj/xcuserdata/
+
+# Godot
+game/.godot/
+game/export_presets.cfg
+
+# SQLite / Database temp files
+*.db-journal
+*.db-shm
+*.db-wal

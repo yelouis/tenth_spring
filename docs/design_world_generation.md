@@ -28,6 +28,8 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 
 - **Query scope**: Overpass API queried lazily — only for map cells that have become `known`, never speculatively. Responses cached on-device (`osm_cache` table) with a 90-day TTL.
 - **POI mapping**: OSM tags → `PlaceCategory` via the table in `design_resources_and_base.md`. Unmapped POIs become generic `ruin` (small mixed loot).
+- **Biome derivation**: each cell is assigned a `Biome` from its dominant OSM land use (residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds). Biome drives which enemy variant skins spawn there (`design_threats_and_colonies.md` §1.1) and is stored on `map_cell`. Deterministic per cell.
+- **Landmark flagging**: POIs tagged as famous places (e.g. `boundary=national_park`, `leisure=nature_reserve`, `tourism=attraction`, `historic=monument`, `leisure=stadium`) are flagged `isLandmark` and seeded with their archetype's named boss (`design_threats_and_colonies.md` §3). Landmark seeding is deterministic and independent of player proximity.
 - **Geometry → tiles**: real geometry is rasterized onto the tile grid at `tileMeters = 16` per tile, then cleaned:
   1. Streets → road tiles (min width 1 tile), snapped to 4/8-directional runs.
   2. Buildings → rectangularized footprints (min 2×2 tiles) with a door tile facing the nearest road.

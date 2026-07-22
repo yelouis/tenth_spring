@@ -5,19 +5,36 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 
 ---
 
-## 🔴 Open Decisions
+## 🟠 Open Decisions
 
-### Decision 1: Confirm Two-Build Stack (blocks Phase 1)
-The game is now **PC (Steam) + thin phone companion**. This decouples the engine choice: the PC engine needs great 2D/tilemap + Steam export and no longer needs mobile background-location plugins (that burden moves entirely to the companion, which does no gameplay). README Decision 0 assumes **PC = Godot 4, companion = Flutter**.
-- **Option A (assumed)**: PC = Godot 4 + companion = Flutter. Best 2D tooling + free Steam export on PC; Flutter keeps the companion's background-geolocation story mature and matches the Gaslight toolchain.
-- **Option B**: PC = Flutter + Flame (desktop build) + companion = Flutter. One language/toolchain for both; weaker Steam/desktop-2D ergonomics than Godot.
-- **Option C**: PC = Unity + companion = native/Flutter. Best tilemap tooling; licensing + build-size overhead for a 2D game.
-- Sync sub-decision: LAN-only device-to-device (assumed) vs. add an E2E-encrypted relay for off-network sync (v1.1 candidate — see `design_companion_and_sync.md` §5).
-- Your selection: _(pending)_
+_These two implementation sub-decisions surfaced while writing `implementation_plan_foundation.md`. Neither blocks starting Phase 0 prototyping — both can be resolved against the `LocationSource` / crypto interfaces once a spike is done._
 
-### Decision 2: GPX Replay Harness Scope (blocks Journey testing)
-E2E journeys need scripted location. Build a debug-only GPX replay harness in Phase 0 (recommended — journeys 1–4 depend on it), or rely on platform mock-location tools only?
-- Your selection: _(pending)_
+### Decision 3: Companion background-geolocation implementation (Phase 0)
+How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
+- **Option A**: `flutter_background_geolocation` (Transistorsoft) — battle-tested SLC + visit + motion + geofencing + persistence + battery management out of the box. Cost: paid license for Android *release* builds; large dependency.
+- **Option B**: Thin custom platform channels — iOS `CLVisit` + significant-location-change; Android foreground service + FusedLocationProvider (balanced priority) + our own dwell detection. Cost: we own all battery/edge-case tuning; more native code to test.
+- Recommendation: prototype B behind the `LocationSource` interface (`implementation_plan_foundation.md` §A2); adopt A only if B misses the battery/reliability target.
+- **Your selection (July 21): Option B first (free/custom), fall back to A (Transistorsoft) if the Phase 0 battery/reliability gate fails.** Provisional — revisit after the Phase 0 device spike; the `LocationSource` seam keeps the swap cheap.
+
+### Decision 4: Crypto + mDNS libraries on the Godot side (Phase 1)
+Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (X25519 + HKDF + XChaCha20-Poly1305 secretstream) and an mDNS responder on the PC.
+- **Option A**: A maintained libsodium GDExtension + an mDNS addon. Cost: vet/maintain third-party GDExtensions.
+- **Option B**: A small custom GDExtension wrapping libsodium + a bundled mDNS lib. Cost: per-platform build pipeline, but full control.
+- Recommendation: A if a maintained binding exists at build time; else B.
+- **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
+
+---
+
+## ✅ Resolved Decisions
+
+### Decision 1 — Stack: Godot (PC) + Flutter (companion); LAN-only sync (Resolved July 21)
+- **Selection**: PC game = **Godot 4** (free, 2D-first, clean Steam export); companion = **Flutter** (mature background location, matches the Gaslight toolchain).
+- **Sync**: **LAN-only**, device-to-device, end-to-end encrypted. No server exists in v1.0. An internet relay is deferred to v1.1 and, if ever added, must preserve "server sees ciphertext only" (`design_companion_and_sync.md` §5).
+- **Consequences**: two source trees — `game/` (Godot/GDScript) and `companion/` (Flutter/Dart); validation splits accordingly (agent guide §4). Detailed build steps live in `implementation_plan_foundation.md`.
+
+### Decision 2 — Build the GPX replay harness in Phase 0 (Resolved July 21)
+- **Selection**: build a debug-only GPX replay `LocationSource` on the companion that feeds recorded routes through the exact capture pipeline the OS would. E2E journeys 1–5 and automated pipeline tests depend on it.
+- **Consequence**: added as a Phase 0 deliverable (`implementation_plan_foundation.md` §A8).
 
 ---
 
@@ -40,3 +57,9 @@ Founding decisions made with the user during the design brainstorm, recorded her
 6. **Setting: a generation after the collapse** — blends overgrown + emptied + undead (user chose "mix of all 3"). Zombies roam by day; tiers Shambler/Stalker/Brute; colonies as the strategic clock.
 7. **True pixel art** (D/P target) via licensed kit + commissions; AI for concepting only — AI raster sprite generation rejected as unreliable for frame-consistent pixel art.
 8. **Name: "Tenth Spring"** — cleared against Steam/app stores/trademark search July 20, 2026 (domains + formal USPTO check still pending). Rejected: Dead Reckoning (crowded, incl. a zombie title), Fogwalker (existing app with the same GPS-fog mechanic — treat as prior art to differentiate from, not copy).
+9. **Creature-collector (Pokémon) pivot considered and REJECTED (July 21)** — explored reskinning the game as a Pokémon-style collector. Rejected because using actual Pokémon assets/creatures/names in a commercial Steam release is copyright + trademark infringement (The Pokémon Company enforces aggressively), and it reverses the founding "avoid IP" reason. Also reaffirmed **OpenStreetMap, not Google Maps** (Google's ToS forbids replica/derivative map products). The genuinely good mechanics from the discussion were kept and adapted to zombies (items 10–12). If a creature collector is ever revived, it must use *original* creatures (Palworld / Temtem / Coromon precedent).
+10. **Location-themed enemy variants (July 21)** — each zombie takes a `Biome` variant (distinct sprite + one signature trait) per cell: residential/downtown/industrial/retail/parkland/waterfront/institutional/wilds. Orthogonal to the 3 tiers. Rationale: thematic sprite variety — enemies look like where you are. See threats §1.1, art §1.1.
+11. **Loot scales with horde difficulty (July 21)** — beyond the site's distance-based `dangerTier`, the toughest horde you actually defeat at a site boosts its loot roll. Rationale: choosing to fight harder is a real risk/reward lever. See resources §1.
+12. **Landmark bosses (July 21)** — famous real POIs (national parks, monuments, stadiums) host fixed, hand-authored named apex bosses (tier 5, non-spreading, long respawn) dropping `unique` non-craftable loot. Rationale: real-world travel to famous places pays out the game's rarest loot — the zombie version of "legendaries at landmarks." See threats §3, resources §1–2.
+13. **Expanded enemy system beyond 3 tiers (July 21)** — the 3 common tiers stay as the "mass"; added **special infected** archetypes (spitter/howler/grabber/charger/bloater/sentinel), a modular **attack-pattern** taxonomy, and **pack-composition combinations** where mixes (e.g. Grabber+Spitter = pinned in acid) force priority-target decisions. Rationale: user wants depth from *which threat to answer first*, not just more numbers. See threats §1.2–1.4.
+14. **Loot icon set + concept sprites (July 21)** — 16×16 Minecraft-style item icons across the full taxonomy; rarity shown by slot border, not icon recolor; `unique` items get a glow. A 12-icon concept sheet establishes the style. Rationale: the game is looting-based, so items are their own (large but easy-to-source) art track. See art §1.2.
