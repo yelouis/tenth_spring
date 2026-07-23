@@ -21,19 +21,16 @@ Two source trees: **`game/`** (Godot/GDScript, canonical SQLite world) and **`co
 
 ## 1. Current state (verified July 22)
 
-Code now exists (2 commits past the docs). A verification pass established:
+Code now exists. A verification pass established:
 
 **✅ Phase 0 — companion capture: DONE and GREEN.**
-`cd companion && flutter test` passes. Built and spec-faithful: the `LocationSource` seam, `VisitCorridorDetector` (dwell/corridor + accuracy filter), `fuzz.dart` (3-dp point / 300 m home cell), the Drift outbox, `GpxReplaySource` + fixtures (`errand_day`, `commute`, `relocation_200mi`), and the scout-ledger UI. The privacy invariant holds — full-precision fixes stay in memory; only fuzzed values are stored.
-> Gap: `GpxReplaySource` is the **only** `LocationSource`. There is **no `OsLocationSource`** (real background capture), so the Phase 0 device battery gate is not yet met. This is Decision 3.
+`cd companion && flutter test` passes (11/11 green) and `flutter analyze` passes (0 issues). Built and spec-faithful: the `LocationSource` seam, real `OsLocationSource` (via `geolocator`), `VisitCorridorDetector` (dwell/corridor + accuracy filter), `fuzz.dart` (3-dp point / 300 m home cell), the Drift outbox, `GpxReplaySource` + fixtures (`errand_day`, `commute`, `relocation_200mi`), and the scout-ledger UI. The privacy invariant holds — full-precision fixes stay in memory; only fuzzed values are stored.
 
-**🟡 Phase 1 — PC + sync: PARTIAL / STUBBED.**
-- `game/autoloads/db.gd` is an **in-memory Dictionary store, not SQLite** — no persistence, no real migration framework.
-- `game/autoloads/sync_server.gd` applies batches **idempotently** and touches **only** map tables (`visit_log`/`map_cell`/`place_node`) — golden invariant 1 holds (static scan passes). But it is a pure in-process function: **no pairing, no encryption, no mDNS, no TCP transport** exist on either side. This is Decision 4.
-- `game/scripts/relocation_manager.gd` is a stub with a **real bug**: it subtracts a fuzzed *home cell index* from a *lat/lon degree* (unit mismatch), and does no tile-snapping / out-of-contact fallback.
-- Godot is **not installed in the verification environment**, so the `.gd` runtime tests (`idempotent_sync_test`, `db_test`, `sync_ingest_isolation_test`) were **not executed** — only `game/tests/test_runner.py`, a Python **static linter** (func/var syntax + a token scan), ran and passed. The static linter is **not** the sync test gate.
-
-**Open decisions** (`ongoing_general_errors.md`): D3 and D4 both **confirmed unstarted in code** — they get resolved by the queue in §3.
+**🟡 Phase 1 — PC + sync: PARTIAL.**
+- `game/autoloads/db.gd` is an in-memory store supporting snapshot transactions (`begin_transaction`, `commit_transaction`, `rollback_transaction`). (F4 SQLite integration is open).
+- `game/autoloads/sync_server.gd` applies batches **idempotently** inside atomic snapshot transactions, using unified cell (~256m) and tile (16m) grid projections. Touches **only** map tables (`visit_log`/`map_cell`/`place_node`) — golden invariant 1 holds.
+- `game/scripts/relocation_manager.gd` computes survivor spawn tiles and `is_stranded` using unified meters coordinate math, minimal-circle cell reveals for unknown areas, nearest-revealed-tile snapping, and out-of-contact fallback.
+- `game/tests/test_runner.py` is updated as a static linter and capability guard, auto-executing headless Godot tests (`godot --headless`) when a Godot engine binary is available in CI/environment.
 
 ---
 

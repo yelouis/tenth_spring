@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
+import 'capture/os_location_source.dart';
 import 'outbox/database.dart';
 import 'ui/scout_ledger_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase();
-  runApp(CompanionApp(database: database));
+  final locationSource = OsLocationSource();
+  runApp(CompanionApp(
+    database: database,
+    locationSource: locationSource,
+  ));
 }
 
 class CompanionApp extends StatelessWidget {
   final AppDatabase database;
+  final OsLocationSource? locationSource;
 
-  const CompanionApp({super.key, required this.database});
+  const CompanionApp({
+    super.key,
+    required this.database,
+    this.locationSource,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +34,10 @@ class CompanionApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: ScoutLedgerScreen(database: database),
+      home: ScoutLedgerScreen(
+        database: database,
+        locationSource: locationSource,
+      ),
     );
   }
 }

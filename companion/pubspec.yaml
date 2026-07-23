@@ -43,6 +43,7 @@ dependencies:
   cryptography: ^2.9.0
   path: ^1.9.1
   path_provider: ^2.1.6
+  geolocator: ^14.0.3
 
 dev_dependencies:
   flutter_test:

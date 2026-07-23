@@ -2,17 +2,30 @@ extends Node
 
 # SyncServer Autoload for PC Game
 # Listens for encrypted companion sync batches, handles HELLO/BATCH/ACK,
-# and applies visit/corridor logs idempotently to the canonical DB.
+# and applies visit/corridor logs idempotently to the canonical DB inside one transaction.
 
 const PROTOCOL_VERSION: int = 1
+const TILE_METERS: float = 16.0
+const CELL_METERS: float = 256.0 # 16x16 tiles at 16m
+const METERS_PER_DEGREE: float = 111000.0
 
 signal sync_completed(peer_id: String, applied_count: int)
 
-# Converts fuzzed Lat/Lon coordinate to cell coordinate (approx 1km cells)
+# Converts fuzzed Lat/Lon coordinate to cell coordinate (~256m cells)
 func latlon_to_cell(lat: float, lon: float) -> Vector2i:
-	var cell_y = int(floor(lat * 100.0))
-	var cell_x = int(floor(lon * 100.0))
+	var lat_meters = lat * METERS_PER_DEGREE
+	var lon_meters = lon * METERS_PER_DEGREE * cos(deg_to_rad(lat))
+	var cell_x = int(floor(lon_meters / CELL_METERS))
+	var cell_y = int(floor(lat_meters / CELL_METERS))
 	return Vector2i(cell_x, cell_y)
+
+# Converts fuzzed Lat/Lon coordinate to tile coordinate (16m tiles)
+func latlon_to_tile(lat: float, lon: float) -> Vector2i:
+	var lat_meters = lat * METERS_PER_DEGREE
+	var lon_meters = lon * METERS_PER_DEGREE * cos(deg_to_rad(lat))
+	var tile_x = int(floor(lon_meters / TILE_METERS))
+	var tile_y = int(floor(lat_meters / TILE_METERS))
+	return Vector2i(tile_x, tile_y)
 
 func handle_hello(payload: Dictionary) -> Dictionary:
 	var peer_id = payload.get("peerId", "")
@@ -24,6 +37,8 @@ func handle_hello(payload: Dictionary) -> Dictionary:
 	return {"status": "ok", "peerId": peer_id}
 
 func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
+	DB.begin_transaction()
+
 	var rows = batch_data.get("rows", [])
 	var body_fix = batch_data.get("bodyFix", {})
 
@@ -83,6 +98,8 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 	var body_ts = int(body_fix.get("tsUtcMs", 0))
 
 	DB.update_sync_peer(peer_id, max_seq, body_lat, body_lon, body_ts)
+	DB.commit_transaction()
+
 	sync_completed.emit(peer_id, applied_count)
 
 	return {

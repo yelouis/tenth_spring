@@ -16,6 +16,13 @@ var _base_state_store: Dictionary = {"id": 1, "home_cell_x": 0, "home_cell_y": 0
 var _inventory_item_store: Array = [] # List of Dict items
 var _osm_cache_store: Dictionary = {}
 
+# Transaction snapshot variables
+var _in_transaction: bool = false
+var _tx_map_cell_snapshot: Dictionary = {}
+var _tx_place_node_snapshot: Dictionary = {}
+var _tx_visit_log_snapshot: Dictionary = {}
+var _tx_sync_peer_snapshot: Dictionary = {}
+
 func _ready() -> void:
 	init_db()
 
@@ -24,6 +31,28 @@ func init_db() -> void:
 
 func get_schema_version() -> int:
 	return int(_meta_store.get("schema_version", "0"))
+
+func begin_transaction() -> void:
+	_in_transaction = true
+	_tx_map_cell_snapshot = _map_cell_store.duplicate(true)
+	_tx_place_node_snapshot = _place_node_store.duplicate(true)
+	_tx_visit_log_snapshot = _visit_log_store.duplicate(true)
+	_tx_sync_peer_snapshot = _sync_peer_store.duplicate(true)
+
+func commit_transaction() -> void:
+	_in_transaction = false
+	_tx_map_cell_snapshot.clear()
+	_tx_place_node_snapshot.clear()
+	_tx_visit_log_snapshot.clear()
+	_tx_sync_peer_snapshot.clear()
+
+func rollback_transaction() -> void:
+	if _in_transaction:
+		_map_cell_store = _tx_map_cell_snapshot.duplicate(true)
+		_place_node_store = _tx_place_node_snapshot.duplicate(true)
+		_visit_log_store = _tx_visit_log_snapshot.duplicate(true)
+		_sync_peer_store = _tx_sync_peer_snapshot.duplicate(true)
+		_in_transaction = false
 
 # Map Cell Operations
 func get_map_cell(cell_x: int, cell_y: int) -> Dictionary:
@@ -37,7 +66,6 @@ func upsert_map_cell(cell_x: int, cell_y: int, reveal_state: int, cell_seed: int
 	var now = Time.get_unix_time_from_system()
 	if _map_cell_store.has(key):
 		var existing = _map_cell_store[key]
-		# Only escalate reveal state (0 = unknown, 1 = known, 2 = cleared)
 		if reveal_state > existing["reveal_state"]:
 			existing["reveal_state"] = reveal_state
 	else:
@@ -100,7 +128,5 @@ func update_sync_peer(peer_id: String, last_applied_seq: int, body_lat: float, b
 	peer["last_body_ts"] = body_ts
 
 # Golden Invariant 1 Capability Guard Check:
-# Ensure sync ingestion capability is strictly isolated from inventory/base
 func verify_sync_isolation() -> bool:
-	# Assert that db methods for sync ingest touch ONLY map_cell, place_node, visit_log, sync_peer
 	return true

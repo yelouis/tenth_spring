@@ -1,10 +1,20 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../capture/detector.dart';
+import '../capture/location_source.dart';
 import '../outbox/database.dart';
 
 class ScoutLedgerScreen extends StatefulWidget {
   final AppDatabase database;
+  final LocationSource? locationSource;
+  final VisitCorridorDetector? detector;
 
-  const ScoutLedgerScreen({super.key, required this.database});
+  const ScoutLedgerScreen({
+    super.key,
+    required this.database,
+    this.locationSource,
+    this.detector,
+  });
 
   @override
   State<ScoutLedgerScreen> createState() => _ScoutLedgerScreenState();
@@ -13,23 +23,80 @@ class ScoutLedgerScreen extends StatefulWidget {
 class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
   bool _isScoutingPaused = false;
   List<VisitOutboxItem> _visits = [];
+  late VisitCorridorDetector _detector;
+  LocationSource? _locationSource;
+
+  StreamSubscription? _fixSub;
+  StreamSubscription? _visitSub;
+  StreamSubscription? _corridorSub;
 
   @override
   void initState() {
     super.initState();
     _refreshLedger();
+    _initCapturePipeline();
+  }
+
+  void _initCapturePipeline() {
+    _detector = widget.detector ?? VisitCorridorDetector();
+    _locationSource = widget.locationSource;
+
+    if (_locationSource != null) {
+      _visitSub = _detector.visitStream.listen((visit) async {
+        await widget.database.insertVisit(
+          kind: 'visit',
+          lat: visit.fuzzedPoint.lat,
+          lon: visit.fuzzedPoint.lon,
+          startedAt: visit.startedAtTsMs,
+          dwellSeconds: visit.dwellSeconds,
+        );
+        _refreshLedger();
+      });
+
+      _corridorSub = _detector.corridorStream.listen((corridor) async {
+        await widget.database.insertVisit(
+          kind: 'corridor',
+          lat: corridor.fuzzedPoint.lat,
+          lon: corridor.fuzzedPoint.lon,
+          startedAt: corridor.timestampTsMs,
+        );
+        _refreshLedger();
+      });
+
+      _fixSub = _locationSource!.fixes().listen((fix) {
+        if (!_isScoutingPaused) {
+          _detector.processFix(fix);
+        }
+      });
+
+      _locationSource!.start().catchError((e) {
+        debugPrint('LocationSource start error: $e');
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _fixSub?.cancel();
+    _visitSub?.cancel();
+    _corridorSub?.cancel();
+    if (widget.detector == null) {
+      _detector.dispose();
+    }
+    super.dispose();
   }
 
   Future<void> _refreshLedger() async {
     final visits = await widget.database.getAllVisits();
-    setState(() {
-      _visits = visits;
-    });
+    if (mounted) {
+      setState(() {
+        _visits = visits;
+      });
+    }
   }
 
   Future<void> _triggerManualScout() async {
     final now = DateTime.now().millisecondsSinceEpoch;
-    // Manual fix: fuzzed default coords for demo/manual button
     await widget.database.insertVisit(
       kind: 'visit',
       lat: 37.775,
@@ -45,6 +112,17 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
     }
   }
 
+  void _toggleScoutingPause() {
+    setState(() {
+      _isScoutingPaused = !_isScoutingPaused;
+    });
+    if (_isScoutingPaused) {
+      _locationSource?.stop();
+    } else {
+      _locationSource?.start();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final visitCount = _visits.where((v) => v.kind == 'visit').length;
@@ -56,11 +134,7 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
           IconButton(
             icon: Icon(_isScoutingPaused ? Icons.play_arrow : Icons.pause),
             tooltip: _isScoutingPaused ? 'Resume Scouting' : 'Pause Scouting',
-            onPressed: () {
-              setState(() {
-                _isScoutingPaused = !_isScoutingPaused;
-              });
-            },
+            onPressed: _toggleScoutingPause,
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -114,7 +188,7 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
                   )
                 : ListView.separated(
                     itemCount: _visits.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
+                    separatorBuilder: (_, _) => const Divider(height: 1),
                     itemBuilder: (context, index) {
                       final item = _visits[index];
                       final dt = DateTime.fromMillisecondsSinceEpoch(
