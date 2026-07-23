@@ -15,6 +15,7 @@ How the phone captures location in the background (significant-location-change +
 - **Option B**: Thin custom platform channels — iOS `CLVisit` + significant-location-change; Android foreground service + FusedLocationProvider (balanced priority) + our own dwell detection. Cost: we own all battery/edge-case tuning; more native code to test.
 - Recommendation: prototype B behind the `LocationSource` interface (`implementation_plan_foundation.md` §A2); adopt A only if B misses the battery/reliability target.
 - **Your selection (July 21): Option B first (free/custom), fall back to A (Transistorsoft) if the Phase 0 battery/reliability gate fails.** Provisional — revisit after the Phase 0 device spike; the `LocationSource` seam keeps the swap cheap.
+- **Status (verified July 22): UNSTARTED in code.** Only `GpxReplaySource` implements `LocationSource`; there is no `OsLocationSource` and no geolocation dependency in `pubspec.yaml`. Resolve via agent-guide §3 item 1.
 
 ### Decision 4: Crypto + mDNS libraries on the Godot side (Phase 1)
 Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (X25519 + HKDF + XChaCha20-Poly1305 secretstream) and an mDNS responder on the PC.
@@ -22,6 +23,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **Option B**: A small custom GDExtension wrapping libsodium + a bundled mDNS lib. Cost: per-platform build pipeline, but full control.
 - Recommendation: A if a maintained binding exists at build time; else B.
 - **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
+- **Status (verified July 22): UNSTARTED in code.** `sync_server.gd` is an in-process apply stub — no pairing, encryption, mDNS, or TCP transport on either side. Resolve via agent-guide §3 item 3.
 
 ---
 
@@ -40,7 +42,19 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ## 🧪 Resolved Issues & Implementation Refinements
 
-_None yet — no code exists. First entries expected from Phase 0 (background-capture battery tuning and platform-permission edge cases are the predicted early residents of this file)._
+**M1 — Phase 0 companion capture implemented & verified (July 22).** `implementation_plan_foundation.md` §A is realized: the `LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart`, the Drift outbox, `GpxReplaySource` + fixtures, and the scout-ledger UI. `flutter test` is **green**, and the fuzz-only-persists invariant is honored (full-precision fixes stay in memory). No design change warranted — the implementation matches the contract. Remaining Phase 0 work (real `OsLocationSource`) is tracked under Decision 3.
+
+---
+
+## 🔎 Verification Findings (July 22) — open, for the next agent
+
+A verification pass (docs + code) found these gaps/defects. They map to the agent-guide §3 queue. Godot was not installed in the verification environment, so `.gd` runtime tests were **not executed** (only `test_runner.py`'s static lint ran); item F5 addresses that.
+
+- **F1 (bug) — relocation unit mismatch.** `game/scripts/relocation_manager.gd` subtracts a fuzzed *home cell index* (`home_cell_x/y`) from a *lat/lon degree* (`body_lat/lon`), so `distance_from_home_meters` / `is_stranded` are wrong. Also missing: nearest-revealed-tile snapping, unknown-area minimal-circle reveal, and the out-of-contact fallback (`implementation_plan_foundation.md` §B5). Agent-guide §3 item 4.
+- **F2 (correctness) — non-transactional batch apply.** `sync_server.process_batch` applies rows without a single DB transaction (§B4.4); a mid-batch crash could advance `last_applied_seq` past partially-applied rows. Agent-guide §3 item 5.
+- **F3 (consistency) — split coordinate grids.** `sync_server.latlon_to_cell` uses `×100` (~1.1 km cells) while `relocation_manager` uses `×1000` for the spawn tile, and neither matches the ~256 m cell / 16 m tile in the models doc. Pick one shared projection. Agent-guide §3 items 2/4.
+- **F4 (gap) — `db.gd` is an in-memory stub.** No SQLite, no persistence, no real migration framework — the §B2 DDL / §B6 migrations are not realized. Agent-guide §3 item 2.
+- **F5 (validation gap) — `.gd` tests never run.** `test_runner.py` is a Python static linter (syntax + token scan); the runtime assertions in `idempotent_sync_test` / `db_test` / `sync_ingest_isolation_test` require Godot headless in CI. Agent-guide §3 item 6.
 
 ---
 

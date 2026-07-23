@@ -18,6 +18,28 @@ enum ZombieTier { shambler, stalker, brute }   // common; specials are ZombieArc
 
 Zombies roam **day and night**. Daylight is safer, never safe.
 
+## 1.1 Biome Variants (location-themed sprites & behavior)
+
+On top of the three tiers, every zombie takes a **biome variant** — a distinct sprite set plus one signature trait — drawn from the dominant character of the cell it spawns in (biome derived from OSM land use; see `design_world_generation.md` §3). This is the primary source of thematic sprite variety: the enemies you meet *look like where you are*.
+
+```dart
+enum Biome { residential, downtown, industrial, retail, parkland, waterfront, institutional, wilds }
+```
+
+| Biome | Derived from | Variant flavor + signature trait |
+|---|---|---|
+| `residential` | houses, suburbs | "Neighbors" — baseline; large slow packs |
+| `downtown` | dense commercial/office | "Commuters" — stalker-heavy; tight sightlines |
+| `industrial` | factories, warehouses | "Grinders" — brute-heavy, debris armor, hazards |
+| `retail` | malls, shops | "Crowds" — huge shambler mobs (the `bigbox` spike) |
+| `parkland` | parks, forest, green | "Verdant" — overgrown; hide in tall grass, ambush |
+| `waterfront` | coast, rivers, docks | "Drowned" — bloated; burst on death |
+| `institutional` | schools, hospitals, civic | "Wards" — fast, erratic stalkers |
+| `wilds` | low-density, rural, fields | sparse — the frontier where landmark bosses lurk |
+
+- **Orthogonal to tier**: a variant swaps *art + one trait*, never the core tier stats — so §1 (tiers) and §4 (scaling) stay intact. Biome selects *which skin/behavior*; danger level still comes from the three axes.
+- **Content scope (flag for art)**: 3 tiers × 8 biomes ≈ 24 base enemy skins before specials and bosses — a real art budget. See `design_art_direction.md` for the matrix and a ship-first subset.
+
 ## 1.2 Special Infected (attack-pattern archetypes)
 
 Beyond the mass, **specials** spawn in small numbers. Each is defined by a distinct attack pattern and a required counter — they are the reason encounters need *thought*, not just aim.
@@ -59,28 +81,6 @@ Individual specials are manageable; **the threat is the combination**, because m
 | Spitter + Stalker | **zoned and chased** — acid forces you into the pursuer's lane | pre-clear one so they don't pincer |
 
 Legibility still holds (§5): the site chip previews known special presence, and specials enter from off-screen edges / marked doors — never teleporting onto you.
-
-## 1.1 Biome Variants (location-themed sprites & behavior)
-
-On top of the three tiers, every zombie takes a **biome variant** — a distinct sprite set plus one signature trait — drawn from the dominant character of the cell it spawns in (biome derived from OSM land use; see `design_world_generation.md` §3). This is the primary source of thematic sprite variety: the enemies you meet *look like where you are*.
-
-```dart
-enum Biome { residential, downtown, industrial, retail, parkland, waterfront, institutional, wilds }
-```
-
-| Biome | Derived from | Variant flavor + signature trait |
-|---|---|---|
-| `residential` | houses, suburbs | "Neighbors" — baseline; large slow packs |
-| `downtown` | dense commercial/office | "Commuters" — stalker-heavy; tight sightlines |
-| `industrial` | factories, warehouses | "Grinders" — brute-heavy, debris armor, hazards |
-| `retail` | malls, shops | "Crowds" — huge shambler mobs (the `bigbox` spike) |
-| `parkland` | parks, forest, green | "Verdant" — overgrown; hide in tall grass, ambush |
-| `waterfront` | coast, rivers, docks | "Drowned" — bloated; burst on death |
-| `institutional` | schools, hospitals, civic | "Wards" — fast, erratic stalkers |
-| `wilds` | low-density, rural, fields | sparse — the frontier where landmark bosses lurk |
-
-- **Orthogonal to tier**: a variant swaps *art + one trait*, never the core tier stats — so §1 (tiers) and §3 (scaling) stay intact. Biome selects *which skin/behavior*; danger level still comes from the three axes.
-- **Content scope (flag for art)**: 3 tiers × 8 biomes ≈ 24 base enemy skins before specials and bosses — a real art budget. See `design_art_direction.md` for the matrix and a ship-first subset.
 
 ## 2. Colony Lifecycle
 

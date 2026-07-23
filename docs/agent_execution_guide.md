@@ -2,124 +2,134 @@
 
 **You are an engineering agent building Tenth Spring — a two-build project: a PC game (Steam, Godot) and a thin phone companion app (Android + iOS, Flutter).** The PC game holds all gameplay; the companion does location capture + sync only.
 
-This guide is your front door. Its job is to (1) point you to the right document for whatever you're doing, and (2) hand you the exact loop to work by. **Read this first, every time. Do not write code before you have found and read the doc that governs the thing you're about to build, and never violate a settled pillar.**
+This guide is your front door: it tells you (1) where to find the governing doc for anything, (2) the exact state of the code right now, (3) the prioritized work left, and (4) the loop to work by. **Read it first, every time.** Never write code before reading the doc that governs the thing you're building, and never violate a settled pillar.
 
-Prime directive: **find the governing doc → follow the loop → validate → record.** Specs in these docs are decisions, not suggestions.
-
----
-
-## 0. Orientation (read in this order on a cold start)
-1. `README.md` — what the game is, the settled design pillars, the confirmed stack.
-2. This guide — how to find docs and how to work.
-3. `docs/master_implementation_plan.md` — the phase order and all tuning constants.
-4. `docs/implementation_plan_foundation.md` — build-ready detail + validation for the current work (Phase 0–1).
-5. The specific `docs/design_*.md` contract for the system you're touching.
-
-Two source trees: **`game/`** (Godot/GDScript, the PC game, the canonical SQLite world) and **`companion/`** (Flutter/Dart, the phone — a visit outbox + pairing state only).
+Prime directive: **find the governing doc → follow the loop → validate → record.** Specs are decisions, not suggestions.
 
 ---
 
-## 1. Where everything lives (find the doc)
+## 0. Orientation (read in this order)
+1. `README.md` — the game, the pillars, the confirmed stack.
+2. This guide — state of the code + the loop.
+3. `docs/master_implementation_plan.md` — phase order + tuning constants.
+4. `docs/implementation_plan_foundation.md` — build-ready detail + validation for Phase 0–1 (the current work).
+5. The specific `docs/design_*.md` contract for the system you touch.
 
-| If you need to know… | Read | 
+Two source trees: **`game/`** (Godot/GDScript, canonical SQLite world) and **`companion/`** (Flutter/Dart — a visit outbox + pairing state only).
+
+---
+
+## 1. Current state (verified July 22)
+
+Code now exists (2 commits past the docs). A verification pass established:
+
+**✅ Phase 0 — companion capture: DONE and GREEN.**
+`cd companion && flutter test` passes. Built and spec-faithful: the `LocationSource` seam, `VisitCorridorDetector` (dwell/corridor + accuracy filter), `fuzz.dart` (3-dp point / 300 m home cell), the Drift outbox, `GpxReplaySource` + fixtures (`errand_day`, `commute`, `relocation_200mi`), and the scout-ledger UI. The privacy invariant holds — full-precision fixes stay in memory; only fuzzed values are stored.
+> Gap: `GpxReplaySource` is the **only** `LocationSource`. There is **no `OsLocationSource`** (real background capture), so the Phase 0 device battery gate is not yet met. This is Decision 3.
+
+**🟡 Phase 1 — PC + sync: PARTIAL / STUBBED.**
+- `game/autoloads/db.gd` is an **in-memory Dictionary store, not SQLite** — no persistence, no real migration framework.
+- `game/autoloads/sync_server.gd` applies batches **idempotently** and touches **only** map tables (`visit_log`/`map_cell`/`place_node`) — golden invariant 1 holds (static scan passes). But it is a pure in-process function: **no pairing, no encryption, no mDNS, no TCP transport** exist on either side. This is Decision 4.
+- `game/scripts/relocation_manager.gd` is a stub with a **real bug**: it subtracts a fuzzed *home cell index* from a *lat/lon degree* (unit mismatch), and does no tile-snapping / out-of-contact fallback.
+- Godot is **not installed in the verification environment**, so the `.gd` runtime tests (`idempotent_sync_test`, `db_test`, `sync_ingest_isolation_test`) were **not executed** — only `game/tests/test_runner.py`, a Python **static linter** (func/var syntax + a token scan), ran and passed. The static linter is **not** the sync test gate.
+
+**Open decisions** (`ongoing_general_errors.md`): D3 and D4 both **confirmed unstarted in code** — they get resolved by the queue in §3.
+
+---
+
+## 2. Where everything lives (find the doc)
+
+| If you need to know… | Read |
 |---|---|
-| What the game is, the pillars, the confirmed stack | `README.md` |
-| What to build next and in what order; tuning constants | `docs/master_implementation_plan.md` |
-| **Exactly how to build the current work, with validation** | `docs/implementation_plan_*.md` (foundation = Phase 0–1) |
-| The rules of one system (schemas, algorithms, invariants) | `docs/design_<system>.md` |
-| The two-fog pipeline, visits→tiles | `docs/design_world_generation.md` |
+| The game, pillars, confirmed stack | `README.md` |
+| What to build next; tuning constants | `docs/master_implementation_plan.md` |
+| **How to build Phase 0–1, with validation** | `docs/implementation_plan_foundation.md` |
+| The rules of one system | `docs/design_<system>.md` |
+| Two-fog pipeline / visits→tiles | `docs/design_world_generation.md` |
 | Data models / schemas | `docs/design_game_state_and_models.md` |
-| Travel, world clock, fast-travel, stranded | `docs/design_travel_and_time.md` |
+| Travel, clock, fast-travel, stranded | `docs/design_travel_and_time.md` |
 | Companion scope, pairing, sync protocol | `docs/design_companion_and_sync.md` |
-| Zombie tiers, scaling, colonies | `docs/design_threats_and_colonies.md` |
+| Enemies (tiers/specials/attack patterns/combos), colonies, bosses | `docs/design_threats_and_colonies.md` |
 | Raids, noise, familiarity, death | `docs/design_expeditions_and_survival.md` |
-| POI→resource, fuel, base, crafting | `docs/design_resources_and_base.md` |
-| Pixel-art spec, sprite sourcing | `docs/design_art_direction.md` |
-| Privacy/location contracts (bind every system) | `docs/design_privacy_and_location.md` |
-| The open decision queue + engineering history | `docs/ongoing_general_errors.md` |
-| Manual end-to-end test journeys | `docs/e2e_testing_journeys.md` |
+| POI→resource, loot, fuel, base, item/loot icons | `docs/design_resources_and_base.md` · `docs/design_art_direction.md` |
+| Privacy/location contracts (bind everything) | `docs/design_privacy_and_location.md` |
+| Open decisions + engineering history + verification findings | `docs/ongoing_general_errors.md` |
+| Manual E2E test journeys | `docs/e2e_testing_journeys.md` |
 
-Rule of the doc set: **the `design_*.md` files are the contracts (the *what* and the *rules*); the `implementation_plan_*.md` files are the build steps (the *how* and the *validation*).** If they ever disagree, the design doc wins and you file the conflict (see §3).
-
----
-
-## 2. Non-negotiables — do NOT re-litigate or "fix" these
-These are settled user decisions and architectural invariants. If one seems infeasible, STOP and file a Decision (§3) — never silently deviate.
-
-- **Cartography, never cargo** — no real-world event grants resources. The sync ingest may write only map tables (`map_cell`, `place_node`, `visit_log`) + the transient `bodyFix`; it has no path to inventory. Guarded by a permanent test (`implementation_plan_foundation.md` §B6).
-- **Intel, never inventory** — repeat real visits raise `IntelLevel` only.
-- **Raw coordinates never persist or transit** — full precision lives only in volatile memory in the capture pipeline; everything stored/sent is fuzzed (`companion/lib/capture/fuzz.dart`, the one place raw coords exist).
-- **Fast travel = the phone's position at sync time** (a desktop has no GPS); **stranded** away from base; **death drops a recoverable cache**; **map/knowledge always persist**.
-- **The phone is never a place to play** — capture + read-only map + sync only. Any "add gameplay to the companion" idea gets filed, not built.
-- **World clock pauses when the game is closed** (except capped colony catch-up). Punishing absence is rejected.
-- **Travel time is simulation-authoritative** (15 mph over real distance); on-screen movement is aesthetic.
-- **Tile synthesis is deterministic** per `(OSM data, cellSeed)` — the tile cache is regenerable, never the source of truth.
-- **Confirmed stack (Decision 1)**: Godot (PC) + Flutter (companion), SQLite both sides, LAN-only E2E sync. Sub-decisions D3/D4 are provisional (start-simple) — see `ongoing_general_errors.md`.
-- **Never hand-roll crypto** — standard libsodium underneath, always.
+`design_*.md` = contracts (rules); `implementation_plan_*.md` = build steps (how + validation). If they conflict, the contract wins and you file it (§4).
 
 ---
 
-## 3. Pick your task
-Every session starts one of three ways:
+## 3. Your task queue — do these in order
+The foundation is half-built. Work these top-to-bottom; each is one pass of THE LOOP (§4) with acceptance = the matching validation in `implementation_plan_foundation.md`.
 
-1. **A queued item** — open `docs/ongoing_general_errors.md`. A `### Bug N` (with a repro) or a `### Decision N` with a filled **`Your selection:`** line is your assignment. Take the top unresolved one → run the **loop** (§4).
-2. **No queue** — work `docs/master_implementation_plan.md` **in phase order**. The current front is Phase 0 (companion capture) then Phase 1 (PC + pairing/sync). Do not jump ahead of the foundation exit criteria.
-3. **A design gap** (a doc under-specifies what you need) — make the smallest choice consistent with the pillars, record it as a Decision in `ongoing_general_errors.md`, sync the affected design doc in the same commit, then continue.
+1. **[Finish Phase 0 · resolves D3] Real background capture.** Implement `OsLocationSource` behind `LocationSource` (§A2): iOS `CLVisit` + significant-location-change; Android foreground service + FusedLocationProvider (balanced) + dwell detection. Wire it into `main.dart`. **Accept:** on-device the ledger fills over a normal day at **< 3%/day** battery (§A7, §Phase 0 exit). Record the D3 outcome.
+2. **[Phase 1 · SQLite] Replace the `db.gd` stub.** Stand up a real SQLite store (GDExtension per D4 tooling) with the §B2 DDL and the §B6 migration framework; port the existing query methods unchanged in signature. **Accept:** schema round-trip + migration fixture tests pass under Godot headless.
+3. **[Phase 1 · resolves D4] Secure transport, both sides.** Build pairing (X25519 + QR via `mobile_scanner`; keys in secure storage — never the DB) and the encrypted channel (mDNS discovery via `multicast_dns` ↔ Godot mDNS; TCP; libsodium `secretstream`). New: `companion/lib/sync/pairing.dart` + `transport.dart` and Godot equivalents. **Verify Dart `cryptography` ↔ the Godot libsodium binding are wire-compatible with shared test vectors.** **Accept:** cross-device sync of a GPX-fixture batch lands the expected PC state; **replay is a no-op; a mid-batch drop resumes to identical state**; Wireshark shows ciphertext only, no coord finer than 3 dp (§B4, device gate).
+4. **[Correctness] Fix relocation.** In `relocation_manager.gd`, put home and body into one coordinate frame (home is a fuzzed *cell*, body is lat/lon); implement nearest-revealed-tile snapping, the unknown-area minimal-circle reveal, and the out-of-contact fallback (§B5). **Unify the grid:** `sync_server.latlon_to_cell` (×100 ≈ 1.1 km) and `relocation` (×1000) use different projections — pick one shared cell/tile projection consistent with `tileMeters`/cell size in the models doc.
+5. **[Correctness] Transactional batch apply.** Wrap `sync_server.process_batch` in one DB transaction (§B4.4) so a crash mid-batch cannot advance `last_applied_seq` past partially-applied rows.
+6. **[Validation infra] Run the `.gd` tests for real.** Wire Godot headless into CI (`godot --headless` test scenes) so `idempotent_sync_test` / `db_test` / `sync_ingest_isolation_test` actually execute. Keep `test_runner.py` as a lint gate only, and label it as such.
 
-If at any point a spec is wrong, a pillar is blocked, or two docs conflict: **STOP, file it in `ongoing_general_errors.md` with options, and ask the user.** Do not guess past a contradiction.
+If none of the above is your assignment, or a new item appears in `ongoing_general_errors.md` with a filled `Your selection:`, take that first.
 
 ---
 
 ## 4. THE LOOP
-Every unit of work is the same skeleton — **Orient → Plan → Implement → Validate → Record → Commit** — with two tracks that differ only at Plan and Validate.
+Every unit of work is **Orient → Plan → Implement → Validate → Record → Commit**, with two tracks that differ only at Plan and Validate.
 
 ### Track A — implement a feature / phase
 ```
-A1 ORIENT   Read the governing design_<system>.md + the phase in the master plan.
-A2 PLAN     Ensure a detailed implementation_plan_*.md covers this work.
-            If none exists (a phase past the foundation), WRITE one FIRST — algorithms,
-            data shapes, file responsibilities, and per-component validation, to the depth
-            of implementation_plan_foundation.md — and PAUSE for user review before coding.
-A3 BUILD    Implement exactly to that plan. Honor every §2 non-negotiable.
-A4 VALIDATE Run the plan's per-component checks + the §5 standard. RED GATE: if any
-            check fails, fix before proceeding — do not stack new work on unvalidated work.
-A5 RECORD   Sync any changed design/plan docs; log any in-scope choice in ongoing_general_errors.md.
-A6 COMMIT   One item = one Conventional Commit; the WHY goes in the body.
+A1 ORIENT   Read the governing design_<system>.md + the relevant implementation_plan_*.md.
+A2 PLAN     If the work has no implementation_plan_*.md at build depth, WRITE one first
+            (algorithms, data shapes, file responsibilities, per-component validation) and
+            PAUSE for user review before coding.
+A3 BUILD    Implement exactly to the plan. Honor every §5 non-negotiable.
+A4 VALIDATE Run the plan's checks + §6 standard. RED GATE: fix failures before new work.
+A5 RECORD   Sync changed design/plan docs; log in-scope choices in ongoing_general_errors.md.
+A6 COMMIT   One item = one Conventional Commit; WHY in the body.
 ```
 
-### Track B — resolve a bug
+### Track B — resolve a bug / verification finding
 ```
-B1 ORIENT   Find (or file, in bug-documentation format) the issue in ongoing_general_errors.md.
-            Identify which design contract it violates — that defines "correct".
-B2 REPRODUCE Write a FAILING automated test that captures the bug (or a documented manual
-            repro for device-only issues). No fix begins without a red test/repro.
-B3 FIX      Fix to the design contract — never paper over a symptom. If the contract itself
-            is wrong, STOP and file a Decision instead of coding around it.
-B4 VALIDATE The new test goes green + full suite green (§5) + existing regression guards intact.
-B5 RECORD   Move the issue to Resolved with: root cause, what-was-solved, and a regression warning.
-B6 COMMIT   One fix = one Conventional Commit; the WHY goes in the body.
+B1 ORIENT   Find/file the issue in ongoing_general_errors.md; name the contract it violates.
+B2 REPRODUCE Write a FAILING test (or a documented manual repro for device-only issues).
+B3 FIX      Fix to the contract — never paper over a symptom. Contract wrong? STOP, file a Decision.
+B4 VALIDATE New test green + full suite green (§6) + regression guards intact.
+B5 RECORD   Move the issue to Resolved with root cause + what-was-solved + a regression warning.
+B6 COMMIT   One fix = one Conventional Commit; WHY in the body.
 ```
+
+When blocked, a spec is wrong, or docs conflict: **STOP, file it in `ongoing_general_errors.md` with options, ask the user.** Never guess past a contradiction. If a choice is the user's to make, file it as a Decision with options and a `Your selection:` line.
 
 ---
 
-## 5. Validation standard — what "green" means
-Nothing is "done" until it passes the checks its plan names, plus these globally:
-
-- **PC (`game/`)**: engine build clean; unit/integration tests green (GUT or the chosen Godot test runner). Determinism tests for tile synthesis and idempotent-sync tests must pass.
-- **Companion (`companion/`)**: `flutter analyze` → 0 errors; `flutter test` green.
-- **Cross-device**: the GPX-fixture sync test (companion → PC over loopback) produces the expected PC state; **replaying the same batch is a no-op**; a mid-batch drop resumes to identical state.
-- **Golden-invariant guards** (must stay green forever): the sync-ingest isolation test (no inventory write path) and the fuzz-only-persists test.
-- **Two manual DEVICE GATES** — required pre-merge for any change touching capture, battery, or the sync channel; not run in CI:
-  1. Real-device battery attribution **< 3%/day** with background capture on.
-  2. Wireshark on the phone↔PC sync shows **ciphertext only** — no coordinate finer than 3 decimals on the wire.
-- **CI** runs everything except the two device gates.
-
-Anything touching location capture, battery, or cross-device sync **requires a real-device check** — a simulator never validates these.
+## 5. Non-negotiables — do NOT re-litigate or "fix" these
+- **Cartography, never cargo** — sync ingest writes only `map_cell`/`place_node`/`visit_log` (+ transient `bodyFix`); no inventory path. Guarded permanently (§B6 / the isolation tests).
+- **Intel, never inventory** — repeat real visits raise `IntelLevel` only.
+- **Raw coordinates never persist or transit** — full precision lives only in volatile capture memory; everything stored/sent is fuzzed (`companion/lib/capture/fuzz.dart`, the one place raw coords exist).
+- **Fast travel = the phone's position at sync time** (a desktop has no GPS); **stranded** away from base; **death drops a recoverable cache**; **map/knowledge always persist**.
+- **The phone is never a place to play** — capture + read-only map + sync only.
+- **World clock pauses when the game is closed** (except capped colony catch-up).
+- **Travel time is simulation-authoritative** (15 mph over real distance); on-screen movement is aesthetic.
+- **Tile synthesis is deterministic** per `(OSM data, cellSeed)` — the tile cache is regenerable, never source of truth.
+- **Confirmed stack (Decision 1)**: Godot (PC) + Flutter (companion), SQLite both sides, LAN-only E2E sync.
+- **Never hand-roll crypto** — standard libsodium underneath, always.
 
 ---
 
-## 6. Recording & commit conventions
-- **Decisions & bugs** live in `docs/ongoing_general_errors.md`: Decisions carry options + a `Your selection:` line; bugs use the bug-documentation format and, once fixed, move to Resolved with root cause + regression warning.
-- **Design/plan docs are living** — when your change alters behavior, update the governing `design_*.md` / `implementation_plan_*.md` in the *same* commit as the code. Docs must never lag the code.
-- **Commits**: one item = one Conventional Commit (`feat:`, `fix:`, `docs:`…), the WHY in the body. Branch for changes; commit/push only when the user asks.
-- **Doc/commit skill conventions**: mirror Gaslight's `.agents/skills/` (import them when that tooling is set up).
+## 6. Validation standard — what "green" means
+Nothing is done until it passes its plan's checks, plus these:
+- **Companion (`companion/`)**: `flutter analyze` → 0 errors; `flutter test` green. *(Currently green.)*
+- **PC (`game/`)**: **Godot headless** test scenes green — the `.gd` tests must actually run (item 6). `test_runner.py` is a static lint gate, not the sync gate.
+- **Cross-device**: GPX-fixture sync (companion → PC) yields expected PC state; **replay = no-op**; mid-batch drop resumes identical.
+- **Golden-invariant guards** (green forever): sync-ingest isolation (no inventory writes) and fuzz-only-persists.
+- **Two manual DEVICE GATES** (pre-merge for anything touching capture, battery, or sync; not in CI): battery **< 3%/day**; Wireshark shows **ciphertext only**, no coord finer than 3 dp.
+
+Anything touching location capture, battery, or cross-device sync **requires a real-device check** — a simulator/desktop never validates these.
+
+---
+
+## 7. Recording & commit conventions
+- **Decisions & bugs** live in `ongoing_general_errors.md`: Decisions carry options + a `Your selection:` line; bugs use the bug-documentation format and, once fixed, move to Resolved with root cause + regression warning.
+- **Docs are living** — update the governing `design_*.md` / `implementation_plan_*.md` in the *same* commit as behavior-changing code. Docs must never lag code.
+- **Commits**: one item = one Conventional Commit (`feat:`/`fix:`/`docs:`…), WHY in the body. Branch for changes; commit/push only when the user asks.
