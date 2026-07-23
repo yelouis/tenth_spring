@@ -43,7 +43,7 @@ A cell's `Biome` (residential/downtown/industrial/retail/parkland/waterfront/ins
 * `posTileX/Y` (int): current overworld position. On PC session start, overwritten by the synced `bodyFix` relocation (fast travel — `design_travel_and_time.md` §4).
 * `hp`, `stamina` (int), `carryCapacity` (int).
 * `carried` (List<InventoryItem>): the *only* inventory that travels. `InventoryItem = {itemId, qty, quality}`.
-* **Stranded rule**: no code path may read `BaseState.stash` while `distanceToHome > baseAccessTiles`.
+* **Stranded rule**: no code path may read `BaseState.stash` while `distanceToHome > baseAccessMeters` (500 m, tunable; distinct from the `homeFuzzMeters` privacy radius).
 
 ## 5. Base State (`BaseState`)
 

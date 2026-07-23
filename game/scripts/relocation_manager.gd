@@ -22,7 +22,7 @@ func calculate_relocation(peer_id: String, peer_reachable: bool = true) -> Dicti
 
 	is_out_of_contact = not peer_reachable or body_ts == 0
 
-	var home = DB._base_state_store
+	var home = DB.get_base_state()
 	var home_cell_x = int(home.get("home_cell_x", 0))
 	var home_cell_y = int(home.get("home_cell_y", 0))
 
@@ -68,8 +68,7 @@ func calculate_relocation(peer_id: String, peer_reachable: bool = true) -> Dicti
 				DB.upsert_map_cell(spawn_cell_x + dx, spawn_cell_y + dy, 1)
 
 	# Nearest-revealed-tile snapping to player profile
-	DB._player_profile_store["pos_tile_x"] = current_spawn_tile.x
-	DB._player_profile_store["pos_tile_y"] = current_spawn_tile.y
+	DB.set_player_tile(current_spawn_tile.x, current_spawn_tile.y)
 
 	return {
 		"spawn_tile": current_spawn_tile,

@@ -127,6 +127,13 @@ func update_sync_peer(peer_id: String, last_applied_seq: int, body_lat: float, b
 	peer["last_body_lon"] = body_lon
 	peer["last_body_ts"] = body_ts
 
+func get_base_state() -> Dictionary:
+	return _base_state_store
+
+func set_player_tile(tile_x: int, tile_y: int) -> void:
+	_player_profile_store["pos_tile_x"] = tile_x
+	_player_profile_store["pos_tile_y"] = tile_y
+
 # Golden Invariant 1 Capability Guard Check:
 func verify_sync_isolation() -> bool:
 	return true

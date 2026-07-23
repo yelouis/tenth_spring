@@ -32,7 +32,7 @@ This document defines the world clock, the 15 mph travel economy, day/night, phy
 
 ## 5. The Stranded Rule
 
-- The base stash is accessible only within `baseAccessTiles` of the safehouse. Everywhere else, the survivor has exactly what `carried` holds.
+- The base stash is accessible only within `baseAccessMeters` (500 m, tunable) of the safehouse. Everywhere else, the survivor has exactly what `carried` holds. This radius is a game constant, separate from the `homeFuzzMeters` privacy fuzz.
 - Starting a session far from home = arriving with what's on your back: scavenge locally, survive, and either trek home in-game (honest 15 mph across the full real distance, with fuel logistics for far islands) or physically return home and start a session there (fast travel).
 - Session-start banner states it plainly: *"You are 212 miles from home. You have what you carry."*
 

@@ -15,8 +15,7 @@ How the phone captures location in the background (significant-location-change +
 - **Option B**: Thin custom platform channels — iOS `CLVisit` + significant-location-change; Android foreground service + FusedLocationProvider (balanced priority) + our own dwell detection. Cost: we own all battery/edge-case tuning; more native code to test.
 - Recommendation: prototype B behind the `LocationSource` interface (`implementation_plan_foundation.md` §A2); adopt A only if B misses the battery/reliability target.
 - **Your selection (July 21): Option B first (free/custom), fall back to A (Transistorsoft) if the Phase 0 battery/reliability gate fails.** Provisional — revisit after the Phase 0 device spike; the `LocationSource` seam keeps the swap cheap.
-- **Status (verified July 22): PARTIALLY REALIZED.** `GpxReplaySource` and real `OsLocationSource` (using `geolocator` with balanced power accuracy and 25m distance filter) are both implemented behind `LocationSource`. `flutter test` and `flutter analyze` are 0-error green.
-- **Refinement (July 22, 2nd verification):** the `OsLocationSource` is a **foreground** `getPositionStream` — no Android foreground-service / iOS background-location modes / `CLVisit` (`nativeVisits()` returns null). It does **not** meet the background <3%/day battery gate. D3 stays open; real background capture is agent-guide §3 item 1.
+- **Status (verified July 22): REALIZED (Option B).** `OsLocationSource` is implemented behind `LocationSource` with `AndroidSettings` (Foreground Service notification, 2-min interval, 25m distance filter) and `AppleSettings` (`allowBackgroundLocationUpdates: true`, `pauseLocationUpdatesAutomatically: true`, 25m distance filter). Permissions configured in `AndroidManifest.xml` and `Info.plist`. `flutter test` (12/12) and `flutter analyze` (0 issues) are green.
 
 ### Decision 4: Crypto + mDNS libraries on the Godot side (Phase 1)
 Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (X25519 + HKDF + XChaCha20-Poly1305 secretstream) and an mDNS responder on the PC.
@@ -24,7 +23,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **Option B**: A small custom GDExtension wrapping libsodium + a bundled mDNS lib. Cost: per-platform build pipeline, but full control.
 - Recommendation: A if a maintained binding exists at build time; else B.
 - **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
-- **Status (verified July 22): UNSTARTED in code.** `sync_server.gd` is an in-process apply stub — no pairing, encryption, mDNS, or TCP transport on either side. Resolve via agent-guide §3 item 3.
+- **Status (verified July 22): UNSTARTED in code.** `sync_server.gd` is an in-process apply stub — no pairing, encryption, mDNS, or TCP transport on either side. Resolve via **agent-guide §5 (Item 3)**.
 
 ---
 
@@ -52,13 +51,15 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **F5 (fixed)**: `test_runner.py` updated to run static linting and automatically execute headless Godot test runners (`godot --headless`) when Godot binary is detected.
 - **F6 (fixed)**: Added `baseAccessMeters` (500m) to `tuning.json` and `config.gd`. `relocation_manager.gd` now thresholds `is_stranded` against game base-access radius instead of privacy fuzz.
 
+**M2 confirmed (July 22, 3rd verification pass).** F2 and F6 independently re-verified in code: `base_access_meters = 500` is wired through `config.gd` ← `tuning.json` ← `relocation_manager.gd`; `process_batch` has a rollback path exercised by `idempotent_sync_test.gd` (replay-is-no-op + simulated mid-batch failure leaves no state). The `baseAccessMeters` constant was promoted into the design docs (master plan Core Configurations, `design_travel_and_time.md` §5, `design_game_state_and_models.md` §4) — previously it lived only in code. Two minor residuals folded into F4: (a) the `simulateFailure` flag is a test hook sitting in the production `process_batch` path — remove/guard it once real failure handling lands; (b) true crash-atomicity depends on real SQLite transactions (F4), since GDScript has no exception unwinding.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-- **F4 (gap) — `db.gd` is an in-memory stub.** No SQLite, no persistence, no real migration framework — the §B2 DDL / §B6 migrations are not realized. Snapshot-transaction scaffolding exists but isn't real durability. Agent-guide §3 item 2.
-- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (not yet implemented). Agent-guide §3 item 6.
-- **D3-background (found July 22 2nd pass) — `OsLocationSource` is foreground-only.** See the D3 status refinement. Agent-guide §3 item 1.
+- **F4 (gap) — `db.gd` is an in-memory stub.** No SQLite, no persistence, no real migration framework — the §B2 DDL / §B6 migrations are not realized. Snapshot-transaction scaffolding exists but isn't real durability. **Agent-guide §4 (Item 2)**.
+- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (not yet implemented). **Agent-guide §6 (Deferred — trigger-gated).**
+- **D3-background (found July 22 2nd pass) — `OsLocationSource` is foreground-only.** See the D3 status refinement. **Agent-guide §3 (Item 1)**, with `file:line` gap detail and the device-gate acceptance criteria.
 
 ---
 

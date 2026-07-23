@@ -12,6 +12,7 @@ All gameplay constants live in one PC-side config file (`game/config/tuning`) so
 - **`corridorRevealMeters = 60`** — width of map revealed along traveled routes.
 - **`familiarityTiers = {1: known, 3: familiar, 10: mastered}`** — real-visit counts → intel level.
 - **`homeFuzzMeters = 300`** — safehouse coordinates snapped/offset for privacy.
+- **`baseAccessMeters = 500`** — radius around the safehouse within which the stash is reachable; beyond it the survivor is "stranded" (carried inventory only). Distinct from `homeFuzzMeters` (privacy). Tunable.
 - **`deathCacheDecayGameDays = 3`** — how long a dropped death cache persists before scavengers claim it.
 - **`colonyGrowthTickGameDays = 1`** — colony expansion cadence.
 - **Data locality**: all location traces and map state live on the player's phone + PC only; sync is direct device-to-device (E2E). No account, no server, no cloud relay in v1.0.
