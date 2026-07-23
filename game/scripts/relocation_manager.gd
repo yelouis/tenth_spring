@@ -50,8 +50,8 @@ func calculate_relocation(peer_id: String, peer_reachable: bool = true) -> Dicti
 	var delta_y = body_lat_meters - home_center_lat_meters
 	distance_from_home_meters = sqrt(delta_x * delta_x + delta_y * delta_y)
 
-	var home_fuzz = Config.home_fuzz_meters
-	is_stranded = distance_from_home_meters > home_fuzz
+	var base_access = Config.base_access_meters
+	is_stranded = distance_from_home_meters > base_access
 
 	var spawn_cell_x = int(floor(body_lon_meters / CELL_METERS))
 	var spawn_cell_y = int(floor(body_lat_meters / CELL_METERS))

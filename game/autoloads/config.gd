@@ -7,6 +7,7 @@ var visit_radius_meters: float = 75.0
 var visit_dwell_seconds: int = 120
 var corridor_reveal_meters: float = 60.0
 var home_fuzz_meters: float = 300.0
+var base_access_meters: float = 500.0
 var death_cache_decay_game_days: int = 3
 var colony_growth_tick_game_days: int = 1
 var familiarity_tiers: Dictionary = {1: "known", 3: "familiar", 10: "mastered"}
@@ -31,6 +32,7 @@ func load_tuning_config(path: String) -> void:
 		visit_dwell_seconds = json.get("visitDwellSeconds", visit_dwell_seconds)
 		corridor_reveal_meters = json.get("corridorRevealMeters", corridor_reveal_meters)
 		home_fuzz_meters = json.get("homeFuzzMeters", home_fuzz_meters)
+		base_access_meters = json.get("baseAccessMeters", base_access_meters)
 		death_cache_decay_game_days = json.get("deathCacheDecayGameDays", death_cache_decay_game_days)
 		colony_growth_tick_game_days = json.get("colonyGrowthTickGameDays", colony_growth_tick_game_days)
 		if json.has("familiarityTiers"):

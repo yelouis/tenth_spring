@@ -19,18 +19,21 @@ Two source trees: **`game/`** (Godot/GDScript, canonical SQLite world) and **`co
 
 ---
 
-## 1. Current state (verified July 22)
+## 1. Current state (verified July 22, 2nd pass)
 
-Code now exists. A verification pass established:
+Independent verification — docs + code read + re-run gates — established:
 
-**✅ Phase 0 — companion capture: DONE and GREEN.**
-`cd companion && flutter test` passes (11/11 green) and `flutter analyze` passes (0 issues). Built and spec-faithful: the `LocationSource` seam, real `OsLocationSource` (via `geolocator`), `VisitCorridorDetector` (dwell/corridor + accuracy filter), `fuzz.dart` (3-dp point / 300 m home cell), the Drift outbox, `GpxReplaySource` + fixtures (`errand_day`, `commute`, `relocation_200mi`), and the scout-ledger UI. The privacy invariant holds — full-precision fixes stay in memory; only fuzzed values are stored.
+**✅ Phase 0 — companion capture: green, mostly done.**
+`flutter test` passes (11/11) and `flutter analyze` reports 0 issues (both re-run and confirmed). Spec-faithful: the `LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart` (3-dp point / 300 m home cell), Drift outbox, `GpxReplaySource` + fixtures, and the scout-ledger UI. Privacy invariant holds — raw fixes stay in memory; only fuzzed values persist.
+- ⚠️ `OsLocationSource` exists (via `geolocator`, medium accuracy + 25 m filter) but is a **foreground** `getPositionStream` — no Android foreground-service / iOS background modes, `nativeVisits()` returns null. It will NOT meet the background <3%/day gate. Real background capture is still Decision 3 (§3 item 1).
 
-**🟡 Phase 1 — PC + sync: PARTIAL.**
-- `game/autoloads/db.gd` is an in-memory store supporting snapshot transactions (`begin_transaction`, `commit_transaction`, `rollback_transaction`). (F4 SQLite integration is open).
-- `game/autoloads/sync_server.gd` applies batches **idempotently** inside atomic snapshot transactions, using unified cell (~256m) and tile (16m) grid projections. Touches **only** map tables (`visit_log`/`map_cell`/`place_node`) — golden invariant 1 holds.
-- `game/scripts/relocation_manager.gd` computes survivor spawn tiles and `is_stranded` using unified meters coordinate math, minimal-circle cell reveals for unknown areas, nearest-revealed-tile snapping, and out-of-contact fallback.
-- `game/tests/test_runner.py` is updated as a static linter and capability guard, auto-executing headless Godot tests (`godot --headless`) when a Godot engine binary is available in CI/environment.
+**🟡 Phase 1 — PC + sync: partial.**
+- `sync_server.gd` applies batches idempotently, writes only map tables (invariant holds), and uses shared 256 m cell / 16 m tile projections (F3 fixed). It wraps the apply in `begin_transaction`/`commit_transaction` (F2), **but nothing calls `rollback_transaction()`** — the wrap is currently decorative; real crash-safety comes with SQLite (§3 item 5).
+- `relocation_manager.gd` uses a unified meters frame (F1 fixed), minimal-circle reveal + out-of-contact fallback. ⚠️ But `is_stranded` is thresholded on `Config.home_fuzz_meters` (a 300 m *privacy* radius) instead of a game base-access radius — wrong constant (F6, §3 item 4).
+- `db.gd` is still **in-memory Dictionaries** (snapshot-transaction scaffolding only) — no SQLite, no persistence, no real migrations (F4, §3 item 2).
+- `test_runner.py` auto-runs Godot headless when present, else static-lints (F5 fixed). Godot is absent in this environment, so `.gd` runtime tests remain unexecuted here.
+
+**Open decisions:** D4 (secure transport) UNSTARTED — no pairing/encryption/mDNS/TCP on either side. D3 partial (foreground only).
 
 ---
 
@@ -58,14 +61,14 @@ Code now exists. A verification pass established:
 ---
 
 ## 3. Your task queue — do these in order
-The foundation is half-built. Work these top-to-bottom; each is one pass of THE LOOP (§4) with acceptance = the matching validation in `implementation_plan_foundation.md`.
+Foundation is ~2/3 built. Work top-to-bottom; each item is one pass of THE LOOP (§4) with acceptance = the matching validation in `implementation_plan_foundation.md`.
 
-1. **[Finish Phase 0 · resolves D3] Real background capture.** Implement `OsLocationSource` behind `LocationSource` (§A2): iOS `CLVisit` + significant-location-change; Android foreground service + FusedLocationProvider (balanced) + dwell detection. Wire it into `main.dart`. **Accept:** on-device the ledger fills over a normal day at **< 3%/day** battery (§A7, §Phase 0 exit). Record the D3 outcome.
-2. **[Phase 1 · SQLite] Replace the `db.gd` stub.** Stand up a real SQLite store (GDExtension per D4 tooling) with the §B2 DDL and the §B6 migration framework; port the existing query methods unchanged in signature. **Accept:** schema round-trip + migration fixture tests pass under Godot headless.
-3. **[Phase 1 · resolves D4] Secure transport, both sides.** Build pairing (X25519 + QR via `mobile_scanner`; keys in secure storage — never the DB) and the encrypted channel (mDNS discovery via `multicast_dns` ↔ Godot mDNS; TCP; libsodium `secretstream`). New: `companion/lib/sync/pairing.dart` + `transport.dart` and Godot equivalents. **Verify Dart `cryptography` ↔ the Godot libsodium binding are wire-compatible with shared test vectors.** **Accept:** cross-device sync of a GPX-fixture batch lands the expected PC state; **replay is a no-op; a mid-batch drop resumes to identical state**; Wireshark shows ciphertext only, no coord finer than 3 dp (§B4, device gate).
-4. **[Correctness] Fix relocation.** In `relocation_manager.gd`, put home and body into one coordinate frame (home is a fuzzed *cell*, body is lat/lon); implement nearest-revealed-tile snapping, the unknown-area minimal-circle reveal, and the out-of-contact fallback (§B5). **Unify the grid:** `sync_server.latlon_to_cell` (×100 ≈ 1.1 km) and `relocation` (×1000) use different projections — pick one shared cell/tile projection consistent with `tileMeters`/cell size in the models doc.
-5. **[Correctness] Transactional batch apply.** Wrap `sync_server.process_batch` in one DB transaction (§B4.4) so a crash mid-batch cannot advance `last_applied_seq` past partially-applied rows.
-6. **[Validation infra] Run the `.gd` tests for real.** Wire Godot headless into CI (`godot --headless` test scenes) so `idempotent_sync_test` / `db_test` / `sync_ingest_isolation_test` actually execute. Keep `test_runner.py` as a lint gate only, and label it as such.
+1. **[D3 · finish real background capture]** The current `OsLocationSource` is foreground-only. Add Android foreground-service + background location and iOS background-location modes / `CLVisit` (wire `nativeVisits`), or adopt Transistorsoft per the D3 fallback. **Accept:** on-device background capture fills the ledger over a normal day at **< 3%/day** (device gate, §A7).
+2. **[F4 · real SQLite]** Replace the in-memory `db.gd` with a SQLite GDExtension implementing the §B2 DDL + §B6 migrations; keep query signatures unchanged; switch the batch apply to real SQLite `BEGIN`/`COMMIT`/`ROLLBACK`. **Accept:** schema round-trip + migration fixtures pass under Godot headless.
+3. **[D4 · secure transport, both sides]** Pairing (X25519 + QR via `mobile_scanner`; keys in secure storage — never the DB) + encrypted channel (mDNS via `multicast_dns` ↔ Godot mDNS; TCP; libsodium `secretstream`). New `companion/lib/sync/{pairing,transport}.dart` + Godot equivalents. Verify Dart `cryptography` ↔ the Godot libsodium binding are wire-compatible with shared vectors. **Accept:** cross-device GPX-batch sync lands the expected PC state; **replay = no-op; a mid-batch drop resumes identical**; Wireshark shows ciphertext only, no coord finer than 3 dp (§B4, device gate).
+4. **[F7 · latent, do when home designation lands]** `fuzzHome` snaps to a 300 m grid while the game treats home as a 256 m cell — reconcile the two when safehouse designation is implemented so they agree.
+
+**Verified DONE, dropped from the queue:** `OsLocationSource` foreground source, relocation unit math (F1), grid unification (F3), transactional snapshot & rollback (F2), Godot-headless test runner (F5), stranded base-access thresholding (F6).
 
 If none of the above is your assignment, or a new item appears in `ongoing_general_errors.md` with a filled `Your selection:`, take that first.
 

@@ -6,6 +6,7 @@
   "visitDwellSeconds": 120,
   "corridorRevealMeters": 60.0,
   "homeFuzzMeters": 300.0,
+  "baseAccessMeters": 500.0,
   "deathCacheDecayGameDays": 3,
   "colonyGrowthTickGameDays": 1,
   "familiarityTiers": {

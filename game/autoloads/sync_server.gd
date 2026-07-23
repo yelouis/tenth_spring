@@ -41,6 +41,7 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 
 	var rows = batch_data.get("rows", [])
 	var body_fix = batch_data.get("bodyFix", {})
+	var simulate_failure = batch_data.get("simulateFailure", false)
 
 	var peer_info = DB.get_sync_peer(peer_id)
 	var last_applied_seq = int(peer_info.get("last_applied_seq", 0))
@@ -50,6 +51,10 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 
 	for row in rows:
 		var seq = int(row.get("seq", 0))
+		if seq < 0 or simulate_failure:
+			DB.rollback_transaction()
+			return {"status": "error", "message": "Transaction failed and was rolled back"}
+
 		if seq <= last_applied_seq:
 			continue # Idempotent skip for already applied rows
 

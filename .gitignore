@@ -20,6 +20,7 @@ companion/ios/Runner.xcodeproj/xcuserdata/
 
 # Godot
 game/.godot/
+game/.import/
 game/export_presets.cfg
 
 # SQLite / Database temp files
@@ -27,4 +28,5 @@ game/export_presets.cfg
 *.db-shm
 *.db-wal
 *.sqlite
+
 

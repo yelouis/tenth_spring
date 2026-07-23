@@ -16,6 +16,7 @@ How the phone captures location in the background (significant-location-change +
 - Recommendation: prototype B behind the `LocationSource` interface (`implementation_plan_foundation.md` §A2); adopt A only if B misses the battery/reliability target.
 - **Your selection (July 21): Option B first (free/custom), fall back to A (Transistorsoft) if the Phase 0 battery/reliability gate fails.** Provisional — revisit after the Phase 0 device spike; the `LocationSource` seam keeps the swap cheap.
 - **Status (verified July 22): PARTIALLY REALIZED.** `GpxReplaySource` and real `OsLocationSource` (using `geolocator` with balanced power accuracy and 25m distance filter) are both implemented behind `LocationSource`. `flutter test` and `flutter analyze` are 0-error green.
+- **Refinement (July 22, 2nd verification):** the `OsLocationSource` is a **foreground** `getPositionStream` — no Android foreground-service / iOS background-location modes / `CLVisit` (`nativeVisits()` returns null). It does **not** meet the background <3%/day battery gate. D3 stays open; real background capture is agent-guide §3 item 1.
 
 ### Decision 4: Crypto + mDNS libraries on the Godot side (Phase 1)
 Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (X25519 + HKDF + XChaCha20-Poly1305 secretstream) and an mDNS responder on the PC.
@@ -46,15 +47,18 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 **M2 — Relocation math, grid projection, transactions & validation (July 22).**
 - **F1 (fixed)**: `relocation_manager.gd` converted `body_lat/lon` and `home_cell` into a unified meters coordinate frame (`METERS_PER_DEGREE = 111000.0`, `CELL_METERS = 256.0`). Implemented out-of-contact fallback, minimal circle cell reveal, and nearest-revealed-tile snapping to player profile.
-- **F2 (fixed)**: Wrapped `sync_server.process_batch` in atomic `DB.begin_transaction()` / `DB.commit_transaction()` snapshot transactions so mid-batch failures roll back safely.
+- **F2 (fixed)**: `sync_server.process_batch` is wrapped in `DB.begin_transaction()` / `commit_transaction()`, and explicit error paths (plus simulated batch failures) trigger `DB.rollback_transaction()`. `idempotent_sync_test.gd` verifies uncommitted state is safely discarded.
 - **F3 (fixed)**: Unified cell (~256m) and tile (16m) grid projections across `sync_server.gd` and `relocation_manager.gd` matching `design_game_state_and_models.md`.
 - **F5 (fixed)**: `test_runner.py` updated to run static linting and automatically execute headless Godot test runners (`godot --headless`) when Godot binary is detected.
+- **F6 (fixed)**: Added `baseAccessMeters` (500m) to `tuning.json` and `config.gd`. `relocation_manager.gd` now thresholds `is_stranded` against game base-access radius instead of privacy fuzz.
 
 ---
 
-## 🔎 Verification Findings (July 22) — open, for the next agent
+## 🔎 Verification Findings — open, for the next agent
 
-- **F4 (gap) — `db.gd` is an in-memory stub.** No SQLite, no persistence, no real migration framework — the §B2 DDL / §B6 migrations are not realized. Agent-guide §3 item 2.
+- **F4 (gap) — `db.gd` is an in-memory stub.** No SQLite, no persistence, no real migration framework — the §B2 DDL / §B6 migrations are not realized. Snapshot-transaction scaffolding exists but isn't real durability. Agent-guide §3 item 2.
+- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (not yet implemented). Agent-guide §3 item 6.
+- **D3-background (found July 22 2nd pass) — `OsLocationSource` is foreground-only.** See the D3 status refinement. Agent-guide §3 item 1.
 
 ---
 

@@ -1,7 +1,8 @@
 extends Node
 
-# Idempotent Sync Ingestion Test
-# Verifies that replaying an identical sync batch produces zero state drift or duplicates.
+# Idempotent Sync Ingestion Test & Rollback Verification
+# Verifies that replaying an identical sync batch produces zero state drift or duplicates,
+# and that a mid-batch failure rolls back database state safely.
 
 func run_test() -> bool:
 	var peer_id = "test_phone_001"
@@ -49,5 +50,35 @@ func run_test() -> bool:
 		push_error("FAIL: Idempotency failed! Replayed batch applied %d rows (expected 0)" % result2.get("appliedCount", 0))
 		return false
 
-	print("PASS: Idempotent Sync Ingestion Test")
+	# Third (Failed) Ingestion - MUST ROLL BACK SAFELY
+	var failing_batch = {
+		"rows": [
+			{
+				"seq": 3,
+				"kind": "visit",
+				"lat": 37.880,
+				"lon": -122.500,
+				"startedAt": 1700000300,
+				"dwellSeconds": 180
+			}
+		],
+		"bodyFix": {
+			"lat": 37.880,
+			"lon": -122.500,
+			"tsUtcMs": 1700000300
+		},
+		"simulateFailure": true
+	}
+	var fail_result = SyncServer.process_batch(peer_id, failing_batch)
+	if fail_result.get("status", "") != "error":
+		push_error("FAIL: Expected error status on simulated batch failure")
+		return false
+
+	var unrevealed_cell = SyncServer.latlon_to_cell(37.880, -122.500)
+	var rolled_back_cell = DB.get_map_cell(unrevealed_cell.x, unrevealed_cell.y)
+	if not rolled_back_cell.is_empty():
+		push_error("FAIL: Rollback failed! Uncommitted map cell was persisted")
+		return false
+
+	print("PASS: Idempotent Sync Ingestion & Rollback Test")
 	return true
