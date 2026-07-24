@@ -9,6 +9,7 @@ All gameplay constants live in one PC-side config file (`game/config/tuning`) so
 - **`wallSecondsPerGameMinute = 2.0`** — world-clock dilation. A full in-game day ≈ 48 wall minutes.
 - **`tileMeters = 16`** — one overworld tile ≈ 16 m of real ground (see `design_world_generation.md`).
 - **`visitRadiusMeters = 75`**, **`visitDwellSeconds = 120`** — thresholds for a real-world "visit" that reveals a place.
+- **`captureDistanceFilterMeters = 25`**, **`captureIntervalMinutes = 2`**, accuracy **`medium`** — the companion's OS capture settings. These three are the **battery-budget levers**: raising accuracy or lowering either value will blow the <3%/day target. Change them only with a fresh device measurement.
 - **`corridorRevealMeters = 60`** — width of map revealed along traveled routes.
 - **`familiarityTiers = {1: known, 3: familiar, 10: mastered}`** — real-visit counts → intel level.
 - **`homeFuzzMeters = 300`** — safehouse coordinates snapped/offset for privacy.

@@ -14,6 +14,7 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 
 - Capture lives entirely in the **companion app**. Primary: OS significant-location-change + visit APIs (iOS `CLVisit`, Android fused provider with PASSIVE/BALANCED priority). Target battery cost < 3%/day.
 - No continuous high-accuracy tracking, ever. Corridor traces come from SLC breadcrumbs interpolated along the road network, not from polling.
+- **Concrete settings (as implemented):** accuracy `medium`, distance filter **25 m**, interval **2 min**; Android runs a foreground service with a persistent low-priority notification, iOS uses `allowBackgroundLocationUpdates` with `pauseLocationUpdatesAutomatically`. These are the battery-budget levers — see the master plan's Core Configurations before touching them.
 - Graceful degradation: with "While Using" permission only, the pipeline still works — visits are detected while the companion is open and a manual "scout here" button logs the current place. "Always" permission is the *enhancement*, never the wall.
 
 ## 3. Onboarding & Consent UX
