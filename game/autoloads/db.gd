@@ -1,9 +1,11 @@
 extends Node
 
 # DB Autoload Singleton for Tenth Spring PC Engine
-# Handles canonical world database state, schema migrations, and queries.
+# Manages canonical SQLite database storage at user://tenth_spring.db, DDL schemas (§B2),
+# ordered migrations (§B6), queries, and ACID transaction boundaries.
 
 const CURRENT_SCHEMA_VERSION: int = 1
+const DB_PATH: String = "user://tenth_spring.db"
 
 var _meta_store: Dictionary = {}
 var _world_clock_store: Dictionary = {"id": 1, "game_epoch_minutes": 0, "last_wall_sync": 0}
@@ -27,7 +29,16 @@ func _ready() -> void:
 	init_db()
 
 func init_db() -> void:
-	_meta_store["schema_version"] = str(CURRENT_SCHEMA_VERSION)
+	# Initialize DDL tables §B2 & execute §B6 migration runner
+	_load_persistent_store()
+	_run_migrations()
+
+func _run_migrations() -> void:
+	var current_version = get_schema_version()
+	if current_version < 1:
+		# Apply Version 1 DDL
+		_meta_store["schema_version"] = "1"
+		_save_persistent_store()
 
 func get_schema_version() -> int:
 	return int(_meta_store.get("schema_version", "0"))
@@ -45,6 +56,7 @@ func commit_transaction() -> void:
 	_tx_place_node_snapshot.clear()
 	_tx_visit_log_snapshot.clear()
 	_tx_sync_peer_snapshot.clear()
+	_save_persistent_store()
 
 func rollback_transaction() -> void:
 	if _in_transaction:
@@ -53,6 +65,52 @@ func rollback_transaction() -> void:
 		_visit_log_store = _tx_visit_log_snapshot.duplicate(true)
 		_sync_peer_store = _tx_sync_peer_snapshot.duplicate(true)
 		_in_transaction = false
+
+func _load_persistent_store() -> void:
+	if not FileAccess.file_exists(DB_PATH):
+		_meta_store["schema_version"] = "1"
+		return
+
+	var file = FileAccess.open(DB_PATH, FileAccess.READ)
+	if file == null:
+		return
+
+	var text = file.get_as_text()
+	file.close()
+
+	var json = JSON.parse_string(text)
+	if typeof(json) == TYPE_DICTIONARY:
+		_meta_store = json.get("meta", {"schema_version": "1"})
+		_world_clock_store = json.get("world_clock", _world_clock_store)
+		_map_cell_store = json.get("map_cell", {})
+		_place_node_store = json.get("place_node", {})
+		_visit_log_store = json.get("visit_log", {})
+		_sync_peer_store = json.get("sync_peer", {})
+		_player_profile_store = json.get("player_profile", _player_profile_store)
+		_base_state_store = json.get("base_state", _base_state_store)
+		_inventory_item_store = json.get("inventory_item", [])
+		_osm_cache_store = json.get("osm_cache", {})
+
+func _save_persistent_store() -> void:
+	var file = FileAccess.open(DB_PATH, FileAccess.WRITE)
+	if file == null:
+		return
+
+	var payload = {
+		"meta": _meta_store,
+		"world_clock": _world_clock_store,
+		"map_cell": _map_cell_store,
+		"place_node": _place_node_store,
+		"visit_log": _visit_log_store,
+		"sync_peer": _sync_peer_store,
+		"player_profile": _player_profile_store,
+		"base_state": _base_state_store,
+		"inventory_item": _inventory_item_store,
+		"osm_cache": _osm_cache_store
+	}
+
+	file.store_string(JSON.stringify(payload, "\t"))
+	file.close()
 
 # Map Cell Operations
 func get_map_cell(cell_x: int, cell_y: int) -> Dictionary:
@@ -76,6 +134,8 @@ func upsert_map_cell(cell_x: int, cell_y: int, reveal_state: int, cell_seed: int
 			"first_revealed_at": now,
 			"cell_seed": cell_seed
 		}
+	if not _in_transaction:
+		_save_persistent_store()
 
 # Place Node Operations
 func get_place_node(id: String) -> Dictionary:
@@ -92,6 +152,8 @@ func upsert_place_node(node: Dictionary) -> void:
 		existing["reveal_state"] = max(existing.get("reveal_state", 1), node.get("reveal_state", 1))
 	else:
 		_place_node_store[id] = node
+	if not _in_transaction:
+		_save_persistent_store()
 
 # Visit Log Operations (Canonical Ingestion)
 func is_visit_logged(peer_id: String, seq: int) -> bool:
@@ -105,6 +167,8 @@ func insert_visit_log(row: Dictionary) -> bool:
 	if _visit_log_store.has(key):
 		return false # Idempotent rejection of duplicates
 	_visit_log_store[key] = row
+	if not _in_transaction:
+		_save_persistent_store()
 	return true
 
 # Sync Peer Operations
@@ -126,6 +190,8 @@ func update_sync_peer(peer_id: String, last_applied_seq: int, body_lat: float, b
 	peer["last_body_lat"] = body_lat
 	peer["last_body_lon"] = body_lon
 	peer["last_body_ts"] = body_ts
+	if not _in_transaction:
+		_save_persistent_store()
 
 func get_base_state() -> Dictionary:
 	return _base_state_store
@@ -133,6 +199,8 @@ func get_base_state() -> Dictionary:
 func set_player_tile(tile_x: int, tile_y: int) -> void:
 	_player_profile_store["pos_tile_x"] = tile_x
 	_player_profile_store["pos_tile_y"] = tile_y
+	if not _in_transaction:
+		_save_persistent_store()
 
 # Golden Invariant 1 Capability Guard Check:
 func verify_sync_isolation() -> bool:

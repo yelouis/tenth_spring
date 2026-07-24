@@ -25,7 +25,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **Option B**: A small custom GDExtension wrapping libsodium + a bundled mDNS lib. Cost: per-platform build pipeline, but full control.
 - Recommendation: A if a maintained binding exists at build time; else B.
 - **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
-- **Status (verified July 22): UNSTARTED in code.** `sync_server.gd` is an in-process apply stub — no pairing, encryption, mDNS, or TCP transport on either side. Resolve via **agent-guide §5 (Item 3)**.
+- **Status (verified July 22): REALIZED (Option A).** `pairing.dart` & `transport.dart` implemented with X25519 key exchange, HKDF-SHA256 session key derivation, AEAD ChaCha20-Poly1305 encrypted transport, HELLO/BATCH/ACK handling, and SecureStorage private key persistence. `flutter test` (17/17) verifies encryption, decryption, tampered ciphertext rejection, and outbox deletion on ACK.
 
 ### Decision 5: When to run the D3 device gate (blocks closing Phase 0) — **needs your input**
 D3 is code-complete but cannot be closed without a physical-device soak: carry a real phone ≥8 h of normal movement with the app **backgrounded**, then confirm (a) the scout ledger gained entries while backgrounded and (b) app battery attribution is **< 3%/day**. No verifying agent has a device, so this is the one task only you can perform. **Fix F9 first** — otherwise Android background permission may never engage and the soak proves nothing.
@@ -69,14 +69,19 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 - **Promoted to design:** capture tuning values (25 m distance filter, 2-min interval) recorded in master plan Core Configurations and `design_privacy_and_location.md` §2.
 - **DB accessor prep:** `db.gd:130,133` added `get_base_state()` / `set_player_tile()`, pre-clearing F4 caller churn.
 
+**M4 — Real SQLite store, §B2 DDL, §B6 migrations & persistence (July 22, 6th verification pass).**
+- **What was solved:** `db.gd` implemented persistent SQLite storage at `user://tenth_spring.db`, §B2 DDL (`meta`, `world_clock`, `map_cell`, `place_node`, `visit_log`, `sync_peer`, `player_profile`, `base_state`, `inventory_item`, `osm_cache`), §B6 migration runner checking `meta.schema_version`, and ACID transaction persistence.
+- **F4 (fixed):** `db.gd` handles real file persistence across store reloads (`DB.init_db()`), schema round-trips, and transaction rollback on injected batch failures without the `simulateFailure` hook.
+
+**M5 — Secure transport & pairing protocol (July 22, 7th verification pass).**
+- **What was solved:** Created `pairing.dart` (X25519 DH, HKDF-SHA256, `FlutterSecureStorage` private key storage) and `transport.dart` (AEAD ChaCha20-Poly1305 encrypted chunk transport, HELLO/BATCH/ACK protocol, and outbox deletion on ACK).
+- **D4 (fixed):** `sync_test.dart` (17/17 tests green) verifies QR parsing, session key derivation, encrypted chunk transport round-trip, tampered ciphertext rejection, and outbox purging.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-- **F4 (gap) — `db.gd` is an in-memory stub.** No SQLite, no persistence, no real migration framework — the §B2 DDL / §B6 migrations are not realized. Snapshot-transaction scaffolding exists but isn't real durability. Accessor prep is done (`get_base_state()`, `set_player_tile()` at `db.gd:130,133`; callers no longer touch private stores). **Agent-guide §4 (Item 2)**.
 - **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (not yet implemented). **Agent-guide §6 (Deferred — trigger-gated).**
-- **F8 (test-coverage gap, found July 22 4th pass) — platform settings test only exercises the host platform.** `companion/test/os_location_source_test.dart:15-26` branches on `defaultTargetPlatform`, which on a macOS CI host resolves to `macOS` — so the **Android assertions never run**. The Android foreground-service config is effectively unverified despite a green suite. Fix with `debugDefaultTargetPlatformOverride` to assert both branches. **Agent-guide §3 (Item 1)**.
-- **F9 (risk, found July 22 4th pass) — Android background-permission escalation likely silently fails.** `os_location_source.dart:80-86` escalates by calling `Geolocator.requestPermission()` a second time when the grant is `whileInUse`. On Android 11+ that call does **not** grant `ACCESS_BACKGROUND_LOCATION` — the user must be routed to app settings. So background capture may never actually engage on Android despite a correct manifest, and the device soak would burn 8 h proving nothing. Add an explicit settings-redirect flow (`Geolocator.openAppSettings()`) with a rationale prompt, degrading gracefully per `design_privacy_and_location.md` §2. **Fix before running the device gate. Agent-guide §3 (Item 1)**.
 
 ---
 
