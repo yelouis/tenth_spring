@@ -1,11 +1,12 @@
 extends Node
 
 # DB Autoload Singleton for Tenth Spring PC Engine
-# Manages canonical SQLite database storage at user://tenth_spring.db, DDL schemas (§B2),
-# ordered migrations (§B6), queries, and ACID transaction boundaries.
+# Manages canonical database storage at user://tenth_spring.db, DDL schemas (§B2),
+# ordered migrations (§B6), queries, and atomic file save / transaction boundaries.
 
 const CURRENT_SCHEMA_VERSION: int = 1
 const DB_PATH: String = "user://tenth_spring.db"
+const DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 
 var _meta_store: Dictionary = {}
 var _world_clock_store: Dictionary = {"id": 1, "game_epoch_minutes": 0, "last_wall_sync": 0}
@@ -67,18 +68,33 @@ func rollback_transaction() -> void:
 		_in_transaction = false
 
 func _load_persistent_store() -> void:
-	if not FileAccess.file_exists(DB_PATH):
-		_meta_store["schema_version"] = "1"
-		return
+	var target_path = DB_PATH
+	if not FileAccess.file_exists(target_path):
+		if FileAccess.file_exists(DB_TMP_PATH):
+			target_path = DB_TMP_PATH
+			push_warning("WARNING: Primary DB file missing; recovering from atomic temp backup")
+		else:
+			_meta_store["schema_version"] = "1"
+			return
 
-	var file = FileAccess.open(DB_PATH, FileAccess.READ)
+	var file = FileAccess.open(target_path, FileAccess.READ)
 	if file == null:
+		push_error("ERROR: Unable to open DB file for reading")
 		return
 
 	var text = file.get_as_text()
 	file.close()
 
 	var json = JSON.parse_string(text)
+	if typeof(json) != TYPE_DICTIONARY:
+		if target_path == DB_PATH and FileAccess.file_exists(DB_TMP_PATH):
+			push_warning("WARNING: Primary DB corrupted; attempting recovery from temp backup")
+			file = FileAccess.open(DB_TMP_PATH, FileAccess.READ)
+			if file != null:
+				text = file.get_as_text()
+				file.close()
+				json = JSON.parse_string(text)
+
 	if typeof(json) == TYPE_DICTIONARY:
 		_meta_store = json.get("meta", {"schema_version": "1"})
 		_world_clock_store = json.get("world_clock", _world_clock_store)
@@ -90,12 +106,11 @@ func _load_persistent_store() -> void:
 		_base_state_store = json.get("base_state", _base_state_store)
 		_inventory_item_store = json.get("inventory_item", [])
 		_osm_cache_store = json.get("osm_cache", {})
+	else:
+		push_error("CRITICAL ERROR: DB file corrupted and unparseable; starting empty with schema version 1")
+		_meta_store["schema_version"] = "1"
 
 func _save_persistent_store() -> void:
-	var file = FileAccess.open(DB_PATH, FileAccess.WRITE)
-	if file == null:
-		return
-
 	var payload = {
 		"meta": _meta_store,
 		"world_clock": _world_clock_store,
@@ -109,8 +124,26 @@ func _save_persistent_store() -> void:
 		"osm_cache": _osm_cache_store
 	}
 
+	# Write atomically to temporary file first
+	var file = FileAccess.open(DB_TMP_PATH, FileAccess.WRITE)
+	if file == null:
+		push_error("ERROR: Failed to open temp DB file for atomic save")
+		return
+
 	file.store_string(JSON.stringify(payload, "\t"))
+	file.flush()
 	file.close()
+
+	# Atomically rename over the main DB file
+	var err = DirAccess.rename_absolute(DB_TMP_PATH, DB_PATH)
+	if err != OK:
+		var content = FileAccess.get_file_as_string(DB_TMP_PATH)
+		var main_file = FileAccess.open(DB_PATH, FileAccess.WRITE)
+		if main_file != null:
+			main_file.store_string(content)
+			main_file.flush()
+			main_file.close()
+			DirAccess.remove_absolute(DB_TMP_PATH)
 
 # Map Cell Operations
 func get_map_cell(cell_x: int, cell_y: int) -> Dictionary:

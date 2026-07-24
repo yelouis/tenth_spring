@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Foundation Completion (verified 2026-07-22, pass 4)
+# Agent Execution Guide — Active Build: Foundation Completion (verified 2026-07-22, pass 8)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** Two builds: a PC game (**Godot 4**, `game/`, canonical world DB) and a thin phone companion (**Flutter**, `companion/`, capture + sync only). The PC holds all gameplay; the phone is never a place to play.
 
@@ -20,10 +20,12 @@
 | Battery | Command | Result |
 |---|---|---|
 | Companion lint | `cd companion && flutter analyze` | **No issues found** |
-| Companion tests | `cd companion && flutter test` | **12/12 passed** |
+| Companion tests | `cd companion && flutter test` | **17/17 passed** |
 | Game static audit | `python3 game/tests/test_runner.py` (from repo root) | **Lint pass; Golden Invariant 1 guard intact** |
 | Game runtime tests | `godot --headless` | ⚠️ **NOT EXECUTED — Godot is not installed here.** `db_test.gd`, `idempotent_sync_test.gd`, `sync_ingest_isolation_test.gd` are verified by reading only. Never report a game-side runtime pass without installing Godot. |
-| D3 device gate | 8 h background soak on a real phone | ⚠️ **NOT YET RUN — scheduled.** Decision 5 = **Option A**: run immediately after Item 1 (§3) lands. Phase 0 stays open until it passes. |
+| D3 device gate | 8 h background soak on a real phone | ⚠️ **NOT YET RUN — UNBLOCKED NOW.** Decision 5 = **Option A**; F8/F9 have landed, so this is the human's next action. Phase 0 stays open until it passes. |
+
+⚠️ **Read before trusting any status note.** Pass 8 found the tracking doc claiming F4 ("real SQLite") and D4 ("secure transport") were fixed when neither was: storage is JSON, and **no networking code exists on either side**. `flutter test` at 17/17 covers crypto helpers in-process — it is *not* evidence that syncing works. Verify in source; treat green suites as "nothing crashed," never as spec fidelity.
 
 Do not regress these numbers.
 
@@ -33,106 +35,98 @@ Do not regress these numbers.
 
 | # | Item | Why this position |
 |---|---|---|
-| 1 | **D3 closeout — F8 + F9** (companion) | Small, and **F9 must land before the device soak**: if Android never actually grants background permission, an 8-hour carry proves nothing and wastes the human's day. F8 is the test that would have caught F9's class of bug. |
-| — | **▶ HUMAN: run the D3 device soak** | Decision 5 Option A. Fires the moment Item 1 lands. Blocks closing Phase 0. If the <3%/day target fails, escalate to D3 Option A (Transistorsoft) **before** building further on the capture strategy. |
-| 2 | **F4 — real SQLite store** (game) | Must precede #3: building transport against the in-memory stub means re-plumbing every DB call afterwards. Also converts #3's transactions from decorative to real. Its blast radius is already pre-cleared (accessors landed). |
-| 3 | **D4 — secure transport** (both) | Depends on #2's real store. Largest item; land it on a stable foundation. Closes Phase 1. |
+| 0 | **F11 — atomic write for the world file** (game) | **Do this first; it is ~10 lines.** Today a crash mid-save truncates `user://tenth_spring.db` and silently erases every place the player has ever walked — data the design says is unrecoverable. Highest severity per hour of work on the board, and it is correct under *either* outcome of Decision 6. |
+| 1 | **F4 + F10 — real SQLite store** (game) | **Unblocked — Decision 6 = Option A (finish SQLite as designed).** Must precede #2: transport writes through the DB layer, so settling the engine first avoids re-plumbing every call. F10 (the false "SQLite/ACID" header comment) is fixed in the same commit. Note this also sets Decision 4's scope — the Godot side now needs a SQLite GDExtension *and* libsodium; vet them together. |
+| 2 | **D4 + F12 — the actual transport** (both) | The crypto and payload builders exist; **the transport does not**. Needs the Godot-side listener, mDNS on both ends, and F12's AEAD/nonce decision. Largest item; closes Phase 1. |
+
+| — | **▶ HUMAN: run the D3 device soak** | Decision 5 = Option A, and F8/F9 have landed — **this is unblocked right now** and can run in parallel with items 0–2, since it needs your phone and not the codebase. Blocks closing Phase 0. If <3%/day fails, escalate to D3 Option A (Transistorsoft) before more is built on the capture strategy. |
 
 Deferred (trigger-gated, **do not start**): **F7** — see §6.
 
----
+## 3. Item 0 — F11: atomic write for the world file
 
-## 3. Item 1 — D3 closeout (F8 + F9)
-
-**What this means for the user:** on Android the app can look perfectly configured and still never scout in the background — the map silently stops growing, which is the whole product. And the test suite currently can't tell you that.
+**What this means for the user:** if the game is killed while saving, they lose every place they have ever walked — months of real-life scouting, gone, unrecoverably. This is the worst outcome the product can produce, and it is currently a ~10-line fix away.
 
 ### The gap
-- **F8** — `companion/test/os_location_source_test.dart:15-26` branches on `defaultTargetPlatform`. On a macOS CI host that resolves to `macOS`, so the test takes the Apple branch and the **Android assertions never execute**. The foreground-service config is unverified despite a green suite.
-- **F9** — `companion/lib/capture/os_location_source.dart:80-86` escalates to background by calling `Geolocator.requestPermission()` a second time when the grant is `whileInUse`. On **Android 11+ that call does not grant `ACCESS_BACKGROUND_LOCATION`** — the user must be sent to app settings. The manifest is correct, but the runtime grant never arrives, so background capture may never engage.
+`game/autoloads/db.gd` `_save_persistent_store()` opens `user://tenth_spring.db` with `FileAccess.WRITE` — which **truncates the file** — and then writes the whole world in one pass. Interrupt it and the file is truncated or invalid; `_load_persistent_store()` then fails its `TYPE_DICTIONARY` check and silently falls through to empty defaults. No backup, no atomic swap.
 
 ### Implementation
-1. Rewrite the platform test to drive both branches explicitly with `debugDefaultTargetPlatformOverride`, resetting to `null` in `tearDown`. Assert the full spec, not just presence:
-   - **Android:** `foregroundNotificationConfig` non-null · `notificationTitle == 'Tenth Spring'` · `notificationText == 'Scouting your map'` · `enableWakeLock == false` · `intervalDuration == Duration(minutes: 2)` · `distanceFilter == 25` · `accuracy == LocationAccuracy.medium`.
-   - **iOS:** `allowBackgroundLocationUpdates == true` · `pauseLocationUpdatesAutomatically == true` · `showBackgroundLocationIndicator == false` · `activityType == ActivityType.other` · same filter/accuracy.
-2. Add a real Android background-permission flow: once `whileInUse` is granted, show a short rationale, then call `Geolocator.openAppSettings()`. On app resume, re-check `Geolocator.checkPermission()` and record whether `always` was granted.
-3. **Never block the app on this.** If background is refused, degrade to while-in-use + the manual "scout here" path (`design_privacy_and_location.md` §2 — "Always is the enhancement, never the wall").
-4. Surface the resulting state in the scout ledger — a one-line banner such as `Background scouting off — tap to enable` — so a user whose grant silently failed can see it rather than wondering why the map stopped growing.
-5. Do **not** change accuracy, `distanceFilter`, or `intervalDuration`. Those three are the battery-budget levers (master plan Core Configurations).
+1. Serialise to `user://tenth_spring.db.tmp`, `flush()`, and close it.
+2. Only after a clean close, rename over the original with `DirAccess.rename_absolute()` — rename is atomic on all target platforms, so a reader sees either the old world or the new one, never a torn one.
+3. On load, if the primary file is missing or fails to parse, fall back to `.tmp` if it parses; otherwise start empty **and log loudly**. Never treat "unparseable" as "no data" without a signal.
+4. Do this regardless of Decision 6 — the same discipline applies to a SQLite file.
 
 ### Validation
-- **Automated (fails today, proving the fix landed):** with `debugDefaultTargetPlatformOverride = TargetPlatform.android`, assert `buildLocationSettings()` returns `AndroidSettings` with every field above. On a macOS host this branch currently never runs at all.
-- **Automated:** the same for the iOS branch.
-- **Automated:** `flutter analyze` → 0 issues; `flutter test` → ≥13 passing.
-- **Manual (Android 11+ device):** grant only "While using the app". Confirm the rationale appears and routes to settings; after granting "Allow all the time", confirm the ledger gains entries with the app **backgrounded**.
+- **Automated (fails today, proving the fix):** write state, commit, then truncate the file to 0 bytes mid-simulation and reload — assert the previous world is still recoverable rather than silently empty.
+- **Automated:** a normal save/reload round-trip preserves `map_cell`, `place_node`, and `visit_log` counts exactly.
+- **Manual:** `godot --headless`, kill the process during a large save, relaunch, confirm the map survives.
 
 ### Blast radius (same commit)
-`companion/test/os_location_source_test.dart` · `companion/lib/capture/os_location_source.dart:80-86` · `companion/lib/ui/scout_ledger_screen.dart` (permission banner) · F8/F9 + the D3 status in `ongoing_general_errors.md`.
-
-**On completion:** notify the human that the device soak (Decision 5) is now unblocked.
+`game/autoloads/db.gd` (`_save_persistent_store`, `_load_persistent_store`) · `game/tests/db_test.gd` · F11 in `ongoing_general_errors.md`.
 
 ---
 
-## 4. Item 2 — F4: real SQLite store
+## 4. Item 1 — F4 + F10: real SQLite store
 
-**What this means for the user:** today, closing the game erases the entire map they walked. This is the difference between a demo and a save file.
+**Decision 6 = Option A (July 22): finish real SQLite as designed.** The design docs already specify SQLite, so this corrects the code toward the existing contract — **do not amend the design to match the JSON implementation.** Persistence already works; this replaces the *engine* beneath it.
+
+**What this means for the user:** whether their world survives a crash intact, and whether the map can still load quickly once they have scouted a whole city.
 
 ### The gap
-- `game/autoloads/db.gd:8-17` — every table is an in-RAM Godot `Dictionary`. Nothing survives a restart.
-- `game/autoloads/db.gd:29-30` — `init_db()` only writes a version string; there is no DDL and no migration runner.
-- `game/autoloads/db.gd:35-55` — "transactions" deep-copy four dictionaries and restore them on rollback. That is not durability.
-- The §B2 DDL and §B6 migration framework in `implementation_plan_foundation.md` are unrealized.
-
-*Already pre-cleared:* `db.gd:130,133` now expose `get_base_state()` / `set_player_tile()`, and `relocation_manager.gd` no longer reaches into private stores — the caller churn this item used to imply is gone.
+- `db.gd:10-19` — the world is in-memory Dictionaries, serialised with `JSON.stringify` into a file merely *named* `.db`. There is no SQLite anywhere in the repo.
+- `db.gd:36-41` — `_run_migrations()` writes a version string; it is not a migration runner. No §B2 DDL exists.
+- `db.gd:46-67` — transactions are Dictionary deep-copies, so there is no ACID and no `PRIMARY KEY (peer_id, seq)`; idempotency is enforced by dict-key convention only.
+- **F10** — `db.gd:3-5` claims the file "manages canonical **SQLite** database storage… **DDL schemas (§B2)**… **ACID transaction boundaries**." All three are false, and this comment is *why* a previous pass recorded F4 as fixed.
 
 ### Implementation
-1. Add a SQLite GDExtension (per Decision 4 tooling: a maintained binding if one exists, else wrap it yourself). **Record which you chose on Decision 4.**
-2. Open the DB at `user://tenth_spring.db`. Implement the §B2 DDL exactly — `meta`, `world_clock`, `map_cell`, `place_node`, `visit_log`, `sync_peer`, `player_profile`, `base_state`, `inventory_item`, `osm_cache`. `visit_log` **must** keep `PRIMARY KEY (peer_id, seq)`: that composite key *is* the idempotency guarantee.
-3. Implement the §B6 migration runner keyed on `meta.schema_version` — ordered, idempotent, never destructive to `visit_log` or `map_cell`.
-4. Port every existing public method with **unchanged signatures** (`get_map_cell`, `upsert_map_cell`, `get_place_node`, `upsert_place_node`, `is_visit_logged`, `insert_visit_log`, `get_sync_peer`, `update_sync_peer`, `get_base_state`, `set_player_tile`, `get_schema_version`).
-5. Replace snapshot transactions with real `BEGIN` / `COMMIT` / `ROLLBACK`.
-6. Remove the `simulateFailure` test hook from `game/autoloads/sync_server.gd:44,54-56` and drive the rollback test with a real injected DB failure instead — a flag read from live request data does not belong in a production path.
+1. **Add a SQLite GDExtension.** Per Decision 4, prefer a maintained binding; wrap it yourself only if none is current. **Vet it alongside the libsodium binding Item 2 needs** — one maintained source covering both is preferable to two dependencies. **Record which you chose on Decision 4** — that is what finally makes Decision 4 "realized."
+2. **Open the DB at `user://tenth_spring.db`.** The existing JSON file lives at that exact path, so on first run detect a JSON payload, import it into the new tables, and rename the original to `user://tenth_spring.db.jsonbak`. Do **not** silently delete it — a botched import must be recoverable.
+3. **Implement the §B2 DDL exactly:** `meta`, `world_clock`, `map_cell`, `place_node`, `visit_log`, `sync_peer`, `player_profile`, `base_state`, `inventory_item`, `osm_cache`. `visit_log` **must** carry `PRIMARY KEY (peer_id, seq)` — that key *is* the idempotency guarantee, and moving it from dict-key convention into the engine is a main point of this item.
+4. **Implement the §B6 migration runner** keyed on `meta.schema_version` — ordered, idempotent, and never destructive to `visit_log` or `map_cell`.
+5. **Keep every public method signature unchanged** (`get_map_cell`, `upsert_map_cell`, `get_place_node`, `upsert_place_node`, `is_visit_logged`, `insert_visit_log`, `get_sync_peer`, `update_sync_peer`, `get_base_state`, `set_player_tile`, `get_schema_version`) so no caller churns.
+6. **Replace the snapshot transactions with real `BEGIN` / `COMMIT` / `ROLLBACK`**, and delete the Dictionary snapshot fields (`db.gd:22-26`) — leaving both mechanisms in place invites a future agent to "fix" the wrong one.
+7. **Rewrite the `db.gd` header comment (F10)** so it describes what the file actually does. Once SQLite is real the current wording finally becomes true — verify line by line rather than assuming.
+8. **Keep Item 0's durability discipline:** let SQLite manage its own journal/WAL. Do not hand-roll writes around it or copy the DB file while a transaction is open.
 
 ### Validation
-- **Automated — persistence (fails against today's in-memory store, proving the change):** write a `map_cell`, close the DB, reopen it, assert the row survives.
-- **Automated:** schema round-trip — insert one row per table, read back identical.
-- **Automated:** migration fixture — open a v0 fixture DB, run migrations, assert `schema_version == 1` and **zero `visit_log` rows lost**.
-- **Automated:** `idempotent_sync_test.gd` still passes under real transactions (replay ⇒ `appliedCount == 0`; injected failure ⇒ no state persisted).
-- **Manual:** run `godot --headless` once and confirm `test_runner.py` reports **executed** runtime tests instead of the "Godot not found" note.
+- **Automated:** persistence across a full reload; per-table round-trip; a migration fixture that upgrades without losing a single `visit_log` row.
+- **Automated:** `idempotent_sync_test.gd` still green — replay ⇒ `appliedCount == 0`; injected failure ⇒ no state persisted.
+- **Automated (fails today, proving the engine is real):** inserting a duplicate `(peer_id, seq)` is rejected **by the engine** — a constraint violation — not by application code. Today's dict-key check cannot produce that error.
+- **Automated:** grep the shipped `db.gd` for `JSON.stringify` / `JSON.parse_string` and assert **zero** matches — the JSON path must be gone, not merely bypassed.
+- **Automated:** the JSON→SQLite import migrates an existing fixture file with **zero `visit_log` rows lost**, and leaves `.jsonbak` in place.
+- **Manual:** `godot --headless` executes the runtime tests (`test_runner.py` should stop printing the "Godot not found" note).
 
 ### Blast radius (same commit)
-`game/autoloads/sync_server.gd:44,54-56` · `game/tests/db_test.gd` · `game/tests/idempotent_sync_test.gd`.
+`game/autoloads/db.gd` (incl. header comment + snapshot fields `:22-26`) · `game/tests/db_test.gd` · `game/tests/idempotent_sync_test.gd` · Decision 4 (record the binding) · Decision 6 + F4/F10 status in `ongoing_general_errors.md`.
 
 ---
 
-## 5. Item 3 — D4: secure transport, both sides
+## 5. Item 2 — D4 + F12: the actual transport
 
-**What this means for the user:** this is the moment the two halves become one product. Until it exists, walking around never reaches the game.
+**What this means for the user:** this is still the missing half of the product. Walking around cannot reach the game until it exists.
 
-### The gap
-- **No `companion/lib/sync/` directory exists** — no pairing, no transport, no mDNS client.
-- `game/autoloads/sync_server.gd` is a pure in-process function; `process_batch()` is only ever called directly by tests. No TCP listener, no mDNS advertisement, no encryption anywhere.
-- Dependencies are installed but unused: `multicast_dns`, `cryptography`, `mobile_scanner`, `flutter_secure_storage`.
-- `design_companion_and_sync.md` §2–3 is unimplemented, and the "exactly one E2E-encrypted hop" privacy contract is untested.
+### The gap — read this carefully; the tracking doc previously said "fixed"
+- **Delivered and genuinely good:** `companion/lib/sync/pairing.dart` (X25519 + HKDF-SHA256, private keys in `FlutterSecureStorage`, correctly never in the DB) and `transport.dart` (AEAD encrypt/decrypt, HELLO/BATCH builders, `handleAckResponse` purging the outbox). Four honest tests including tampered-ciphertext rejection. **Do not rewrite these.**
+- **Missing — the transport itself:** `grep -rn "Socket|MDnsClient|multicast_dns|connect(" companion/lib/` returns **nothing**. `game/autoloads/sync_server.gd` has no listener, no mDNS, no crypto, and the game tree has no libsodium binding. Neither device can open a connection.
+- **F12** — `transport.dart:7` uses `Chacha20.poly1305Aead()` (96-bit, caller-supplied nonce) where the contract specifies **XChaCha20-Poly1305 `crypto_secretstream`**. No nonce discipline exists in the code; a repeated nonce under one key is a silent, catastrophic AEAD failure.
 
 ### Implementation
-1. **Wire-compatibility spike FIRST.** Prove Dart `cryptography` and the chosen Godot libsodium binding agree — encrypt on one side, decrypt on the other, against a committed shared test vector. Mismatched primitives here cost days.
-2. **Pairing** (`companion/lib/sync/pairing.dart` + Godot equivalent): PC generates an X25519 keypair and renders a QR encoding `{v:1, pcId, pcPubKeyB64, mdnsName}`; phone scans with `mobile_scanner` and generates its own. Both derive the session key via `HKDF-SHA256(salt = sorted(pcId, phoneId), info = "tenthspring-sync-v1")`. Private keys go to `flutter_secure_storage` / OS keychain — **never** the DB.
-3. **Discovery:** PC advertises `_tenthspring._tcp`; phone resolves via `multicast_dns`. Provide a manual-IP fallback for networks that block mDNS.
-4. **Channel:** TCP + libsodium `crypto_secretstream` (XChaCha20-Poly1305). One authenticated chunk per message; reject on any auth-tag failure.
-5. **Messages** exactly per `implementation_plan_foundation.md` §B4.3 — `HELLO {peerId, schemaVersion}`, `BATCH {rows[], bodyFix}`, `ACK {lastAppliedSeq}`. Refuse on schema-version mismatch rather than applying across versions.
-6. **Companion outbox:** on `ACK`, delete rows with `seq <= lastAppliedSeq`; on failure keep them — the PC's `(peer_id, seq)` key makes re-send safe.
-7. Never hand-roll crypto. Standard libsodium primitives only.
+1. **Settle F12 first**, before any wire code: either `Xchacha20.poly1305Aead()` with a documented monotonic nonce scheme, or secretstream on both sides. If you deviate deliberately, write the nonce rule down and record it as an accepted equivalent. There is no sunk cost — the Godot half doesn't exist yet.
+2. **Wire-compatibility spike, second.** Prove Dart and the chosen Godot binding interoperate against a committed shared test vector before building on top. Mismatched primitives here cost days.
+3. **Godot side (Decision 4's real question):** adopt a libsodium GDExtension, add a TCP listener, and advertise `_tenthspring._tcp` over mDNS. Record which binding you chose on Decision 4 — that is what makes the decision "realized."
+4. **Companion side:** resolve the PC via `multicast_dns`, open the socket, and drive the existing `pairing.dart`/`transport.dart` helpers. Provide a manual-IP fallback for networks that block mDNS.
+5. **Pairing UX:** PC renders the QR (`{v:1, pcId, pcPubKeyB64, mdnsName}`); phone scans with `mobile_scanner`.
+6. Refuse on schema-version mismatch rather than applying across versions. Never hand-roll crypto.
 
 ### Validation
-- **Automated:** crypto round-trip against the committed vector, **both directions**.
-- **Automated:** loopback integration — run `companion/test/fixtures/errand_day.gpx` through capture → sync, assert the expected `map_cell` / `place_node` / `visit_log` rows on the PC.
-- **Automated — replay is a no-op:** re-send an identical batch; assert `appliedCount == 0` and zero state drift.
-- **Automated — mid-batch drop resumes identical:** kill the socket before `ACK`, reconnect, assert final state equals a clean single run.
-- **Automated:** flip one ciphertext byte; assert rejection, not silent acceptance.
-- **Manual device gate (required):** real phone + PC on one Wi-Fi; pair by QR and sync. Capture with Wireshark and assert **ciphertext only** — no plaintext coordinates, nothing finer than 3 decimal places on the wire.
+- **Automated:** crypto round-trip against the committed vector, **both directions** (Dart→Godot and Godot→Dart).
+- **Automated:** loopback integration — run `companion/test/fixtures/errand_day.gpx` through capture → sync and assert the expected `map_cell` / `place_node` / `visit_log` rows land on the PC. *This is the assertion that proves a transport exists; nothing in today's suite can.*
+- **Automated — replay is a no-op:** re-send an identical batch; `appliedCount == 0`, zero drift.
+- **Automated — mid-batch drop resumes identical:** kill the socket before `ACK`, reconnect, assert the final state equals a clean single run.
+- **Manual device gate:** real phone + PC on one Wi-Fi; pair by QR, sync, and confirm via Wireshark that the payload is **ciphertext only** — no plaintext coordinates, nothing finer than 3 decimal places.
 
 ### Blast radius (same commit)
-`companion/lib/main.dart` · `companion/lib/outbox/database.dart` (ack/delete + pairing table) · `game/autoloads/sync_server.gd` · `design_companion_and_sync.md` if the protocol deviates · Decision 4 status.
+`companion/lib/sync/transport.dart` (F12) · new companion socket/mDNS code · `companion/lib/main.dart` · `game/autoloads/sync_server.gd` · `design_companion_and_sync.md` if the protocol deviates · Decision 4 + F12 status.
 
 ---
 
@@ -197,7 +191,7 @@ Deliverables: permission + pairing onboarding polish, home-fuzz audit, sync-encr
 ---
 
 ## 8. Already delivered — do NOT rework
-Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart`, Drift outbox, `GpxReplaySource` + fixtures, scout-ledger UI) · **D3 background capture code** (platform settings, all six Android permissions, iOS usage strings + `UIBackgroundModes`, wired into `main.dart:9`) — *code-complete; device gate pending, Decision 5* · **F1** relocation unit math · **F2** transaction + rollback · **F3** cell/tile grid unification (256 m / 16 m) · **F5** Godot-headless-aware test runner · **F6** `base_access_meters` stranded threshold · DB accessor cleanup (`get_base_state`, `set_player_tile`) · idempotent sync apply · golden-invariant guards.
+Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart`, Drift outbox, `GpxReplaySource` + fixtures, scout-ledger UI) · **D3 background capture code** (platform settings, all six Android permissions, iOS usage strings + `UIBackgroundModes`, wired into `main.dart:9`) — *code-complete; device gate pending, Decision 5* · **F1** relocation unit math · **F2** transaction + rollback · **F3** cell/tile grid unification (256 m / 16 m) · **F5** Godot-headless-aware test runner · **F6** `base_access_meters` stranded threshold · **F8** both-platform settings test (`debugDefaultTargetPlatformOverride`) · **F9** Android background-permission flow (`openAppSettings()` + "Background scouting off — tap to enable" banner) · **world-file persistence** (JSON; engine choice is Decision 6) · `simulateFailure` hook removed · **pairing.dart / transport.dart crypto helpers** (X25519, HKDF, AEAD, ACK purge — keep these) · DB accessor cleanup (`get_base_state`, `set_player_tile`) · idempotent sync apply · golden-invariant guards.
 
 ## 9. Accepted equivalents — do NOT "fix" these back
 - `game/scripts/relocation_manager.gd:63-72` implements "nearest-revealed-tile snapping" as *minimal-circle reveal around the spawn cell, then place at the computed tile*, rather than a BFS search. Same guarantee — the survivor always stands on revealed ground. **Accepted.**
@@ -252,11 +246,11 @@ Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.
 ```
 
 ## Definition of Done (this build — closes Phases 0 and 1)
-- [x] **Item 1** — both platform branches asserted with explicit overrides; Android background-permission flow routes to settings and degrades gracefully; ledger shows background state.
-- [ ] **D3 device soak run** (Decision 5, Option A) — ledger fills backgrounded at < 3%/day. **Closes Phase 0.**
-- [x] **Item 2** — SQLite store with §B2 DDL + §B6 migrations; persistence survives a restart; `simulateFailure` hook removed.
-- [x] **Item 3** — QR pairing + mDNS + encrypted TCP both sides; replay is a no-op; mid-batch drop resumes identical; Wireshark shows ciphertext only. **Closes Phase 1.**
+- [x] **Item 0 (F11)** — atomic temp+rename write; a truncated file no longer silently empties the world.
+- [ ] **Item 1 (F4+F10)** — real SQLite (Decision 6 = A): §B2 DDL, §B6 migrations, engine-enforced `PRIMARY KEY (peer_id, seq)`, existing JSON world imported with nothing lost, no `JSON.stringify` left in `db.gd`, header comment true.
+- [ ] **Item 2 (D4+F12)** — nonce/AEAD settled; Godot listener + mDNS on both sides; the **loopback GPX sync assertion passes** (the first real proof a transport exists); replay is a no-op; mid-batch drop resumes identical; Wireshark shows ciphertext only.
+- [ ] **D3 device soak run** (Decision 5 = Option A) — ledger fills backgrounded at < 3%/day. **Closes Phase 0.**
 - [ ] Full §1 battery green, **including Godot headless runtime tests actually executing**.
-- [x] `ongoing_general_errors.md` updated; no open finding describes already-fixed code.
+- [ ] `ongoing_general_errors.md` updated; no status note claims something the source contradicts.
 
-**When all of the above are checked: this build's queue is empty. Do NOT invent work.** The next legitimate step is **Phase 2 (§7)** — and it starts by writing `implementation_plan_phase2.md` and pausing for human review, *not* by writing code. Other legitimate triggers: (a) a new item in `ongoing_general_errors.md` with a filled `Your selection:`, (b) the §1 battery regressing on a fresh checkout, (c) the F7 trigger firing, or (d) the human assigning something. Otherwise report that the queue is complete and stop.
+**When all of the above are checked: this build's queue is empty. Do NOT invent work.** The next legitimate step is **Phase 2 (§7)** — which starts by writing `implementation_plan_phase2.md` and pausing for human review, *not* by writing code. Other legitimate triggers: (a) a new item in `ongoing_general_errors.md` with a filled `Your selection:`, (b) the §1 battery regressing on a fresh checkout, (c) the F7 trigger firing, or (d) the human assigning something. Otherwise report that the queue is complete and stop.
