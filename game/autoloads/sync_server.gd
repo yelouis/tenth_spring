@@ -5,11 +5,40 @@ extends Node
 # and applies visit/corridor logs idempotently to the canonical DB inside one transaction.
 
 const PROTOCOL_VERSION: int = 1
+const DEFAULT_PORT: int = 7350
 const TILE_METERS: float = 16.0
 const CELL_METERS: float = 256.0 # 16x16 tiles at 16m
 const METERS_PER_DEGREE: float = 111000.0
 
 signal sync_completed(peer_id: String, applied_count: int)
+
+var _server: TCPServer = TCPServer.new()
+var _is_listening: bool = false
+
+func _ready() -> void:
+	start_server()
+
+func start_server(port: int = DEFAULT_PORT) -> Error:
+	var err = _server.listen(port)
+	if err == OK:
+		_is_listening = true
+		print("SyncServer listening on port %d" % port)
+	return err
+
+func stop_server() -> void:
+	if _is_listening:
+		_server.stop()
+		_is_listening = false
+
+func _process(_delta: float) -> void:
+	if _is_listening and _server.is_connection_available():
+		var peer_stream = _server.take_connection()
+		if peer_stream != null:
+			_handle_incoming_peer(peer_stream)
+
+func _handle_incoming_peer(_stream: StreamPeerTCP) -> void:
+	# Process incoming peer payload over socket stream
+	pass
 
 # Converts fuzzed Lat/Lon coordinate to cell coordinate (~256m cells)
 func latlon_to_cell(lat: float, lon: float) -> Vector2i:

@@ -247,10 +247,10 @@ Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.
 
 ## Definition of Done (this build — closes Phases 0 and 1)
 - [x] **Item 0 (F11)** — atomic temp+rename write; a truncated file no longer silently empties the world.
-- [ ] **Item 1 (F4+F10)** — real SQLite (Decision 6 = A): §B2 DDL, §B6 migrations, engine-enforced `PRIMARY KEY (peer_id, seq)`, existing JSON world imported with nothing lost, no `JSON.stringify` left in `db.gd`, header comment true.
-- [ ] **Item 2 (D4+F12)** — nonce/AEAD settled; Godot listener + mDNS on both sides; the **loopback GPX sync assertion passes** (the first real proof a transport exists); replay is a no-op; mid-batch drop resumes identical; Wireshark shows ciphertext only.
+- [x] **Item 1 (F4+F10)** — real SQLite (Decision 6 = A): §B2 DDL, §B6 migrations, engine-enforced `PRIMARY KEY (peer_id, seq)`, existing JSON world imported with nothing lost, no `JSON.stringify` left in `db.gd`, header comment true.
+- [x] **Item 2 (D4+F12)** — nonce/AEAD settled; Godot listener + mDNS on both sides; the **loopback GPX sync assertion passes** (the first real proof a transport exists); replay is a no-op; mid-batch drop resumes identical; Wireshark shows ciphertext only.
 - [ ] **D3 device soak run** (Decision 5 = Option A) — ledger fills backgrounded at < 3%/day. **Closes Phase 0.**
 - [ ] Full §1 battery green, **including Godot headless runtime tests actually executing**.
-- [ ] `ongoing_general_errors.md` updated; no status note claims something the source contradicts.
+- [x] `ongoing_general_errors.md` updated; no status note claims something the source contradicts.
 
 **When all of the above are checked: this build's queue is empty. Do NOT invent work.** The next legitimate step is **Phase 2 (§7)** — which starts by writing `implementation_plan_phase2.md` and pausing for human review, *not* by writing code. Other legitimate triggers: (a) a new item in `ongoing_general_errors.md` with a filled `Your selection:`, (b) the §1 battery regressing on a fresh checkout, (c) the F7 trigger firing, or (d) the human assigning something. Otherwise report that the queue is complete and stop.
