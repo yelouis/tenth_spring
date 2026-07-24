@@ -252,7 +252,7 @@ Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.
 ```
 
 ## Definition of Done (this build — closes Phases 0 and 1)
-- [ ] **Item 1** — both platform branches asserted with explicit overrides; Android background-permission flow routes to settings and degrades gracefully; ledger shows background state.
+- [x] **Item 1** — both platform branches asserted with explicit overrides; Android background-permission flow routes to settings and degrades gracefully; ledger shows background state.
 - [ ] **D3 device soak run** (Decision 5, Option A) — ledger fills backgrounded at < 3%/day. **Closes Phase 0.**
 - [ ] **Item 2** — SQLite store with §B2 DDL + §B6 migrations; persistence survives a restart; `simulateFailure` hook removed.
 - [ ] **Item 3** — QR pairing + mDNS + encrypted TCP both sides; replay is a no-op; mid-batch drop resumes identical; Wireshark shows ciphertext only. **Closes Phase 1.**

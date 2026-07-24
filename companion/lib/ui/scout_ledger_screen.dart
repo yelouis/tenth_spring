@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../capture/detector.dart';
 import '../capture/location_source.dart';
+import '../capture/os_location_source.dart';
 import '../outbox/database.dart';
 
 class ScoutLedgerScreen extends StatefulWidget {
@@ -20,8 +21,10 @@ class ScoutLedgerScreen extends StatefulWidget {
   State<ScoutLedgerScreen> createState() => _ScoutLedgerScreenState();
 }
 
-class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
+class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
+    with WidgetsBindingObserver {
   bool _isScoutingPaused = false;
+  bool _isBackgroundScoutingEnabled = true;
   List<VisitOutboxItem> _visits = [];
   late VisitCorridorDetector _detector;
   LocationSource? _locationSource;
@@ -33,8 +36,28 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refreshLedger();
     _initCapturePipeline();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkBackgroundPermission();
+    }
+  }
+
+  Future<void> _checkBackgroundPermission() async {
+    if (_locationSource is OsLocationSource) {
+      final granted = await (_locationSource as OsLocationSource)
+          .isBackgroundPermissionGranted();
+      if (mounted) {
+        setState(() {
+          _isBackgroundScoutingEnabled = granted;
+        });
+      }
+    }
   }
 
   void _initCapturePipeline() {
@@ -42,6 +65,8 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
     _locationSource = widget.locationSource;
 
     if (_locationSource != null) {
+      _checkBackgroundPermission();
+
       _visitSub = _detector.visitStream.listen((visit) async {
         await widget.database.insertVisit(
           kind: 'visit',
@@ -77,6 +102,7 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _fixSub?.cancel();
     _visitSub?.cancel();
     _corridorSub?.cancel();
@@ -109,6 +135,18 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Scouted a location near you')),
       );
+    }
+  }
+
+  Future<void> _enableBackgroundScouting() async {
+    if (_locationSource is OsLocationSource) {
+      final granted = await (_locationSource as OsLocationSource)
+          .requestBackgroundPermission();
+      if (mounted) {
+        setState(() {
+          _isBackgroundScoutingEnabled = granted;
+        });
+      }
     }
   }
 
@@ -175,6 +213,35 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen> {
                       'PAUSED',
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+                if (!_isBackgroundScoutingEnabled && !_isScoutingPaused) ...[
+                  const SizedBox(height: 8),
+                  InkWell(
+                    onTap: _enableBackgroundScouting,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade800,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded,
+                              color: Colors.white, size: 18),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Background scouting off — tap to enable',
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

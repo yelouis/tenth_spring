@@ -76,10 +76,13 @@ class OsLocationSource implements LocationSource {
           'Location permissions are permanently denied, cannot request permissions.');
     }
 
-    // Step 2: Staged request - if whileInUse granted, attempt background request (Always)
+    // Step 2: Staged request - if whileInUse granted, check if always is granted
     if (permission == LocationPermission.whileInUse) {
       try {
-        permission = await Geolocator.requestPermission();
+        if (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.macOS) {
+          permission = await Geolocator.requestPermission();
+        }
       } catch (_) {
         // Fallback: If background permission is declined, app continues operating in WhileInUse mode
       }
@@ -100,6 +103,26 @@ class OsLocationSource implements LocationSource {
       );
       _fixController.add(fix);
     });
+  }
+
+  Future<bool> isBackgroundPermissionGranted() async {
+    final permission = await Geolocator.checkPermission();
+    return permission == LocationPermission.always;
+  }
+
+  Future<bool> requestBackgroundPermission() async {
+    final permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.whileInUse) {
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        await Geolocator.openAppSettings();
+        final newPermission = await Geolocator.checkPermission();
+        return newPermission == LocationPermission.always;
+      } else {
+        final newPermission = await Geolocator.requestPermission();
+        return newPermission == LocationPermission.always;
+      }
+    }
+    return permission == LocationPermission.always;
   }
 
   @override
