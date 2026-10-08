@@ -22,6 +22,48 @@ def parse_gdscript(filepath):
 
 	return errors
 
+def check_vendored_checksums(game_dir):
+	"""Recomputes SHA-256 for all vendored files and verifies complete coverage."""
+	vendored_dir = os.path.join(game_dir, "addons", "godot-sqlite")
+	sha_file = os.path.join(vendored_dir, "VENDORED.sha256")
+	if not os.path.exists(sha_file):
+		print("\n[VENDORED CHECK FAIL] VENDORED.sha256 missing")
+		sys.exit(1)
+
+	import hashlib
+	with open(sha_file, "r", encoding="utf-8") as f:
+		lines = [l.strip() for l in f if l.strip()]
+
+	expected_hashes = {}
+	for line in lines:
+		parts = line.split(None, 1)
+		if len(parts) == 2:
+			expected_hashes[parts[1].strip()] = parts[0]
+
+	for rel_p, exp_hash in expected_hashes.items():
+		full_p = os.path.join(vendored_dir, rel_p)
+		if not os.path.isfile(full_p):
+			print(f"\n[VENDORED CHECK FAIL] Listed file missing: {rel_p}")
+			sys.exit(1)
+		h = hashlib.sha256()
+		with open(full_p, "rb") as bf:
+			while chunk := bf.read(65536):
+				h.update(chunk)
+		act_hash = h.hexdigest()
+		if act_hash != exp_hash:
+			print(f"\n[VENDORED CHECK FAIL] SHA256 mismatch for {rel_p}: expected {exp_hash}, got {act_hash}")
+			sys.exit(1)
+
+	bin_dir = os.path.join(vendored_dir, "bin")
+	if os.path.exists(bin_dir):
+		for root, _, files in os.walk(bin_dir):
+			for file in files:
+				file_full = os.path.join(root, file)
+				file_rel = os.path.relpath(file_full, vendored_dir)
+				if file_rel not in expected_hashes:
+					print(f"\n[VENDORED CHECK FAIL] File under bin/ not listed in VENDORED.sha256: {file_rel}")
+					sys.exit(1)
+
 def main():
 	game_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 	repo_root = os.path.dirname(game_dir)
@@ -83,6 +125,11 @@ def main():
 		print("\n[ISOLATION AUDIT FAIL] F22 save isolation tests failed.")
 		sys.exit(1)
 	print("[ISOLATION AUDIT OK] Test save isolation verified.\n")
+
+	# Vendored GDExtension Integrity Check (Decision 7)
+	print("=== Vendored GDExtension Integrity Check ===")
+	check_vendored_checksums(game_dir)
+	print("[VENDORED EXTENSION OK] All vendored files match VENDORED.sha256 exactly.\n")
 
 	EXPECTED = ["db_test", "idempotent_sync_test", "sync_ingest_isolation_test", "real_save_untouched"]
 
