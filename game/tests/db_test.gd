@@ -63,5 +63,12 @@ func run_test() -> bool:
 			push_error("FAIL: Atomic temp backup recovery failed when primary DB was corrupted")
 			return false
 
-	print("PASS: DB, Relocation, Persistence & Atomic Recovery (F11) Test Suite")
+	# 6. execute_query on null handle returns false (F13)
+	if DB._db == null:
+		var q_res = DB.execute_query("CREATE TABLE t(x);")
+		if q_res != false:
+			push_error("FAIL: Expected execute_query to return false when _db is null")
+			return false
+
+	print("PASS: DB, Relocation, Persistence & Atomic Recovery (F11/F13) Test Suite")
 	return true
