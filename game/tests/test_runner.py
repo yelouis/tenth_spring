@@ -135,9 +135,14 @@ def main():
 		"db_legacy_import_test",
 		"db_migration_test",
 		"db_test",
+		"frame_codec_test",
 		"idempotent_sync_test",
+		"pairing_codes_test",
+		"pc_identity_test",
+		"qr_code_test",
 		"real_save_untouched",
-		"sync_ingest_isolation_test"
+		"sync_ingest_isolation_test",
+		"sync_session_test"
 	]
 
 	# Check for Godot executable to run runtime GDScript tests

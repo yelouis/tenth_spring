@@ -408,6 +408,16 @@ func update_sync_peer(peer_id: String, last_applied_seq: int, body_lat: float, b
 		peer_id, last_applied_seq, body_lat, body_lon, body_ts
 	])
 
+func set_peer_token_hash(peer_id: String, token_hash: PackedByteArray) -> bool:
+	last_error = ""
+	return _q("INSERT INTO sync_peer (peer_id, device_token_hash) VALUES (?, ?) ON CONFLICT(peer_id) DO UPDATE SET device_token_hash = excluded.device_token_hash;", [
+		peer_id, token_hash
+	])
+
+func clear_other_peer_tokens(peer_id: String) -> bool:
+	last_error = ""
+	return _q("UPDATE sync_peer SET device_token_hash = NULL WHERE peer_id != ?;", [peer_id])
+
 func get_base_state() -> Dictionary:
 	var rows = _rows("SELECT * FROM base_state WHERE id = 1;")
 	return rows[0] if not rows.is_empty() else {}

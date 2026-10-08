@@ -5,13 +5,19 @@ extends Node
 # records non-destructive hash check of real save files, and exits with 0 or 1.
 
 func _ready() -> void:
-	# 1. Record pre-test state of real save files (F22 real-save check)
-	var real_db_path = "user://tenth_spring.db"
-	var real_tmp_path = "user://tenth_spring.db.tmp"
-	var pre_db_exists = FileAccess.file_exists(real_db_path)
-	var pre_db_sha = FileAccess.get_sha256(real_db_path) if pre_db_exists else ""
-	var pre_tmp_exists = FileAccess.file_exists(real_tmp_path)
-	var pre_tmp_sha = FileAccess.get_sha256(real_tmp_path) if pre_tmp_exists else ""
+	# 1. Record pre-test state of real save and identity files (F22 real-save check + Item 3a)
+	var protected_files = [
+		"user://tenth_spring.db",
+		"user://tenth_spring.db.tmp",
+		"user://sync_identity/pc.key",
+		"user://sync_identity/pc.crt",
+		"user://sync_identity/pc_id.txt"
+	]
+	var pre_states = {}
+	for p in protected_files:
+		var ex = FileAccess.file_exists(p)
+		var sha = FileAccess.get_sha256(p) if ex else ""
+		pre_states[p] = {"exists": ex, "sha": sha}
 
 	var all_passed = true
 
@@ -63,14 +69,17 @@ func _ready() -> void:
 				all_passed = false
 			t.queue_free()
 
-	# 5. Real-save check after all tests
-	var post_db_exists = FileAccess.file_exists(real_db_path)
-	var post_db_sha = FileAccess.get_sha256(real_db_path) if post_db_exists else ""
-	var post_tmp_exists = FileAccess.file_exists(real_tmp_path)
-	var post_tmp_sha = FileAccess.get_sha256(real_tmp_path) if post_tmp_exists else ""
+	# 5. Real-save and identity check after all tests
+	var save_untouched = true
+	for p in protected_files:
+		var post_ex = FileAccess.file_exists(p)
+		var post_sha = FileAccess.get_sha256(p) if post_ex else ""
+		var pre_info = pre_states[p]
+		if pre_info["exists"] != post_ex or pre_info["sha"] != post_sha:
+			save_untouched = false
+			push_error("Protected file modified or created during test: " + p)
+			break
 
-	var save_untouched = (pre_db_exists == post_db_exists and pre_db_sha == post_db_sha and
-		pre_tmp_exists == post_tmp_exists and pre_tmp_sha == post_tmp_sha)
 	if save_untouched:
 		print("PASS real_save_untouched")
 	else:
