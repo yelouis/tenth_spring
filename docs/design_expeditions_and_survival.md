@@ -1,48 +1,55 @@
 # Expeditions & Survival
 
-This document defines the raid loop (the core moment-to-moment game), the noise/stealth model, how familiarity intel cashes out, and the roguelite death contract.
+This document defines exploring a revealed place in-game: searching sites for items, haunted interiors, how real-world familiarity pays off, healing scarcity, and blacking out. The survival undertone of the original design survives the Pokémon pivot through three rules: **healing only happens at home, the bag drops when you black out, and far from home you only have your party** (`design_creatures_and_battles.md` §11).
 
-## 1. The Raid Loop
+---
 
-Arriving at a `known` PlaceNode and entering it starts a raid on its **site map** (interior tilemap, generated deterministically from category + size + `cellSeed`).
+## 1. Exploring a site
+
+Arriving at a `known` PlaceNode and entering it opens its **site map** — an interior tilemap generated deterministically from `(category, size, cellSeed)`.
 
 ```
-APPROACH  → exterior read: visible zombies, entry choices (door/window/roof)
-ENTER     → interior; dark beyond light radius unless intel pre-reveals
-SCAVENGE  → loot containers (category loot table); every action emits noise
-COMPLICATE→ noise/time raises alert stages: quiet → stirred → hunted
-EXTRACT   → leave with what you carry; place → `cleared`, loot → `partial/stripped`
+APPROACH → the site chip shows zone, ghost activity, level band, haunt stage
+ENTER    → interior; dark beyond the light radius unless intel pre-reveals it
+SEARCH   → item spots roll on the category's item table (design_resources_and_base.md §1)
+ENCOUNTER→ steps in tall-grass patches or haunted rooms roll encounters
+LEAVE    → place becomes `cleared`; item spots → `partial` / `stripped`
 ```
+- **The world clock keeps running inside.** A long search can cost the daylight you needed to get home before the ghosts surge. The leave prompt always shows travel time home, daylight remaining, and the party's total HP %.
+- Leaving early still marks the place `cleared` with `partial` items. You can come back; haunting growth may get there first.
 
-- **Time passes during raids** (world clock keeps running) — a greedy scavenge can cost you the daylight you needed to walk home. The extract prompt always shows the current trek-home time and daylight remaining.
-- **Carry capacity forces choices**: loot exceeds capacity by design at mid+ tier sites; taking the generator means leaving the meds.
-- Clearing is not all-or-nothing: extracting early still marks `cleared` with `partial` loot — you can come back, but regrowth/colony pressure may beat you to it.
+## 2. Haunted interiors
 
-## 2. Familiarity Cash-Out (Intel, Never Inventory)
+Abandoned buildings, ruins, hospitals, and cemetery chapels generate **haunted interiors** (in the spirit of Platinum's Old Chateau): darker, encounters draw only from the haunted pool, and the **Dusk Ball bonus applies** (`design_creatures_and_battles.md` §9). A haunted zone's root site is always a haunted interior, with the zone boss in its deepest room (`design_encounters_and_haunted_zones.md` §5.5).
 
-| IntelLevel | Effect at raid start |
+## 3. Familiarity — intel, never inventory
+
+Repeat real-world visits raise a place's intel level. Familiarity **never grants items or Pokémon** — it makes the in-game visit safer and more efficient.
+
+| IntelLevel (real visits) | Effect when exploring |
 |---|---|
-| `known` (1 real visit) | Nothing pre-revealed. Blind entry. |
-| `familiar` (3+) | Layout + exits pre-mapped; −25% ambush rolls. |
-| `mastered` (10+) | Full interior incl. loot spots; −50% ambush; guaranteed escape route marked. |
+| `known` (1+) | Interior dark; standard encounter rate |
+| `familiar` (3+) | Layout and item spots pre-revealed; encounter rate −25% |
+| `mastered` (10+) | Full interior mapped; encounter rate −50%; exit route marked |
 
-Your real-life regulars become the raids you run confidently; the one-visit gas station three states away is terrifying. **No intel level ever grants items.**
+Your real-life regular spots become places you can sweep confidently. The cemetery you walked past once, three towns over, is the frightening one.
 
-## 3. Noise & Stealth
+## 4. Healing scarcity
 
-- Every action has a noise value (walk 1, jog 2, sprint 4, pry/loot 3, smash 6, gunshot 10). Noise emits an event circle; stalkers within lock on, shamblers drift toward it.
-- Alert stages per site: `quiet` (ambient wander) → `stirred` (converging) → `hunted` (active pursuit + off-screen reinforcements from marked doors).
-- Crouched movement halves noise; thrown objects create decoy noise events. This is the entire stealth model — no vision cones in v1.0.
+There are no Pokémon Centers — the world collapsed. **Full healing happens only at the home safehouse.** In the field, the party heals only from bag items found while exploring. Deciding when to turn back is the core expedition tension.
 
-## 4. Death & Recovery (Roguelite Contract)
+## 5. Blacking out and recovery
 
-- On death: carried inventory drops as a `DeathCache` at the death tile; the survivor wakes at the safehouse (or, if stranded far from home, at the nearest cleared friendly tile on that island) with empty hands and full HP.
-- **The map, familiarity, cleared states, base, and stash always persist.** Knowledge is immortal; stuff is mortal.
-- The cache persists `deathCacheDecayGameDays` (3 game days), marked on the map with a countdown. Recovering it means returning — possibly into the colony that killed you. One cache max; a second death merges into the newest site.
-- **No other death penalty** — no XP loss, no map loss, no fortification damage. Death sets up the game's tensest quest (the recovery run) rather than erasing progress.
+- If every party Pokémon faints: wake at home, party fully healed.
+- **The bag's contents drop at the tile where you blacked out**, kept as a `BagCache` for `bagCacheDecayGameDays = 3`, marked on the map with a countdown. Recovering it means going back — possibly into the haunting that beat you.
+- At most one cache exists; blacking out again merges into a cache at the newest location.
+- **Pokémon are never lost.** The map, intel, Pokédex, and PC always persist.
 
-## 5. Files (PC game)
-* `game/systems/site_generator` — deterministic interiors per category/size/seed.
-* `game/systems/raid_controller` — loop states, alert stages, extract prompts.
-* `game/systems/noise_model` — emission values, propagation, lock-on.
-* `game/systems/death_handler` — cache drop/merge/decay, respawn placement.
+## 6. Site item state
+
+`untouched → partial → stripped → regrown`. Regrowth is slow and driven by haunting proximity (haunted territory "resurfaces" items over time), **never** by real-world visits.
+
+## 7. Files (PC game)
+* `game/explore/site_generator.gd` — deterministic interiors per `(category, size, cellSeed)`.
+* `game/explore/site_controller.gd` — enter / search / leave, the leave prompt.
+* `game/explore/bag_cache.gd` — blackout drop, merge, decay, recovery.

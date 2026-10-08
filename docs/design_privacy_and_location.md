@@ -4,11 +4,11 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 
 ## 1. Data Contracts (non-negotiable)
 
-- **Your devices only**: raw GPS traces never leave the phone. Fuzzed `VisitLog` rows travel exactly one hop — phone → paired PC — over a direct, end-to-end-encrypted LAN channel (`design_companion_and_sync.md` §3). No account, no server, no cloud relay, no analytics containing coordinates. Steam Cloud (if enabled) may sync the *game save*; the save stores map state at fuzzed precision only.
+- **Your devices only**: raw GPS traces never leave the phone. Fuzzed `VisitLog` rows travel exactly one hop — phone → paired PC — over a direct, end-to-end-encrypted LAN channel (`design_companion_and_sync.md` §3). No account, no server, no cloud relay, no analytics containing coordinates. The game save stores map state at fuzzed precision only.
 - **Fuzzing at source**: coordinates are reduced to 3-decimal precision (~110 m) *on the phone before storage or sync* — higher precision never persists and never transits. The safehouse is stored only as a fuzzed cell (`homeFuzzMeters = 300` snap) — the exact home point never persists anywhere on either device.
 - **No third-party SDKs** with location access, on either app. OSM Overpass queries (PC-side) are made for *cell-sized regions*, not points, and only for already-revealed cells (a query can't leak a precise position).
 - **Export & erase**: settings on both devices expose "export my map" (GeoJSON, from the PC) and "erase everything" (wipes phone outbox + PC world + pairing). Both are one tap, no dark patterns.
-- **Enforced separation**: the sync ingest has no write path into inventory/resource tables (see resources doc §5) — cartography, never cargo, at the architecture level.
+- **Enforced separation**: the sync ingest has no write path into the bag, party, PC box, or Pokémon tables (see `design_resources_and_base.md` §5) — real movement unlocks access, never cargo or creatures, at the architecture level.
 
 ## 2. Capture Strategy (battery + trust)
 
@@ -33,4 +33,4 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 * `companion/lib/capture/capture_service.dart` — SLC/visit subscription, battery budget guards.
 * `companion/lib/capture/fuzz.dart` — all precision-reduction in one reviewed file (the only place raw coordinates exist).
 * `companion/lib/screens/onboarding_consent.dart` — canonical rationale copy.
-* `game/sync/ingest` (PC) — visit-batch validation; structurally has no inventory write access.
+* `game/sync/ingest` (PC) — visit-batch validation; structurally has no write access to bag, party, PC box, or Pokémon tables.

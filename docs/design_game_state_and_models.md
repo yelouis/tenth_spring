@@ -1,6 +1,6 @@
 # Game State & Data Models
 
-This document defines the schemas, enums, and persistence rules. **Storage split**: the PC game's SQLite database is the canonical world (all tables below live there); the phone companion holds only a `VisitLog` outbox (rows pending sync) plus pairing state. There is no server. Schema version is stored in `meta` on both devices and every migration is tested against a fixture DB — location history is unrecoverable if a migration eats it. (File paths are engine-neutral pending Decision 1; enums shown in Dart syntax for readability.)
+This document defines the schemas, enums, and persistence rules. **Storage split**: the PC game's SQLite database is the canonical world (all tables below live there); the phone companion holds only a `VisitLog` outbox (rows pending sync) plus pairing state. There is no server. Schema version is stored in `meta` on both devices and every migration is tested against a fixture DB — location history is unrecoverable if a migration eats it. (Enums shown in Dart syntax for readability.) **No table stores Nintendo content** — species, moves, and items are referenced by number; names, stats, and sprites are resolved from the player's ROM cache at runtime (`design_rom_asset_pipeline.md`).
 
 ## 1. World Clock (`WorldClock`)
 
@@ -9,7 +9,7 @@ Single-row table driving all simulation.
 * `gameEpochMinutes` (int): minutes elapsed since world start.
 * `lastWallSync` (int): wall epoch ms at last tick, for catch-up on app resume.
 * Derived: time-of-day, day count, `isNight` (see `design_travel_and_time.md` §3).
-* **Offline rule**: while the app is closed the world clock is *paused* — the simulation only advances during play sessions, except colony growth which ticks on app-open catch-up (max 3 ticks).
+* **Offline rule**: while the app is closed the world clock is *paused* — the simulation only advances during play sessions, except haunting growth, which ticks on app-open catch-up (max 3 ticks).
 
 ## 2. Map Cell (`MapCell`)
 
@@ -17,55 +17,46 @@ The fog atom. A cell is a ~256 m square (16×16 tiles at `tileMeters = 16`).
 * `cellX`, `cellY` (int): global grid coordinates (Web-Mercator-derived).
 * `revealState` (PlaceRevealState): `unknown | known | cleared` — cells use `known` when corridor/visit-revealed; `cleared` is place-level, mirrored here for region queries.
 * `tileBlob` (Uint8List): synthesized tile indices (deterministic; regenerable — cache, not source of truth).
-* `biome` (Biome): dominant land-use biome (residential/downtown/industrial/retail/parkland/waterfront/institutional/wilds); selects the enemy variant skins spawned here (`design_threats_and_colonies.md` §1.1). Deterministic from OSM.
+* `zone` (SpawnZone): residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds / **cemetery / ruins / hospital**. Selects the spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2). Deterministic from OSM.
+* `hauntZoneId` (String?): the haunted zone whose territory covers this cell, if any.
 * `firstRevealedAt` (int), `worldSeed`-salted `cellSeed` (int).
 
 ## 3. Place Node (`PlaceNode`)
 
-A raid-able real-world location.
-* File: `game/models/place_node.dart`
+An explorable real-world location.
+* File: `game/models/place_node.gd`
 * `id` (String): stable hash of OSM id (or synthesized for unmapped ruins).
-* `name` (String), `category` (PlaceCategory): see resource table.
+* `name` (String), `category` (PlaceCategory — `design_resources_and_base.md` §1).
 * `cellX`, `cellY`, `tileX`, `tileY` (int): position.
 * `revealState` (PlaceRevealState).
 * `visitCount` (int), `lastRealVisitAt` (int) → derived `intelLevel` (IntelLevel).
-* `lootState` (LootState): `untouched | partial | stripped | regrown` — loot regrowth is slow and driven by colony proximity, never by real-world visits.
-* `dangerTier` (int 1–5): computed from distance-to-home, urban density, colony proximity (see `design_threats_and_colonies.md`); `landmark` sites are fixed at 5.
-* `isLandmark` (bool): famous-place flag (national park, monument, stadium…). When true, `bossState` is populated.
-* `bossState` (BossState?): `{bossId, defeated, respawnAtGameDay}` — the fixed, non-spreading landmark apex and its long-cooldown respawn. Null on non-landmark places.
+* `itemState` (ItemState): `untouched | partial | stripped | regrown` — regrowth is driven by haunting proximity, never by real-world visits.
+* `levelTier` (int 0–3): from distance to home (`design_encounters_and_haunted_zones.md` §4).
+* `isLandmark` (bool) and `legendaryDex` (int?): the legendary assigned to this landmark, if any.
+* `legendaryState` (`{caught, faintedRespawnAtGameDay}`?): null on non-landmark places.
 
-A cell's `Biome` (residential/downtown/industrial/retail/parkland/waterfront/institutional/wilds) lives on `MapCell` (§2) and selects the enemy variant skins spawned in that cell.
+## 4. Player, party, and bag
 
-## 4. Player Profile & Inventory
+* File: `game/models/player_profile.gd`
+* `trainerName`, `spriteIndex`, `posTileX/Y` — position overwritten on PC session start by the synced `bodyFix` (fast travel — `design_travel_and_time.md` §4).
+* `party`: up to 6 `PokemonInstance` ids, in order.
+* `bag`: `{pocket, itemIndex, qty}` rows (pockets per `design_resources_and_base.md` §2).
+* **Stranded rule:** no code path may read or write `pc_box` for withdrawal or swap while `distanceToHome > baseAccessMeters` (500 m, tunable; distinct from the `homeFuzzMeters` privacy radius). Remote *deposit* of a newly caught Pokémon is always allowed.
 
-* File: `game/models/player_profile.dart`
-* `survivorName`, `spriteIndex`.
-* `posTileX/Y` (int): current overworld position. On PC session start, overwritten by the synced `bodyFix` relocation (fast travel — `design_travel_and_time.md` §4).
-* `hp`, `stamina` (int), `carryCapacity` (int).
-* `carried` (List<InventoryItem>): the *only* inventory that travels. `InventoryItem = {itemId, qty, quality}`.
-* **Stranded rule**: no code path may read `BaseState.stash` while `distanceToHome > baseAccessMeters` (500 m, tunable; distinct from the `homeFuzzMeters` privacy radius).
+## 5. Pokémon instance (`PokemonInstance`)
 
-## 5. Base State (`BaseState`)
+* File: `game/creatures/pokemon.gd`
+* `id`, `dex`, `level`, `exp`, `ivs[6]`, `evs[6]`, `nature`, `ability`, `gender`, `isShiny`.
+* `moves`: up to 4 × `{moveId, pp, ppMax}`; `currentHp`; `status`.
+* `location`: `party | pc_box`, plus `boxIndex/slot` when boxed.
+* `caughtAtCell`, `caughtAtCategory`, `caughtAtGameDay` — the memoir (`design_creatures_and_battles.md` §13). Categories and cells only, never coordinates.
 
-* File: `game/models/base_state.dart`
-* `homeCellX/Y` (fuzzed — never raw home coordinates).
-* `stash` (List<InventoryItem>): unlimited-slot home storage.
-* `fortifications` (Map<FortificationType, int>): walls, barricades, watchpost, workshop, garden levels.
-* `vehicles` (List<Vehicle>): `{type, fuelUnits, condition}`.
+## 6. Home, Pokédex, haunted zones, bag cache
 
-## 6. Colony State (`ColonyState`)
-
-* File: `game/models/colony_state.dart`
-* `id`, `rootPlaceId` (String): the POI the hive rooted in.
-* `stage` (int 1–4): nest → hive → warren → dominion.
-* `territoryCells` (List<(int,int)>): cells under colony influence.
-* `lastGrowthTick` (int, game days), `apexTier` (int): boss power.
-* `raidPressure` (double): accumulates with stage + proximity to home; crossing threshold schedules a base-raid event.
-
-## 7. Death Cache (`DeathCache`)
-
-* `id`, `tileX/Y`, `items` (List<InventoryItem>), `droppedAtGameDay` (int).
-* Expires after `deathCacheDecayGameDays` (3): items are lost to scavengers. At most one cache exists; dying again merges caches at the newest site.
+* **Home (`BaseState`)** — `homeCellX/Y` (fuzzed; never raw coordinates), `pcSealed` (bool — stage-4 intrusion, `design_encounters_and_haunted_zones.md` §5.4), garden plots `{plotIndex, berryIndex, plantedAtGameDay}` (max 8).
+* **Pokédex** — per dex: `seen`, `caught`, `firstCaughtCell`, `firstCaughtCategory`.
+* **Haunted zone (`HauntZone`)** — `id`, `rootPlaceId`, `stage` (0–4), `territoryCells`, `lastGrowthTick`, `bossDex`, `bossDefeated`.
+* **Bag cache (`BagCache`)** — `tileX/Y`, `items`, `droppedAtGameDay`. Expires after `bagCacheDecayGameDays = 3`. At most one exists; blacking out again merges into the newest location.
 
 ## 8. Visit Log (`VisitLog`)
 

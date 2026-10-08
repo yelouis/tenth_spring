@@ -4,6 +4,15 @@ This document defines the key player journeys and step-by-step manual instructio
 
 ---
 
+## 💾 Journey 0: ROM Import (Bring Your Own ROM)
+
+**Objective**: Verify the game runs without a ROM, imports a valid dump, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Platinum (USA) ROM **the tester dumped from their own cartridge** — never a downloaded one.
+1. Fresh install, no ROM. Launch the PC game → verify it reaches the map in "no ROM" mode with placeholder silhouettes and a clear "import your ROM" prompt; onboarding, pairing, and sync all work.
+2. Offer a non-ROM file and a ROM with the wrong game code → both rejected with plain-language messages; no partial cache is left behind.
+3. Import the valid dump → progress shown; `user://rom_cache/manifest.json` written last; the §7 validation passes (493 species; Giratina is Ghost/Dragon; Spiritomb is Ghost/Dark; a sprite decodes to a real image, not static).
+4. Kill the game mid-import, relaunch → the old cache (or none) is intact and import resumes cleanly.
+5. Run `git status` in the repo → **nothing** from the ROM or cache appears; `tools/check_no_nintendo_assets.py` passes. Copy a `.nds` into the repo and stage it → the check **fails**.
+
 ## 🗺️ Journey 1: Setup Day (PC Tutorial → Pairing → First Sync → First Reveal)
 
 **Objective**: Verify the two-device onboarding, consent flow, and the sync-time reveal from install to a personal map.
@@ -17,43 +26,46 @@ This document defines the key player journeys and step-by-step manual instructio
 6. Return to the same network, start a **PC session**. Verify: the sync pulls the visit batch, the **intel ceremony** plays (fog peels, chips stamp, route draws), corridor tiles render `known` grey, visited POIs show name + category + "?" chip, and **inventory is completely unchanged** (cartography, never cargo).
 7. Verify the phone outbox is acked empty and a replayed batch is a no-op.
 
-## 🥾 Journey 2: First Raid (Known → Cleared)
+## 🌿 Journey 2: First Catch (Known → Explored)
 
-**Objective**: Verify the travel economy and raid loop on a nearby revealed place.
-1. From the safehouse, open the destination chip for a `known` grocery ~1 mile away. Verify it shows ~4 min travel time and a green daylight badge.
-2. Walk there in-game. Verify world-clock charge matches distance, and encounter rolls occur outside the porch only.
-3. Enter → verify blind interior (1 visit = `known` intel). Loot food; make noise until `stirred`; extract.
-4. Verify place → `cleared` full color, loot state `partial`, stash unchanged until items are deposited at home.
+**Objective**: Verify travel, tall-grass encounters, a full battle, and catching on a nearby revealed place.
+1. From home, open the destination chip for a `known` park ~1 mile away. Verify ~4 min travel time, a green daylight badge, zone `parkland`, ghost activity "low", level band 2–10.
+2. Walk there. Verify the world clock is charged for the distance and no encounters roll on the porch or roads.
+3. Walk through tall grass until an encounter starts (≈ every 10 steps on average). Weaken the wild Pokémon with damaging moves; check damage numbers against the Gen IV formula for the shown stats.
+4. Throw a Poké Ball. Verify the shake count follows the catch formula; on success the Pokémon joins the party (or deposits remotely if the party is full) and its Pokédex entry records this place's category and cell.
+5. Verify the place becomes `cleared` and its sprites/names come from the ROM cache — and that nothing in the save file contains a name or sprite, only numbers.
 
 ## 🌙 Journey 3: Caught Out at Night
 
-**Objective**: Verify day/night danger and the no-teleport-punish rule.
-1. Depart late afternoon toward a target with an amber daylight badge. Linger scavenging until dusk.
-2. Verify night: spawn ×1.5, tier bump, shrunken light radius, stalker lock-on radius doubled.
-3. Walk home in the dark. Verify no forced teleport/timeout — surviving the trek is the content.
+**Objective**: Verify the Ghost surge, Dusk Ball, and that being far from home at night is genuinely dangerous.
+1. Leave late afternoon toward a cemetery with an amber daylight badge; linger until night.
+2. At night in the cemetery, run 30 encounters → most should be Ghost-type (the ghost share caps at 80%). Back in a suburb by day, Ghost types should be rare.
+3. Throw a Dusk Ball at night → verify the ×3.5 modifier is applied (compare against a Poké Ball on a matching target).
+4. Walk home in the dark with a weakened party. Verify no forced teleport and no healing until home — surviving the trek is the content.
 
 ## ✈️ Journey 4: Stranded (Fast Travel = Real Body)
 
 **Objective**: Verify phone-anchored relocation and the stranded rule.
-1. With loot in `carried` and more in the stash, mock-relocate the **phone** 200+ miles and sync. Start a PC session (e.g. on a laptop on that network).
-2. Verify: survivor spawns at the synced `bodyFix` on a minimal revealed circle; banner reads distance-from-home; stash is inaccessible; carried inventory is exactly what was carried.
-3. Verify the trek-home option prices the full real distance at 15 mph (multi-game-day estimate); mock-relocating the phone home + syncing restores stash access with no penalty.
+1. With a party of 6 and more Pokémon in the PC box, mock-relocate the **phone** 200+ miles and sync. Start a PC session (e.g. on a laptop on that network).
+2. Verify: the player spawns at the synced `bodyFix` on a minimal revealed circle; banner reads distance-from-home; the PC box cannot be withdrawn from or swapped; the party and bag are exactly what was brought; a newly caught Pokémon still deposits remotely.
+3. Verify the trek-home option prices the full real distance at 15 mph (multi-game-day estimate); mock-relocating the phone home + syncing restores PC access with no penalty.
 4. **Out-of-contact fallback**: start a PC session with the phone unreachable → verify spawn at last synced body position with the "scout out of contact" banner, never blocked or teleported home.
 
-## 💀 Journey 5: Death & Recovery
+## 🕯️ Journey 5: Blackout & Recovery
 
-**Objective**: Verify the roguelite contract.
-1. Die inside a raid carrying items. Verify: `DeathCache` at death tile with 3-game-day countdown; respawn at safehouse, empty hands; map/intel/cleared states fully intact.
-2. Recover the cache before expiry → verify merge into inventory. Die again elsewhere first → verify single-cache merge rule.
-3. Let a cache expire → verify permanent loss and map marker removal.
+**Objective**: Verify the blackout contract.
+1. Let the whole party faint in a haunted interior while carrying items. Verify: you wake at home with the party fully healed; a `BagCache` sits at the blackout tile with a 3-game-day countdown; **no Pokémon is lost**; the map, Pokédex, and PC are intact.
+2. Return and recover the bag before expiry → items merge back. Black out elsewhere first → verify the single-cache merge rule.
+3. Let a cache expire → items are permanently gone and the map marker disappears.
 
-## 🐝 Journey 6: Colony Pressure (Long-Arc)
+## 👻 Journey 6: A Haunting Spreads (Long-Arc)
 
 **Objective**: Verify the world pushes back. (Use a debug time-warp harness.)
-1. Reveal a dense region; verify deterministic colony seeding at the densest uncleared POI.
-2. Warp growth ticks: verify stage-ups expand territory, previously `cleared` cells regress to `regrown`, and danger floors override the three axes inside territory.
-3. Let `raidPressure` cross threshold near home → verify a scheduled base raid resolves as wave defense, damages fortification levels only (never stash/map), and watchpost previews composition.
-4. Assault the colony root, kill the apex → verify collapse, 2-game-day territory reversion, −1 region danger for 30 game days, apex `special` drop.
+1. Reveal a region containing a cemetery; verify a haunted zone seeds there deterministically.
+2. Warp growth ticks: stage-ups expand territory, ghost share and wild levels rise inside it, and the distortion tint deepens.
+3. Let a stage-3 zone's territory reach within 2 cells of home → ghost encounters start on the porch. At stage 4 → the PC box is sealed.
+4. Enter the root site, beat or catch the zone boss → the zone is cleansed, the PC unseals, and territory reverts over 2 game days.
+5. Reveal a lake inside a national park → a legendary is assigned; catch it → it never spawns again in this save.
 
 ## 🔋 Journey 7: Battery & Privacy Audit (Release Gate)
 

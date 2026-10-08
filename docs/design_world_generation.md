@@ -14,7 +14,7 @@ enum PlaceRevealState { unknown, known, cleared }
 |---|---|---|
 | `unknown` | — (default) | Black fog. Not on the map at all. |
 | `known` | A detected real-world **visit** (or corridor pass for streets) | Grey silhouette tiles + "?" chip; name + category shown; no interior. |
-| `cleared` | The survivor **traveling there in-game** and completing a raid | Full-color tiles; interior mapped; loot state tracked. |
+| `cleared` | The player **traveling there in-game** and exploring it | Full-color tiles; interior mapped; item state tracked. |
 
 ## 2. Visit Detection
 
@@ -27,9 +27,10 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 ## 3. OSM Ingestion & Tile Synthesis
 
 - **Query scope**: Overpass API queried lazily — only for map cells that have become `known`, never speculatively. Responses cached on-device (`osm_cache` table) with a 90-day TTL.
-- **POI mapping**: OSM tags → `PlaceCategory` via the table in `design_resources_and_base.md`. Unmapped POIs become generic `ruin` (small mixed loot).
-- **Biome derivation**: each cell is assigned a `Biome` from its dominant OSM land use (residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds). Biome drives which enemy variant skins spawn there (`design_threats_and_colonies.md` §1.1) and is stored on `map_cell`. Deterministic per cell.
-- **Landmark flagging**: POIs tagged as famous places (e.g. `boundary=national_park`, `leisure=nature_reserve`, `tourism=attraction`, `historic=monument`, `leisure=stadium`) are flagged `isLandmark` and seeded with their archetype's named boss (`design_threats_and_colonies.md` §3). Landmark seeding is deterministic and independent of player proximity.
+- **POI mapping**: OSM tags → `PlaceCategory` via the table in `design_resources_and_base.md`. Unmapped POIs become generic `ruin` (small mixed items).
+- **Spawn-zone derivation**: each cell is assigned a `zone` from its dominant OSM land use — residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds, plus the haunted zones **cemetery** (`landuse=cemetery`, `amenity=grave_yard`), **ruins** (`historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*`), and **hospital** (`amenity=hospital`). Haunted zones win ties. The zone drives spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2) and is stored on `map_cell`. Deterministic per cell.
+- **Tall grass placement**: tall-grass tiles fill OSM vegetation (park, meadow, grass, scrub, wood edges) and overgrown land (`landuse=brownfield`, vacant lots, abandoned sites). The collapse setting adds overgrowth: road and lot tiles convert to tall grass with probability rising by distance band from home (0%, 10%, 25%, 40%), seeded per cell so it is deterministic. Tall grass is where encounters happen — its placement *is* encounter design.
+- **Landmark flagging**: POIs tagged as famous places (e.g. `boundary=national_park`, `leisure=nature_reserve`, `tourism=attraction`, `historic=monument`, `leisure=stadium`) are flagged `isLandmark` and assigned a legendary from their archetype's pool (`design_encounters_and_haunted_zones.md` §7). Assignment is deterministic and independent of player proximity.
 - **Geometry → tiles**: real geometry is rasterized onto the tile grid at `tileMeters = 16` per tile, then cleaned:
   1. Streets → road tiles (min width 1 tile), snapped to 4/8-directional runs.
   2. Buildings → rectangularized footprints (min 2×2 tiles) with a door tile facing the nearest road.
@@ -40,21 +41,21 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 
 ## 4. Familiarity (Intel, Never Inventory)
 
-Repeat real-world visits raise a place's intel level. Familiarity **never** yields resources — it de-risks the eventual raid.
+Repeat real-world visits raise a place's intel level. Familiarity **never** yields items or Pokémon — it makes the eventual in-game exploration safer (`design_expeditions_and_survival.md` §3).
 
 ```dart
 enum IntelLevel { known, familiar, mastered }  // 1+, 3+, 10+ visits
 ```
 
-| Level | Raid effect |
+| Level | Exploration effect |
 |---|---|
-| `known` | Interior fully dark; standard ambush rolls. |
-| `familiar` | Room layout pre-revealed; exits marked; −25% ambush chance. |
-| `mastered` | Full interior pre-mapped incl. loot spots; −50% ambush chance; guaranteed known escape route. |
+| `known` | Interior fully dark; standard encounter rate. |
+| `familiar` | Room layout and item spots pre-revealed; −25% encounter rate. |
+| `mastered` | Full interior pre-mapped incl. item spots; −50% encounter rate; exit route marked. |
 
 ## 5. Global Scope (The Archipelago)
 
-The map has no boundary. Travel anywhere real adds a distant island of `known` cells. Islands are stitched into one world map at true geographic offsets — in-game travel between them is possible but priced honestly by `design_travel_and_time.md` (a 500-mile island is a multi-game-day expedition with fuel logistics, or a real-life return trip).
+The map has no boundary. Travel anywhere real adds a distant island of `known` cells. Islands are stitched into one world map at true geographic offsets — in-game travel between them is possible but priced honestly by `design_travel_and_time.md` (a 500-mile island is a multi-game-day trek, even by bicycle, or a real-life return trip).
 
 ## 6. Files
 * `companion/lib/capture/visit_detector.dart` — dwell/corridor detection (phone).

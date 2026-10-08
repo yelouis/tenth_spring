@@ -1,6 +1,6 @@
 # Companion App & Sync
 
-This document defines the two-device architecture: what the phone companion does (and deliberately does not do), the pairing model, and the phone→PC sync protocol. The pillar: **the phone is the scout; the PC is the game.** The phone is also the survivor's *body* — its position at sync time is where each PC session begins.
+This document defines the two-device architecture: what the phone companion does (and deliberately does not do), the pairing model, and the phone→PC sync protocol. The pillar: **the phone is the scout; the PC is the game.** The phone is also the player's *body* — its position at sync time is where each PC session begins.
 
 ## 1. Companion App Scope (deliberately thin)
 
@@ -14,7 +14,9 @@ The companion app contains **no gameplay**. Its entire feature set:
 | **Sync** | Pairing + transfer per §3. Shows last-sync time and pending-visit count. |
 | **Controls** | Pause scouting toggle, export/erase, permission status. |
 
-Explicitly **excluded** from the companion (v1.0): raids, inventory, base management, colony status, notifications about in-game events. If a feature makes the phone a place to *play*, it's out of scope — the phone's job is to make you look forward to the PC.
+Explicitly **excluded** from the companion (v1.0): battles, catching, the party, the bag, the PC box, haunting status, and notifications about in-game events. If a feature makes the phone a place to *play*, it's out of scope — the phone's job is to make you look forward to the PC.
+
+**The companion contains no Nintendo assets or names — ever.** No Pokémon sprites, names, or Pokédex text, not even cached from the PC. The phone has no ROM, it must stay listable on the App Store and Google Play, and it is a location tracker, not a Pokémon app. Its memoir map shows terrain, places, and visit history only (`design_rom_asset_pipeline.md` §8).
 
 ## 2. Pairing Model
 
@@ -28,11 +30,11 @@ Explicitly **excluded** from the companion (v1.0): raids, inventory, base manage
 - **Payload** (phone → PC): append-only batch of `VisitLog` rows since last ack + **`bodyFix`**: the phone's current fuzzed position + timestamp. Payloads are already fuzzed to storage precision — raw GPS never leaves the phone at any precision higher than the game consumes.
 - **Ack** (PC → phone): last-applied sequence number + rendered map summary (for the memoir view). The PC never sends gameplay state to the phone beyond the map raster.
 - **Idempotent + resumable**: sequence-numbered batches; replays are no-ops; a dead connection resumes mid-batch.
-- **Session start**: on PC game launch, the game requests a fresh sync. `bodyFix` places the survivor (fast travel — `design_travel_and_time.md` §4). If the phone is unreachable, the session starts at the **last synced body position** with a "scout out of contact" banner — never blocked, never teleported home.
+- **Session start**: on PC game launch, the game requests a fresh sync. `bodyFix` places the player (fast travel — `design_travel_and_time.md` §4). If the phone is unreachable, the session starts at the **last synced body position** with a "scout out of contact" banner — never blocked, never teleported home.
 
 ## 4. In-Fiction Framing
 
-Sync is diegetic: the companion is the survivor's *field journal*, and syncing is "the scout reporting in." PC-side, new intel arrives as the map-table ceremony: fog peels, place chips stamp in, the day's route draws itself. This framing is a design contract, not flavor — UI copy on both sides uses scout/report/intel vocabulary, never "sync/upload/data."
+Sync is diegetic: the companion is the trainer's *field journal*, and syncing is "the scout reporting in." PC-side, new intel arrives as the map-table ceremony: fog peels, place chips stamp in, the day's route draws itself. This framing is a design contract, not flavor — UI copy on both sides uses scout/report/intel vocabulary, never "sync/upload/data."
 
 ## 5. Trade-offs Recorded
 

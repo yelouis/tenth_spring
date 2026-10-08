@@ -7,7 +7,7 @@ This document is a build-ready specification for the foundation of Tenth Spring:
 **Stack (Decision 1).** PC = Godot 4 (GDScript). Companion = Flutter (Dart). Storage = SQLite both sides (Drift on Flutter; a SQLite GDExtension on Godot). Sync = LAN-only, end-to-end encrypted. Two open sub-decisions (D3 geolocation plugin, D4 Godot crypto/mDNS libs) do not block starting; code against the interfaces in §A2 and §B3 so either resolution drops in.
 
 **Golden invariants (enforce in code review on every foundation PR).**
-1. **Cartography, never cargo** — the sync ingest (§B4.5) may write only `map_cell`, `place_node`, `visit_log`, and the transient `bodyFix`. It must have *no* path to `inventory_item` / `base_state`. Assert this with a test (§B6).
+1. **Cartography, never cargo** — the sync ingest (§B4.5) may write only `map_cell`, `place_node`, `visit_log`, and the transient `bodyFix`. It must have *no* path to `inventory_item` / `base_state` — or, after the Pokémon pivot (2026-10-07), to the bag, party, PC box, or Pokémon tables. Assert this with a test (§B6).
 2. **Raw coordinates never persist and never transit** — full-precision fixes exist only in volatile memory inside the capture pipeline; everything written to disk or sent over the wire is fuzzed (§A4).
 3. **Idempotent sync** — replaying any batch changes nothing (§B4.4).
 4. **No gameplay on the phone** — the companion contains capture + read-only map + sync only.
@@ -220,7 +220,9 @@ CREATE TABLE osm_cache (
   cell_x INTEGER, cell_y INTEGER, fetched_at INTEGER, payload BLOB,
   PRIMARY KEY (cell_x, cell_y)
 );
--- colony_state, fortification, vehicle, death_cache: created here as empty tables per the
+-- NOTE (2026-10-07 Pokémon pivot): colony_state/fortification/vehicle/death_cache are superseded by
+-- haunt_zone / pc_box / bag_cache / pokemon tables, added by later-phase migrations — do not create them here.
+-- (original note:) colony_state, fortification, vehicle, death_cache: created here as empty tables per the
 -- models doc so migrations start clean, but exercised only from later phases.
 ```
 
