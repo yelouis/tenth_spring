@@ -4,7 +4,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 
 **The setting:** a generation after a collapse. The streets are overgrown, the cities stand empty, and the Ghost types have moved in. The fog over the unexplored world is the Distortion — reality only holds where people still walk. Cemeteries, ruins, and abandoned hospitals are thick with Ghost Pokémon; at night they are everywhere. Hauntings spread outward if left alone. At the end, Giratina waits.
 
-**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import a Pokémon Platinum ROM **dumped from a cartridge you own**, and reads sprites, species data, moves, and names from it on your own machine. The project will never provide ROMs or help anyone find one. There is no Steam release, no sales, and no monetization. See `docs/design_rom_asset_pipeline.md`.
+**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import Pokémon ROMs **dumped from cartridges you own** — Pokémon Black or White, plus Platinum if you want the Diamond/Pearl-style sprites (pending Decision 10) — and reads sprites, species data, moves, and names from them on your own machine. All 649 Pokémon of Generations 1–5 are included. The project will never provide ROMs or help anyone find one. There is no Steam release, no sales, and no monetization. See `docs/design_rom_asset_pipeline.md`.
 
 **Platform split:** the PC game holds all gameplay. The phone companion is deliberately thin — location capture, a read-only memoir map, and sync — and contains no Pokémon content at all.
 
@@ -43,9 +43,9 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 
 ## Stack
 
-- **PC game: Godot 4.** SQLite for saves (Decision 6). ROM import in pure GDScript.
+- **PC game: Godot 4.3.** SQLite for saves via the vendored `godot-sqlite` extension (Decisions 6–7). ROM import in pure GDScript.
 - **Companion: Flutter** — location capture, read-only memoir map, sync. No gameplay, no Nintendo content.
-- **Sync:** direct device-to-device over LAN (QR pairing, mDNS, end-to-end encrypted).
+- **Sync:** direct device-to-device over LAN — QR pairing, TLS with the PC's certificate pinned by the QR code (Decision 11), end-to-end encrypted.
 - **Map data:** OpenStreetMap (Overpass API), queried by the PC and cached locally. Never Google Maps — its terms forbid derivative map products.
 - **Distribution:** the asset-free client via GitHub Releases; the companion via the app stores.
 

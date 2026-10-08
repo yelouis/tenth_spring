@@ -4,7 +4,7 @@ This document is a build-ready specification for the foundation of Tenth Spring:
 
 **Scope discipline.** Only Phase 0 and Phase 1 are specified here. Later phases (world gen, travel, threats, expeditions, base, art) each get their own `implementation_plan_*.md` when reached — do not build ahead of the foundation. Every rule below traces to a `design_*.md` contract; where this doc and a design doc disagree, the design doc wins and you file the conflict in `ongoing_general_errors.md`.
 
-**Stack (Decision 1).** PC = Godot 4 (GDScript). Companion = Flutter (Dart). Storage = SQLite both sides (Drift on Flutter; a SQLite GDExtension on Godot). Sync = LAN-only, end-to-end encrypted. Two open sub-decisions (D3 geolocation plugin, D4 Godot crypto/mDNS libs) do not block starting; code against the interfaces in §A2 and §B3 so either resolution drops in.
+**Stack (Decision 1).** PC = Godot 4 (GDScript). Companion = Flutter (Dart). Storage = SQLite both sides (Drift on Flutter; the vendored `godot-sqlite` v4.4 GDExtension on Godot — Decision 7). Sync = LAN-only TLS with a pinned self-signed certificate (Decision 11). D3 (geolocation plugin) is code-complete pending its device soak; D4 is superseded by Decision 11.
 
 **Golden invariants (enforce in code review on every foundation PR).**
 1. **Cartography, never cargo** — the sync ingest (§B4.5) may write only `map_cell`, `place_node`, `visit_log`, and the transient `bodyFix`. It must have *no* path to `inventory_item` / `base_state` — or, after the Pokémon pivot (2026-10-07), to the bag, party, PC box, or Pokémon tables. Assert this with a test (§B6).
@@ -143,10 +143,10 @@ Goal: stand up the Godot project and canonical DB, pair a phone, and prove a day
 
 ## B1. Godot project skeleton
 
-Godot 4.x under `game/`, GDScript. SQLite via a GDExtension (Decision 4). Autoload singletons:
+Godot 4.3 under `game/`, GDScript. SQLite via `godot-sqlite` v4.4 (2shady4u, MIT), vendored under `game/addons/godot-sqlite/` (Decision 7). Autoload singletons:
 - `Config` — loads `game/config/tuning` (all constants; single source of truth).
 - `DB` — opens the SQLite file, runs migrations (§B6), exposes typed queries.
-- `SyncServer` — mDNS advertise + encrypted TCP listener (§B4).
+- `SyncServer` — TLS listener on TCP 7350 (§B4).
 - `WorldClock` — created here but only ticked from Phase 3; Phase 1 just persists the row.
 
 Validation B1: headless Godot test scene opens the DB, runs migrations to current version, and reports schema_version.
@@ -193,16 +193,15 @@ CREATE TABLE visit_log (                     -- canonical, mirrored from the pho
 
 CREATE TABLE sync_peer (
   peer_id TEXT PRIMARY KEY,
-  peer_pubkey BLOB NOT NULL,
+  device_token_hash BLOB,                    -- SHA-256 of the phone's device token (§B3); NULL = unpaired
   last_applied_seq INTEGER NOT NULL DEFAULT 0,
   last_body_lat REAL, last_body_lon REAL, last_body_ts INTEGER
 );
 
 CREATE TABLE player_profile (
   id INTEGER PRIMARY KEY CHECK (id = 1),
-  survivor_name TEXT, sprite_index INTEGER DEFAULT 0,
-  pos_tile_x INTEGER, pos_tile_y INTEGER,
-  hp INTEGER, stamina INTEGER, carry_capacity INTEGER
+  trainer_name TEXT, sprite_index INTEGER DEFAULT 0,
+  pos_tile_x INTEGER, pos_tile_y INTEGER
 );
 
 CREATE TABLE base_state (
@@ -210,16 +209,14 @@ CREATE TABLE base_state (
   home_cell_x INTEGER, home_cell_y INTEGER   -- fuzzed cell only; never raw home
 );
 
-CREATE TABLE inventory_item (                 -- schema present now; the sync ingest must NOT touch it
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  owner TEXT NOT NULL,                        -- 'carried' | 'stash'
-  item_id TEXT NOT NULL, qty INTEGER NOT NULL, quality INTEGER
-);
-
 CREATE TABLE osm_cache (
   cell_x INTEGER, cell_y INTEGER, fetched_at INTEGER, payload BLOB,
   PRIMARY KEY (cell_x, cell_y)
 );
+-- NOTE (2026-10-08, F23 + Decision 11): this v1 DDL was corrected in place ONCE — sync_peer.peer_pubkey ->
+-- device_token_hash, zombie-era player_profile fields removed, inventory_item dropped (the bag arrives
+-- by migration). That was safe only because no SQLite file had ever been created by any build. From
+-- the first SQLite release on, this DDL is frozen: every change is a §B6 migration.
 -- NOTE (2026-10-07 Pokémon pivot): colony_state/fortification/vehicle/death_cache are superseded by
 -- haunt_zone / pc_box / bag_cache / pokemon tables, added by later-phase migrations — do not create them here.
 -- (original note:) colony_state, fortification, vehicle, death_cache: created here as empty tables per the
@@ -228,37 +225,97 @@ CREATE TABLE osm_cache (
 
 Validation B2: per-table insert/read round-trip; enum code↔name mapping test; `(peer_id, seq)` uniqueness rejects duplicates.
 
-## B3. Pairing (X25519 + QR)
+## B3. Pairing (pinned TLS certificate + QR) — Decision 11
 
-One PC ↔ one phone (v1.0). Use libsodium on both sides (Decision 4 on the Godot side; `cryptography`/`sodium` on Flutter). **Do not hand-roll crypto.**
+One PC ↔ one phone (v1.0). **Godot's built-in TLS on the PC, Dart's `SecureSocket` on the phone. No libsodium, no custom crypto.**
 
-Flow:
-1. PC generates an X25519 keypair; private key in OS secure storage, never in the DB.
-2. PC renders a QR encoding JSON `{v:1, pcId, pcPubKeyB64, mdnsName}`.
-3. Phone (`mobile_scanner`) scans, generates its own X25519 keypair (private → `flutter_secure_storage`).
-4. Both derive a shared secret `X25519(ownPriv, peerPub)` → session key via `HKDF-SHA256(salt = sorted(pcId,phoneId), info = "tenthspring-sync-v1")`.
-5. Each stores the peer's public key (`sync_peer` on PC; `pairing` table on phone) and the derived key in secure storage.
+**PC identity** — created on first launch if absent (`game/sync/pc_identity.gd`):
+1. `var key := Crypto.new().generate_rsa(2048)`.
+2. `var cert := Crypto.new().generate_self_signed_certificate(key, "CN=tenthspring-pc,O=Tenth Spring,C=US", <now as YYYYMMDDhhmmss>, <now + 20 years>)`.
+3. `pcId` = 16 bytes from `Crypto.generate_random_bytes`, hex-encoded (32 chars).
+4. Save `key` to `user://sync_identity/pc.key` (`CryptoKey.save`) and `cert` to `user://sync_identity/pc.crt` (`X509Certificate.save`), with `pcId` in `user://sync_identity/pc_id.txt`.
+   - **Never in the save DB, never in the repo.**
+   - The directory is configurable exactly like `DB.configure_paths`, and tests use `user://test/sync_identity/`.
+5. **Fingerprint** = SHA-256 over the certificate's **DER** bytes, as 64 lowercase hex chars. Godot 4.3's `X509Certificate` exposes only PEM (`save_to_string()`), so: drop the `-----BEGIN/END CERTIFICATE-----` lines, strip whitespace, `Marshalls.base64_to_raw()` → DER, then hash with `HashingContext` (`HASH_SHA256`).
 
-Optional hardening: show a 4-word Short Authentication String derived from the handshake on both screens for the user to eyeball (defends against a MITM during pairing; QR-in-person already resists it). File as a nice-to-have, not a blocker.
+**Pairing flow:**
+1. The PC's pairing screen creates a **pairing code**: 16 random bytes, hex. Only one is active at a time; it expires after **10 minutes** or one successful pairing, whichever comes first.
+2. The QR encodes compact JSON:
 
-Validation B3: keypair gen + ECDH + HKDF produce identical session keys on both sides for known test vectors; private keys are absent from both SQLite DBs (assert by scanning the DB files).
+   `{"v":2,"pcId":"<32 hex>","fp":"<64 hex>","addrs":["192.168.1.20"],"port":7350,"pair":"<32 hex>"}`
+
+   `addrs` = `IP.get_local_addresses()`, filtered as follows:
+   - **keep** private IPv4 only (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`);
+   - **drop** loopback and `169.254.0.0/16`;
+   - **at most 4**.
+3. The phone (`mobile_scanner`) parses it and rejects `v != 2`.
+   - If it is already paired with **this** `pcId` **and** `fp`, it only updates the stored `addrs`/`port`. Done; no PAIR is sent.
+   - Otherwise it generates:
+     - `phoneId` once, if absent: 16 random bytes, hex;
+     - a `deviceToken`: 32 bytes from `Random.secure()`.
+4. The phone connects (§B4.2) and sends `PAIR`.
+5. The PC checks `pair` against the active code with `Crypto.constant_time_compare`.
+   - **On success:** store `sync_peer(peer_id = phoneId, device_token_hash = SHA-256(deviceToken))`, clear `device_token_hash` on any **other** peer row (its `visit_log` history stays), invalidate the code, and reply `PAIR_OK`.
+   - **On failure:** reply `ERROR {code:"bad_pair_code"}` and close.
+6. The phone stores `pcId`, `fp`, `addrs`, `port`, `phoneId`, and `deviceToken` in `flutter_secure_storage` only, never in the Drift DB.
+
+Optional hardening, not a blocker: show the first 8 hex chars of `fp` on both screens for the user to compare.
+
+Validation B3:
+- **Fingerprint parity.** A committed test certificate (`game/tests/fixtures/test_cert.pem` and `companion/test/fixtures/test_cert.pem` — certificate only, **no private key**) yields the **same** fingerprint hex in GDScript and in Dart. Both must equal the value the committing agent computed with `openssl x509 -in test_cert.pem -outform der | shasum -a 256`.
+- **Pairing code rules.** An expired code and a wrong code are both rejected; a used code cannot pair twice.
+- **No secrets in the DB.** Neither the device token nor the private key appears in any DB file — assert by scanning the bytes.
 
 ## B4. Sync transport
 
-### B4.1 Discovery
-PC (`SyncServer`) advertises `_tenthspring._tcp` via mDNS and listens on a TCP port. Phone discovers via `multicast_dns`/`nsd`. Fallback: manual IP entry if mDNS is blocked on the network.
+### B4.1 Finding the PC (no mDNS in v1 — F27)
+The PC listens on TCP **7350** on all interfaces.
 
-### B4.2 Encrypted channel
-Establish a libsodium `crypto_secretstream` (XChaCha20-Poly1305) session keyed by the §B3 session key. Every message is one encrypted, authenticated chunk; ordering and integrity are guaranteed by the stream. Reject on any auth-tag failure (a wrong-key or tampered peer).
+**The phone tries, in order:**
+1. the last address that synced successfully;
+2. then each QR `addrs` entry.
 
-### B4.3 Messages (plaintext shapes, encrypted on the wire)
+Each attempt has a **3 s** connect timeout. If all fail, the phone shows a "can't reach your PC — open the scout report on your PC and re-scan its code" message, in scout vocabulary per §4 of the design doc. mDNS is deferred: Godot has no responder, and raw multicast needs Apple's restricted entitlement on iPhones.
+
+**Platform requirements:**
+- **iOS:** `NSLocalNetworkUsageDescription` in `Info.plist`.
+- **Android:** `android.permission.INTERNET` in the **main** manifest. Flutter adds it only to debug builds.
+
+### B4.2 Encrypted channel (TLS, pinned)
+**Phone:**
+- Call `SecureSocket.connect(host, port, context: SecurityContext(withTrustedRoots: false), onBadCertificate: (c) => hex(sha256(c.der)) == storedFp, timeout: 3s)`.
+- `withTrustedRoots: false` is load-bearing. With it, *every* certificate fails normal verification, so every connection goes through the pin check. Without it, a certificate that chains to a public CA would skip `onBadCertificate` entirely.
+- After connecting, re-check `socket.peerCertificate` against the pin, and destroy the socket on mismatch.
+
+**PC:**
+- `TCPServer.take_connection()` → `StreamPeerTLS.new()` → `accept_stream(tcp, TLSOptions.server(key, cert))`.
+- Then `poll()` every frame until `get_status() == STATUS_CONNECTED`.
+- If that takes more than **10 s**, or the status reaches `STATUS_ERROR`, close.
+
+**Both sides:**
+- **One session at a time.** A second connection during an active session is closed immediately.
+- **Idle timeout: 30 s** without a complete frame, then close.
+
+### B4.3 Frames and messages (plaintext shapes, inside TLS)
+**Frame:**
+- A 4-byte big-endian unsigned length **N**, then **N** bytes of UTF-8 JSON (one object with a `type` field).
+- **1 ≤ N ≤ 1,048,576.** Anything else is a protocol error, and the connection closes.
+- Frames may arrive split across reads or several per read. Buffer, never assume one frame per read.
 ```
-HELLO  { peerId, schemaVersion }
-BATCH  { rows: [ {seq, kind, lat, lon, startedAt, dwellSeconds?} ...],   // seq-ascending
-         bodyFix: { lat, lon, tsUtcMs } }                                // fuzzed
-ACK    { lastAppliedSeq, mapSummary }                                    // summary drives the phone memoir view
+PAIR      { type, v:2, phoneId, pair, deviceToken }                     // base64 token; first contact only
+PAIR_OK   { type, pcId }
+HELLO     { type, peerId, schemaVersion, deviceToken }                  // every session
+HELLO_OK  { type, pcId, lastAppliedSeq }
+BATCH     { type, rows: [ {seq, kind, lat, lon, startedAt, dwellSeconds?} ...],   // ≤ 500 rows, seq-ascending
+            bodyFix: { lat, lon, tsUtcMs } }                                       // fuzzed
+ACK       { type:"ACK", status:"ack", lastAppliedSeq, appliedCount }    // = process_batch()'s result + type
+ERROR     { type, code }  // bad_pair_code | unpaired | schema_mismatch | protocol | busy
 ```
-Schema-version mismatch → refuse and surface a "update one device" message; never apply across incompatible schemas.
+**HELLO checks** (the PC rejects with `ERROR` and closes):
+- **Token:** the PC compares SHA-256(`deviceToken`) with the stored hash using `Crypto.constant_time_compare`; a mismatch → `unpaired`.
+- **Schema:** a version mismatch → `schema_mismatch`. The phone then surfaces an "update one device" message. Never apply across incompatible schemas.
+
+**BATCH is accepted only after a successful HELLO.** The phone sends BATCHes until its outbox is empty, then closes.
 
 ### B4.4 Idempotent apply (the core correctness property)
 On `BATCH`, inside one DB transaction:
@@ -281,7 +338,7 @@ For each row (ingest has write access to `map_cell`, `place_node`, `visit_log` o
 Validation B4:
 - Idempotency (unit): apply a fixture BATCH → assert map_cells/place_nodes/visit_log; **re-apply the identical BATCH → zero changes**; apply an out-of-order/overlapping BATCH → only new seqs land.
 - Resumption (integration): kill the socket mid-batch (before ACK) → reconnect → final DB state equals the clean-run state exactly.
-- Crypto (unit): secretstream round-trip; a tampered ciphertext or wrong key is rejected, not silently accepted.
+- Channel (integration, loopback): the phone accepts only the pinned certificate; a different self-signed certificate is refused before any frame is sent; a wrong device token gets `ERROR unpaired`; a 2 MiB frame header closes the connection.
 - Isolation (unit, guards invariant 1): a BATCH whose handler is (in a fault-injection test) pointed at `inventory_item` fails a static capability check — the ingest module must not import/reference inventory tables at all.
 
 ## B5. Relocation on session start (fast travel = the phone)
@@ -309,8 +366,10 @@ A day of real scouting on a paired phone appears — after one LAN sync — as `
 | Companion unit | fuzz determinism/precision; visit detector on synthetic streams; GPX parse |
 | Companion integration | each GPX fixture → expected outbox rows |
 | Companion device (gate) | < 3%/day battery; background survives process death; staged permissions |
-| PC unit | schema round-trip; enum mapping; **idempotent apply**; crypto round-trip; ingest-isolation |
+| PC unit | schema round-trip; enum mapping; **idempotent apply**; certificate-fingerprint parity; frame codec; ingest-isolation |
 | Cross-device integration | pair → sync a fixture batch over loopback → expected PC state; replay = no-op; mid-batch drop resumes clean |
-| Cross-device manual (gate) | real phone + PC on one WiFi: mDNS discovery, QR pair, real sync; Wireshark shows ciphertext, no plaintext coords; relocation + out-of-contact fallback behave |
+| Cross-device manual (gate) | real phone + PC on one WiFi: QR pair, real sync, re-scan after an address change; Wireshark shows only TLS records, no plaintext JSON or coords; relocation + out-of-contact fallback behave |
 
-CI runs everything except the two device gates, which are manual pre-merge checks for any PR touching capture, battery, or the sync channel (agent guide §4).
+CI runs everything except the two device gates, which are manual pre-merge checks for any PR touching capture, battery, or the sync channel (agent guide, THE LOOP).
+
+**Godot test harness contract (added 2026-10-08 after F25).** `godot -s` only runs scripts inheriting `SceneTree`/`MainLoop`, so game tests run as a **scene**: `game/tests/test_main.tscn` with a root `Node` script that, in `_ready()`, instantiates each test script, calls its `run_test()`, prints exactly one `PASS <name>` or `FAIL <name>` line per test, then calls `get_tree().quit(0 if all passed else 1)`. Running as a normal scene means autoloads (`DB`, `Config`, `SyncServer`) load exactly as in the game. The runner invokes `godot --headless --path game res://tests/test_main.tscn` and is green **only if** the exit code is 0 **and** the output contains one `PASS` line for every expected test — a crash before tests run, or an empty run, is a failure. A deliberately failing self-test (enabled by `TENTH_SPRING_HARNESS_SELFTEST=1`) must make the harness exit 1, proving it can fail. CI runs this with headless Godot **4.3-stable** (matching `project.godot`).

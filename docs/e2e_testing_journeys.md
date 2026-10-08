@@ -6,10 +6,10 @@ This document defines the key player journeys and step-by-step manual instructio
 
 ## 💾 Journey 0: ROM Import (Bring Your Own ROM)
 
-**Objective**: Verify the game runs without a ROM, imports a valid dump, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Platinum (USA) ROM **the tester dumped from their own cartridge** — never a downloaded one.
+**Objective**: Verify the game runs without a ROM, imports valid dumps, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Black or White (USA) ROM — plus Platinum (USA) if Decision 10 uses it — **that the tester dumped from their own cartridges**, never downloaded ones.
 1. Fresh install, no ROM. Launch the PC game → verify it reaches the map in "no ROM" mode with placeholder silhouettes and a clear "import your ROM" prompt; onboarding, pairing, and sync all work.
 2. Offer a non-ROM file and a ROM with the wrong game code → both rejected with plain-language messages; no partial cache is left behind.
-3. Import the valid dump → progress shown; `user://rom_cache/manifest.json` written last; the §7 validation passes (493 species; Giratina is Ghost/Dragon; Spiritomb is Ghost/Dark; a sprite decodes to a real image, not static).
+3. Import the valid dump(s) → progress shown; `user://rom_cache/manifest.json` written last; the §7 validation passes (649 species, 559 moves; Giratina is Ghost/Dragon; Spiritomb is Ghost/Dark; Chandelure is Ghost/Fire; sprites decode to real images, not static).
 4. Kill the game mid-import, relaunch → the old cache (or none) is intact and import resumes cleanly.
 5. Run `git status` in the repo → **nothing** from the ROM or cache appears; `tools/check_no_nintendo_assets.py` passes. Copy a `.nds` into the repo and stage it → the check **fails**.
 
@@ -19,7 +19,7 @@ This document defines the key player journeys and step-by-step manual instructio
 
 ### 📋 Steps to Test:
 1. Fresh install both builds. Launch the **PC game** → tutorial establishes the fantasy and prompts "recruit your scout" with a pairing QR.
-2. Install the **companion**, scan the QR. Verify pairing derives a shared key on both devices (no key leaves either device) and the PC shows the phone as paired.
+2. Install the **companion**, scan the QR. Verify the phone pins the PC's certificate fingerprint and the PC shows the phone as paired (no secret leaves either device). Pair a second phone from a fresh QR → the first phone's next sync is refused (`unpaired`), and its already-synced history is still on the map.
 3. Companion permission ask: verify the canonical rationale copy (`design_privacy_and_location.md` §3) and that declining "Always" still works ("While Using" + manual "scout here").
 4. Designate the safehouse **on the PC**. Verify the stored home is the fuzzed cell, not the raw point (inspect PC DB) and the fuzz circle is shown.
 5. Carry the phone on a normal errand (or replay a GPX trace with ≥2 dwells ≥120 s). Verify the companion ledger lists the day's visits by **name only** — no map reveal on the phone.

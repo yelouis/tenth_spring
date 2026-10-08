@@ -10,7 +10,7 @@ The pivot changes where art comes from. **Pokémon and item art come from the pl
 
 | Art | Source | In repo? |
 |---|---|---|
-| Pokémon battle sprites (front/back, shiny) — 80×80 | Player's ROM via the importer | **Never** |
+| Pokémon battle sprites (front/back, shiny) — 96×96 animated (Black/White) or 80×80 still (Platinum, #1–493 only); which style is used is **Decision 10** | Player's ROMs via the importer | **Never** |
 | Item icons | Player's ROM via the importer | **Never** |
 | Overworld tiles (generated from OSM) | Original | Yes |
 | Player overworld sprite, battle UI, menus, fonts | Original | Yes |
@@ -18,6 +18,8 @@ The pivot changes where art comes from. **Pokémon and item art come from the pl
 | Fog, distortion, night, and lamp effects | Original shaders | Yes |
 
 Gen 4 overworlds are 3D models, not 2D tilesets, so there is nothing usable to extract for the overworld — and our world is generated from OpenStreetMap anyway. Overworld tiles stay original.
+
+**Battle layout must fit both sprite sizes.** Platforms and HP boxes are laid out for a 96×96 sprite box. 80×80 sprites are centred bottom-aligned in that box at the same integer scale, never stretched, so either Decision 10 outcome renders correctly.
 
 ## 2. The rip trap — read before sourcing any tiles
 

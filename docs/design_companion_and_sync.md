@@ -20,17 +20,30 @@ Explicitly **excluded** from the companion (v1.0): battles, catching, the party,
 
 ## 2. Pairing Model
 
-- One PC install ↔ one phone (v1.0). Pairing: the PC shows a QR code encoding `{pcId, pubkey, LAN hint}`; the phone scans it; both derive a shared key (X25519 → symmetric session keys). The key never leaves the two devices.
-- Re-pairing (new PC/phone) requires the old device or the erase flow — no account-based recovery, because there is no account.
-- Multiple PCs (desktop + laptop) is a v1.1 question — filed as an open decision, not silently supported.
+- **One PC install ↔ one phone (v1.0).** Pairing a new phone replaces the old one's credential. The old phone's synced history stays in the PC save, because location history is never deleted.
+- **The PC has its own identity** (Decision 11): a self-signed TLS certificate, generated once on first launch and stored in the PC's user data folder. It is never stored in the save DB and never in the repo.
+- **The pairing QR code** (shown on the PC) carries:
+  - the PC's id;
+  - the **SHA-256 fingerprint** of that certificate;
+  - the PC's LAN addresses and port;
+  - a one-time pairing code that expires after 10 minutes or one use.
+- **When the phone scans it:**
+  1. The phone connects over TLS and checks the fingerprint.
+  2. It sends the pairing code plus a freshly generated 256-bit **device token**.
+  3. The PC stores only the token's SHA-256 hash.
+- **Trust model:** the phone trusts **no certificate authority** — only the fingerprint it scanned. The PC trusts only a phone that presents the token. No secret ever leaves the two devices. Scanning the QR in person is what defeats a man-in-the-middle.
+- **Re-pairing** (new PC or phone) means scanning a new QR on the PC. There is no account-based recovery, because there is no account.
+- **Multiple PCs** (desktop + laptop) is a v1.1 question, filed as an open decision rather than silently supported.
 
 ## 3. Sync Protocol
 
-- **Transport**: direct LAN — phone discovers the paired PC via mDNS when both are on the same network; payloads are E2E-encrypted with the pairing key. No relay server exists in v1.0 (see §5 for the trade-off record).
-- **Payload** (phone → PC): append-only batch of `VisitLog` rows since last ack + **`bodyFix`**: the phone's current fuzzed position + timestamp. Payloads are already fuzzed to storage precision — raw GPS never leaves the phone at any precision higher than the game consumes.
-- **Ack** (PC → phone): last-applied sequence number + rendered map summary (for the memoir view). The PC never sends gameplay state to the phone beyond the map raster.
-- **Idempotent + resumable**: sequence-numbered batches; replays are no-ops; a dead connection resumes mid-batch.
-- **Session start**: on PC game launch, the game requests a fresh sync. `bodyFix` places the player (fast travel — `design_travel_and_time.md` §4). If the phone is unreachable, the session starts at the **last synced body position** with a "scout out of contact" banner — never blocked, never teleported home.
+- **Transport: direct LAN TCP, wrapped in TLS**, using Godot's built-in TLS on the PC and Dart's `SecureSocket` on the phone. Messages are length-prefixed JSON frames inside the TLS stream. No relay server exists in v1.0 (see §5 for the trade-off record).
+- **Finding the PC.** The phone tries the address that last worked, then the addresses from the pairing QR. If none answers — usually because the router gave the PC a new address — the phone asks the player to re-scan the QR on the PC. A re-scan from the same PC (same id and fingerprint) just updates the addresses, without re-pairing. **mDNS auto-discovery is deferred** (F27): Godot has no mDNS responder, and raw multicast from the phone needs a restricted Apple entitlement on iPhones.
+- **Payload** (phone → PC): an append-only batch of `VisitLog` rows since the last ack, plus **`bodyFix`** — the phone's current fuzzed position and timestamp. Payloads are already fuzzed to storage precision; raw GPS never leaves the phone at any precision higher than the game consumes.
+- **Ack** (PC → phone): the last-applied sequence number. A rendered map summary for the memoir view is added when the memoir view is built. The PC never sends gameplay state to the phone beyond the map raster.
+- **Idempotent and resumable:** batches are sequence-numbered; replays are no-ops; a dead connection resumes from the last ack.
+- **Session start:** on PC game launch, the game requests a fresh sync. `bodyFix` places the player (fast travel — `design_travel_and_time.md` §4). If the phone is unreachable, the session starts at the **last synced body position** with a "scout out of contact" banner — never blocked, never teleported home.
+- Exact message shapes, frame limits, and timeouts: `implementation_plan_foundation.md` §B3–B4.
 
 ## 4. In-Fiction Framing
 
@@ -43,4 +56,4 @@ Sync is diegetic: the companion is the trainer's *field journal*, and syncing is
 
 ## 6. Files
 * Companion (Flutter): `companion/lib/capture/*`, `companion/lib/sync/pairing.dart`, `companion/lib/sync/transport.dart`, `companion/lib/screens/{ledger,memoir,settings}.dart`
-* PC (Godot): `game/sync/sync_server.gd`, `game/sync/pairing.gd`, `game/world/intel_ceremony.gd`
+* PC (Godot): `game/autoloads/sync_server.gd` (TLS listener, frames, dispatch), `game/sync/pc_identity.gd` (certificate + fingerprint), `game/sync/pairing.gd` (pairing codes, QR payload), `game/world/intel_ceremony.gd`

@@ -4,13 +4,23 @@ This document defines the schemas, enums, and persistence rules. **Storage split
 
 ## 0. Storage backends
 
-The target engine is SQLite (Decision 6 = A). Until the SQLite GDExtension is installed (Decision 7), `game/autoloads/db.gd` runs an **interim file fallback**, and both backends must honor this contract:
+**The engine is SQLite** (Decision 6 = A), via the vendored `godot-sqlite` v4.4 GDExtension (Decision 7 = B). Until agent-guide Item 2 lands, `game/autoloads/db.gd` still runs an **interim file fallback**. Its contract, which applies until it is retired:
 - **Boot diagnostic:** one line at startup — `storage: SQLite extension` or `storage: file fallback`.
-- **Fail loud:** `execute_query()` with no engine pushes an error and returns `false`. Callers in fallback mode must not call it at all (gate on `_db != null`) — a no-op that reports success is forbidden.
-- **Atomic writes:** the fallback serialises to `user://tenth_spring.db.tmp`, flushes, closes, then `DirAccess.rename_absolute()` over `user://tenth_spring.db` (Godot documents that rename overwrites the destination). On load, an empty or unparseable primary falls back to `.tmp`, with a loud warning.
-- **Transactions:** in fallback mode, no write saves to disk while a transaction is open; commit saves once; rollback restores the in-memory snapshot and writes nothing.
+- **Fail loud:** `execute_query()` with no engine pushes an error and returns `false`. Callers in fallback mode must not call it at all (gate on `_db != null`); a no-op that reports success is forbidden.
+- **Atomic writes:** serialise to `user://tenth_spring.db.tmp`, flush, close, then `DirAccess.rename_absolute()` over `user://tenth_spring.db`. On load, an empty or unparseable primary falls back to `.tmp`, with a loud warning.
+- **Transactions:** no write saves to disk while a transaction is open; commit saves once; rollback restores the in-memory snapshot and writes nothing.
 - **Tests never touch the real save:** test runs point the store at a separate path (F22).
-- `JSON_BAK_PATH` (`user://tenth_spring.db.jsonbak`) is reserved for the one-time import when SQLite goes live.
+
+**When Item 2 lands, the fallback is retired.** The extension ships inside every build, so a second persistence path would only diverge:
+- **SQLite only.** Every value is passed as a **bound parameter**, and every getter reads SQL, never memory.
+- **Durability:** `PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;`.
+- **Missing extension at boot** prints `storage: UNAVAILABLE — SQLite extension missing`, pushes an error, and writes nothing. It never silently degrades.
+- **Upsert semantics** (identical to the fallback's — F26):
+  - `reveal_state` only ever increases;
+  - `first_revealed_at` and `cell_seed` are set once;
+  - `place_node.visit_count` accumulates;
+  - `sync_peer.last_applied_seq` never decreases.
+- **One-time legacy import.** A fallback save is recognised because its first 16 bytes are not `SQLite format 3\0`. It is renamed to `user://tenth_spring.db.jsonbak` (`JSON_BAK_PATH`), imported in one transaction, and kept. It is never deleted.
 
 ## 1. World Clock (`WorldClock`)
 

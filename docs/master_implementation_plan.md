@@ -24,10 +24,10 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 Carrying the phone yields a fuzzed visit/corridor log within budget. **Exit:** ledger fills while backgrounded over ≥ 8 h at < 3%/day on a real device.
 
 **Phase 1 — Pairing, sync & data models** *(partial — the active queue)*
-A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Exit:** real-device sync, replay is a no-op, Wireshark shows ciphertext only.
+A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records.
 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*
-Import a player-supplied Platinum ROM into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
+Import player-supplied ROMs — Black or White (all data for the 649 Gen 1–5 species, plus sprites) and, if Decision 10 calls for it, Platinum (Diamond/Pearl-style sprites for #1–493) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
 
 **Phase 3 — World generation**
 OSM → deterministic tile overworld: spawn zones (incl. cemetery/ruins/hospital), **tall-grass placement**, landmark flagging with legendary assignment, two-fog rendering, and the intel ceremony. Contract: `design_world_generation.md`. **Exit:** identical tiles from `(cached OSM, cellSeed)` across runs; tall grass appears where the rules say.

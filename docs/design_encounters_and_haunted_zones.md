@@ -25,17 +25,17 @@ Each map cell carries one **zone**, derived deterministically from OSM tags (`de
 |---|---|---|---|---|
 | `residential` | `landuse=residential` | 0.05 | Normal/Flying: Starly 396, Bidoof 399, Glameow 431 | Murkrow 198, Misdreavus 200 |
 | `downtown` | dense commercial/office | 0.08 | Psychic/Steel: Abra 63, Magnemite 81 | Gastly 92, Stunky 434 |
-| `industrial` | `landuse=industrial`, `brownfield` | 0.05 | Poison/Steel/Electric: Grimer 88, Koffing 109, Voltorb 100 | Bronzor 436 |
+| `industrial` | `landuse=industrial`, `brownfield` | 0.05 | Poison/Steel/Electric: Grimer 88, Koffing 109, Voltorb 100, Trubbish 568 | Bronzor 436, Golett 622 |
 | `retail` | malls, `shop=*` clusters | 0.08 | Normal: Meowth 52, Glameow 431 | Duskull 355, **Rotom 479** (§6) |
 | `parkland` | parks, forest, meadow, scrub | 0.06 | Grass/Bug: Budew 406, Kricketot 401, Oddish 43 | Shuppet 353, Hoothoot 163 |
-| `waterfront` | coast, riverbank, docks | 0.05 | Water: Psyduck 54, Buizel 418, Shellos 422 | Drifloon 425 |
-| `institutional` | schools, civic buildings | 0.12 | Psychic: Chingling 433, Drowzee 96 | Duskull 355, Misdreavus 200 |
+| `waterfront` | coast, riverbank, docks | 0.05 | Water: Psyduck 54, Buizel 418, Shellos 422 | Drifloon 425, Frillish 592 |
+| `institutional` | schools, civic buildings | 0.12 | Psychic: Chingling 433, Drowzee 96 | Duskull 355, Misdreavus 200, Litwick 607 |
 | `wilds` | low-density rural, fields | 0.06 | Varied, higher level | Murkrow 198, Gastly 92 |
-| **`cemetery`** | `landuse=cemetery`, `amenity=grave_yard` | **0.60** | Normal: Bidoof 399 | **Gastly 92, Haunter 93, Duskull 355, Dusclops 356, Shuppet 353, Misdreavus 200** |
-| **`ruins`** | `historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*` | **0.45** | Rock/Psychic: Unown 201, Bronzor 436 | Sableye 302, Gastly 92, Haunter 93 |
-| **`hospital`** | `amenity=hospital` | **0.30** | Psychic: Chingling 433, Hypno 97 | Duskull 355, Misdreavus 200 |
+| **`cemetery`** | `landuse=cemetery`, `amenity=grave_yard` | **0.60** | Normal: Bidoof 399 | **Gastly 92, Haunter 93, Duskull 355, Dusclops 356, Shuppet 353, Misdreavus 200, Yamask 562** |
+| **`ruins`** | `historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*` | **0.45** | Rock/Psychic: Unown 201, Bronzor 436 | Sableye 302, Gastly 92, Haunter 93, Yamask 562, Golett 622 |
+| **`hospital`** | `amenity=hospital` | **0.30** | Psychic: Chingling 433, Hypno 97 | Duskull 355, Misdreavus 200, Litwick 607, Lampent 608 |
 
-The full weighted tables live in `game/config/spawn_tables.json` (dex numbers + weights only). These are **starting content**, tunable in Phase 11 balance.
+The roster spans all 649 Gen 1–5 species (Decision 12). Gen 5's Ghost lines are placed where they fit the setting: Litwick/Lampent in hospitals and institutions, Yamask in cemeteries and ruins, Golett in ruins and industry, Frillish at the waterfront. Their final forms (Chandelure, Cofagrigus, Golurk, Jellicent) come from evolution, or appear as zone bosses (§5). The full weighted tables live in `game/config/spawn_tables.json` (dex numbers + weights only). These are **starting content**, tunable in Phase 11 balance.
 
 ## 3. Ghost prevalence — the horror undertone, as a formula
 
@@ -74,7 +74,7 @@ Every `hauntGrowthTickGameDays = 1`, a zone gains progress; on stage-up its terr
 When a stage-3+ zone's territory comes within **2 cells** of the home safehouse, ghost encounters begin on the porch ("intrusion"). At **stage 4 adjacent to home, the PC box is sealed** until the intrusion is driven back by defeating the zone's boss. That is the stake that replaces zombie base raids: let a haunting grow and you lose access to your stored Pokémon.
 
 ### 5.5 Cleansing
-Each zone's root site is a haunted interior with a **zone boss** — a high-level Ghost Pokémon chosen by stage (e.g. whisper: Haunter 93 · haunt: Banette 354 · shroud: Mismagius 429 · distortion: Dusknoir 477). **Defeating or catching the boss cleanses the zone**: territory reverts over 2 game days and the bonuses vanish. Catching it means you keep a powerful ghost. Rewards: ghost-themed items — Spell Tag, Reaper Cloth, Dusk Stone, Dusk Balls (`design_resources_and_base.md`).
+Each zone's root site is a haunted interior with a **zone boss** — a high-level Ghost Pokémon chosen by stage (e.g. whisper: Haunter 93 · haunt: Banette 354 · shroud: Mismagius 429 · distortion: Dusknoir 477). Each stage's boss pool also includes Gen 5 ghosts: haunt adds Lampent 608; shroud adds Cofagrigus 563 and Jellicent 593; distortion adds Chandelure 609 and Golurk 623. **Defeating or catching the boss cleanses the zone**: territory reverts over 2 game days and the bonuses vanish. Catching it means you keep a powerful ghost. Rewards: ghost-themed items — Spell Tag, Reaper Cloth, Dusk Stone, Dusk Balls (`design_resources_and_base.md`).
 
 ## 6. Real-world-gated events
 

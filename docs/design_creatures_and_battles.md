@@ -1,6 +1,6 @@
 # Creatures & Battles
 
-This document defines the Pokémon model and the main-series battle system: stats, types, damage, status, catching, experience, party, PC box, healing, and blacking out. **Mechanics follow Generation IV (Diamond/Pearl/Platinum)**, matching the ROM the player imports. Mechanics and formulas are game rules and live in the repo; species data, move data, and names come only from the player's ROM via `asset_db` (`design_rom_asset_pipeline.md` §10).
+This document defines the Pokémon model and the main-series battle system: stats, types, damage, status, catching, experience, party, PC box, healing, and blacking out. **The roster is all 649 Pokémon of Generations 1–5** (Decision 12). **Formulas follow Generation IV (Diamond/Pearl/Platinum); data comes from Black/White.** Formulas are game rules and live in the repo. Species data, move data, and names come only from the player's Black/White ROM, via `asset_db` (`design_rom_asset_pipeline.md` §2, §10). Gen 5 supplies data, never rules: no Gen 5 battle mechanics (critical captures, the Gen 5 EXP scaling, triple battles) are in scope.
 
 Where a value below is marked **verify**, confirm it against Bulbapedia's Generation IV mechanics pages or `pret/pokeplatinum` before shipping — do not substitute a guess.
 
@@ -10,7 +10,11 @@ Where a value below is marked **verify**, confirm it against Bulbapedia's Genera
 
 - **Species data** (base stats, types, catch rate, base EXP yield, growth rate, abilities, gender ratio, learnset, evolutions) is read from `asset_db.species(dex)`. The repo never stores it.
 - **Instance data** (persisted in the save, `design_game_state_and_models.md`): `dex`, `level`, `exp`, `ivs[6]`, `evs[6]`, `nature`, `ability`, `gender`, `isShiny`, `moves[≤4]` with `pp`, `currentHp`, `status`, `caughtAtCell`, `caughtAtCategory`, `caughtAtGameDay`.
-- **Wild generation:** level from the spawn band (`design_encounters_and_haunted_zones.md` §4); each IV uniform 0–31; nature uniform of 25; ability uniform of the species' one or two; gender by species ratio; **shiny 1/8192**; moves = the last four level-up moves learned at or below the level.
+- **Wild generation:**
+  - Level from the spawn band (`design_encounters_and_haunted_zones.md` §4).
+  - Each IV uniform 0–31; nature uniform of 25; gender by species ratio; **shiny 1/8192**.
+  - Ability uniform of the species' one or two **standard** abilities. Black/White data also lists a third, hidden ("Dream World") ability — **never assigned in v1**.
+  - Moves = the last four level-up moves learned at or below the level.
 
 ## 2. Stats
 
@@ -58,13 +62,13 @@ damage = (base + 2) · Crit · Random · STAB · Type1 · Type2 · AbilityMods
 
 ## 7. Moves — v1 effect coverage
 
-Move power, accuracy, PP, type, category, and **effect id** come from ROM move data. v1 implements these effect handlers; map Platinum's effect ids to them using `pret/pokeplatinum`:
+Move power, accuracy, PP, type, category, and **effect id** come from Black/White move data (559 moves). v1 implements the effect handlers below. Map Black/White's effect ids to them using Project Pokémon's Black move-data documentation, and record the mapping table in `game/config/move_effects.json` (effect ids → handler names only — repo-safe):
 pure damage · secondary status chance (burn/poison/paralysis/sleep/freeze/confusion/flinch) · user/target stat stages ±1/±2 · heal 50% · drain 50% of damage · recoil (per-move fraction) · multi-hit 2–5 (37.5 / 37.5 / 12.5 / 12.5 %) · fixed damage equal to user level (**Night Shade**, Seismic Toss) · priority moves (**Shadow Sneak**) · Ghost-type **Curse**.
 **Any unimplemented effect falls back to damage-only and logs its effect id once.** Never silently skip it.
 
 ## 8. Abilities — v1 subset
 
-**Levitate** (Ground immunity — common among Gen IV ghosts) · **Wonder Guard** (only super-effective hits land) · **Pressure** (opponent's moves cost 2 PP) · **Insomnia** (sleep immunity) · **Overgrow / Blaze / Torrent / Swarm** (×1.5 to matching-type moves at ≤ ⅓ HP). All others: no effect, logged once per ability id.
+**Levitate** (Ground immunity — common among ghosts) · **Wonder Guard** (only super-effective hits land) · **Pressure** (opponent's moves cost 2 PP) · **Insomnia** (sleep immunity) · **Overgrow / Blaze / Torrent / Swarm** (×1.5 to matching-type moves at ≤ ⅓ HP) · **Cursed Body** (Frillish/Jellicent: 30% chance to disable the move that hit it for 4 turns) · **Mummy** (Cofagrigus: a contact move's attacker has its ability replaced by Mummy). All others: no effect, logged once per ability id.
 
 ## 9. Catching (Gen III–IV formula)
 
@@ -82,7 +86,7 @@ four shake checks: each draws uniform 0–65535; all four < b → caught
 
 - **EXP per defeated Pokémon:** `⌊(a · b · L) / (7 · s)⌋` — `a` = 1 wild / 1.5 boss, `b` = base EXP yield, `L` = defeated level, `s` = number of participants.
 - **Growth curves** — the six Gen III–IV curves, encoded in repo. Unit tests assert the level-100 totals: Erratic **600,000** · Fast **800,000** · Medium Fast **1,000,000** · Medium Slow **1,059,860** · Slow **1,250,000** · Fluctuating **1,640,000**.
-- **Evolution v1:** level-up and evolution stones (including **Dusk Stone** — Misdreavus → Mismagius, Murkrow → Honchkrow). Other methods (friendship, trade, held item, location) are read from the ROM, shown as "a condition you haven't met," and logged as unsupported.
+- **Evolution v1:** level-up and evolution stones (including **Dusk Stone** — Misdreavus → Mismagius, Murkrow → Honchkrow, Lampent → Chandelure). Other methods (friendship, trade, held item, location) are read from the ROM, shown as "a condition you haven't met," and logged as unsupported.
 - **Learning moves on level-up:** if four moves are known, prompt to replace one or skip.
 
 ## 11. Party, PC box, healing, blacking out
