@@ -131,13 +131,16 @@ The implementation delivered **JSON file persistence** where the design specifie
 - **What was solved:** `execute_query()` on null `_db` handle now emits `push_error()` naming the missing SQLite extension and returns `false` instead of silently returning `true`. Restored file fallback persistence: in-memory state is serialised to `user://tenth_spring.db.tmp`, flushed, closed, and renamed over `user://tenth_spring.db` with `DirAccess.rename_absolute()`. Startup logs live backend: `"storage: SQLite extension"` or `"storage: file fallback"`. On load: missing, empty, or unparseable primary recovers from `.tmp` backup with explicit warning. Transactions in fallback mode maintain memory snapshots rolled back safely on failure.
 - **F13 & F11 (fixed):** `db_test.gd` verifies atomic temp recovery from truncated primary and verifies `execute_query` returns `false` on null handle.
 
+**M9 — Retired zombie config keys & loaded Pokémon pivot constants (F17, 2026-10-07).**
+- **What was solved:** Renamed `deathCacheDecayGameDays` to `bagCacheDecayGameDays` and `colonyGrowthTickGameDays` to `hauntGrowthTickGameDays` in `tuning.json` and `config.gd` (values 3 and 1). Added master-plan pivot constants: `bicycleSpeedMultiplier` (2.0), `grassEncounterRate` (0.10), `hauntedInteriorEncounterRate` (0.12), `legendaryRespawnGameDays` (30), and `partySize` (6).
+- **F17 (fixed):** `grep -rniE "colony|death_?cache" game/` returns nothing. All pivot constants load into `Config` autoload.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
 - **F19 (SECURITY, found 2026-10-07) — SQL built by string interpolation from network input.** `game/autoloads/db.gd:135` `insert_visit_log` formats `peer_id` and `kind` into the SQL string with `'%s'`. Both arrive in BATCH rows **from the phone over the network** (D4). Today this is inert only because SQLite never executes (F13); the moment Item 3 makes SQLite real, a crafted `kind` such as `visit'); DROP TABLE map_cell;--` executes. **Every query must use bound parameters**, and no value from a sync payload may ever be string-formatted into SQL. The same method's comment ("Engine composite PRIMARY KEY … constraint rejection", `:133`) describes a Dictionary `has()` check — fix it with the engine change. **Agent-guide §6.**
 - **F20 (found 2026-10-07) — `verify_sync_isolation()` is a decorative guard.** `game/autoloads/db.gd:172-173` returns `true` unconditionally. The real guard is the static token scan in `game/tests/sync_ingest_isolation_test.gd` and `test_runner.py`. A future agent could cite this function as proof of isolation — delete it, or make it real. **Agent-guide §6.**
-- **F17 (pivot cleanup, found 2026-10-07) — zombie-era names survive in config.** `game/config/tuning.json:11` `colonyGrowthTickGameDays` and `game/autoloads/config.gd:12,37` `colony_growth_tick_game_days`; `deathCacheDecayGameDays` likewise. Rename to `hauntGrowthTickGameDays` / `bagCacheDecayGameDays` per the master plan. Small, but a future agent reading "colony" will reintroduce zombie concepts. **Agent-guide §5 (Item 2).**
 
 > **⛔ 9th verification pass (July 22) — commit `d225a37` ("realize SQLite engine DDL, socket transport listener, and monotonic AEAD nonce discipline") does not do any of those three things, and it *regressed* working persistence.** M4/M5/M6's "fixed" notes above are superseded by F13–F16 below. Read those before touching `db.gd`.
 
