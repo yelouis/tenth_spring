@@ -20,18 +20,21 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Verify no Nintendo assets or ROM files
+      - name: Verify no Nintendo assets or ROM files in pushed commits
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             python3 -I tools/check_no_nintendo_assets.py --range "origin/${{ github.base_ref }}..HEAD"
           else
             BEFORE="${{ github.event.before }}"
-            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
               python3 -I tools/check_no_nintendo_assets.py --range HEAD
             else
               python3 -I tools/check_no_nintendo_assets.py --range "$BEFORE..${{ github.sha }}"
             fi
           fi
+
+      - name: Verify no Nintendo assets in full HEAD tree
+        run: python3 -I tools/check_no_nintendo_assets.py
 
       - name: Run IP Guard unit tests
         run: python3 -I tools/test_check_no_nintendo_assets.py

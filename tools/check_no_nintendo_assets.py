@@ -17,8 +17,8 @@ FORBIDDEN_EXTENSIONS = {
     ".narc", ".ncgr", ".nclr", ".ncer", ".nanr", ".nscr", ".sdat"
 }
 
-FORBIDDEN_GAME_CODES = {
-    b"CPUE", b"ADAE", b"APAE", b"IPKE", b"IPGE"
+FORBIDDEN_GAME_CODE_PREFIXES = {
+    b"ADA", b"APA", b"CPU", b"IPK", b"IPG", b"IRB", b"IRA", b"IRE", b"IRD"
 }
 
 def get_blob_head(rev, path, num_bytes=16):
@@ -75,10 +75,13 @@ def check_file(path, rev="HEAD"):
     if len(header) >= 4 and header[:4] == b"NARC":
         return "NARC magic header detected"
 
-    # (c) >= 0x10 bytes and bytes 0x0C-0x0F equal one of CPUE, ADAE, APAE, IPKE, IPGE
-    if len(header) >= 0x10 and header[0x0C:0x10] in FORBIDDEN_GAME_CODES:
+    # (c) >= 0x10 bytes and bytes 0x0C-0x0F match one of the forbidden prefixes
+    # Match 3-letter prefix for Gen 4-5 titles: ADA (Diamond), APA (Pearl), CPU (Platinum),
+    # IPK (HeartGold), IPG (SoulSilver), IRB (Black), IRA (White), IRE (Black 2), IRD (White 2)
+    if len(header) >= 0x10 and header[0x0C:0x0F] in FORBIDDEN_GAME_CODE_PREFIXES:
+        prefix = header[0x0C:0x0F].decode("ascii", errors="replace")
         code = header[0x0C:0x10].decode("ascii", errors="replace")
-        return f"NDS game code '{code}' detected at offset 0x0C"
+        return f"NDS game code prefix '{prefix}' ({code}) detected at offset 0x0C"
 
     return None
 
@@ -123,14 +126,15 @@ def main():
         violations = []
 
         for sha in commits:
-            cmd = ["git", "diff-tree", "--root", "--no-commit-id", "-r", "--name-only", "--diff-filter=d", sha, "-z"]
+            cmd = ["git", "diff-tree", "-m", "--root", "--no-commit-id", "-r", "--name-only", "--diff-filter=d", sha, "-z"]
             try:
-                diff_out = subprocess.check_output(cmd)
-            except subprocess.CalledProcessError:
-                continue
+                diff_out = subprocess.check_output(cmd, stderr=subprocess.PIPE)
+            except subprocess.CalledProcessError as e:
+                print(f"Error inspecting commit {sha}: {e.stderr.decode('utf-8', errors='replace')}", file=sys.stderr)
+                sys.exit(1)
             if not diff_out:
                 continue
-            paths = [p for p in diff_out.decode("utf-8", errors="surrogateescape").split("\0") if p]
+            paths = list(dict.fromkeys(p for p in diff_out.decode("utf-8", errors="surrogateescape").split("\0") if p))
             for path in paths:
                 reason = check_file(path, rev=sha)
                 if reason:

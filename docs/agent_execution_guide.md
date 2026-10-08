@@ -758,7 +758,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ## Definition of Done (this build)
 - [x] **Item 0 (F25)** — `game_tests` green on GitHub with exactly the `EXPECTED` `PASS` lines; the harness self-test exits 1; a re-introduced F13 and a stray test both turn CI red.
-- [ ] **Item 1 (F24 + F28)** — a merge-introduced file is caught; CI runs range **and** tree scans; an unset `core.hooksPath` fails the local battery; git errors fail closed; `CPUP`/`IRBO` headers are caught.
+- [x] **Item 1 (F24 + F28)** — a merge-introduced file is caught; CI runs range **and** tree scans; an unset `core.hooksPath` fails the local battery; git errors fail closed; `CPUP`/`IRBO` headers are caught.
 - [ ] **Item 2** — the CI log shows `storage: SQLite extension`; reads come from disk after a restart; F26 semantics hold; the injection, `O'Brien's Pub`, legacy-import, and migration tests pass; the fallback is gone; `real_save_untouched` passes on a fresh runner — all **executed** in CI.
 - [ ] **Item 3** — `sync_e2e` green, with `visit_log == rows sent`; pinning, authentication, and the 3-decimal boundary tests pass; the superseded crypto is gone; companion tests run in CI; **the device gate passes (closes Phase 1).**
 - [ ] **D3 device soak run** (Decision 5 = A). **Closes Phase 0.**

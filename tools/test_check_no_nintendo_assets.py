@@ -155,5 +155,64 @@ class TestCheckNoNintendoAssets(unittest.TestCase):
         self.assertIn("rom.nds", res.stdout)
         self.assertIn(bad_sha[:7], res.stdout)
 
+    def test_range_merge_introducing_rom(self):
+        """8. Merge commit introducing CPUE-headed file must fail in range mode (exit 1)."""
+        base_sha = self._run_git(["rev-parse", "HEAD"]).stdout.strip()
+        current_branch = self._run_git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
+
+        # Create branch 'feature' with a bad file
+        self._run_git(["checkout", "-b", "feature"])
+        bad_file = os.path.join(self.test_dir, "bad.bin")
+        with open(bad_file, "wb") as f:
+            f.write(b"\x00" * 12 + b"CPUE")
+        self._run_git(["add", "bad.bin"])
+        self._run_git(["commit", "-m", "add bad file in feature"])
+
+        # Switch back to initial branch and make a commit
+        self._run_git(["checkout", current_branch])
+        main_file = os.path.join(self.test_dir, "other.txt")
+        with open(main_file, "w") as f:
+            f.write("other change")
+        self._run_git(["add", "other.txt"])
+        self._run_git(["commit", "-m", "other change on main"])
+
+        # Merge feature with --no-ff
+        self._run_git(["merge", "--no-ff", "feature", "-m", "merge feature into main"])
+        head_sha = self._run_git(["rev-parse", "HEAD"]).stdout.strip()
+
+        res = self._run_guard(["--range", f"{base_sha}..{head_sha}"])
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("bad.bin", res.stdout)
+
+    def test_range_unknown_sha(self):
+        """9. Unknown SHA in commit range must fail (exit 1)."""
+        res = self._run_guard(["--range", "0123456789abcdef0123456789abcdef01234567..HEAD"])
+        self.assertEqual(res.returncode, 1)
+
+    def test_staged_forbidden_prefixes(self):
+        """10. CPUP, CPUJ, IRBO, and IRAO-headed blobs named x.bin must each exit 1."""
+        for code in [b"CPUP", b"CPUJ", b"IRBO", b"IRAO"]:
+            file_path = os.path.join(self.test_dir, "x.bin")
+            with open(file_path, "wb") as f:
+                f.write(b"\x00" * 12 + code)
+            self._run_git(["add", "x.bin"])
+
+            res = self._run_guard(["--staged"])
+            self.assertEqual(res.returncode, 1, f"Expected code {code} to be rejected")
+            self.assertIn("x.bin", res.stdout)
+
+            self._run_git(["rm", "-f", "x.bin"])
+
+    def test_staged_prefix_not_anything(self):
+        """11. A 16-byte file with CPX at 0x0C must pass (exit 0), proving prefix is not 'anything'."""
+        file_path = os.path.join(self.test_dir, "x.bin")
+        with open(file_path, "wb") as f:
+            f.write(b"\x00" * 12 + b"CPX\x00")
+        self._run_git(["add", "x.bin"])
+
+        res = self._run_guard(["--staged"])
+        self.assertEqual(res.returncode, 0)
+        self._run_git(["rm", "-f", "x.bin"])
+
 if __name__ == "__main__":
     unittest.main()

@@ -26,6 +26,26 @@ def main():
 	game_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 	repo_root = os.path.dirname(game_dir)
 
+	# Runner hook check: unless in CI, verify core.hooksPath is .githooks
+	if os.environ.get("CI") != "true":
+		try:
+			hook_check = subprocess.run(
+				["git", "config", "core.hooksPath"],
+				cwd=repo_root,
+				stdout=subprocess.PIPE,
+				stderr=subprocess.PIPE,
+				text=True,
+				check=False
+			)
+			hooks_path = hook_check.stdout.strip()
+			if hooks_path != ".githooks":
+				print(f"\n[HOOK CHECK FAIL] core.hooksPath is '{hooks_path}', expected '.githooks'.")
+				print("To activate the pre-commit hook, run:\n  git config core.hooksPath .githooks\n")
+				sys.exit(1)
+		except Exception as e:
+			print(f"\n[HOOK CHECK FAIL] Failed to check git config core.hooksPath: {e}\n")
+			sys.exit(1)
+
 	# Public-Repo IP Guard: verify no forbidden Nintendo assets or ROM files are tracked
 	ip_guard_path = os.path.join(repo_root, "tools", "check_no_nintendo_assets.py")
 	if not os.path.exists(ip_guard_path):
