@@ -4,6 +4,8 @@ Public-Repo IP Guard Check.
 
 Enforces that no Nintendo ROMs, extracted Nintendo assets, or container files
 are ever committed to this public repository.
+Operates strictly on git committed and staged blob streams (never working-tree disk files).
+Supports --staged, --range <A>..<B>, and default (full repo ls-files) modes.
 """
 
 import os
@@ -19,30 +21,39 @@ FORBIDDEN_GAME_CODES = {
     b"CPUE", b"ADAE", b"APAE", b"IPKE", b"IPGE"
 }
 
-def get_file_bytes(path, num_bytes=16):
-    """Safely retrieves the first num_bytes of a file from disk or the git index."""
-    if os.path.isfile(path):
-        try:
-            with open(path, "rb") as f:
-                return f.read(num_bytes)
-        except Exception:
-            pass
+def get_blob_head(rev, path, num_bytes=16):
+    """
+    Reads up to num_bytes of the object at {rev}:{path} using git show.
+    Never touches working-tree files on disk.
+    If rev is ':', reads from git index (:path).
+    """
+    spec = f":{path}" if rev == ":" else f"{rev}:{path}"
     try:
         res = subprocess.run(
-            ["git", "show", f":{path}"],
+            ["git", "show", spec],
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             check=False
         )
         if res.returncode == 0:
             return res.stdout[:num_bytes]
+        # In default mode (HEAD), if file is in index but not yet in HEAD, check index
+        if rev == "HEAD":
+            res2 = subprocess.run(
+                ["git", "show", f":{path}"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                check=False
+            )
+            if res2.returncode == 0:
+                return res2.stdout[:num_bytes]
     except Exception:
         pass
     return b""
 
-def check_file(path):
+def check_file(path, rev="HEAD"):
     """
-    Checks if a file violates IP guard policies.
+    Checks if a file violates IP guard policies at the specified rev.
     Returns error reason string if violation found, else None.
     """
     # (a) Forbidden extension
@@ -50,13 +61,13 @@ def check_file(path):
     if ext.lower() in FORBIDDEN_EXTENSIONS:
         return f"forbidden extension '{ext}'"
 
-    # (d) rom_cache anywhere in its path
+    # (d) rom_cache anywhere in its path (and roms/ directory)
     normalized = path.replace("\\", "/")
     parts = normalized.split("/")
     if "rom_cache" in normalized or any(p in ("roms", "rom_cache", "rom_cache.tmp") for p in parts):
         return "forbidden path pattern containing rom_cache or roms"
 
-    header = get_file_bytes(path, 16)
+    header = get_blob_head(rev, path, 16)
     if not header:
         return None
 
@@ -71,12 +82,75 @@ def check_file(path):
 
     return None
 
+def parse_args():
+    use_staged = False
+    commit_range = None
+    args = sys.argv[1:]
+    i = 0
+    while i < len(args):
+        if args[i] == "--staged":
+            use_staged = True
+        elif args[i] == "--range":
+            if i + 1 < len(args):
+                commit_range = args[i + 1]
+                i += 1
+            else:
+                print("Error: --range requires an argument", file=sys.stderr)
+                sys.exit(1)
+        i += 1
+    return use_staged, commit_range
+
 def main():
-    use_staged = "--staged" in sys.argv
+    use_staged, commit_range = parse_args()
+
+    if commit_range:
+        if ".." in commit_range:
+            parts = commit_range.split("..", 1)
+            if not parts[0] or set(parts[0]) == {"0"}:
+                rev_cmd = ["git", "rev-list", parts[1]]
+            else:
+                rev_cmd = ["git", "rev-list", commit_range]
+        else:
+            rev_cmd = ["git", "rev-list", commit_range]
+
+        try:
+            revs_out = subprocess.check_output(rev_cmd, stderr=subprocess.PIPE).decode("utf-8", errors="replace")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running git rev-list: {e.stderr.decode('utf-8', errors='replace')}", file=sys.stderr)
+            sys.exit(1)
+
+        commits = [c.strip() for c in revs_out.splitlines() if c.strip()]
+        violations = []
+
+        for sha in commits:
+            cmd = ["git", "diff-tree", "--root", "--no-commit-id", "-r", "--name-only", "--diff-filter=d", sha, "-z"]
+            try:
+                diff_out = subprocess.check_output(cmd)
+            except subprocess.CalledProcessError:
+                continue
+            if not diff_out:
+                continue
+            paths = [p for p in diff_out.decode("utf-8", errors="surrogateescape").split("\0") if p]
+            for path in paths:
+                reason = check_file(path, rev=sha)
+                if reason:
+                    violations.append((sha, path, reason))
+
+        if violations:
+            print("⛔ Public-repo IP guard violation: prohibited Nintendo asset(s) detected in commit range:")
+            for sha, path, reason in violations:
+                print(f"  - commit {sha[:10]}: {path} ({reason})")
+            print("\nNever commit Nintendo assets or ROM files to this public repository.")
+            sys.exit(1)
+
+        sys.exit(0)
+
     if use_staged:
-        cmd = ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM", "-z"]
+        cmd = ["git", "diff", "--cached", "--name-only", "--diff-filter=d", "-z"]
+        active_rev = ":"
     else:
         cmd = ["git", "ls-files", "-z"]
+        active_rev = "HEAD"
 
     try:
         res = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
@@ -92,7 +166,7 @@ def main():
 
     violations = []
     for filepath in files:
-        reason = check_file(filepath)
+        reason = check_file(filepath, rev=active_rev)
         if reason:
             violations.append((filepath, reason))
 

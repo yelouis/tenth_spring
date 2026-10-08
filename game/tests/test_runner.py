@@ -28,13 +28,29 @@ def main():
 
 	# Public-Repo IP Guard: verify no forbidden Nintendo assets or ROM files are tracked
 	ip_guard_path = os.path.join(repo_root, "tools", "check_no_nintendo_assets.py")
-	if os.path.exists(ip_guard_path):
-		print("=== Public-Repo IP Guard ===")
-		res = subprocess.run([sys.executable, "-I", ip_guard_path], cwd=repo_root)
-		if res.returncode != 0:
-			print("\n[IP GUARD VIOLATION] Nintendo asset check failed.")
-			sys.exit(1)
-		print("[IP GUARD OK] No Nintendo assets tracked in repository.\n")
+	if not os.path.exists(ip_guard_path):
+		print("\n[IP GUARD ERROR] IP guard script missing")
+		sys.exit(1)
+
+	print("=== Public-Repo IP Guard ===")
+	res = subprocess.run([sys.executable, "-I", ip_guard_path], cwd=repo_root)
+	if res.returncode != 0:
+		print("\n[IP GUARD VIOLATION] Nintendo asset check failed.")
+		sys.exit(1)
+	print("[IP GUARD OK] No Nintendo assets tracked in repository.\n")
+
+	# Public-Repo IP Guard regression tests
+	guard_tests_path = os.path.join(repo_root, "tools", "test_check_no_nintendo_assets.py")
+	if not os.path.exists(guard_tests_path):
+		print("\n[IP GUARD ERROR] IP guard test suite missing")
+		sys.exit(1)
+
+	print("=== Public-Repo IP Guard Test Suite ===")
+	test_res = subprocess.run([sys.executable, "-I", guard_tests_path], cwd=repo_root)
+	if test_res.returncode != 0:
+		print("\n[IP GUARD TEST FAIL] IP guard unit tests failed.")
+		sys.exit(1)
+	print("[IP GUARD TESTS OK] All IP guard test cases passed.\n")
 
 	print(f"=== Tenth Spring GDScript Static Lint & Invariant Gate ===")
 	print(f"Auditing GDScript codebase in {game_dir}...\n")

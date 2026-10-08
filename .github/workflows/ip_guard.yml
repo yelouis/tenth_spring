@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -19,4 +21,17 @@ jobs:
           python-version: '3.x'
 
       - name: Verify no Nintendo assets or ROM files
-        run: python3 -I tools/check_no_nintendo_assets.py
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            python3 -I tools/check_no_nintendo_assets.py --range "origin/${{ github.base_ref }}..HEAD"
+          else
+            BEFORE="${{ github.event.before }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              python3 -I tools/check_no_nintendo_assets.py --range HEAD
+            else
+              python3 -I tools/check_no_nintendo_assets.py --range "$BEFORE..${{ github.sha }}"
+            fi
+          fi
+
+      - name: Run IP Guard unit tests
+        run: python3 -I tools/test_check_no_nintendo_assets.py

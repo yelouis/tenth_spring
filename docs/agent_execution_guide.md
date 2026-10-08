@@ -26,7 +26,7 @@
 | Companion lint | `cd companion && flutter analyze` | **No issues found** |
 | Companion tests | `cd companion && flutter test` | **17/17 passed** |
 | Game static audit + IP guard | `python3 game/tests/test_runner.py` (repo root) | **Pass** — guard exits 0 on the clean repo; lint and Golden Invariant 1 scan intact |
-| IP guard, adversarial | isolated scratch repo, 7 cases | ⚠️ **2 of 7 bypass the pre-commit hook** — a rename to `.nds`, and a staged blob that differs from the working tree (F21) |
+| IP guard, adversarial | isolated scratch repo, 7 cases | **PASS (M10)** — all 7 cases verified: renames caught, staged blob read from git show, range mode catches intermediate commits, runner fails closed |
 | Game runtime tests | `godot --headless` | ⚠️ **NOT EXECUTED — Godot is not installed here.** `.gd` tests are verified by reading only. |
 | Game persistence | `db.gd` file fallback | **Implemented and source-verified** (atomic `.tmp`→rename swap, fail-loud null path, transaction-safe saves). **Never executed** — no Godot. The previous "PASS" in this row was an overclaim. |
 | D3 device gate | 8 h background soak, real phone | ⚠️ **NOT YET RUN** — waiting on the human (Decision 5 = A). |
@@ -287,7 +287,7 @@ Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.
 ```
 
 ## Definition of Done (this build)
-- [ ] **Item 0 (F21)** — all seven guard cases give the required exit codes, including rename and index-vs-disk; CI scans every pushed commit; a missing guard fails the battery.
+- [x] **Item 0 (F21)** — all seven guard cases give the required exit codes, including rename and index-vs-disk; CI scans every pushed commit; a missing guard fails the battery.
 - [ ] **Item 1 (F22)** — the real save is byte-identical after the full suite; a failed save makes the recovery test fail, not skip.
 - [ ] **Decision 7 answered**, then **Item 2** — reads come from SQL after restart; engine rejects duplicate `(peer_id, seq)`; injection and `O'Brien's Pub` tests pass; fallback retired; header true.
 - [ ] **Item 3** — nonce wired and persisted; listener reads real frames; mDNS both sides; loopback GPX sync passes; Wireshark shows ciphertext only. **Closes Phase 1.**
