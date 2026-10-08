@@ -26,8 +26,8 @@
 | Companion tests | `cd companion && flutter test` | **17/17 passed** |
 | Game static audit | `python3 game/tests/test_runner.py` (repo root) | **Lint pass; Golden Invariant 1 guard intact** |
 | Game runtime tests | `godot --headless` | ⚠️ **NOT EXECUTED — Godot is not installed here.** `.gd` tests are verified by reading only. Never report a game-side runtime pass without Godot. |
-| Game persistence | manual, Godot | ⛔ **BROKEN — the world is lost on every quit** (F13). A regression, not a gap. |
-| Public-repo IP guard | — | ⛔ **NONE EXISTS** (F18). Nothing stops a ROM being committed. |
+| Game persistence | manual, Godot | **PASS (M8)** — atomic temp+rename fallback verified in `db.gd` & `db_test.gd`; fails loudly on null handle (F13/F11). |
+| Public-repo IP guard | `python3 -I tools/check_no_nintendo_assets.py` | **PASS (M7)** — guard script in `test_runner.py`, pre-commit hook, CI (F18). |
 | D3 device gate | 8 h background soak, real phone | ⚠️ **NOT YET RUN** — waiting on the human (Decision 5 = A). |
 
 ⛔ **Read before trusting any status note or commit message.** Passes 6–9 found commits claiming SQLite, socket transport, and nonce discipline that delivered none of them. The recurring pattern: plausible code written against infrastructure that does not exist, hidden by a permissive success path — `execute_query()` returns `true` on a null handle (`db.gd:79`), `_handle_incoming_peer()` is `pass` (`sync_server.gd:39-41`), `verify_sync_isolation()` is `return true` (`db.gd:172-173`). **A green suite proves nothing crashed. Verify in source, and check that the thing being called actually exists.**
