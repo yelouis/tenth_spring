@@ -82,7 +82,11 @@ Spot-check against facts the player's own ROM must contain: species count = 493 
 
 1. **Nothing from §1's right-hand column is ever committed** — not in a test fixture, not a debug PNG, not "temporarily." A ROM in public git history stays there until the history is rewritten.
 2. `.gitignore` blocks ROM and Nintendo-format extensions (`*.nds`, `*.gba`, `*.gb`, `*.gbc`, `*.narc`, `*.ncgr`, `*.nclr`, `*.ncer`) and any local cache directory.
-3. A repository check (`tools/check_no_nintendo_assets.py`, run in CI and as a pre-commit hook) fails if any tracked file has a forbidden extension, begins with the `NARC` magic, or carries an NDS header game code (`CPUE`, `ADAE`, `APAE`, `IPKE`, `IPGE`) at offset `0x0C`.
+3. A repository check (`tools/check_no_nintendo_assets.py`, run in CI and as a pre-commit hook) fails if any tracked file has a forbidden extension, begins with the `NARC` magic, or carries an NDS header game code (`CPUE`, `ADAE`, `APAE`, `IPKE`, `IPGE`) at offset `0x0C`. Because the pre-commit hook is the **only** defense before content becomes public, it must also:
+   - check **every staged path except deletions**, renames and copies included (`--diff-filter=d`);
+   - read bytes from **what will be committed** — the index (`git cat-file`/`git show :path`) — never the working tree;
+   - and the battery must **fail, not skip**, if the guard script is missing.
+   CI checks out full history and scans **every commit in the pushed range**, not only the final tree — a file added then removed is still in public history and must be reported.
 4. Tests that need Pokémon data run **only** when a developer supplies a ROM locally (env var `TENTH_SPRING_ROM`); otherwise they are skipped, not faked. CI never has a ROM.
 5. **Do not use "Pokémon" or other Nintendo trademarks in the game's title, logo, store pages, or release names.** The game is "Tenth Spring."
 6. The **phone companion contains no Nintendo assets or names**, ever (`design_companion_and_sync.md` §1). It is a location tracker and must stay store-listable.

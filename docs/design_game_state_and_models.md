@@ -2,6 +2,16 @@
 
 This document defines the schemas, enums, and persistence rules. **Storage split**: the PC game's SQLite database is the canonical world (all tables below live there); the phone companion holds only a `VisitLog` outbox (rows pending sync) plus pairing state. There is no server. Schema version is stored in `meta` on both devices and every migration is tested against a fixture DB — location history is unrecoverable if a migration eats it. (Enums shown in Dart syntax for readability.) **No table stores Nintendo content** — species, moves, and items are referenced by number; names, stats, and sprites are resolved from the player's ROM cache at runtime (`design_rom_asset_pipeline.md`).
 
+## 0. Storage backends
+
+The target engine is SQLite (Decision 6 = A). Until the SQLite GDExtension is installed (Decision 7), `game/autoloads/db.gd` runs an **interim file fallback**, and both backends must honor this contract:
+- **Boot diagnostic:** one line at startup — `storage: SQLite extension` or `storage: file fallback`.
+- **Fail loud:** `execute_query()` with no engine pushes an error and returns `false`. Callers in fallback mode must not call it at all (gate on `_db != null`) — a no-op that reports success is forbidden.
+- **Atomic writes:** the fallback serialises to `user://tenth_spring.db.tmp`, flushes, closes, then `DirAccess.rename_absolute()` over `user://tenth_spring.db` (Godot documents that rename overwrites the destination). On load, an empty or unparseable primary falls back to `.tmp`, with a loud warning.
+- **Transactions:** in fallback mode, no write saves to disk while a transaction is open; commit saves once; rollback restores the in-memory snapshot and writes nothing.
+- **Tests never touch the real save:** test runs point the store at a separate path (F22).
+- `JSON_BAK_PATH` (`user://tenth_spring.db.jsonbak`) is reserved for the one-time import when SQLite goes live.
+
 ## 1. World Clock (`WorldClock`)
 
 Single-row table driving all simulation.
