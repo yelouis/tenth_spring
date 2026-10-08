@@ -1,0 +1,35 @@
+name: game_tests
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  game-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Godot 4.3
+        run: |
+          curl -fsSLO https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
+          curl -fsSLO https://github.com/godotengine/godot/releases/download/4.3-stable/SHA512-SUMS.txt
+          grep " Godot_v4.3-stable_linux.x86_64.zip$" SHA512-SUMS.txt | sha512sum -c -
+          unzip -q Godot_v4.3-stable_linux.x86_64.zip
+          sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+
+      - name: Import Godot project assets
+        run: godot --headless --path game --import
+
+      - name: Run test runner
+        run: python3 game/tests/test_runner.py

@@ -64,6 +64,67 @@ def main():
 		sys.exit(1)
 	print("[ISOLATION AUDIT OK] Test save isolation verified.\n")
 
+	EXPECTED = ["db_test", "idempotent_sync_test", "sync_ingest_isolation_test", "real_save_untouched"]
+
+	# Check for Godot executable to run runtime GDScript tests
+	godot_bin = shutil.which("godot") or shutil.which("godot4")
+	if not godot_bin:
+		print("game runtime tests SKIPPED — Godot not installed; CI runs them\n")
+	else:
+		print(f"=== Game Runtime Test Suite (Headless Godot) ===")
+		print(f"Using Godot binary: {godot_bin}")
+
+		# 1. Harness self-test (TENTH_SPRING_HARNESS_SELFTEST=1 must exit 1 and report FAIL harness_selftest)
+		print("Running harness self-test...")
+		selftest_env = os.environ.copy()
+		selftest_env["TENTH_SPRING_HARNESS_SELFTEST"] = "1"
+		selftest_res = subprocess.run(
+			[godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"],
+			cwd=repo_root,
+			capture_output=True,
+			text=True,
+			env=selftest_env,
+			timeout=300
+		)
+		selftest_out = (selftest_res.stdout or "") + (selftest_res.stderr or "")
+		if selftest_res.returncode != 1 or "FAIL harness_selftest" not in selftest_out:
+			print(f"\n[HARNESS SELF-TEST FAILED] Expected exit code 1 with 'FAIL harness_selftest', got exit code {selftest_res.returncode}:\n{selftest_out}")
+			sys.exit(1)
+		print("[HARNESS SELF-TEST OK] Harness successfully caught injected failure.\n")
+
+		# 2. Main test suite
+		print("Running main game test suite...")
+		main_res = subprocess.run(
+			[godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"],
+			cwd=repo_root,
+			capture_output=True,
+			text=True,
+			timeout=300
+		)
+		main_out = (main_res.stdout or "") + (main_res.stderr or "")
+		print(main_out)
+
+		if main_res.returncode != 0:
+			print(f"[TEST RUNNER FAIL] Godot exited with code {main_res.returncode}")
+			sys.exit(1)
+
+		if "SCRIPT ERROR" in main_out:
+			print("[TEST RUNNER FAIL] Script error detected in Godot output")
+			sys.exit(1)
+
+		lines = main_out.splitlines()
+		has_fail = any(line.strip().startswith("FAIL ") for line in lines)
+		if has_fail:
+			print("[TEST RUNNER FAIL] Test failure detected in output")
+			sys.exit(1)
+
+		passed_tests = [line.strip().split()[1] for line in lines if line.strip().startswith("PASS ")]
+		if sorted(passed_tests) != sorted(EXPECTED) or len(passed_tests) != len(EXPECTED):
+			print(f"[TEST RUNNER FAIL] Passed tests {passed_tests} do not match EXPECTED {EXPECTED}")
+			sys.exit(1)
+
+		print(f"[ALL GAME TESTS PASS] All {len(EXPECTED)} expected tests passed.\n")
+
 	print(f"=== Tenth Spring GDScript Static Lint & Invariant Gate ===")
 	print(f"Auditing GDScript codebase in {game_dir}...\n")
 
@@ -101,27 +162,6 @@ def main():
 		sys.exit(1)
 
 	print("\nStatic lint passed. Golden Invariant 1 static capability guard intact.")
-
-	# Check for Godot executable to run runtime GDScript tests
-	godot_bin = shutil.which("godot") or shutil.which("godot4")
-	if godot_bin:
-		print(f"\nFound Godot binary at '{godot_bin}'. Executing runtime test suite under headless mode...")
-		test_files = [
-			"tests/db_test.gd",
-			"tests/idempotent_sync_test.gd",
-			"tests/sync_ingest_isolation_test.gd"
-		]
-		for test_file in test_files:
-			test_path = os.path.join(game_dir, test_file)
-			cmd = [godot_bin, "--headless", "-s", test_path]
-			res = subprocess.run(cmd, cwd=game_dir, capture_output=True, text=True)
-			if res.returncode == 0:
-				print(f"[RUNTIME OK]   {test_file}")
-			else:
-				print(f"[RUNTIME FAIL] {test_file}:\n{res.stderr or res.stdout}")
-				sys.exit(1)
-	else:
-		print("\n[NOTE] Godot binary ('godot') not found in PATH. Static lint passed. Runtime GDScript execution requires Godot engine.")
 
 if __name__ == '__main__':
 	main()
