@@ -9,10 +9,19 @@ const TEST_DB_PATH: String = "user://test/tenth_spring_test.db"
 const TEST_TMP_PATH: String = "user://test/tenth_spring_test.db.tmp"
 
 func _cleanup_test_files() -> void:
-	if FileAccess.file_exists(TEST_DB_PATH):
-		DirAccess.remove_absolute(TEST_DB_PATH)
-	if FileAccess.file_exists(TEST_TMP_PATH):
-		DirAccess.remove_absolute(TEST_TMP_PATH)
+	var to_clean = [
+		TEST_DB_PATH,
+		TEST_DB_PATH + "-wal",
+		TEST_DB_PATH + "-shm",
+		TEST_TMP_PATH,
+		TEST_DB_PATH + ".jsonbak",
+		TEST_DB_PATH + ".jsonbak.tmp",
+		TEST_DB_PATH + ".jsonbak.1",
+		TEST_DB_PATH + ".jsonbak.2"
+	]
+	for p in to_clean:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
 
 func run_test() -> bool:
 	# Isolate test from real player save (F22)
@@ -64,6 +73,10 @@ func run_test() -> bool:
 		push_error("FAIL: Expected cell to be revealed (known = 1)")
 		_cleanup_test_files()
 		return false
+
+	# Restart simulation: close DB and re-init to ensure persisted state on disk
+	DB.close()
+	DB.init_db()
 
 	# Second (Replayed) Ingestion - MUST BE A NO-OP
 	var result2 = SyncServer.process_batch(peer_id, batch)

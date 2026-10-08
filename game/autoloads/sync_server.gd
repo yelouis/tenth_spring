@@ -16,7 +16,7 @@ var _server: TCPServer = TCPServer.new()
 var _is_listening: bool = false
 
 func _ready() -> void:
-	start_server()
+	pass
 
 func start_server(port: int = DEFAULT_PORT) -> Error:
 	var err = _server.listen(port)
@@ -103,6 +103,10 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 		}
 
 		var inserted = DB.insert_visit_log(log_entry)
+		if DB.last_error != "":
+			DB.rollback_transaction()
+			return {"status": "error", "message": "storage error"}
+
 		if inserted:
 			applied_count += 1
 			if seq > max_seq:
@@ -111,6 +115,9 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 			# Reveal map cell(s)
 			var cell = latlon_to_cell(lat, lon)
 			DB.upsert_map_cell(cell.x, cell.y, 1) # 1 = Known
+			if DB.last_error != "":
+				DB.rollback_transaction()
+				return {"status": "error", "message": "storage error"}
 
 			if kind == "visit":
 				var place_id = "place_%d_%d" % [cell.x, cell.y]
@@ -124,6 +131,9 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 					"visit_count": 1,
 					"last_real_visit_at": started_at
 				})
+				if DB.last_error != "":
+					DB.rollback_transaction()
+					return {"status": "error", "message": "storage error"}
 
 	# Save last body position for relocation
 	var body_lat = float(body_fix.get("lat", 0.0))
@@ -131,6 +141,10 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 	var body_ts = int(body_fix.get("tsUtcMs", 0))
 
 	DB.update_sync_peer(peer_id, max_seq, body_lat, body_lon, body_ts)
+	if DB.last_error != "":
+		DB.rollback_transaction()
+		return {"status": "error", "message": "storage error"}
+
 	DB.commit_transaction()
 
 	sync_completed.emit(peer_id, applied_count)

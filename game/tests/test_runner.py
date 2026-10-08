@@ -131,7 +131,14 @@ def main():
 	check_vendored_checksums(game_dir)
 	print("[VENDORED EXTENSION OK] All vendored files match VENDORED.sha256 exactly.\n")
 
-	EXPECTED = ["db_test", "idempotent_sync_test", "sync_ingest_isolation_test", "real_save_untouched"]
+	EXPECTED = [
+		"db_legacy_import_test",
+		"db_migration_test",
+		"db_test",
+		"idempotent_sync_test",
+		"real_save_untouched",
+		"sync_ingest_isolation_test"
+	]
 
 	# Check for Godot executable to run runtime GDScript tests
 	godot_bin = shutil.which("godot") or shutil.which("godot4")
@@ -222,6 +229,20 @@ def main():
 		for token in forbidden:
 			if token in content:
 				print(f"\n[GOLDEN INVARIANT VIOLATION] sync_server.gd contains illegal token '{token}'")
+				total_errors += 1
+
+	# F19 Static Rule: Ensure db.gd has no lines combining SQL keywords and string formatting/concatenation
+	db_gd_path = os.path.join(game_dir, "autoloads", "db.gd")
+	if os.path.exists(db_gd_path):
+		with open(db_gd_path, 'r', encoding='utf-8') as f:
+			db_lines = f.readlines()
+		sql_keywords = ["INSERT", "UPDATE", "DELETE", "SELECT", "CREATE"]
+		for idx, line in enumerate(db_lines, 1):
+			has_kw = any(kw in line for kw in sql_keywords)
+			has_interp = ("%" in line) or ('" +' in line) or ('"+"' in line)
+			if has_kw and has_interp:
+				print(f"\n[F19 SQL INJECTION HAZARD] Line {idx} in db.gd contains SQL keyword and string formatting/concatenation:")
+				print(f"  {line.strip()}")
 				total_errors += 1
 
 	if total_errors > 0:

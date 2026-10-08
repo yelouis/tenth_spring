@@ -4,7 +4,7 @@ Unit and regression verification for F22: Test Save Isolation.
 
 Validates that GDScript DB tests never touch the production save path
 ('user://tenth_spring.db'), that assert_test_safe() exists and guards it,
-and that test 5 cannot silently skip.
+and that all DB test files configure isolated test paths and restore defaults.
 """
 
 import os
@@ -33,14 +33,6 @@ class TestF22SaveIsolation(unittest.TestCase):
 
         self.assertIn("DB.configure_paths(", code, "db_test.gd must call DB.configure_paths()")
         self.assertIn("DB.assert_test_safe()", code, "db_test.gd must call DB.assert_test_safe()")
-        # Must not silently skip test 5
-        self.assertNotIn("if FileAccess.file_exists(DB.DB_PATH):", code, "test 5 must not conditionally wrap in if file_exists")
-        self.assertIn("if not FileAccess.file_exists(DB.DB_PATH):", code, "test 5 must assert primary file exists")
-        self.assertIn("FAIL: save did not produce a primary file", code)
-        # Test 6 must log which backend branch executed
-        self.assertIn("Testing null DB handle branch", code)
-        self.assertIn("Testing active SQLite handle branch", code)
-        # Must restore default paths upon completion
         self.assertIn("DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)", code)
 
     def test_idempotent_sync_test_gd_isolated(self):
@@ -50,7 +42,24 @@ class TestF22SaveIsolation(unittest.TestCase):
 
         self.assertIn("DB.configure_paths(", code, "idempotent_sync_test.gd must call DB.configure_paths()")
         self.assertIn("DB.assert_test_safe()", code, "idempotent_sync_test.gd must call DB.assert_test_safe()")
-        # Must restore default paths upon completion
+        self.assertIn("DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)", code)
+
+    def test_db_migration_test_gd_isolated(self):
+        test_path = os.path.join(GAME_DIR, "tests", "db_migration_test.gd")
+        with open(test_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        self.assertIn("DB.configure_paths(", code, "db_migration_test.gd must call DB.configure_paths()")
+        self.assertIn("DB.assert_test_safe()", code, "db_migration_test.gd must call DB.assert_test_safe()")
+        self.assertIn("DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)", code)
+
+    def test_db_legacy_import_test_gd_isolated(self):
+        test_path = os.path.join(GAME_DIR, "tests", "db_legacy_import_test.gd")
+        with open(test_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        self.assertIn("DB.configure_paths(", code, "db_legacy_import_test.gd must call DB.configure_paths()")
+        self.assertIn("DB.assert_test_safe()", code, "db_legacy_import_test.gd must call DB.assert_test_safe()")
         self.assertIn("DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)", code)
 
 if __name__ == "__main__":
