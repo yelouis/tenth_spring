@@ -2,9 +2,28 @@ extends Node
 
 # Idempotent Sync Ingestion Test & Rollback Verification
 # Verifies that replaying an identical sync batch produces zero state drift or duplicates,
-# and that an injected batch failure rolls back database state safely.
+# that an injected batch failure rolls back database state safely,
+# and that test runs are strictly isolated from the real user save file (F22).
+
+const TEST_DB_PATH: String = "user://test/tenth_spring_test.db"
+const TEST_TMP_PATH: String = "user://test/tenth_spring_test.db.tmp"
+
+func _cleanup_test_files() -> void:
+	if FileAccess.file_exists(TEST_DB_PATH):
+		DirAccess.remove_absolute(TEST_DB_PATH)
+	if FileAccess.file_exists(TEST_TMP_PATH):
+		DirAccess.remove_absolute(TEST_TMP_PATH)
 
 func run_test() -> bool:
+	# Isolate test from real player save (F22)
+	DB.configure_paths(TEST_DB_PATH, TEST_TMP_PATH)
+	if not DB.assert_test_safe():
+		push_error("FAIL: DB.assert_test_safe failed; active path was not isolated")
+		return false
+
+	_cleanup_test_files()
+	DB.init_db()
+
 	var peer_id = "test_phone_001"
 	var batch = {
 		"rows": [
@@ -35,6 +54,7 @@ func run_test() -> bool:
 	var result1 = SyncServer.process_batch(peer_id, batch)
 	if result1.get("appliedCount", 0) != 2:
 		push_error("FAIL: Expected 2 applied rows on first run, got %d" % result1.get("appliedCount", 0))
+		_cleanup_test_files()
 		return false
 
 	# Verify map cell reveal
@@ -42,12 +62,14 @@ func run_test() -> bool:
 	var map_cell = DB.get_map_cell(cell.x, cell.y)
 	if map_cell.get("reveal_state", 0) != 1:
 		push_error("FAIL: Expected cell to be revealed (known = 1)")
+		_cleanup_test_files()
 		return false
 
 	# Second (Replayed) Ingestion - MUST BE A NO-OP
 	var result2 = SyncServer.process_batch(peer_id, batch)
 	if result2.get("appliedCount", 0) != 0:
 		push_error("FAIL: Idempotency failed! Replayed batch applied %d rows (expected 0)" % result2.get("appliedCount", 0))
+		_cleanup_test_files()
 		return false
 
 	# Third (Injected Failure) Ingestion - MUST ROLL BACK SAFELY
@@ -71,13 +93,19 @@ func run_test() -> bool:
 	var fail_result = SyncServer.process_batch(peer_id, failing_batch)
 	if fail_result.get("status", "") != "error":
 		push_error("FAIL: Expected error status on injected batch failure")
+		_cleanup_test_files()
 		return false
 
 	var unrevealed_cell = SyncServer.latlon_to_cell(37.880, -122.500)
 	var rolled_back_cell = DB.get_map_cell(unrevealed_cell.x, unrevealed_cell.y)
 	if not rolled_back_cell.is_empty():
 		push_error("FAIL: Rollback failed! Uncommitted map cell was persisted")
+		_cleanup_test_files()
 		return false
+
+	# Clean up and restore production save paths
+	_cleanup_test_files()
+	DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 
 	print("PASS: Idempotent Sync Ingestion & Rollback Test")
 	return true

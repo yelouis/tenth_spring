@@ -52,6 +52,18 @@ def main():
 		sys.exit(1)
 	print("[IP GUARD TESTS OK] All IP guard test cases passed.\n")
 
+	# Test Save Isolation check (F22)
+	isolation_test_path = os.path.join(game_dir, "tests", "test_f22_save_isolation.py")
+	if not os.path.exists(isolation_test_path):
+		print("\n[ISOLATION AUDIT ERROR] Test save isolation test suite missing")
+		sys.exit(1)
+	print("=== Test Save Isolation Audit (F22) ===")
+	iso_res = subprocess.run([sys.executable, "-I", isolation_test_path], cwd=game_dir)
+	if iso_res.returncode != 0:
+		print("\n[ISOLATION AUDIT FAIL] F22 save isolation tests failed.")
+		sys.exit(1)
+	print("[ISOLATION AUDIT OK] Test save isolation verified.\n")
+
 	print(f"=== Tenth Spring GDScript Static Lint & Invariant Gate ===")
 	print(f"Auditing GDScript codebase in {game_dir}...\n")
 

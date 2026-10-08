@@ -5,9 +5,24 @@ extends Node
 # DDL schemas (§B2), queries, and transaction boundaries.
 
 const CURRENT_SCHEMA_VERSION: int = 1
-const DB_PATH: String = "user://tenth_spring.db"
-const DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
+const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
+const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
+
+var DB_PATH: String = DEFAULT_DB_PATH
+var DB_TMP_PATH: String = DEFAULT_DB_TMP_PATH
+
+func configure_paths(new_db_path: String, new_tmp_path: String) -> void:
+	DB_PATH = new_db_path
+	DB_TMP_PATH = new_tmp_path
+	if _db != null and _db.has_method("open_db"):
+		_db.path = DB_PATH
+
+func assert_test_safe() -> bool:
+	if DB_PATH == DEFAULT_DB_PATH or DB_TMP_PATH == DEFAULT_DB_TMP_PATH:
+		push_error("FAIL: active save path equals production save file user://tenth_spring.db; test cannot run against production save file")
+		return false
+	return true
 
 var _db: Object = null
 var _in_transaction: bool = false
@@ -115,6 +130,9 @@ func _save_persistent_store() -> void:
 		"osm_cache": _osm_cache_table
 	}
 	var json_str = JSON.stringify(state)
+	var base_dir = DB_TMP_PATH.get_base_dir()
+	if base_dir != "" and not DirAccess.dir_exists_absolute(base_dir):
+		DirAccess.make_dir_recursive_absolute(base_dir)
 	var file = FileAccess.open(DB_TMP_PATH, FileAccess.WRITE)
 	if file == null:
 		push_error("Failed to open temp DB file for writing: %s (error %d)" % [DB_TMP_PATH, FileAccess.get_open_error()])
