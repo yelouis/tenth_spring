@@ -56,10 +56,10 @@ No code has changed since pass 11. This pass resolved decisions, updated the des
 |---|---|---|
 | Companion lint | `cd companion && flutter analyze` | **No issues found** |
 | Companion tests | `cd companion && flutter test` | **17/17 passed** |
-| Game static audit + IP guard + guard self-tests + isolation audit | `python3 game/tests/test_runner.py` (repo root) | **Pass** — guard exits 0; guard self-tests pass; isolation audit passes (static string checks only) |
-| CI on GitHub | `gh run list --repo yelouis/tenth_spring` | **"Public-Repo IP Guard" green** on the last two pushes. It is the only workflow. |
-| Game runtime tests | Godot (CI) | **PASS (M12)** — executed in headless Godot 4.3 in CI with exact `EXPECTED` match (`db_test`, `idempotent_sync_test`, `sync_ingest_isolation_test`, `real_save_untouched`), harness self-test exits 1 on failure |
-| Game persistence (file fallback) | `db.gd` | Implemented, source-verified, and **executed** in CI |
+| Game static audit + IP guard + guard self-tests + isolation audit + vendored manifest | `python3 game/tests/test_runner.py` (repo root) | **Pass** — guard exits 0; guard self-tests pass; isolation audit passes; vendored sha256 verified |
+| CI on GitHub | `gh run list --repo yelouis/tenth_spring` | **"Public-Repo IP Guard" and "game_tests" green** |
+| Game runtime tests | Godot (CI) | **PASS (M12, M14)** — executed in headless Godot 4.3 in CI with exact `EXPECTED` match (6 tests: `db_legacy_import_test`, `db_migration_test`, `db_test`, `idempotent_sync_test`, `sync_ingest_isolation_test`, `real_save_untouched`), harness self-test exits 1 on failure |
+| Game persistence (real SQLite) | `db.gd` | Implemented, source-verified, and **executed** in CI (`storage: SQLite extension`, WAL mode, bound parameters, legacy import) |
 | Test save isolation (F22) | `db.gd` + `.gd` tests | Implemented, source-verified, and **executed** in CI (`real_save_untouched` PASS) |
 | D3 device gate | 8 h background soak, real phone | ⚠️ **NOT YET RUN** — waiting on the human (Decision 5 = A). |
 
@@ -759,7 +759,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ## Definition of Done (this build)
 - [x] **Item 0 (F25)** — `game_tests` green on GitHub with exactly the `EXPECTED` `PASS` lines; the harness self-test exits 1; a re-introduced F13 and a stray test both turn CI red.
 - [x] **Item 1 (F24 + F28)** — a merge-introduced file is caught; CI runs range **and** tree scans; an unset `core.hooksPath` fails the local battery; git errors fail closed; `CPUP`/`IRBO` headers are caught.
-- [ ] **Item 2** — the CI log shows `storage: SQLite extension`; reads come from disk after a restart; F26 semantics hold; the injection, `O'Brien's Pub`, legacy-import, and migration tests pass; the fallback is gone; `real_save_untouched` passes on a fresh runner — all **executed** in CI.
+- [x] **Item 2** — the CI log shows `storage: SQLite extension`; reads come from disk after a restart; F26 semantics hold; the injection, `O'Brien's Pub`, legacy-import, and migration tests pass; the fallback is gone; `real_save_untouched` passes on a fresh runner — all **executed** in CI (M14, runs 37857191397, 37857191447).
 - [ ] **Item 3** — `sync_e2e` green, with `visit_log == rows sent`; pinning, authentication, and the 3-decimal boundary tests pass; the superseded crypto is gone; companion tests run in CI; **the device gate passes (closes Phase 1).**
 - [ ] **D3 device soak run** (Decision 5 = A). **Closes Phase 0.**
 - [ ] **A Black/White dump supplied**, then **Item 4** — the verify markers are resolved, `implementation_plan_rom_importer.md` is written, the comparison is shown (if Platinum was supplied), and the work is **paused for review and Decision 10**.
