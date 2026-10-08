@@ -49,6 +49,13 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 - **Map data:** OpenStreetMap (Overpass API), queried by the PC and cached locally. Never Google Maps — its terms forbid derivative map products.
 - **Distribution:** the asset-free client via GitHub Releases; the companion via the app stores.
 
+## Setup notes
+
+Configure git to use the repository's pre-commit hooks to ensure no prohibited ROM or Nintendo assets are committed:
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Status
 
 Phases 0–1 (location capture, sync, persistence) are partly built and carry over unchanged. Everything Pokémon-specific is designed but not yet built. All `design_*.md` docs are contracts: implement exactly as specified, and file disagreements in `docs/ongoing_general_errors.md` as Decision blocks rather than silently deviating.

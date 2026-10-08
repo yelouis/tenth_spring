@@ -293,7 +293,7 @@ Phase 0 capture pipeline (`LocationSource` seam, `VisitCorridorDetector`, `fuzz.
 ```
 
 ## Definition of Done (this build)
-- [ ] **Item 0 (F18)** — `.gitignore` rules, guard script, pre-commit hook, and CI workflow in place; a staged `NARC`/`CPUE`/`.nds` file is rejected.
+- [x] **Item 0 (F18)** — `.gitignore` rules, guard script, pre-commit hook, and CI workflow in place; a staged `NARC`/`CPUE`/`.nds` file is rejected.
 - [ ] **Item 1 (F13)** — `execute_query` fails loudly on a null handle; persistence restored with atomic temp+rename; boot line names the backend.
 - [ ] **Item 2 (F17)** — no `colony` / `death_cache` names remain in `game/`; pivot constants loaded.
 - [ ] **Decision 7 answered**, then **Item 3** — extension verified present, DDL executes, bound parameters everywhere (injection test passes), Dictionary shadow and `verify_sync_isolation` deleted, header true.

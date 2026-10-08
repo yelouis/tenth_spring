@@ -24,6 +24,18 @@ def parse_gdscript(filepath):
 
 def main():
 	game_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+	repo_root = os.path.dirname(game_dir)
+
+	# Public-Repo IP Guard: verify no forbidden Nintendo assets or ROM files are tracked
+	ip_guard_path = os.path.join(repo_root, "tools", "check_no_nintendo_assets.py")
+	if os.path.exists(ip_guard_path):
+		print("=== Public-Repo IP Guard ===")
+		res = subprocess.run([sys.executable, "-I", ip_guard_path], cwd=repo_root)
+		if res.returncode != 0:
+			print("\n[IP GUARD VIOLATION] Nintendo asset check failed.")
+			sys.exit(1)
+		print("[IP GUARD OK] No Nintendo assets tracked in repository.\n")
+
 	print(f"=== Tenth Spring GDScript Static Lint & Invariant Gate ===")
 	print(f"Auditing GDScript codebase in {game_dir}...\n")
 

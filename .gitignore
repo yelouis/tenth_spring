@@ -29,4 +29,20 @@ game/export_presets.cfg
 *.db-wal
 *.sqlite
 
-
+# Nintendo content — never commit (public repo)
+*.nds
+*.gba
+*.gb
+*.gbc
+*.3ds
+*.cia
+*.narc
+*.ncgr
+*.nclr
+*.ncer
+*.nanr
+*.nscr
+*.sdat
+roms/
+**/rom_cache/
+**/rom_cache.tmp/
