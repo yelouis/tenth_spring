@@ -255,7 +255,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §9 (Deferred — trigger-gated on playtest feedback).**
 - **Pending Physical Device Gates (Human Action Required):**
   - **D3 Device Soak (Phase 0 exit):** ≥ 8 h background carry on a real phone with app backgrounded; confirm scout ledger fills and app battery consumption is < 3%/day (Decision 5 = Option A).
-  - **Item 3 Device Gate (Phase 1 exit):** Phone and PC on same Wi-Fi; pair via QR; report scouted route; verify records arrive on PC and Wireshark on port 7350 shows only TLS records.
+  - **Real-Device Sync Gate (Phase 1 exit):** Phone and PC on same Wi-Fi; pair via QR; report scouted route; verify records arrive on PC and Wireshark on port 7350 shows only TLS records (Agent guide §5).
 
 ---
 
