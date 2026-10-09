@@ -420,4 +420,4 @@ class ActiveSession extends RefCounted:
 	func close() -> void:
 		if state != State.CLOSED:
 			state = State.CLOSED
-			tls.disconnect_from_host()
+			tls.disconnect_from_stream()
