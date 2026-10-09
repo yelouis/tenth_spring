@@ -110,9 +110,14 @@ class ScoutLink {
   Future<PairResult> pair(QrPayloadV2 qr) async {
     final storedPcId = await store.getPcId();
     final storedFp = await store.getFp();
+    final storedToken = await store.getDeviceToken();
 
-    // Same PC and cert: update addrs/port only
-    if (storedPcId != null && storedPcId == qr.pcId && storedFp != null && storedFp.toLowerCase() == qr.fp.toLowerCase()) {
+    // Same PC and cert: update addrs/port only if deviceToken is present
+    if (storedPcId != null &&
+        storedPcId == qr.pcId &&
+        storedFp != null &&
+        storedFp.toLowerCase() == qr.fp.toLowerCase() &&
+        storedToken != null) {
       await store.updateAddrsAndPort(addrs: qr.addrs, port: qr.port);
       return const PairOk();
     }
@@ -256,7 +261,10 @@ class ScoutLink {
       if (helloResp['type'] == 'ERROR') {
         await framed.close();
         final code = helloResp['code'];
-        if (code == 'unpaired') return const ReportUnpaired();
+        if (code == 'unpaired') {
+          await store.clearDeviceToken();
+          return const ReportUnpaired();
+        }
         if (code == 'schema_mismatch') return const ReportSchemaMismatch();
         return ReportProtocolError(code?.toString());
       }
@@ -292,7 +300,10 @@ class ScoutLink {
         if (ackResp['type'] == 'ERROR') {
           await framed.close();
           final code = ackResp['code'];
-          if (code == 'unpaired') return const ReportUnpaired();
+          if (code == 'unpaired') {
+            await store.clearDeviceToken();
+            return const ReportUnpaired();
+          }
           if (code == 'schema_mismatch') return const ReportSchemaMismatch();
           return ReportProtocolError(code?.toString());
         }

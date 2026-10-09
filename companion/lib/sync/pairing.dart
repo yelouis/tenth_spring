@@ -140,6 +140,10 @@ class PairingStore {
     await _storage.write(key: keyLastGoodAddr, value: addr);
   }
 
+  Future<void> clearDeviceToken() async {
+    await _storage.delete(key: keyDeviceToken);
+  }
+
   Future<void> clear() async {
     await _storage.delete(key: keyPcId);
     await _storage.delete(key: keyFp);

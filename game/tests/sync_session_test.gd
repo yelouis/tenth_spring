@@ -198,6 +198,68 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	# 11. Falsifying F33: multi-phone re-pair
+	# Phone A ("phone_alpha") was paired and got HELLO_OK in steps 2 & 4.
+	# Phone B pairs with a fresh code.
+	var code_b = test_pairing.new_code(now)
+	var token_b_bytes = crypto.generate_random_bytes(32)
+	var token_b_b64 = Marshalls.raw_to_base64(token_b_bytes)
+	var pair_b = disp.handle_frame({
+		"type": "PAIR",
+		"phoneId": "phone_beta",
+		"pair": code_b,
+		"deviceToken": token_b_b64
+	})
+	if pair_b.get("type") != "PAIR_OK":
+		push_error("sync_session_test: Phone B PAIR failed: " + str(pair_b))
+		_cleanup()
+		return false
+
+	# Phone A's HELLO -> ERROR unpaired (PC cleared other tokens)
+	var hello_a_unpaired = disp.handle_frame({
+		"type": "HELLO",
+		"peerId": "phone_alpha",
+		"schemaVersion": 1,
+		"deviceToken": valid_token_b64
+	})
+	if hello_a_unpaired.get("type") != "ERROR" or hello_a_unpaired.get("code") != "unpaired":
+		push_error("sync_session_test: Phone A HELLO after B paired did not return ERROR unpaired: " + str(hello_a_unpaired))
+		_cleanup()
+		return false
+
+	# Phone A pairs again with a fresh code -> PAIR_OK
+	var code_a2 = test_pairing.new_code(now)
+	var token_a2_bytes = crypto.generate_random_bytes(32)
+	var token_a2_b64 = Marshalls.raw_to_base64(token_a2_bytes)
+	var pair_a2 = disp.handle_frame({
+		"type": "PAIR",
+		"phoneId": "phone_alpha",
+		"pair": code_a2,
+		"deviceToken": token_a2_b64
+	})
+	if pair_a2.get("type") != "PAIR_OK":
+		push_error("sync_session_test: Phone A re-pair failed: " + str(pair_a2))
+		_cleanup()
+		return false
+
+	# Phone A's HELLO -> HELLO_OK
+	var hello_a2 = disp.handle_frame({
+		"type": "HELLO",
+		"peerId": "phone_alpha",
+		"schemaVersion": 1,
+		"deviceToken": token_a2_b64
+	})
+	if hello_a2.get("type") != "HELLO_OK":
+		push_error("sync_session_test: Phone A HELLO after re-pair failed: " + str(hello_a2))
+		_cleanup()
+		return false
+
+	# Earlier visit_log rows for Phone A are still present
+	if not DB.is_visit_logged("phone_alpha", 1):
+		push_error("sync_session_test: Phone A earlier visit_log missing after re-pair")
+		_cleanup()
+		return false
+
 	_cleanup()
 	return true
 

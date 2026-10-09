@@ -214,15 +214,16 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **PC:** `game/autoloads/sync_server.gd` strictly validates `bodyFix` when present (Dictionary, fuzzed coordinates, `tsUtcMs > 0`) returning `ERROR protocol` on violation; `process_batch` conditionally updates body position via `DB.update_sync_peer` or calls `DB.update_sync_peer_seq` when `bodyFix` is omitted; `game/autoloads/db.gd` added `update_sync_peer_seq` and updated `update_sync_peer` conflict clause with `CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0)` to refuse stale fixes.
 - **F34 (fixed):** Verified in `game/tests/sync_session_test.gd` (falsifying test: BATCH with bodyFix then BATCH without bodyFix keeps stored position; stale fix rejected; 4-decimal and missing tsUtcMs rejected as ERROR protocol) and in `companion/test/sync_test.dart` (payload omits key when null; fake server receives no bodyFix).
 
+**M17 — Re-pairing after unpaired actually re-pairs (F33, 2026-10-09).**
+- **What was solved:**
+  - **Phone:** Added `PairingStore.clearDeviceToken()` deleting only `pairing.deviceToken` while preserving `pcId`, `fp`, `addrs`, `port`, `phoneId`, and `lastGoodAddr`.
+  - In `ScoutLink.report()`, receiving `ERROR` with `code == "unpaired"` (to HELLO or BATCH) calls `store.clearDeviceToken()` before returning `ReportUnpaired()`, so `PairingStore.isPaired()` turns false.
+  - In `ScoutLink.pair()`, short-circuits address/port refresh only if `storedPcId == qr.pcId && storedFp == qr.fp && (await store.getDeviceToken()) != null`. When deviceToken is null, runs full `PAIR` path reusing existing `phoneId`.
+- **F33 (fixed):** Verified in Dart unit tests (`sync_test.dart`: `pair()` without token connects and executes PAIR frame; `pair()` with token short-circuits without socket connection; `report()` with `ERROR unpaired` clears device token while preserving other fields) and Godot dispatcher test (`sync_session_test.gd`: Phone A pairs, Phone B pairs clearing A, Phone A HELLO returns ERROR unpaired, Phone A re-pairs with fresh code and gets PAIR_OK, Phone A HELLO succeeds and earlier `visit_log` rows remain intact).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-- **F33 (HIGH — dead end, found 2026-10-09, 13th pass) — after losing its pairing, the phone can never re-pair with the same PC.**
-  - When another phone pairs, the PC clears this phone's token, and `report()` returns `ReportUnpaired`. The UI says *"scan its code to pair again"*.
-  - But `ScoutLink.pair()` (`companion/lib/sync/scout_link.dart:114-118`) sees the same `pcId` + `fp`, only refreshes the addresses, and returns `PairOk` (*"Scout recruited successfully!"*) **without sending PAIR**.
-  - The next report is `unpaired` again — forever, short of reinstalling the app.
-  - **Contract** (updated): `implementation_plan_foundation.md` §B3 step 3; `design_companion_and_sync.md` §2.
-  - **Agent-guide §4 (Item 1).**
 - **F32 (found 2026-10-09, 13th pass) — PC storage failures reach the phone as "success".**
   - **BATCH:** when `process_batch` rolls back on a DB error, it returns `{"status":"error"}`, and the dispatcher stamps it `"type":"ACK"` (`sync_server.gd:345-347`). The phone's `handleAckResponse` returns 0, the loop breaks, `report()` returns **`ReportOk`**, and the UI says *"Delivered N scout reports to PC."* Nothing is lost, because the outbox is kept, but the player is told it worked.
   - **PAIR:** `_handle_pair` (`:251-253`) ignores the return values of `set_peer_token_hash`/`clear_other_peer_tokens`, so it can answer `PAIR_OK` with no token saved.

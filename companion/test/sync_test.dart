@@ -383,6 +383,11 @@ void main() {
       expect(result, isA<ReportUnpaired>());
       // Deletes nothing
       expect((await db.getAllVisits()).length, equals(1));
+      // Leaves getDeviceToken() == null, with phoneId, pcId, and fp unchanged
+      expect(await store.getDeviceToken(), isNull);
+      expect(await store.getPhoneId(), equals('test_phone_id'));
+      expect(await store.getPcId(), equals('pc_fake'));
+      expect(await store.getFp(), equals(fpHex));
 
       await server.close();
     });
@@ -473,6 +478,134 @@ void main() {
       expect(result, isA<ReportOk>());
       expect(receivedBatchFrame, isNotNull);
       expect(receivedBatchFrame!.containsKey('bodyFix'), isFalse);
+
+      await server.close();
+    });
+
+    test('pair() without stored deviceToken sends real PAIR even if pcId/fp match (F33 falsification)', () async {
+      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+      final privKey = keyPair.privateKey as RSAPrivateKey;
+      final pubKey = keyPair.publicKey as RSAPublicKey;
+      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+      final der = base64Decode(certPem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll('\n', '')
+          .replaceAll('\r', ''));
+      final digest = await Sha256().hash(der);
+      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+
+      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+      Map<String, dynamic>? receivedPairFrame;
+
+      server.listen((client) {
+        final framed = FramedSocket(client);
+        () async {
+          final frame = await framed.nextFrame();
+          if (frame != null && frame['type'] == 'PAIR') {
+            receivedPairFrame = frame;
+            await framed.send({
+              'type': 'PAIR_OK',
+              'pcId': 'pc_fake',
+            });
+          }
+        }();
+      });
+
+      // Store pcId, fp, addrs, phoneId with NO deviceToken
+      final store = PairingStore();
+      await store.clear();
+      await store.savePairing(
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        phoneId: 'persisted_phone_id',
+        deviceToken: 'old_dead_token',
+      );
+      await store.clearDeviceToken();
+      expect(await store.getDeviceToken(), isNull);
+      expect(await store.getPhoneId(), equals('persisted_phone_id'));
+
+      final qr = QrPayloadV2(
+        v: 2,
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        pair: '0123456789abcdef0123456789abcdef',
+      );
+
+      final link = ScoutLink(pairingStore: store);
+      final res = await link.pair(qr);
+
+      expect(res, isA<PairOk>());
+      expect(receivedPairFrame, isNotNull);
+      expect(receivedPairFrame!['type'], equals('PAIR'));
+      expect(receivedPairFrame!['phoneId'], equals('persisted_phone_id'));
+      expect(receivedPairFrame!['pair'], equals('0123456789abcdef0123456789abcdef'));
+      expect(await store.getDeviceToken(), isNotNull);
+      expect(await store.isPaired(), isTrue);
+
+      await server.close();
+    });
+
+    test('pair() with stored token present makes no connection and short-circuits', () async {
+      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+      final privKey = keyPair.privateKey as RSAPrivateKey;
+      final pubKey = keyPair.publicKey as RSAPublicKey;
+      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+      final der = base64Decode(certPem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll('\n', '')
+          .replaceAll('\r', ''));
+      final digest = await Sha256().hash(der);
+      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+
+      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+      int connectionCount = 0;
+      server.listen((client) {
+        connectionCount++;
+      });
+
+      final store = PairingStore();
+      await store.clear();
+      await store.savePairing(
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        phoneId: 'test_phone',
+        deviceToken: 'valid_token',
+      );
+
+      final qr = QrPayloadV2(
+        v: 2,
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        pair: '0123456789abcdef0123456789abcdef',
+      );
+
+      final link = ScoutLink(pairingStore: store);
+      final res = await link.pair(qr);
+
+      expect(res, isA<PairOk>());
+      expect(connectionCount, equals(0));
 
       await server.close();
     });
