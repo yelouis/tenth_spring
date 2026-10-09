@@ -64,6 +64,51 @@ def check_vendored_checksums(game_dir):
 					print(f"\n[VENDORED CHECK FAIL] File under bin/ not listed in VENDORED.sha256: {file_rel}")
 					sys.exit(1)
 
+def get_godot_user_dir():
+	"""Computes Godot user data directory for project name 'Tenth Spring'."""
+	app_name = "Tenth Spring"
+	if sys.platform.startswith("linux"):
+		xdg_data = os.environ.get("XDG_DATA_HOME")
+		if not xdg_data:
+			xdg_data = os.path.expanduser("~/.local/share")
+		return os.path.join(xdg_data, "godot", "app_userdata", app_name)
+	elif sys.platform == "darwin":
+		return os.path.expanduser(f"~/Library/Application Support/Godot/app_userdata/{app_name}")
+	elif sys.platform == "win32":
+		appdata = os.environ.get("APPDATA")
+		if not appdata:
+			appdata = os.path.expanduser("~\\AppData\\Roaming")
+		return os.path.join(appdata, "Godot", "app_userdata", app_name)
+	else:
+		xdg_data = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share"))
+		return os.path.join(xdg_data, "godot", "app_userdata", app_name)
+
+PROTECTED_SAVE_FILES = [
+	"tenth_spring.db",
+	"tenth_spring.db-wal",
+	"tenth_spring.db-shm",
+	"tenth_spring.db.tmp",
+	"tenth_spring.db.jsonbak",
+	"sync_identity/pc.key",
+	"sync_identity/pc.crt",
+	"sync_identity/pc_id.txt",
+]
+
+def snapshot_protected_files(user_dir):
+	import hashlib
+	snapshot = {}
+	for rel_file in PROTECTED_SAVE_FILES:
+		full_path = os.path.join(user_dir, *rel_file.split("/"))
+		if os.path.isfile(full_path):
+			h = hashlib.sha256()
+			with open(full_path, "rb") as f:
+				while chunk := f.read(65536):
+					h.update(chunk)
+			snapshot[rel_file] = h.hexdigest()
+		else:
+			snapshot[rel_file] = None
+	return snapshot
+
 def main():
 	game_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 	repo_root = os.path.dirname(game_dir)
@@ -153,6 +198,10 @@ def main():
 		print(f"=== Game Runtime Test Suite (Headless Godot) ===")
 		print(f"Using Godot binary: {godot_bin}")
 
+		# F29 Runner-level snapshot: snapshot protected save files before first Godot invocation
+		user_dir = get_godot_user_dir()
+		pre_snap = snapshot_protected_files(user_dir)
+
 		# 1. Harness self-test (TENTH_SPRING_HARNESS_SELFTEST=1 must exit 1 and report FAIL harness_selftest)
 		print("Running harness self-test...")
 		selftest_env = os.environ.copy()
@@ -203,6 +252,27 @@ def main():
 			sys.exit(1)
 
 		print(f"[ALL GAME TESTS PASS] All {len(EXPECTED)} expected tests passed.\n")
+
+		# F29 Vacuity guard: after the run, assert <user dir>/test/ exists
+		test_dir = os.path.join(user_dir, "test")
+		if not os.path.isdir(test_dir):
+			print(f"\n[REAL SAVE CHECK FAIL] computed Godot user dir is wrong: {user_dir}")
+			sys.exit(1)
+
+		# F29 Snapshot comparison: compare after the main run
+		post_snap = snapshot_protected_files(user_dir)
+		is_ci = os.environ.get("CI") == "true"
+		for rel_file in PROTECTED_SAVE_FILES:
+			pre_hash = pre_snap.get(rel_file)
+			post_hash = post_snap.get(rel_file)
+			if pre_hash != post_hash:
+				print(f"\n[REAL SAVE CHECK FAIL] {rel_file} changed during the test run")
+				sys.exit(1)
+			if is_ci and post_hash is not None:
+				print(f"\n[REAL SAVE CHECK FAIL] {rel_file} exists after the test run in CI")
+				sys.exit(1)
+
+		print(f"[REAL SAVE CHECK OK] Godot user dir verified: {user_dir} (test/ exists, protected files untouched)\n")
 
 	print(f"=== Tenth Spring GDScript Static Lint & Invariant Gate ===")
 	print(f"Auditing GDScript codebase in {game_dir}...\n")

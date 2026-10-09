@@ -236,20 +236,21 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **F31 (fixed):** Verified in `game/tests/db_legacy_import_test.gd`:
   - Happy path first boot and second boot still pass without duplicating rows.
   - Falsifying test with duplicate `visit_log` entry (`peer_id` + `seq`) fails with UNIQUE constraint error, rolls back transaction, leaves `DB._db == null`, returns false from `DB.execute_query("SELECT 1;")`, keeps `.jsonbak` byte-identical to original fixture, and independent SQLite instance confirms no `legacy_import` row in `meta`.
-  - Precondition test with pre-existing `map_cell` row blocks import, closes DB (`DB._db == null`), keeps row count unchanged, and independent SQLite confirms no `legacy_import` row in `meta`.
+**M20 — Runner-level save snapshot and evil-merge test coverage (F29 + F30, 2026-10-09).**
+- **What was solved:**
+  - **F29 (Runner-level snapshot):** In `game/tests/test_runner.py`:
+    - Computed Godot's user-data directory for project name "Tenth Spring" across Linux, macOS, and Windows.
+    - Added pre-test snapshot of existence and SHA-256 for all protected files (`tenth_spring.db`, `-wal`, `-shm`, `.tmp`, `.jsonbak`, `sync_identity/pc.key`, `pc.crt`, `pc_id.txt`) before launching Godot.
+    - Added post-test comparison failing if any protected file changed, and failing in CI if any protected file exists after the run.
+    - Added vacuity guard asserting `<user dir>/test/` exists after the run to prove the computed user path really is Godot's user directory.
+  - **F30 (Evil-merge test):** In `tools/test_check_no_nintendo_assets.py`:
+    - Added `test_range_evil_merge_rom`: tests an evil merge commit introducing a CPUE-headed file only within the merge commit, asserting range scan exits 1 naming `evil.bin`.
+    - Added `test_evil_merge_requires_m_flag`: executes the same scenario against a guard script copy with `"-m", ` removed, asserting exit code 0 and proving the test's dependency on the `-m` flag.
+- **F29, F30 (fixed):** Verified in IP guard test suite (13/13 passed) and runner execution.
 
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-- **F29 (found 2026-10-09, 13th pass) — the real-save check is blind to anything written during boot.** `test_main.gd` takes its "before" snapshot in its own `_ready()`, **after** the autoloads have already run.
-  - **Evidence:** in scratch run 37856055127, `DB._ready()` still called `init_db()` on the **real** save path with SQLite live — and `PASS real_save_untouched` was printed anyway.
-  - **Why nothing escapes today:** the autoloads are inert. One re-added line would bring the problem back silently.
-  - **Fix:** the Python runner must snapshot the protected files from **outside** the Godot process, before launch and after exit; in CI they must not exist at all.
-  - **Agent-guide §7 (Item 4).**
-- **F30 (found 2026-10-09, 13th pass) — the merge self-test can't fail.**
-  - `tools/test_check_no_nintendo_assets.py::test_range_merge_introducing_rom` adds `bad.bin` in an ordinary feature commit that is itself inside the scanned range, so it passes with or without `-m`.
-  - The case F24 was about — a file introduced **only by the merge commit** (an "evil merge") — has no test.
-  - **Agent-guide §7 (Item 4).**
 - **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §9 (Deferred — trigger-gated).**
 - **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §9 (Deferred — trigger-gated on playtest feedback).**
 - **Pending Physical Device Gates (Human Action Required):**

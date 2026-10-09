@@ -214,5 +214,61 @@ class TestCheckNoNintendoAssets(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self._run_git(["rm", "-f", "x.bin"])
 
+    def _create_evil_merge_commit(self):
+        """Helper to create an evil merge commit containing evil.bin."""
+        current_branch = self._run_git(["rev-parse", "--abbrev-ref", "HEAD"]).stdout.strip()
+        self._run_git(["checkout", "-b", "feat_evil"])
+        f_file = os.path.join(self.test_dir, "f.txt")
+        with open(f_file, "w", encoding="utf-8") as f:
+            f.write("feat\n")
+        self._run_git(["add", "f.txt"])
+        self._run_git(["commit", "-m", "feat commit"])
+
+        self._run_git(["checkout", current_branch])
+        m_file = os.path.join(self.test_dir, "m.txt")
+        with open(m_file, "w", encoding="utf-8") as f:
+            f.write("main\n")
+        self._run_git(["add", "m.txt"])
+        self._run_git(["commit", "-m", "main commit"])
+
+        self._run_git(["merge", "--no-ff", "--no-commit", "feat_evil"])
+        evil_file = os.path.join(self.test_dir, "evil.bin")
+        with open(evil_file, "wb") as f:
+            f.write(b"\x00" * 12 + b"CPUE")
+        self._run_git(["add", "evil.bin"])
+        self._run_git(["commit", "-m", "evil merge commit"])
+        return self._run_git(["rev-parse", "HEAD"]).stdout.strip()
+
+    def test_range_evil_merge_rom(self):
+        """12. Evil merge commit introducing CPUE file must fail in range scan (exit 1)."""
+        m_sha = self._create_evil_merge_commit()
+        res = self._run_guard(["--range", f"{m_sha}^1..{m_sha}"])
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("evil.bin", res.stdout)
+
+    def test_evil_merge_requires_m_flag(self):
+        """13. Removing -m flag causes evil merge not to be detected (exit 0), proving dependency."""
+        m_sha = self._create_evil_merge_commit()
+        with open(GUARD_SCRIPT, "r", encoding="utf-8") as f:
+            guard_content = f.read()
+        self.assertIn('"-m", ', guard_content)
+        no_m_content = guard_content.replace('"-m", ', "")
+
+        temp_dir = tempfile.mkdtemp(prefix="no_m_guard_")
+        temp_guard_path = os.path.join(temp_dir, "guard_no_m.py")
+        try:
+            with open(temp_guard_path, "w", encoding="utf-8") as f:
+                f.write(no_m_content)
+            res = subprocess.run(
+                [sys.executable, "-I", temp_guard_path, "--range", f"{m_sha}^1..{m_sha}"],
+                cwd=self.test_dir,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            self.assertEqual(res.returncode, 0)
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
 if __name__ == "__main__":
     unittest.main()

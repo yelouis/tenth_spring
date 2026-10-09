@@ -507,7 +507,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **Item 2 (F32)** — a storage failure reaches the phone as `ERROR storage` → `ReportPcStorageError`; a malformed PAIR doesn't burn the code; executed in CI.
 - [ ] **HUMAN: real-device sync gate passes** (Item 2 validation, steps 1–5). **Closes Phase 1.**
 - [x] **Item 3 (F31)** — a failed legacy import leaves `_db == null` with the backup intact; executed in CI.
-- [ ] **Item 4 (F29 + F30)** — a re-added boot-time `init_db()` turns CI red via the runner check; the evil-merge self-tests pass and prove their dependency on `-m`.
+- [x] **Item 4 (F29 + F30)** — a re-added boot-time `init_db()` turns CI red via the runner check; the evil-merge self-tests pass and prove their dependency on `-m`.
 - [ ] **HUMAN: D3 device soak run** (Decision 5 = A). **Closes Phase 0.**
 - [ ] **A Black/White dump supplied**, then **Item 5** — the verify markers are resolved, `implementation_plan_rom_importer.md` is written, the comparison is shown (if Platinum was supplied), and the work is **paused for review and Decision 10**.
 - [ ] The full §1 battery and all three CI workflows are green.
