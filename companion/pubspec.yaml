@@ -39,7 +39,6 @@ dependencies:
   flutter_secure_storage: ^10.3.1
   mobile_scanner: ^7.4.0
   xml: ^7.0.1
-  multicast_dns: ^0.3.3+1
   cryptography: ^2.9.0
   path: ^1.9.1
   path_provider: ^2.1.6
@@ -48,6 +47,7 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  basic_utils: 5.8.2
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

@@ -1,20 +1,25 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../capture/detector.dart';
+import '../capture/fuzz.dart';
 import '../capture/location_source.dart';
 import '../capture/os_location_source.dart';
 import '../outbox/database.dart';
+import '../sync/scout_link.dart';
+import 'pairing_screen.dart';
 
 class ScoutLedgerScreen extends StatefulWidget {
   final AppDatabase database;
   final LocationSource? locationSource;
   final VisitCorridorDetector? detector;
+  final ScoutLink? scoutLink;
 
   const ScoutLedgerScreen({
     super.key,
     required this.database,
     this.locationSource,
     this.detector,
+    this.scoutLink,
   });
 
   @override
@@ -25,6 +30,10 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
     with WidgetsBindingObserver {
   bool _isScoutingPaused = false;
   bool _isBackgroundScoutingEnabled = true;
+  bool _isReporting = false;
+  DateTime? _lastReportTime;
+  double? _lastFixLat;
+  double? _lastFixLon;
   List<VisitOutboxItem> _visits = [];
   late VisitCorridorDetector _detector;
   LocationSource? _locationSource;
@@ -89,6 +98,9 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
       });
 
       _fixSub = _locationSource!.fixes().listen((fix) {
+        final fuzzed = fuzzPoint(fix.lat, fix.lon);
+        _lastFixLat = fuzzed.lat;
+        _lastFixLon = fuzzed.lon;
         if (!_isScoutingPaused) {
           _detector.processFix(fix);
         }
@@ -161,6 +173,74 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
     }
   }
 
+  Future<void> _openPairing() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PairingScreen(scoutLink: widget.scoutLink),
+      ),
+    );
+  }
+
+  Future<void> _reportToPc() async {
+    setState(() => _isReporting = true);
+    final link = widget.scoutLink ?? ScoutLink();
+    final bodyFix = {
+      "lat": _lastFixLat ?? 37.775,
+      "lon": _lastFixLon ?? -122.419,
+      "tsUtcMs": DateTime.now().millisecondsSinceEpoch,
+    };
+    final result = await link.report(db: widget.database, bodyFix: bodyFix);
+    if (!mounted) return;
+    setState(() => _isReporting = false);
+
+    switch (result) {
+      case ReportOk(:final sent):
+        setState(() {
+          _lastReportTime = DateTime.now();
+        });
+        await _refreshLedger();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Delivered $sent scout reports to PC.')),
+        );
+      case ReportUnreachable():
+        _showErrorDialog("Can't reach your PC — open the scout report on your PC and re-scan its code.");
+      case ReportUnpaired():
+        _showErrorDialog("This phone isn't paired with that PC anymore — scan its code to pair again.");
+      case ReportSchemaMismatch():
+        _showErrorDialog("Schema mismatch with PC — please update your app or PC game.");
+      case ReportProtocolError(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Scout report error: ${message ?? 'protocol failure'}')),
+        );
+    }
+  }
+
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Scout Link'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String get _lastReportText {
+    if (_lastReportTime == null) return 'Never';
+    final diff = DateTime.now().difference(_lastReportTime!);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
+
   @override
   Widget build(BuildContext context) {
     final visitCount = _visits.where((v) => v.kind == 'visit').length;
@@ -169,6 +249,11 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
       appBar: AppBar(
         title: const Text('Tenth Spring Scout Ledger'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            tooltip: 'Pair with your PC',
+            onPressed: _openPairing,
+          ),
           IconButton(
             icon: Icon(_isScoutingPaused ? Icons.play_arrow : Icons.pause),
             tooltip: _isScoutingPaused ? 'Resume Scouting' : 'Pause Scouting',
@@ -199,6 +284,34 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
                 Text(
                   'Sync at your PC to add them to your map.',
                   style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Last report: $_lastReportText',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _isReporting ? null : _reportToPc,
+                      icon: _isReporting
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded, size: 18),
+                      label: const Text('Report to PC'),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: _openPairing,
+                      icon: const Icon(Icons.qr_code_2, size: 18),
+                      label: const Text('Pair with your PC'),
+                    ),
+                  ],
                 ),
                 if (_isScoutingPaused) ...[
                   const SizedBox(height: 8),
