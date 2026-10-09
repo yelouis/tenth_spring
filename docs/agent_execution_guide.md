@@ -510,7 +510,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **Item 4 (F29 + F30)** — a re-added boot-time `init_db()` turns CI red via the runner check; the evil-merge self-tests pass and prove their dependency on `-m`.
 - [ ] **HUMAN: D3 device soak run** (Decision 5 = A). **Closes Phase 0.**
 - [ ] **A Black/White dump supplied**, then **Item 5** — the verify markers are resolved, `implementation_plan_rom_importer.md` is written, the comparison is shown (if Platinum was supplied), and the work is **paused for review and Decision 10**.
-- [ ] The full §1 battery and all three CI workflows are green.
+- [x] The full §1 battery and all three CI workflows are green.
 
 **When all of the above are checked: this build's queue is empty. Do NOT invent work.** The next legitimate step is building the ROM importer from the *approved* plan, then Phase 3. Other legitimate triggers:
 - a new item in `ongoing_general_errors.md` with a filled `Your selection:`;
