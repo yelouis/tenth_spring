@@ -4,7 +4,7 @@ This document defines the schemas, enums, and persistence rules. **Storage split
 
 ## 0. Storage backends
 
-**The engine is SQLite** (Decision 6 = A), via the vendored `godot-sqlite` v4.4 GDExtension (Decision 7 = B). With agent-guide Item 2 landed, the **interim file fallback has been retired**:
+**The engine is SQLite** (Decision 6 = A), via the vendored `godot-sqlite` v4.4 GDExtension (Decision 7 = B). With the pass-12 SQLite build landed (2026-10-08), the **interim file fallback has been retired**:
 - **SQLite only.** Every value is passed as a **bound parameter**, and every getter reads SQL, never memory.
 - **Durability:** `PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;`.
 - **Missing extension at boot** prints `storage: UNAVAILABLE — SQLite extension missing`, pushes an error, and writes nothing. It never silently degrades.
@@ -13,7 +13,7 @@ This document defines the schemas, enums, and persistence rules. **Storage split
   - `first_revealed_at` and `cell_seed` are set once;
   - `place_node.visit_count` accumulates;
   - `sync_peer.last_applied_seq` never decreases.
-- **One-time legacy import.** A fallback save is recognised because its first 16 bytes are not `SQLite format 3\0`. It is renamed to `user://tenth_spring.db.jsonbak` (`JSON_BAK_PATH`), imported in one transaction, and kept. It is never deleted.
+- **One-time legacy import.** A fallback save is recognised because its first 16 bytes are not `SQLite format 3\0`. It is renamed to `user://tenth_spring.db.jsonbak` (`JSON_BAK_PATH`), imported in one transaction, and kept. It is never deleted. **Any import failure — a failed statement, or a row-count mismatch — rolls back and closes the database for the session** (`storage: UNAVAILABLE — legacy import failed: …`); the backup stays untouched and the next boot retries. An import never runs into a database that already holds `visit_log` or `map_cell` rows (F31).
 
 ## 1. World Clock (`WorldClock`)
 

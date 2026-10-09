@@ -18,7 +18,7 @@ Black/White also holds all the data the game needs (stats, moves, names) for all
 - **Option A — Mix them: Platinum sprites for #1–493, Black/White for #494–649.** Keeps the Diamond/Pearl look for three-quarters of the Pokédex. Cost: a battle between, say, Gengar and Chandelure shows two visibly different art styles side by side, and players need **two** cartridges (Platinum and Black or White).
 - **Option B — Black/White sprites for all 649.** One consistent, animated style. Players need only **one** cartridge (Black or White). Only one sprite format to decode. Cost: gives up the Diamond/Pearl sprite look, and Platinum (Decision 9) is no longer needed at all. *Recommended: consistency in every battle and one cartridge instead of two outweigh the older look, and the animation suits the Ghost types this setting is built around.*
 - **Option C — Let the player choose** (a setting, using whichever ROMs they imported). The most flexible, and the most work: both formats decoded, validated, and tested.
-- **You'll see both before deciding.** The ROM spike (agent-guide §7, Item 4) renders the same Pokémon in both styles into a comparison image on your machine. The image is never committed.
+- **You'll see both before deciding.** The ROM spike (agent-guide §8, Item 5) renders the same Pokémon in both styles into a comparison image on your machine. The image is never committed.
 - Your selection: _(pending)_
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
@@ -36,7 +36,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 - **Option A — run it next, right after F9 lands.** Closes Phase 0 properly and de-risks the battery budget before more is built on it. Cost: one day of carrying the phone. *Recommended: the battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and you want to learn that early.*
 - **Option B — batch it with the D4 device gate.** One combined session validates background capture *and* the Wireshark ciphertext check together. Cost: Phase 0 stays formally open for weeks; if the battery target fails you discover it after building transport on top.
 - **Option C — defer to the Phase 8 hardening pass.** Cheapest now, riskiest later: a battery failure that late invalidates the capture strategy after everything depends on it.
-- **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent-guide §1 (baseline) and §9 (roadmap).
+- **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent-guide §1 (baseline) and §10 (roadmap).
 
 ---
 
@@ -93,7 +93,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
 - **Status (claimed July 22): REALIZED (Option A).** `pairing.dart` & `transport.dart` implemented with X25519 key exchange, HKDF-SHA256 session key derivation, AEAD ChaCha20-Poly1305 encrypted transport, HELLO/BATCH/ACK handling, and SecureStorage private key persistence. `flutter test` (17/17) verifies encryption, decryption, tampered ciphertext rejection, and outbox deletion on ACK.
 - **⛔ Status CORRECTED (July 22, 8th verification pass): NOT REALIZED — D4 remains OPEN.** What exists is real and useful, but it is *crypto primitives and payload builders, not a transport*: `grep -rn "Socket|MDnsClient|multicast_dns|connect(" companion/lib/` returns **nothing** — there is no socket, no mDNS discovery, and no connection code anywhere in the companion. On the PC side `game/autoloads/sync_server.gd` is unchanged: still a pure in-process function with **no TCP listener, no mDNS advertisement, and no crypto** (the game tree contains no libsodium or SQLite GDExtension at all). **The two devices cannot exchange a single byte.** Decision 4 asked which Godot-side libsodium/mDNS binding to adopt — that question is still entirely unanswered, so Option A cannot be said to be "realized." See **F12** for a crypto-primitive deviation, and agent-guide §6 (Item 3).
-- **Resolution (2026-10-08): superseded.** The crypto half is answered by **Decision 11** (Godot's built-in TLS — no libsodium, no extension). The mDNS half is tracked as **F27**: Godot has no mDNS responder, and the companion's raw-multicast client fails on real iPhones. v1 connects by remembered address plus QR re-scan; mDNS is deferred (agent-guide §8).
+- **Resolution (2026-10-08): superseded.** The crypto half is answered by **Decision 11** (Godot's built-in TLS — no libsodium, no extension). The mDNS half is tracked as **F27**: Godot has no mDNS responder, and the companion's raw-multicast client fails on real iPhones. v1 connects by remembered address plus QR re-scan; mDNS is deferred (agent-guide §9).
 
 ### Decision 1 — Stack: Godot (PC) + Flutter (companion); LAN-only sync (Resolved July 21)
 - **Selection**: PC game = **Godot 4** (free, 2D-first, clean Steam export); companion = **Flutter** (mature background location, matches the Gaslight toolchain).
@@ -173,14 +173,25 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 **M12 — Godot runtime test harness & CI workflow implemented (F25, 2026-10-08).**
 - **What was solved:** Created `game/tests/test_main.gd` and `game/tests/test_main.tscn` to execute test scripts under Godot's SceneTree, discovering `*_test.gd` files in alphabetical order and verifying that `user://tenth_spring.db` and `.tmp` are non-destructively identical before and after test execution (`PASS real_save_untouched`). Added `game/tests/harness_selftest.gd` returning false when `TENTH_SPRING_HARNESS_SELFTEST=1` to prove the harness can fail. Updated `game/tests/test_runner.py` to invoke the scene with `--path game`, require exact match against `EXPECTED = ["db_test", "idempotent_sync_test", "sync_ingest_isolation_test", "real_save_untouched"]`, and print `game runtime tests SKIPPED — Godot not installed; CI runs them` if Godot is absent. Added `.github/workflows/game_tests.yml` downloading and checksum-verifying Godot 4.3-stable on ubuntu-latest and running `--import` followed by `test_runner.py`. Updated `game/project.godot` description.
 - **F25 (fixed):** Headless Godot test execution enabled and verified via CI workflow, with self-test failure injection and save isolation assertion.
+- **✅ M12 verified (2026-10-09, 13th pass).** Re-read `test_main.gd`, `test_runner.py`, and `game_tests.yml`, and read the CI logs:
+  - The latest `game_tests` run (37884027917) checksum-verifies Godot 4.3 and executes **all 11 expected tests**.
+  - The harness self-test exits 1.
+  - The falsification branches went red for the right reasons: re-introduced F13 → `FAIL db_test` (run 37854908787); stray `zz_test` → unexpected PASS rejected (run 37855017689).
+  - **Residual F29:** `real_save_untouched` cannot see writes made while the autoloads boot.
 
 **M13 — IP guard merge, tip-tree, hook check & Gen 4-5 prefix gaps closed (F24, F28, 2026-10-08).**
 - **What was solved:** In `tools/check_no_nintendo_assets.py`, added `-m` to `diff-tree` range mode to inspect merge commits and de-duplicate paths per commit; replaced silent skip with fail-closed error exit on git diff errors; replaced exact USA codes with `FORBIDDEN_GAME_CODE_PREFIXES` (`ADA`, `APA`, `CPU`, `IPK`, `IPG`, `IRB`, `IRA`, `IRE`, `IRD`) catching all Gen 4-5 regions (F28). In `.github/workflows/ip_guard.yml`, added git cat-file validation for push ranges falling back to `--range HEAD` after force-pushes, and added a full HEAD tree scan step following range scan. In `game/tests/test_runner.py`, added runner hook check enforcing `core.hooksPath == .githooks` outside CI. In `tools/test_check_no_nintendo_assets.py`, added 4 new unit tests covering merge commit detection, unknown SHA failure, forbidden prefix detection across European/Japanese/Gen 5 titles, and prefix specificity.
 - **F24 & F28 (fixed):** All 11 guard unit tests pass, hook check enforced, and CI runs both range and full-tree checks.
+- **✅ M13 verified (2026-10-09, 13th pass).** In a scratch repo, a file introduced **only inside a merge commit** now exits 1 under `--range M^1..M`. A copy of the script with `-m` removed exits 0 on the same repo, proving the flag is what catches it. The tip-tree scan also catches it. The workflow runs range + tree + self-tests, and `CPUP`/`CPUJ`/`IRBO`/`IRAO` are rejected. **Residual F30:** the new merge self-test doesn't actually depend on `-m`.
 
 **M14 — Real SQLite engine via vendored godot-sqlite v4.4, bound parameters & retired file fallback (F4, F10, F16, F19, F20, F23, F26, Decision 7, 2026-10-08).**
 - **What was solved:** Vendored `godot-sqlite` v4.4 GDExtension desktop binaries under `game/addons/godot-sqlite/` with integrity check in `test_runner.py` verifying `VENDORED.sha256`. Moved engine and server initialization out of autoloads (`_ready` is no-op) into new `game/scenes/main.tscn` + `main.gd`. Implemented real SQLite persistence in `db.gd` with §B2 corrected v1 DDL (9 tables, no `inventory_item`, `trainer_name` on `player_profile`, `device_token_hash` on `sync_peer`). All statements execute via `_q` and `_rows` with bound parameters exclusively (no string interpolation; protected by static runner gate for F19). Implemented migration runner (`_run_migrations`) and automatic one-time legacy fallback import (`_run_legacy_import`) with backup rotation (`.jsonbak`) and row-count verification. Retired dictionary stores, file fallback, and decorative `verify_sync_isolation()`. Added `db_migration_test.gd`, `db_legacy_import_test.gd`, and rewritten `db_test.gd`.
 - **F4, F10, F16, F19, F20, F23, F26 (fixed):** Headless Godot 4.3 in CI executes real SQLite with `storage: SQLite extension`, disk read persistence across independent connections, UNIQUE constraint duplicate rejection, upsert semantics preservation, SQL injection immunity, atomic rollback, and migration/legacy-import execution.
+- **✅ M14 verified (2026-10-09, 13th pass).**
+  - **Vendored add-on:** the `.gdextension` is byte-identical to upstream v4.4; `VENDORED.sha256` checks out locally; only desktop binaries are present; the scratch-branch run (37856055127) logged `storage: SQLite extension` before any engine code existed.
+  - **`db.gd`:** bound parameters everywhere; ON CONFLICT upserts with MAX semantics; the corrected nine-table DDL; inert `_ready()`.
+  - **Tests:** `db_test` reads the row back through an **independent second SQLite connection**, covers duplicates, F26 semantics, injection, and rollback, and passes in CI.
+  - **Residual F31:** a legacy-import failure leaves the database open.
 
 **M15 — Pinned-TLS sync transport, pairing, scout reports & cross-language loopback sync in CI (F12, F14, F15, F27a–c, Decision 4, Decision 11, 2026-10-08).**
 - **What was solved:**
@@ -188,13 +199,53 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Companion Pinned-TLS Scout Reports (Item 3b, `a73743c`):** Deleted dead/superseded crypto (`encryptChunk`, `decryptChunk`, `generateMonotonicNonce`, `SyncClient`, `deriveSessionKey`, and `multicast_dns`). Implemented `QrPayloadV2.tryParse` and `PairingStore` over `flutter_secure_storage` in `companion/lib/sync/pairing.dart`; frame codec in `companion/lib/sync/frame_codec.dart`; `ScoutLink` in `companion/lib/sync/scout_link.dart` (`connectPinned` rejecting untrusted roots and validating fingerprint in both bad-cert callback and `peerCertificate` post-check, `pair()`, and `report()` batch loop with ACK-based purge); added `NSLocalNetworkUsageDescription` in `Info.plist` and `android.permission.INTERNET` in `AndroidManifest.xml`; updated UI to scout vocabulary. Companion test suite expanded to 25 passing tests with test-time generated certificates for pin accept/refuse.
   - **Cross-Language E2E Sync in CI (Item 3c, `2d66328`):** Implemented headless Godot test server `game/tests/sync_e2e_server.gd` emitting `E2E_READY` and `E2E_STATE`; `companion/test/sync_e2e_test.dart` ingesting `errand_day.gpx`, pairing, and verifying idempotent report replays; `tools/sync_e2e.py` orchestration script; and `.github/workflows/sync_e2e.yml` running Godot 4.3 + Flutter 3.44.6 on ubuntu-latest.
 - **F12, F14, F15, F27(a–c), Decision 4, Decision 11 (fixed):** All verified in unit tests and live in CI workflow `sync_e2e` (run 37883357285: 14 visit rows, maxSeq 14, map cells 2, place nodes 1 synced across language boundary over pinned TLS).
+- **✅ M15 verified (2026-10-09, 13th pass).**
+  - **Server:** the BATCH peer id comes from the authenticated session; token checks use `constant_time_compare`; the 3-decimal boundary is enforced; there is a busy guard and 10 s / 30 s timeouts.
+  - **Phone:** pins via `withTrustedRoots: false` plus a post-connect re-check; the superseded crypto and `multicast_dns` are gone.
+  - **Platform:** the `Info.plist` and `AndroidManifest.xml` permissions are present.
+  - **Tests:** companion `flutter test` runs 25 passed + 1 skipped (the CI-only end-to-end test) locally, with analyze clean. `sync_e2e` (37884028074) shows `E2E_SENT` 14 rows → `E2E_STATE` `visit_log` 14, `last_applied_seq` 14, and replay `appliedCount` 0.
+  - **Residuals:** F32, F33, F34.
+  - **Not yet proven:** that a real phone can scan the PC's QR code (the QR fixtures' provenance can't be checked offline) — the device gate covers it.
+  - **Process note:** three iterations of the `sync_e2e` commit were **force-pushed over `main`** (runs 37882602560, 37882837725, 37883070244 point at commits no longer in history). Iterate on a branch instead.
 
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred — trigger-gated).**
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §8 (Deferred — trigger-gated on playtest feedback).**
+- **F34 (HIGH — pillar 1 + fast travel, found 2026-10-09, 13th pass) — the phone can place the player somewhere they have never been.**
+  - **The phone side:** `companion/lib/ui/scout_ledger_screen.dart:187-191` builds `bodyFix` as `_lastFixLat ?? 37.775` / `_lastFixLon ?? -122.419`. Tapping *Report to PC* before the app has seen a fix (just launched, permission denied, indoors) reports a **hardcoded San Francisco location**. Its `tsUtcMs` is the send time, not the fix time.
+  - **The PC side:** `game/autoloads/sync_server.gd:195-199` writes `float(body_fix.get("lat", 0.0))`, so a BATCH without `bodyFix` overwrites the last body position with **0, 0** at time 0.
+  - **Why it matters:** fast travel spawns the player at the body position, and relocation reveals ground there. Either path reveals a place the player never walked — the one thing the game's first pillar forbids.
+  - **Contract** (updated): `design_companion_and_sync.md` §3; `implementation_plan_foundation.md` §B4.3–B4.4.
+  - **Agent-guide §3 (Item 0).**
+- **F33 (HIGH — dead end, found 2026-10-09, 13th pass) — after losing its pairing, the phone can never re-pair with the same PC.**
+  - When another phone pairs, the PC clears this phone's token, and `report()` returns `ReportUnpaired`. The UI says *"scan its code to pair again"*.
+  - But `ScoutLink.pair()` (`companion/lib/sync/scout_link.dart:114-118`) sees the same `pcId` + `fp`, only refreshes the addresses, and returns `PairOk` (*"Scout recruited successfully!"*) **without sending PAIR**.
+  - The next report is `unpaired` again — forever, short of reinstalling the app.
+  - **Contract** (updated): `implementation_plan_foundation.md` §B3 step 3; `design_companion_and_sync.md` §2.
+  - **Agent-guide §4 (Item 1).**
+- **F32 (found 2026-10-09, 13th pass) — PC storage failures reach the phone as "success".**
+  - **BATCH:** when `process_batch` rolls back on a DB error, it returns `{"status":"error"}`, and the dispatcher stamps it `"type":"ACK"` (`sync_server.gd:345-347`). The phone's `handleAckResponse` returns 0, the loop breaks, `report()` returns **`ReportOk`**, and the UI says *"Delivered N scout reports to PC."* Nothing is lost, because the outbox is kept, but the player is told it worked.
+  - **PAIR:** `_handle_pair` (`:251-253`) ignores the return values of `set_peer_token_hash`/`clear_other_peer_tokens`, so it can answer `PAIR_OK` with no token saved.
+  - **Contract** (updated): a new `ERROR storage` code, and ACK only on success (§B4.3).
+  - **Agent-guide §5 (Item 2).**
+- **F31 (found 2026-10-09, 13th pass) — a failed legacy import leaves the database open and writable.**
+  - **Wrong failure mode:** on a row-count mismatch, `_run_legacy_import` (`game/autoloads/db.gd:343-346`) prints `storage: UNAVAILABLE — legacy import mismatch` but leaves `_db` open. The game keeps running and syncing into an empty world.
+  - **Permanent mismatch:** the check compares **whole-table** counts with the JSON's. Once anything else has been written, every later boot's retry mismatches forever.
+  - **Unchecked statements:** individual import statements (`:241-316`) never check `_q`'s result, so a failed `player_profile`/`world_clock`/`base_state` update goes unnoticed.
+  - **Misleading message:** `_q` reports *"SQLite extension not available"* for a merely closed handle (`:73`), the `ERROR` line seen in every CI log.
+  - **Agent-guide §6 (Item 3).**
+- **F29 (found 2026-10-09, 13th pass) — the real-save check is blind to anything written during boot.** `test_main.gd` takes its "before" snapshot in its own `_ready()`, **after** the autoloads have already run.
+  - **Evidence:** in scratch run 37856055127, `DB._ready()` still called `init_db()` on the **real** save path with SQLite live — and `PASS real_save_untouched` was printed anyway.
+  - **Why nothing escapes today:** the autoloads are inert. One re-added line would bring the problem back silently.
+  - **Fix:** the Python runner must snapshot the protected files from **outside** the Godot process, before launch and after exit; in CI they must not exist at all.
+  - **Agent-guide §7 (Item 4).**
+- **F30 (found 2026-10-09, 13th pass) — the merge self-test can't fail.**
+  - `tools/test_check_no_nintendo_assets.py::test_range_merge_introducing_rom` adds `bad.bin` in an ordinary feature commit that is itself inside the scanned range, so it passes with or without `-m`.
+  - The case F24 was about — a file introduced **only by the merge commit** (an "evil merge") — has no test.
+  - **Agent-guide §7 (Item 4).**
+- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §9 (Deferred — trigger-gated).**
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §9 (Deferred — trigger-gated on playtest feedback).**
 - **Pending Physical Device Gates (Human Action Required):**
   - **D3 Device Soak (Phase 0 exit):** ≥ 8 h background carry on a real phone with app backgrounded; confirm scout ledger fills and app battery consumption is < 3%/day (Decision 5 = Option A).
   - **Item 3 Device Gate (Phase 1 exit):** Phone and PC on same Wi-Fi; pair via QR; report scouted route; verify records arrive on PC and Wireshark on port 7350 shows only TLS records.

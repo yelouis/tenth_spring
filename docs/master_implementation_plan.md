@@ -23,7 +23,7 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 **Phase 0 — Companion capture & scout ledger** *(code-complete; device gate pending)*
 Carrying the phone yields a fuzzed visit/corridor log within budget. **Exit:** ledger fills while backgrounded over ≥ 8 h at < 3%/day on a real device.
 
-**Phase 1 — Pairing, sync & data models** *(code-complete & CI-verified; physical device gate pending)*
+**Phase 1 — Pairing, sync & data models** *(built & CI-verified; pass-13 fixes F32–F34 queued, then the physical device gate — see the agent guide §2)*
 A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Status:** All code delivered across Item 2 (real SQLite persistence, WAL, bound parameters) and Item 3a–c (pinned TLS listener, QR generator, pairing tokens, frame codec, scout reports, and cross-language loopback sync in CI). Verified in CI (`sync_e2e`, `game_tests`, `Public-Repo IP Guard`). **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records (pending human testing on physical phone + PC).
 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*

@@ -249,7 +249,8 @@ One PC ↔ one phone (v1.0). **Godot's built-in TLS on the PC, Dart's `SecureSoc
    - **drop** loopback and `169.254.0.0/16`;
    - **at most 4**.
 3. The phone (`mobile_scanner`) parses it and rejects `v != 2`.
-   - If it is already paired with **this** `pcId` **and** `fp`, it only updates the stored `addrs`/`port`. Done; no PAIR is sent.
+   - If it is already paired with **this** `pcId` **and** `fp` **and still holds a `deviceToken`**, it only updates the stored `addrs`/`port`. Done; no PAIR is sent.
+   - Whenever the PC answers `ERROR unpaired` (to HELLO or BATCH), the phone **deletes `pairing.deviceToken`** and keeps everything else (F33). The next scan of the same QR therefore sends a full PAIR.
    - Otherwise it generates:
      - `phoneId` once, if absent: 16 random bytes, hex;
      - a `deviceToken`: 32 bytes from `Random.secure()`.
@@ -307,9 +308,10 @@ PAIR_OK   { type, pcId }
 HELLO     { type, peerId, schemaVersion, deviceToken }                  // every session
 HELLO_OK  { type, pcId, lastAppliedSeq }
 BATCH     { type, rows: [ {seq, kind, lat, lon, startedAt, dwellSeconds?} ...],   // ≤ 500 rows, seq-ascending
-            bodyFix: { lat, lon, tsUtcMs } }                                       // fuzzed
-ACK       { type:"ACK", status:"ack", lastAppliedSeq, appliedCount }    // = process_batch()'s result + type
-ERROR     { type, code }  // bad_pair_code | unpaired | schema_mismatch | protocol | busy
+            bodyFix?: { lat, lon, tsUtcMs } }   // OPTIONAL. Fuzzed; tsUtcMs = when the fix was taken. Omitted if the phone has no fix (F34)
+ACK       { type:"ACK", status:"ack", lastAppliedSeq, appliedCount }    // success ONLY — = process_batch()'s result + type
+ERROR     { type, code }  // bad_pair_code | unpaired | schema_mismatch | protocol | busy | storage
+          // storage: a DB write failed (BATCH rolled back, or PAIR token not saved). Never sent as an ACK (F32).
 ```
 **HELLO checks** (the PC rejects with `ERROR` and closes):
 - **Token:** the PC compares SHA-256(`deviceToken`) with the stored hash using `Crypto.constant_time_compare`; a mismatch → `unpaired`.
@@ -321,7 +323,7 @@ ERROR     { type, code }  // bad_pair_code | unpaired | schema_mismatch | protoc
 On `BATCH`, inside one DB transaction:
 1. Read `sync_peer.last_applied_seq` for this peer.
 2. Apply only rows with `seq > last_applied_seq`, in ascending order (§B4.5).
-3. Set `last_applied_seq = max(applied seq)`; store `bodyFix` into `sync_peer.last_body_*`.
+3. Set `last_applied_seq = max(applied seq)`. **Only if `bodyFix` is present and valid**, store it into `sync_peer.last_body_*`; otherwise leave the previous body position untouched (F34).
 4. Reply `ACK { lastAppliedSeq }`.
 Phone: on ACK, delete outbox rows with `seq <= lastAppliedSeq`. If the connection drops before ACK, nothing is deleted and nothing is half-applied (the transaction either commits fully or not); the phone resends from `last_acked` and the PC re-applies safely because rows `<= last_applied_seq` are skipped.
 
