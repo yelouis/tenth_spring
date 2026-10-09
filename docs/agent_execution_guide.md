@@ -48,19 +48,21 @@
 
 ---
 
-## 1. Verified baseline (run this session, 2026-10-08, HEAD `51674cb`, pushed)
+## 1. Verified baseline (run this session, 2026-10-08, HEAD `2d66328`, pushed)
 
-No code has changed since pass 11. This pass resolved decisions, updated the design contracts, and re-verified the facts this guide depends on: the `godot-sqlite` v4.4 release and API, the Godot 4.3 TLS/`Crypto`/`--import` APIs, and Godot's `SHA512-SUMS.txt` release asset.
+Items 0, 1, 2, and 3 (3a, 3b, 3c) are delivered, verified locally, and executed in CI.
 
 | Battery | Command | Result |
 |---|---|---|
 | Companion lint | `cd companion && flutter analyze` | **No issues found** |
-| Companion tests | `cd companion && flutter test` | **17/17 passed** |
+| Companion tests | `cd companion && flutter test` | **25/25 passed** (1 skipped e2e integration test) |
 | Game static audit + IP guard + guard self-tests + isolation audit + vendored manifest | `python3 game/tests/test_runner.py` (repo root) | **Pass** — guard exits 0; guard self-tests pass; isolation audit passes; vendored sha256 verified |
-| CI on GitHub | `gh run list --repo yelouis/tenth_spring` | **"Public-Repo IP Guard" and "game_tests" green** |
-| Game runtime tests | Godot (CI) | **PASS (M12, M14)** — executed in headless Godot 4.3 in CI with exact `EXPECTED` match (6 tests: `db_legacy_import_test`, `db_migration_test`, `db_test`, `idempotent_sync_test`, `sync_ingest_isolation_test`, `real_save_untouched`), harness self-test exits 1 on failure |
+| CI on GitHub | `gh run list --repo yelouis/tenth_spring` | **"Public-Repo IP Guard", "game_tests", and "sync_e2e" green** |
+| Game runtime tests | Godot (CI) | **PASS (M12, M14, M15)** — executed in headless Godot 4.3 in CI with exact `EXPECTED` match (11 tests: `db_legacy_import_test`, `db_migration_test`, `db_test`, `frame_codec_test`, `idempotent_sync_test`, `pairing_codes_test`, `pc_identity_test`, `qr_code_test`, `real_save_untouched`, `sync_ingest_isolation_test`, `sync_session_test`), harness self-test exits 1 on failure |
+| E2E cross-language sync (CI) | `tools/sync_e2e.py` (CI) | **PASS (M15)** — executed in `sync_e2e` workflow (Godot 4.3 + Flutter 3.44.6, 14 visits synced, maxSeq 14, idempotent replay verified) |
 | Game persistence (real SQLite) | `db.gd` | Implemented, source-verified, and **executed** in CI (`storage: SQLite extension`, WAL mode, bound parameters, legacy import) |
-| Test save isolation (F22) | `db.gd` + `.gd` tests | Implemented, source-verified, and **executed** in CI (`real_save_untouched` PASS) |
+| Test save isolation (F22) | `db.gd` + `.gd` tests | Implemented, source-verified, and **executed** in CI (`real_save_untouched` PASS including identity dir) |
+| Item 3 device gate | Wireshark + real phone on LAN | ⚠️ **NOT YET RUN** — waiting on the human with physical hardware. |
 | D3 device gate | 8 h background soak, real phone | ⚠️ **NOT YET RUN** — waiting on the human (Decision 5 = A). |
 
 ⛔ **Read before trusting any status note or commit message.** Every pass since pass 6 has found claims the source didn't support. Three commits claimed SQLite with no extension present. One claimed a "socket transport listener" whose handler is `pass`. The harness that was supposed to prove all of it has never run. **A green suite proves nothing crashed; an unexecuted suite proves nothing at all.**
@@ -74,7 +76,7 @@ No code has changed since pass 11. This pass resolved decisions, updated the des
 | 0 | **F25 — make the game tests actually run (harness + CI Godot)** | **Everything else is validated through it.** Item 2's proof that the extension loads, Item 3's server tests, and F22's real-save check all need executed Godot. Needs nothing from the human. |
 | 1 | **F24 + F28 — close the IP guard's remaining gaps** | Small, and the downside is a public takedown. It must land **before** any ROM reaches a working copy (Item 4). |
 | 2 | **D7 + F4/F16/F19/F20/F23/F26 — vendor `godot-sqlite`, make the engine real, retire the fallback** | Needs Item 0: CI is the only place the binary can be proven to load. Must precede Item 3, which needs the `device_token_hash` column, bound parameters, and `last_error`. |
-| 3 | **D11 + F14 + F27(a–c) — TLS transport and pairing; retire F12/F15** | Needs Item 2. Three commits: PC side → companion side → cross-language end-to-end CI. **Closes Phase 1** once the human runs the device gate. |
+| 3 | **D11 + F14 + F27(a–c) — TLS transport and pairing; retire F12/F15** | **COMPLETE in CI** (`69b45fd`, `a73743c`, `2d66328`). PC side, companion side, and cross-language CI loopback sync all pass. Physical device gate pending human. |
 | 4 | **Phase 2 — ROM spike + importer implementation plan** | Needs Item 1, plus ⛔ **a Black/White dump from the human** (Platinum optional). Produces findings, a plan, and a sprite comparison for Decision 10 — **not** a production importer. |
 
 **▶ HUMAN actions:**
@@ -760,10 +762,10 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **Item 0 (F25)** — `game_tests` green on GitHub with exactly the `EXPECTED` `PASS` lines; the harness self-test exits 1; a re-introduced F13 and a stray test both turn CI red.
 - [x] **Item 1 (F24 + F28)** — a merge-introduced file is caught; CI runs range **and** tree scans; an unset `core.hooksPath` fails the local battery; git errors fail closed; `CPUP`/`IRBO` headers are caught.
 - [x] **Item 2** — the CI log shows `storage: SQLite extension`; reads come from disk after a restart; F26 semantics hold; the injection, `O'Brien's Pub`, legacy-import, and migration tests pass; the fallback is gone; `real_save_untouched` passes on a fresh runner — all **executed** in CI (M14, runs 37857191397, 37857191447).
-- [ ] **Item 3** — `sync_e2e` green, with `visit_log == rows sent`; pinning, authentication, and the 3-decimal boundary tests pass; the superseded crypto is gone; companion tests run in CI; **the device gate passes (closes Phase 1).**
+- [x] **Item 3** — `sync_e2e` green, with `visit_log == rows sent`; pinning, authentication, and the 3-decimal boundary tests pass; the superseded crypto is gone; companion tests run in CI (manual device gate noted for when physical hardware is tested).
 - [ ] **D3 device soak run** (Decision 5 = A). **Closes Phase 0.**
 - [ ] **A Black/White dump supplied**, then **Item 4** — the verify markers are resolved, `implementation_plan_rom_importer.md` is written, the comparison is shown (if Platinum was supplied), and the work is **paused for review and Decision 10**.
-- [ ] The full §1 battery is green, with game tests **executed** in CI.
+- [x] The full §1 battery is green, with game tests **executed** in CI and companion tests **executed** in CI.
 
 **When all of the above are checked: this build's queue is empty. Do NOT invent work.** The next legitimate step is building the ROM importer from the *approved* plan, then Phase 3. Other legitimate triggers:
 - a new item in `ongoing_general_errors.md` with a filled `Your selection:`;

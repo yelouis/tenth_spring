@@ -55,5 +55,5 @@ Sync is diegetic: the companion is the trainer's *field journal*, and syncing is
 - **No account** means device loss loses unsynced scouting (synced map lives on PC; the PC save is the canonical world). Accepted: aligns with the no-account privacy stance.
 
 ## 6. Files
-* Companion (Flutter): `companion/lib/capture/*`, `companion/lib/sync/pairing.dart`, `companion/lib/sync/transport.dart`, `companion/lib/screens/{ledger,memoir,settings}.dart`
-* PC (Godot): `game/autoloads/sync_server.gd` (TLS listener, frames, dispatch), `game/sync/pc_identity.gd` (certificate + fingerprint), `game/sync/pairing.gd` (pairing codes, QR payload), `game/world/intel_ceremony.gd`
+* Companion (Flutter): `companion/lib/capture/*`, `companion/lib/sync/pairing.dart`, `companion/lib/sync/frame_codec.dart`, `companion/lib/sync/scout_link.dart`, `companion/lib/ui/*`
+* PC (Godot): `game/autoloads/sync_server.gd` (TLS listener, frames, dispatch), `game/sync/pc_identity.gd` (certificate + fingerprint), `game/sync/pairing.gd` (pairing codes, QR payload), `game/sync/frame_codec.gd`, `game/sync/qr_code.gd`, `game/scenes/pairing.tscn`

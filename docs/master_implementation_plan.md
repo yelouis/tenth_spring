@@ -23,8 +23,8 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 **Phase 0 — Companion capture & scout ledger** *(code-complete; device gate pending)*
 Carrying the phone yields a fuzzed visit/corridor log within budget. **Exit:** ledger fills while backgrounded over ≥ 8 h at < 3%/day on a real device.
 
-**Phase 1 — Pairing, sync & data models** *(partial — the active queue)*
-A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records.
+**Phase 1 — Pairing, sync & data models** *(code-complete & CI-verified; physical device gate pending)*
+A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Status:** All code delivered across Item 2 (real SQLite persistence, WAL, bound parameters) and Item 3a–c (pinned TLS listener, QR generator, pairing tokens, frame codec, scout reports, and cross-language loopback sync in CI). Verified in CI (`sync_e2e`, `game_tests`, `Public-Repo IP Guard`). **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records (pending human testing on physical phone + PC).
 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*
 Import player-supplied ROMs — Black or White (all data for the 649 Gen 1–5 species, plus sprites) and, if Decision 10 calls for it, Platinum (Diamond/Pearl-style sprites for #1–493) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
