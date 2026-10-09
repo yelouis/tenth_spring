@@ -13,7 +13,7 @@ class SyncTransport {
   }
 
   /// Builds BATCH payload from un-synced outbox items
-  Map<String, dynamic> buildBatchPayload(List<VisitOutboxItem> rows, Map<String, dynamic> bodyFix) {
+  Map<String, dynamic> buildBatchPayload(List<VisitOutboxItem> rows, Map<String, dynamic>? bodyFix) {
     final rowList = rows.map((r) => {
       "seq": r.seq,
       "kind": r.kind,
@@ -26,7 +26,7 @@ class SyncTransport {
     return {
       "type": "BATCH",
       "rows": rowList,
-      "bodyFix": bodyFix,
+      "bodyFix": ?bodyFix,
     };
   }
 

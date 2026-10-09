@@ -402,9 +402,15 @@ func get_sync_peer(peer_id: String) -> Dictionary:
 	var rows = _rows("SELECT * FROM sync_peer WHERE peer_id = ?;", [peer_id])
 	return rows[0] if not rows.is_empty() else {}
 
+func update_sync_peer_seq(peer_id: String, last_applied_seq: int) -> void:
+	last_error = ""
+	_q("INSERT INTO sync_peer (peer_id, last_applied_seq) VALUES (?, ?) ON CONFLICT(peer_id) DO UPDATE SET last_applied_seq = MAX(sync_peer.last_applied_seq, excluded.last_applied_seq);", [
+		peer_id, last_applied_seq
+	])
+
 func update_sync_peer(peer_id: String, last_applied_seq: int, body_lat: float, body_lon: float, body_ts: int) -> void:
 	last_error = ""
-	_q("INSERT INTO sync_peer (peer_id, last_applied_seq, last_body_lat, last_body_lon, last_body_ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(peer_id) DO UPDATE SET last_applied_seq = MAX(sync_peer.last_applied_seq, excluded.last_applied_seq), last_body_lat = excluded.last_body_lat, last_body_lon = excluded.last_body_lon, last_body_ts = excluded.last_body_ts;", [
+	_q("INSERT INTO sync_peer (peer_id, last_applied_seq, last_body_lat, last_body_lon, last_body_ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(peer_id) DO UPDATE SET last_applied_seq = MAX(sync_peer.last_applied_seq, excluded.last_applied_seq), last_body_lat = CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0) THEN excluded.last_body_lat ELSE sync_peer.last_body_lat END, last_body_lon = CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0) THEN excluded.last_body_lon ELSE sync_peer.last_body_lon END, last_body_ts = MAX(COALESCE(sync_peer.last_body_ts, 0), excluded.last_body_ts);", [
 		peer_id, last_applied_seq, body_lat, body_lon, body_ts
 	])
 

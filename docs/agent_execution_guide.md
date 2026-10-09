@@ -502,7 +502,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ```
 
 ## Definition of Done (this build)
-- [ ] **Item 0 (F34)** — a BATCH without `bodyFix` leaves the stored body position unchanged; a stale fix can't overwrite a newer one; no location literals remain in `companion/lib`; executed in CI.
+- [x] **Item 0 (F34)** — a BATCH without `bodyFix` leaves the stored body position unchanged; a stale fix can't overwrite a newer one; no location literals remain in `companion/lib`; executed in CI.
 - [ ] **Item 1 (F33)** — after `unpaired`, scanning the same PC's QR sends a real PAIR and the phone reports again; executed in CI.
 - [ ] **Item 2 (F32)** — a storage failure reaches the phone as `ERROR storage` → `ReportPcStorageError`; a malformed PAIR doesn't burn the code; executed in CI.
 - [ ] **HUMAN: real-device sync gate passes** (Item 2 validation, steps 1–5). **Closes Phase 1.**

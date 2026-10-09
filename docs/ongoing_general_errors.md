@@ -208,16 +208,15 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Not yet proven:** that a real phone can scan the PC's QR code (the QR fixtures' provenance can't be checked offline) — the device gate covers it.
   - **Process note:** three iterations of the `sync_e2e` commit were **force-pushed over `main`** (runs 37882602560, 37882837725, 37883070244 point at commits no longer in history). Iterate on a branch instead.
 
+**M16 — Real fuzzed fix enforcement and stale fix refusal (F34, 2026-10-09).**
+- **What was solved:**
+  - **Phone:** Replaced `_lastFixLat`/`_lastFixLon` with `_FixRecord? _lastFix` capturing `{lat, lon, tsUtcMs}` from real location fixes; deleted all hardcoded coordinates (`37.775`, `-122.419`) from `companion/lib/`; `_reportToPc()` passes `bodyFix` only when non-null; `SyncTransport.buildBatchPayload` omits `"bodyFix"` key when null; `ScoutLink.report` supports optional `bodyFix`.
+  - **PC:** `game/autoloads/sync_server.gd` strictly validates `bodyFix` when present (Dictionary, fuzzed coordinates, `tsUtcMs > 0`) returning `ERROR protocol` on violation; `process_batch` conditionally updates body position via `DB.update_sync_peer` or calls `DB.update_sync_peer_seq` when `bodyFix` is omitted; `game/autoloads/db.gd` added `update_sync_peer_seq` and updated `update_sync_peer` conflict clause with `CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0)` to refuse stale fixes.
+- **F34 (fixed):** Verified in `game/tests/sync_session_test.gd` (falsifying test: BATCH with bodyFix then BATCH without bodyFix keeps stored position; stale fix rejected; 4-decimal and missing tsUtcMs rejected as ERROR protocol) and in `companion/test/sync_test.dart` (payload omits key when null; fake server receives no bodyFix).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-
-- **F34 (HIGH — pillar 1 + fast travel, found 2026-10-09, 13th pass) — the phone can place the player somewhere they have never been.**
-  - **The phone side:** `companion/lib/ui/scout_ledger_screen.dart:187-191` builds `bodyFix` as `_lastFixLat ?? 37.775` / `_lastFixLon ?? -122.419`. Tapping *Report to PC* before the app has seen a fix (just launched, permission denied, indoors) reports a **hardcoded San Francisco location**. Its `tsUtcMs` is the send time, not the fix time.
-  - **The PC side:** `game/autoloads/sync_server.gd:195-199` writes `float(body_fix.get("lat", 0.0))`, so a BATCH without `bodyFix` overwrites the last body position with **0, 0** at time 0.
-  - **Why it matters:** fast travel spawns the player at the body position, and relocation reveals ground there. Either path reveals a place the player never walked — the one thing the game's first pillar forbids.
-  - **Contract** (updated): `design_companion_and_sync.md` §3; `implementation_plan_foundation.md` §B4.3–B4.4.
-  - **Agent-guide §3 (Item 0).**
 - **F33 (HIGH — dead end, found 2026-10-09, 13th pass) — after losing its pairing, the phone can never re-pair with the same PC.**
   - When another phone pairs, the PC clears this phone's token, and `report()` returns `ReportUnpaired`. The UI says *"scan its code to pair again"*.
   - But `ScoutLink.pair()` (`companion/lib/sync/scout_link.dart:114-118`) sees the same `pcId` + `fp`, only refreshes the addresses, and returns `PairOk` (*"Scout recruited successfully!"*) **without sending PAIR**.

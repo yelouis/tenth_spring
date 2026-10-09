@@ -11,6 +11,7 @@ import 'package:companion/outbox/database.dart';
 import 'package:companion/sync/frame_codec.dart';
 import 'package:companion/sync/pairing.dart';
 import 'package:companion/sync/scout_link.dart';
+import 'package:companion/sync/transport.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -382,6 +383,96 @@ void main() {
       expect(result, isA<ReportUnpaired>());
       // Deletes nothing
       expect((await db.getAllVisits()).length, equals(1));
+
+      await server.close();
+    });
+
+    test('buildBatchPayload with null bodyFix omits bodyFix key', () {
+      final transport = SyncTransport();
+      final rows = [
+        VisitOutboxItem(
+          seq: 1,
+          kind: 'visit',
+          lat: 37.776,
+          lon: -122.420,
+          startedAt: 1000,
+          synced: 0,
+        ),
+      ];
+      final payload = transport.buildBatchPayload(rows, null);
+      expect(payload.containsKey('bodyFix'), isFalse);
+      expect(payload['rows'], isNotEmpty);
+
+      final payloadWithFix = transport.buildBatchPayload(rows, {
+        'lat': 37.776,
+        'lon': -122.420,
+        'tsUtcMs': 1000,
+      });
+      expect(payloadWithFix.containsKey('bodyFix'), isTrue);
+      expect(payloadWithFix['bodyFix']['lat'], equals(37.776));
+    });
+
+    test('report(bodyFix: null) sends BATCH frame without bodyFix key', () async {
+      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+      final privKey = keyPair.privateKey as RSAPrivateKey;
+      final pubKey = keyPair.publicKey as RSAPublicKey;
+      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+      final der = base64Decode(certPem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll('\n', '')
+          .replaceAll('\r', ''));
+      final digest = await Sha256().hash(der);
+      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+
+      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+      Map<String, dynamic>? receivedBatchFrame;
+
+      server.listen((client) {
+        final framed = FramedSocket(client);
+        () async {
+          while (true) {
+            final frame = await framed.nextFrame();
+            if (frame == null) break;
+            if (frame['type'] == 'HELLO') {
+              await framed.send({
+                'type': 'HELLO_OK',
+                'pcId': 'pc_fake',
+                'lastAppliedSeq': 0,
+              });
+            } else if (frame['type'] == 'BATCH') {
+              receivedBatchFrame = frame;
+              await framed.send({
+                'type': 'ACK',
+                'status': 'ack',
+                'lastAppliedSeq': 1,
+                'appliedCount': 1,
+              });
+            }
+          }
+        }();
+      });
+
+      await store.savePairing(
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        phoneId: 'test_phone_id',
+        deviceToken: 'token_abc',
+      );
+
+      await db.insertVisit(kind: 'visit', lat: 37.776, lon: -122.420, startedAt: 1000);
+      final result = await link.report(db: db, bodyFix: null);
+      expect(result, isA<ReportOk>());
+      expect(receivedBatchFrame, isNotNull);
+      expect(receivedBatchFrame!.containsKey('bodyFix'), isFalse);
 
       await server.close();
     });

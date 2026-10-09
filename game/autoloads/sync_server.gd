@@ -125,7 +125,6 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 	DB.begin_transaction()
 
 	var rows = batch_data.get("rows", [])
-	var body_fix = batch_data.get("bodyFix", {})
 
 	var peer_info = DB.get_sync_peer(peer_id)
 	var last_applied_seq = int(peer_info.get("last_applied_seq", 0))
@@ -192,11 +191,14 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 					return {"status": "error", "message": "storage error"}
 
 	# Save last body position for relocation
-	var body_lat = float(body_fix.get("lat", 0.0))
-	var body_lon = float(body_fix.get("lon", 0.0))
-	var body_ts = int(body_fix.get("tsUtcMs", 0))
-
-	DB.update_sync_peer(peer_id, max_seq, body_lat, body_lon, body_ts)
+	var body_fix = batch_data.get("bodyFix", null)
+	if body_fix != null and typeof(body_fix) == TYPE_DICTIONARY and not body_fix.is_empty():
+		var body_lat = float(body_fix["lat"])
+		var body_lon = float(body_fix["lon"])
+		var body_ts = int(body_fix["tsUtcMs"])
+		DB.update_sync_peer(peer_id, max_seq, body_lat, body_lon, body_ts)
+	else:
+		DB.update_sync_peer_seq(peer_id, max_seq)
 	if DB.last_error != "":
 		DB.rollback_transaction()
 		return {"status": "error", "message": "storage error"}
@@ -329,17 +331,27 @@ class SessionDispatcher extends RefCounted:
 			if not SyncServer.is_fuzzed_coord(flat) or not SyncServer.is_fuzzed_coord(flon):
 				return {"type": "ERROR", "code": "protocol"}
 
-		var body_fix = frame.get("bodyFix", null)
-		if body_fix != null and typeof(body_fix) == TYPE_DICTIONARY and not body_fix.is_empty():
+		if frame.has("bodyFix"):
+			var body_fix = frame.get("bodyFix")
+			if typeof(body_fix) != TYPE_DICTIONARY:
+				return {"type": "ERROR", "code": "protocol"}
 			var b_lat = body_fix.get("lat", null)
 			var b_lon = body_fix.get("lon", null)
-			if b_lat != null and b_lon != null and (typeof(b_lat) in [TYPE_FLOAT, TYPE_INT]) and (typeof(b_lon) in [TYPE_FLOAT, TYPE_INT]):
-				var fb_lat = float(b_lat)
-				var fb_lon = float(b_lon)
-				if fb_lat < -90.0 or fb_lat > 90.0 or fb_lon < -180.0 or fb_lon > 180.0:
-					return {"type": "ERROR", "code": "protocol"}
-				if not SyncServer.is_fuzzed_coord(fb_lat) or not SyncServer.is_fuzzed_coord(fb_lon):
-					return {"type": "ERROR", "code": "protocol"}
+			var b_ts = body_fix.get("tsUtcMs", null)
+			if b_lat == null or b_lon == null or b_ts == null:
+				return {"type": "ERROR", "code": "protocol"}
+			if not (typeof(b_lat) in [TYPE_FLOAT, TYPE_INT]) or not (typeof(b_lon) in [TYPE_FLOAT, TYPE_INT]):
+				return {"type": "ERROR", "code": "protocol"}
+			var fb_lat = float(b_lat)
+			var fb_lon = float(b_lon)
+			if fb_lat < -90.0 or fb_lat > 90.0 or fb_lon < -180.0 or fb_lon > 180.0:
+				return {"type": "ERROR", "code": "protocol"}
+			if not SyncServer.is_fuzzed_coord(fb_lat) or not SyncServer.is_fuzzed_coord(fb_lon):
+				return {"type": "ERROR", "code": "protocol"}
+			if not (typeof(b_ts) == TYPE_INT or (typeof(b_ts) == TYPE_FLOAT and b_ts == round(b_ts))):
+				return {"type": "ERROR", "code": "protocol"}
+			if int(b_ts) <= 0:
+				return {"type": "ERROR", "code": "protocol"}
 
 		# Apply batch using the authenticated session peer id
 		var result = SyncServer.process_batch(authenticated_peer_id, frame)

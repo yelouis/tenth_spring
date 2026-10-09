@@ -199,7 +199,7 @@ class ScoutLink {
   }
 
   /// Reports pending scout outbox rows to PC.
-  Future<ReportResult> report({required AppDatabase db, required Map<String, dynamic> bodyFix}) async {
+  Future<ReportResult> report({required AppDatabase db, Map<String, dynamic>? bodyFix}) async {
     final pcId = await store.getPcId();
     final fp = await store.getFp();
     final phoneId = await store.getPhoneId();

@@ -26,14 +26,20 @@ class ScoutLedgerScreen extends StatefulWidget {
   State<ScoutLedgerScreen> createState() => _ScoutLedgerScreenState();
 }
 
+class _FixRecord {
+  final double lat;
+  final double lon;
+  final int tsUtcMs;
+  const _FixRecord({required this.lat, required this.lon, required this.tsUtcMs});
+}
+
 class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
     with WidgetsBindingObserver {
   bool _isScoutingPaused = false;
   bool _isBackgroundScoutingEnabled = true;
   bool _isReporting = false;
   DateTime? _lastReportTime;
-  double? _lastFixLat;
-  double? _lastFixLon;
+  _FixRecord? _lastFix;
   List<VisitOutboxItem> _visits = [];
   late VisitCorridorDetector _detector;
   LocationSource? _locationSource;
@@ -99,8 +105,11 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
 
       _fixSub = _locationSource!.fixes().listen((fix) {
         final fuzzed = fuzzPoint(fix.lat, fix.lon);
-        _lastFixLat = fuzzed.lat;
-        _lastFixLon = fuzzed.lon;
+        _lastFix = _FixRecord(
+          lat: fuzzed.lat,
+          lon: fuzzed.lon,
+          tsUtcMs: fix.tsUtcMs,
+        );
         if (!_isScoutingPaused) {
           _detector.processFix(fix);
         }
@@ -134,11 +143,19 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
   }
 
   Future<void> _triggerManualScout() async {
+    if (_lastFix == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No location fix available yet')),
+        );
+      }
+      return;
+    }
     final now = DateTime.now().millisecondsSinceEpoch;
     await widget.database.insertVisit(
       kind: 'visit',
-      lat: 37.775,
-      lon: -122.419,
+      lat: _lastFix!.lat,
+      lon: _lastFix!.lon,
       startedAt: now,
       dwellSeconds: 120,
     );
@@ -184,11 +201,13 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
   Future<void> _reportToPc() async {
     setState(() => _isReporting = true);
     final link = widget.scoutLink ?? ScoutLink();
-    final bodyFix = {
-      "lat": _lastFixLat ?? 37.775,
-      "lon": _lastFixLon ?? -122.419,
-      "tsUtcMs": DateTime.now().millisecondsSinceEpoch,
-    };
+    final bodyFix = _lastFix == null
+        ? null
+        : {
+            "lat": _lastFix!.lat,
+            "lon": _lastFix!.lon,
+            "tsUtcMs": _lastFix!.tsUtcMs,
+          };
     final result = await link.report(db: widget.database, bodyFix: bodyFix);
     if (!mounted) return;
     setState(() => _isReporting = false);

@@ -101,7 +101,7 @@ func run_test() -> bool:
 		"type": "BATCH",
 		"peerId": "other_attacker",
 		"rows": [{"seq": 1, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 1000, "dwellSeconds": 60}],
-		"bodyFix": {"lat": 37.776, "lon": -122.420, "tsUtcMs": 1000000}
+		"bodyFix": {"lat": 37.776, "lon": -122.420, "tsUtcMs": 1000}
 	})
 	if batch_spoof.get("type") != "ACK" or int(batch_spoof.get("appliedCount", 0)) != 1:
 		push_error("sync_session_test: valid batch failed to ACK: " + str(batch_spoof))
@@ -115,6 +115,86 @@ func run_test() -> bool:
 
 	if DB.is_visit_logged("other_attacker", 1):
 		push_error("sync_session_test: row was stored under spoofed peerId")
+		_cleanup()
+		return false
+
+	# 7. Falsifying F34: BATCH with bodyFix (ts 2000), then BATCH without bodyFix keeps stored position
+	var batch_fix1 = disp.handle_frame({
+		"type": "BATCH",
+		"rows": [{"seq": 2, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 2000, "dwellSeconds": 60}],
+		"bodyFix": {"lat": 37.776, "lon": -122.420, "tsUtcMs": 2000}
+	})
+	if batch_fix1.get("type") != "ACK":
+		push_error("sync_session_test: batch_fix1 failed: " + str(batch_fix1))
+		_cleanup()
+		return false
+
+	var peer_check1 = DB.get_sync_peer("phone_alpha")
+	if abs(float(peer_check1.get("last_body_lat", 0.0)) - 37.776) > 1e-6 or abs(float(peer_check1.get("last_body_lon", 0.0)) - (-122.420)) > 1e-6 or int(peer_check1.get("last_body_ts", 0)) != 2000:
+		push_error("sync_session_test: peer body fix not saved correctly: " + str(peer_check1))
+		_cleanup()
+		return false
+
+	# BATCH (seq 3) without bodyFix key
+	var batch_no_fix = disp.handle_frame({
+		"type": "BATCH",
+		"rows": [{"seq": 3, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 3000, "dwellSeconds": 60}]
+	})
+	if batch_no_fix.get("type") != "ACK":
+		push_error("sync_session_test: batch_no_fix failed: " + str(batch_no_fix))
+		_cleanup()
+		return false
+
+	var peer_check2 = DB.get_sync_peer("phone_alpha")
+	if int(peer_check2.get("last_applied_seq", 0)) != 3:
+		push_error("sync_session_test: last_applied_seq was not updated to 3: " + str(peer_check2))
+		_cleanup()
+		return false
+	if abs(float(peer_check2.get("last_body_lat", 0.0)) - 37.776) > 1e-6 or abs(float(peer_check2.get("last_body_lon", 0.0)) - (-122.420)) > 1e-6 or int(peer_check2.get("last_body_ts", 0)) != 2000:
+		push_error("sync_session_test: peer body position corrupted by BATCH without bodyFix: " + str(peer_check2))
+		_cleanup()
+		return false
+
+	# 8. Falsifying — stale fix: later BATCH with bodyFix tsUtcMs 1000 leaves stored position at ts 2000 values
+	var batch_stale = disp.handle_frame({
+		"type": "BATCH",
+		"rows": [{"seq": 4, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 4000, "dwellSeconds": 60}],
+		"bodyFix": {"lat": 37.770, "lon": -122.410, "tsUtcMs": 1000}
+	})
+	if batch_stale.get("type") != "ACK":
+		push_error("sync_session_test: batch_stale failed: " + str(batch_stale))
+		_cleanup()
+		return false
+
+	var peer_check3 = DB.get_sync_peer("phone_alpha")
+	if int(peer_check3.get("last_applied_seq", 0)) != 4:
+		push_error("sync_session_test: last_applied_seq not updated on stale fix batch: " + str(peer_check3))
+		_cleanup()
+		return false
+	if abs(float(peer_check3.get("last_body_lat", 0.0)) - 37.776) > 1e-6 or abs(float(peer_check3.get("last_body_lon", 0.0)) - (-122.420)) > 1e-6 or int(peer_check3.get("last_body_ts", 0)) != 2000:
+		push_error("sync_session_test: stale bodyFix overwrote newer bodyFix: " + str(peer_check3))
+		_cleanup()
+		return false
+
+	# 9. Protocol validation: 4-decimal coord in bodyFix -> ERROR protocol
+	var batch_bad_fix_coord = disp.handle_frame({
+		"type": "BATCH",
+		"rows": [{"seq": 5, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 5000, "dwellSeconds": 60}],
+		"bodyFix": {"lat": 37.7761, "lon": -122.420, "tsUtcMs": 5000}
+	})
+	if batch_bad_fix_coord.get("type") != "ERROR" or batch_bad_fix_coord.get("code") != "protocol":
+		push_error("sync_session_test: 4-decimal bodyFix did not return ERROR protocol: " + str(batch_bad_fix_coord))
+		_cleanup()
+		return false
+
+	# 10. Protocol validation: missing tsUtcMs in bodyFix -> ERROR protocol
+	var batch_no_ts = disp.handle_frame({
+		"type": "BATCH",
+		"rows": [{"seq": 5, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 5000, "dwellSeconds": 60}],
+		"bodyFix": {"lat": 37.776, "lon": -122.420}
+	})
+	if batch_no_ts.get("type") != "ERROR" or batch_no_ts.get("code") != "protocol":
+		push_error("sync_session_test: bodyFix without tsUtcMs did not return ERROR protocol: " + str(batch_no_ts))
 		_cleanup()
 		return false
 
