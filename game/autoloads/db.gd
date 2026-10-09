@@ -70,7 +70,7 @@ func init_db() -> void:
 
 func _q(sql: String, params: Array = []) -> bool:
 	if _db == null:
-		last_error = "SQLite extension not available"
+		last_error = "storage: database not open"
 		push_error(last_error)
 		return false
 	var ok: bool = _db.query_with_bindings(sql, params)
@@ -210,6 +210,14 @@ func _get_candidate_bak_path() -> String:
 		return base_bak
 	return ""
 
+func _fail_legacy_import(reason: String) -> void:
+	if _in_transaction:
+		rollback_transaction()
+	var err_msg = "storage: UNAVAILABLE — legacy import failed: " + reason
+	print(err_msg)
+	push_error(err_msg)
+	close()
+
 func _run_legacy_import() -> void:
 	var rows = _rows("SELECT value FROM meta WHERE key = 'legacy_import';")
 	if not rows.is_empty():
@@ -217,6 +225,17 @@ func _run_legacy_import() -> void:
 
 	var bak_path = _get_candidate_bak_path()
 	if bak_path == "":
+		return
+
+	var cell_check_rows = _rows("SELECT COUNT(*) as c FROM map_cell;")
+	var visit_check_rows = _rows("SELECT COUNT(*) as c FROM visit_log;")
+	var existing_cells = int(cell_check_rows[0].get("c", 0)) if not cell_check_rows.is_empty() else 0
+	var existing_visits = int(visit_check_rows[0].get("c", 0)) if not visit_check_rows.is_empty() else 0
+	if existing_cells > 0 or existing_visits > 0:
+		var blocked_msg = "storage: UNAVAILABLE — legacy import blocked: database already has rows"
+		print(blocked_msg)
+		push_error(blocked_msg)
+		close()
 		return
 
 	var data = null
@@ -230,35 +249,42 @@ func _run_legacy_import() -> void:
 			data = JSON.parse_string(tmp_text)
 
 	if data == null or typeof(data) != TYPE_DICTIONARY:
-		push_warning("Legacy bak was unparseable; skipping legacy import.")
+		print("storage: legacy save unreadable — kept at " + bak_path)
 		return
 
 	if not begin_transaction():
+		_fail_legacy_import(last_error)
 		return
 
 	var wc = data.get("world_clock", {})
 	if typeof(wc) == TYPE_DICTIONARY and not wc.is_empty():
-		_q("UPDATE world_clock SET game_epoch_minutes = ?, last_wall_sync = ? WHERE id = 1;", [
+		if not _q("UPDATE world_clock SET game_epoch_minutes = ?, last_wall_sync = ? WHERE id = 1;", [
 			int(wc.get("game_epoch_minutes", 0)),
 			int(wc.get("last_wall_sync", 0))
-		])
+		]):
+			_fail_legacy_import(last_error)
+			return
 
 	var prof = data.get("player_profile", {})
 	if typeof(prof) == TYPE_DICTIONARY and not prof.is_empty():
 		var t_name = prof.get("survivor_name", prof.get("trainer_name", null))
-		_q("UPDATE player_profile SET trainer_name = ?, sprite_index = ?, pos_tile_x = ?, pos_tile_y = ? WHERE id = 1;", [
+		if not _q("UPDATE player_profile SET trainer_name = ?, sprite_index = ?, pos_tile_x = ?, pos_tile_y = ? WHERE id = 1;", [
 			t_name,
 			int(prof.get("sprite_index", 0)),
 			int(prof.get("pos_tile_x", 0)),
 			int(prof.get("pos_tile_y", 0))
-		])
+		]):
+			_fail_legacy_import(last_error)
+			return
 
 	var bs = data.get("base_state", {})
 	if typeof(bs) == TYPE_DICTIONARY and not bs.is_empty():
-		_q("UPDATE base_state SET home_cell_x = ?, home_cell_y = ? WHERE id = 1;", [
+		if not _q("UPDATE base_state SET home_cell_x = ?, home_cell_y = ? WHERE id = 1;", [
 			int(bs.get("home_cell_x", 0)),
 			int(bs.get("home_cell_y", 0))
-		])
+		]):
+			_fail_legacy_import(last_error)
+			return
 
 	var cells = data.get("map_cell", {})
 	if typeof(cells) == TYPE_DICTIONARY:
@@ -269,15 +295,17 @@ func _run_legacy_import() -> void:
 			var rev = int(c.get("reveal_state", 0))
 			var seed_val = int(c.get("cell_seed", 0))
 			var first_rev = int(c.get("first_revealed_at", Time.get_unix_time_from_system()))
-			_q("INSERT INTO map_cell (cell_x, cell_y, reveal_state, first_revealed_at, cell_seed) VALUES (?, ?, ?, ?, ?) ON CONFLICT(cell_x, cell_y) DO UPDATE SET reveal_state = MAX(map_cell.reveal_state, excluded.reveal_state);", [
+			if not _q("INSERT INTO map_cell (cell_x, cell_y, reveal_state, first_revealed_at, cell_seed) VALUES (?, ?, ?, ?, ?) ON CONFLICT(cell_x, cell_y) DO UPDATE SET reveal_state = MAX(map_cell.reveal_state, excluded.reveal_state);", [
 				cx, cy, rev, first_rev, seed_val
-			])
+			]):
+				_fail_legacy_import(last_error)
+				return
 
 	var places = data.get("place_node", {})
 	if typeof(places) == TYPE_DICTIONARY:
 		for pid in places:
 			var p = places[pid]
-			_q("INSERT INTO place_node (id, name, category, cell_x, cell_y, reveal_state, visit_count, last_real_visit_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET visit_count = place_node.visit_count + excluded.visit_count, last_real_visit_at = excluded.last_real_visit_at, reveal_state = MAX(place_node.reveal_state, excluded.reveal_state);", [
+			if not _q("INSERT INTO place_node (id, name, category, cell_x, cell_y, reveal_state, visit_count, last_real_visit_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET visit_count = place_node.visit_count + excluded.visit_count, last_real_visit_at = excluded.last_real_visit_at, reveal_state = MAX(place_node.reveal_state, excluded.reveal_state);", [
 				str(p.get("id", pid)),
 				str(p.get("name", "")),
 				int(p.get("category", 1)),
@@ -286,13 +314,15 @@ func _run_legacy_import() -> void:
 				int(p.get("reveal_state", 1)),
 				int(p.get("visit_count", 1)),
 				int(p.get("last_real_visit_at", Time.get_unix_time_from_system()))
-			])
+			]):
+				_fail_legacy_import(last_error)
+				return
 
 	var visits = data.get("visit_log", {})
 	if typeof(visits) == TYPE_DICTIONARY:
 		for vkey in visits:
 			var v = visits[vkey]
-			_q("INSERT INTO visit_log (seq, peer_id, place_id, lat, lon, started_at, dwell_seconds, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", [
+			if not _q("INSERT INTO visit_log (seq, peer_id, place_id, lat, lon, started_at, dwell_seconds, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?);", [
 				int(v.get("seq", 0)),
 				str(v.get("peer_id", "")),
 				v.get("place_id", null),
@@ -301,19 +331,23 @@ func _run_legacy_import() -> void:
 				int(v.get("started_at", 0)),
 				int(v.get("dwell_seconds", 0)),
 				str(v.get("kind", "visit"))
-			])
+			]):
+				_fail_legacy_import(last_error)
+				return
 
 	var peers = data.get("sync_peer", {})
 	if typeof(peers) == TYPE_DICTIONARY:
 		for peer_id in peers:
 			var sp = peers[peer_id]
-			_q("INSERT INTO sync_peer (peer_id, last_applied_seq, last_body_lat, last_body_lon, last_body_ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(peer_id) DO UPDATE SET last_applied_seq = MAX(sync_peer.last_applied_seq, excluded.last_applied_seq), last_body_lat = excluded.last_body_lat, last_body_lon = excluded.last_body_lon, last_body_ts = excluded.last_body_ts;", [
+			if not _q("INSERT INTO sync_peer (peer_id, last_applied_seq, last_body_lat, last_body_lon, last_body_ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(peer_id) DO UPDATE SET last_applied_seq = MAX(sync_peer.last_applied_seq, excluded.last_applied_seq), last_body_lat = excluded.last_body_lat, last_body_lon = excluded.last_body_lon, last_body_ts = excluded.last_body_ts;", [
 				str(sp.get("peer_id", peer_id)),
 				int(sp.get("last_applied_seq", 0)),
 				float(sp.get("last_body_lat", 0.0)),
 				float(sp.get("last_body_lon", 0.0)),
 				int(sp.get("last_body_ts", 0))
-			])
+			]):
+				_fail_legacy_import(last_error)
+				return
 
 	var inv = data.get("inventory_item", [])
 	if typeof(inv) == TYPE_ARRAY and inv.size() > 0:
@@ -321,8 +355,7 @@ func _run_legacy_import() -> void:
 
 	var bak_filename = bak_path.get_file()
 	if not _q("INSERT INTO meta (key, value) VALUES ('legacy_import', ?);", [bak_filename]):
-		rollback_transaction()
-		print("storage: UNAVAILABLE — legacy import mismatch")
+		_fail_legacy_import(last_error)
 		return
 
 	var cell_count_rows = _rows("SELECT COUNT(*) as c FROM map_cell;")
@@ -340,9 +373,21 @@ func _run_legacy_import() -> void:
 	var act_visits = int(visit_count_rows[0].get("c", 0)) if not visit_count_rows.is_empty() else 0
 	var act_peers = int(peer_count_rows[0].get("c", 0)) if not peer_count_rows.is_empty() else 0
 
-	if act_cells != exp_cells or act_places != exp_places or act_visits != exp_visits or act_peers != exp_peers:
-		rollback_transaction()
-		print("storage: UNAVAILABLE — legacy import mismatch")
+	if act_cells != exp_cells:
+		var reason = "count mismatch map_cell expected " + str(exp_cells) + " got " + str(act_cells)
+		_fail_legacy_import(reason)
+		return
+	if act_places != exp_places:
+		var reason = "count mismatch place_node expected " + str(exp_places) + " got " + str(act_places)
+		_fail_legacy_import(reason)
+		return
+	if act_visits != exp_visits:
+		var reason = "count mismatch visit_log expected " + str(exp_visits) + " got " + str(act_visits)
+		_fail_legacy_import(reason)
+		return
+	if act_peers != exp_peers:
+		var reason = "count mismatch sync_peer expected " + str(exp_peers) + " got " + str(act_peers)
+		_fail_legacy_import(reason)
 		return
 
 	commit_transaction()

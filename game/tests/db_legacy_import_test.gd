@@ -117,6 +117,115 @@ func run_test() -> bool:
 		_cleanup_test_files()
 		return false
 
+	DB.close()
+	_cleanup_test_files()
+
+	# 3. Falsifying F31: failed legacy import closes DB, leaves backup intact, no meta row
+	var fail_fixture_path = "res://tests/fixtures/legacy_fallback_duplicate_visit.json"
+	if not FileAccess.file_exists(fail_fixture_path):
+		push_error("FAIL: Duplicate visit fixture missing: " + fail_fixture_path)
+		return false
+
+	var fa_fail = FileAccess.open(fail_fixture_path, FileAccess.READ)
+	var fail_bytes = fa_fail.get_buffer(fa_fail.get_length())
+	fa_fail.close()
+	var fail_hash = FileAccess.get_sha256(fail_fixture_path)
+
+	var fa_out_fail = FileAccess.open(TEST_DB_PATH, FileAccess.WRITE)
+	fa_out_fail.store_buffer(fail_bytes)
+	fa_out_fail.close()
+
+	DB.init_db()
+
+	if DB._db != null:
+		push_error("FAIL: DB._db should be null after failed legacy import")
+		_cleanup_test_files()
+		return false
+
+	if DB.execute_query("SELECT 1;"):
+		push_error("FAIL: DB.execute_query should return false when DB is closed")
+		_cleanup_test_files()
+		return false
+
+	var fail_bak_path = TEST_DB_PATH + ".jsonbak"
+	if not FileAccess.file_exists(fail_bak_path):
+		push_error("FAIL: Expected rotated backup file at " + fail_bak_path)
+		_cleanup_test_files()
+		return false
+
+	var fail_bak_hash = FileAccess.get_sha256(fail_bak_path)
+	if fail_bak_hash != fail_hash:
+		push_error("FAIL: Rotated backup hash mismatch! Expected %s, got %s" % [fail_hash, fail_bak_hash])
+		_cleanup_test_files()
+		return false
+
+	var ind_db = ClassDB.instantiate("SQLite")
+	ind_db.path = TEST_DB_PATH
+	if not ind_db.open_db():
+		push_error("FAIL: Could not open independent SQLite connection on disk")
+		_cleanup_test_files()
+		return false
+	ind_db.query("SELECT value FROM meta WHERE key = 'legacy_import';")
+	var meta_rows = ind_db.query_result
+	ind_db.close_db()
+	if not meta_rows.is_empty():
+		push_error("FAIL: Expected no legacy_import meta row after failed import, got: " + str(meta_rows))
+		_cleanup_test_files()
+		return false
+
+	DB.close()
+	_cleanup_test_files()
+
+	# 4. Precondition check: database with existing map_cell row blocks legacy import and closes DB
+	DB.init_db()
+	DB.upsert_map_cell(10, 20, 1)
+	var pre_cells = DB._rows("SELECT COUNT(*) as c FROM map_cell;")
+	if pre_cells.is_empty() or pre_cells[0].get("c", 0) != 1:
+		push_error("FAIL: Failed to seed map_cell for precondition test")
+		DB.close()
+		_cleanup_test_files()
+		return false
+	DB.close()
+
+	# Stage a .jsonbak while DB already has rows and meta has no legacy_import row
+	var fa_bak_in = FileAccess.open(fixture_path, FileAccess.READ)
+	var bak_bytes = fa_bak_in.get_buffer(fa_bak_in.get_length())
+	fa_bak_in.close()
+
+	var fa_bak_out = FileAccess.open(TEST_DB_PATH + ".jsonbak", FileAccess.WRITE)
+	fa_bak_out.store_buffer(bak_bytes)
+	fa_bak_out.close()
+
+	DB.init_db()
+
+	if DB._db != null:
+		push_error("FAIL: DB._db should be null when legacy import is blocked by existing rows")
+		_cleanup_test_files()
+		return false
+
+	var ind_db2 = ClassDB.instantiate("SQLite")
+	ind_db2.path = TEST_DB_PATH
+	if not ind_db2.open_db():
+		push_error("FAIL: Could not open independent SQLite connection on disk for precondition check")
+		_cleanup_test_files()
+		return false
+	ind_db2.query("SELECT COUNT(*) as c FROM map_cell;")
+	var post_cell_count = ind_db2.query_result[0].get("c", 0) if not ind_db2.query_result.is_empty() else 0
+	ind_db2.query("SELECT value FROM meta WHERE key = 'legacy_import';")
+	var precond_meta_rows = ind_db2.query_result
+	ind_db2.close_db()
+
+	if post_cell_count != 1:
+		push_error("FAIL: Precondition check failed; map_cell count changed: %d" % post_cell_count)
+		_cleanup_test_files()
+		return false
+
+	if not precond_meta_rows.is_empty():
+		push_error("FAIL: Precondition blocked import but legacy_import meta row exists")
+		_cleanup_test_files()
+		return false
+
+	DB.close()
 	_cleanup_test_files()
 	DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 

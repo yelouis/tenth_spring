@@ -225,17 +225,22 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **What was solved:**
   - **PC:** `process_batch` fails immediately with `storage error` if `DB.begin_transaction()` returns false. `SessionDispatcher._handle_batch` returns `{"type": "ERROR", "code": "storage"}` whenever batch processing status is not `ack`. `SessionDispatcher._handle_pair` strictly validates `phoneId` (32 lowercase hex chars via `SyncServer.is_valid_phone_id`) and `deviceToken` (base64 of 32 bytes) returning `ERROR protocol` before consuming the pairing code; wraps saving the token hash and clearing other tokens in a transaction returning `ERROR storage` on failure; only emits `peer_paired` and replies `PAIR_OK` on success.
   - **Phone:** Added `ReportPcStorageError` and `PairPcStorageError` result types. In `ScoutLink.report()`, maps `ERROR storage` to `ReportPcStorageError`, and requires `status == "ack"` on `ACK` frames (returning `ReportProtocolError('ACK without ack status')` otherwise). In `ScoutLink.pair()`, maps `ERROR storage` to `PairPcStorageError`. Added scout vocabulary copy in `ScoutLedgerScreen` and `PairingScreen`.
-- **F32 (fixed):** Verified in Dart unit tests (`sync_test.dart`: BATCH `ERROR storage` → `ReportPcStorageError` with outbox preserved; `ACK` with `status: error` → `ReportProtocolError`; PAIR `ERROR storage` → `PairPcStorageError`) and Godot dispatcher tests (`sync_session_test.gd`: 31-byte token PAIR returns `ERROR protocol` and leaves code unconsumed; closed DB PAIR returns `ERROR storage`; BATCH with closed DB returns `ERROR storage`).
+**M19 — Failed legacy import closes database, protects backup, and checks statements (F31, 2026-10-09).**
+- **What was solved:**
+  - **PC:** In `game/autoloads/db.gd`:
+    - Added precondition in `_run_legacy_import`: if `visit_log` or `map_cell` holds any row, refuses import, logs `storage: UNAVAILABLE — legacy import blocked: database already has rows`, pushes error, and calls `close()`.
+    - Wrapped all import statements (`world_clock`, `player_profile`, `base_state`, `map_cell`, `place_node`, `visit_log`, `sync_peer`, `meta`) with status checks. First statement failure rolls back transaction, logs `storage: UNAVAILABLE — legacy import failed: <last_error>`, pushes error, and calls `close()`.
+    - Validates post-import counts for each table individually; any mismatch calls `_fail_legacy_import("count mismatch <table> expected <n> got <m>")`, rolling back and closing the database.
+    - Preserves unparseable backups logging `storage: legacy save unreadable — kept at <path>`.
+    - Corrected closed-handle message in `_q`: when `_db == null`, sets `last_error = "storage: database not open"`.
+- **F31 (fixed):** Verified in `game/tests/db_legacy_import_test.gd`:
+  - Happy path first boot and second boot still pass without duplicating rows.
+  - Falsifying test with duplicate `visit_log` entry (`peer_id` + `seq`) fails with UNIQUE constraint error, rolls back transaction, leaves `DB._db == null`, returns false from `DB.execute_query("SELECT 1;")`, keeps `.jsonbak` byte-identical to original fixture, and independent SQLite instance confirms no `legacy_import` row in `meta`.
+  - Precondition test with pre-existing `map_cell` row blocks import, closes DB (`DB._db == null`), keeps row count unchanged, and independent SQLite confirms no `legacy_import` row in `meta`.
 
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-- **F31 (found 2026-10-09, 13th pass) — a failed legacy import leaves the database open and writable.**
-  - **Wrong failure mode:** on a row-count mismatch, `_run_legacy_import` (`game/autoloads/db.gd:343-346`) prints `storage: UNAVAILABLE — legacy import mismatch` but leaves `_db` open. The game keeps running and syncing into an empty world.
-  - **Permanent mismatch:** the check compares **whole-table** counts with the JSON's. Once anything else has been written, every later boot's retry mismatches forever.
-  - **Unchecked statements:** individual import statements (`:241-316`) never check `_q`'s result, so a failed `player_profile`/`world_clock`/`base_state` update goes unnoticed.
-  - **Misleading message:** `_q` reports *"SQLite extension not available"* for a merely closed handle (`:73`), the `ERROR` line seen in every CI log.
-  - **Agent-guide §6 (Item 3).**
 - **F29 (found 2026-10-09, 13th pass) — the real-save check is blind to anything written during boot.** `test_main.gd` takes its "before" snapshot in its own `_ready()`, **after** the autoloads have already run.
   - **Evidence:** in scratch run 37856055127, `DB._ready()` still called `init_db()` on the **real** save path with SQLite live — and `PASS real_save_untouched` was printed anyway.
   - **Why nothing escapes today:** the autoloads are inert. One re-added line would bring the problem back silently.
