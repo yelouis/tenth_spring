@@ -609,5 +609,194 @@ void main() {
 
       await server.close();
     });
+
+    test('report() with ERROR storage reply returns ReportPcStorageError and preserves outbox (F32)', () async {
+      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+      final privKey = keyPair.privateKey as RSAPrivateKey;
+      final pubKey = keyPair.publicKey as RSAPublicKey;
+      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+      final der = base64Decode(certPem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll('\n', '')
+          .replaceAll('\r', ''));
+      final digest = await Sha256().hash(der);
+      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+
+      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+
+      server.listen((client) {
+        final framed = FramedSocket(client);
+        () async {
+          final hello = await framed.nextFrame();
+          if (hello != null && hello['type'] == 'HELLO') {
+            await framed.send({
+              'type': 'HELLO_OK',
+              'pcId': 'pc_fake',
+              'lastAppliedSeq': 0,
+            });
+
+            final batch = await framed.nextFrame();
+            if (batch != null && batch['type'] == 'BATCH') {
+              await framed.send({
+                'type': 'ERROR',
+                'code': 'storage',
+              });
+            }
+          }
+        }();
+      });
+
+      final store = PairingStore();
+      await store.clear();
+      await store.savePairing(
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        phoneId: 'test_phone_id',
+        deviceToken: 'token_abc',
+      );
+
+      await db.insertVisit(kind: 'visit', lat: 37.776, lon: -122.420, startedAt: 1000);
+      expect((await db.getAllVisits()).length, equals(1));
+
+      final result = await link.report(db: db, bodyFix: null);
+
+      expect(result, isA<ReportPcStorageError>());
+      // Outbox rows are NOT deleted
+      expect((await db.getAllVisits()).length, equals(1));
+
+      await server.close();
+    });
+
+    test('report() with ACK having status error returns ReportProtocolError (F32)', () async {
+      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+      final privKey = keyPair.privateKey as RSAPrivateKey;
+      final pubKey = keyPair.publicKey as RSAPublicKey;
+      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+      final der = base64Decode(certPem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll('\n', '')
+          .replaceAll('\r', ''));
+      final digest = await Sha256().hash(der);
+      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+
+      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+
+      server.listen((client) {
+        final framed = FramedSocket(client);
+        () async {
+          final hello = await framed.nextFrame();
+          if (hello != null && hello['type'] == 'HELLO') {
+            await framed.send({
+              'type': 'HELLO_OK',
+              'pcId': 'pc_fake',
+              'lastAppliedSeq': 0,
+            });
+
+            final batch = await framed.nextFrame();
+            if (batch != null && batch['type'] == 'BATCH') {
+              await framed.send({
+                'type': 'ACK',
+                'status': 'error',
+                'lastAppliedSeq': 0,
+              });
+            }
+          }
+        }();
+      });
+
+      final store = PairingStore();
+      await store.clear();
+      await store.savePairing(
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        phoneId: 'test_phone_id',
+        deviceToken: 'token_abc',
+      );
+
+      await db.insertVisit(kind: 'visit', lat: 37.776, lon: -122.420, startedAt: 1000);
+      expect((await db.getAllVisits()).length, equals(1));
+
+      final result = await link.report(db: db, bodyFix: null);
+
+      expect(result, isA<ReportProtocolError>());
+      expect((result as ReportProtocolError).message, contains('ACK without ack status'));
+      // Outbox rows are NOT deleted
+      expect((await db.getAllVisits()).length, equals(1));
+
+      await server.close();
+    });
+
+    test('pair() receiving ERROR storage returns PairPcStorageError (F32)', () async {
+      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+      final privKey = keyPair.privateKey as RSAPrivateKey;
+      final pubKey = keyPair.publicKey as RSAPublicKey;
+      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+      final der = base64Decode(certPem
+          .replaceAll('-----BEGIN CERTIFICATE-----', '')
+          .replaceAll('-----END CERTIFICATE-----', '')
+          .replaceAll('\n', '')
+          .replaceAll('\r', ''));
+      final digest = await Sha256().hash(der);
+      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+
+      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+
+      server.listen((client) {
+        final framed = FramedSocket(client);
+        () async {
+          final frame = await framed.nextFrame();
+          if (frame != null && frame['type'] == 'PAIR') {
+            await framed.send({
+              'type': 'ERROR',
+              'code': 'storage',
+            });
+          }
+        }();
+      });
+
+      final store = PairingStore();
+      await store.clear();
+
+      final qr = QrPayloadV2(
+        v: 2,
+        pcId: 'pc_fake',
+        fp: fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        pair: '0123456789abcdef0123456789abcdef',
+      );
+
+      final link = ScoutLink(pairingStore: store);
+      final res = await link.pair(qr);
+
+      expect(res, isA<PairPcStorageError>());
+      expect(await store.isPaired(), isFalse);
+
+      await server.close();
+    });
   });
 }

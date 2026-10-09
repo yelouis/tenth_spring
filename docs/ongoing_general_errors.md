@@ -221,14 +221,15 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - In `ScoutLink.pair()`, short-circuits address/port refresh only if `storedPcId == qr.pcId && storedFp == qr.fp && (await store.getDeviceToken()) != null`. When deviceToken is null, runs full `PAIR` path reusing existing `phoneId`.
 - **F33 (fixed):** Verified in Dart unit tests (`sync_test.dart`: `pair()` without token connects and executes PAIR frame; `pair()` with token short-circuits without socket connection; `report()` with `ERROR unpaired` clears device token while preserving other fields) and Godot dispatcher test (`sync_session_test.gd`: Phone A pairs, Phone B pairs clearing A, Phone A HELLO returns ERROR unpaired, Phone A re-pairs with fresh code and gets PAIR_OK, Phone A HELLO succeeds and earlier `visit_log` rows remain intact).
 
+**M18 — Storage failures surface as ERROR storage, never success (F32, 2026-10-09).**
+- **What was solved:**
+  - **PC:** `process_batch` fails immediately with `storage error` if `DB.begin_transaction()` returns false. `SessionDispatcher._handle_batch` returns `{"type": "ERROR", "code": "storage"}` whenever batch processing status is not `ack`. `SessionDispatcher._handle_pair` strictly validates `phoneId` (32 lowercase hex chars via `SyncServer.is_valid_phone_id`) and `deviceToken` (base64 of 32 bytes) returning `ERROR protocol` before consuming the pairing code; wraps saving the token hash and clearing other tokens in a transaction returning `ERROR storage` on failure; only emits `peer_paired` and replies `PAIR_OK` on success.
+  - **Phone:** Added `ReportPcStorageError` and `PairPcStorageError` result types. In `ScoutLink.report()`, maps `ERROR storage` to `ReportPcStorageError`, and requires `status == "ack"` on `ACK` frames (returning `ReportProtocolError('ACK without ack status')` otherwise). In `ScoutLink.pair()`, maps `ERROR storage` to `PairPcStorageError`. Added scout vocabulary copy in `ScoutLedgerScreen` and `PairingScreen`.
+- **F32 (fixed):** Verified in Dart unit tests (`sync_test.dart`: BATCH `ERROR storage` → `ReportPcStorageError` with outbox preserved; `ACK` with `status: error` → `ReportProtocolError`; PAIR `ERROR storage` → `PairPcStorageError`) and Godot dispatcher tests (`sync_session_test.gd`: 31-byte token PAIR returns `ERROR protocol` and leaves code unconsumed; closed DB PAIR returns `ERROR storage`; BATCH with closed DB returns `ERROR storage`).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-- **F32 (found 2026-10-09, 13th pass) — PC storage failures reach the phone as "success".**
-  - **BATCH:** when `process_batch` rolls back on a DB error, it returns `{"status":"error"}`, and the dispatcher stamps it `"type":"ACK"` (`sync_server.gd:345-347`). The phone's `handleAckResponse` returns 0, the loop breaks, `report()` returns **`ReportOk`**, and the UI says *"Delivered N scout reports to PC."* Nothing is lost, because the outbox is kept, but the player is told it worked.
-  - **PAIR:** `_handle_pair` (`:251-253`) ignores the return values of `set_peer_token_hash`/`clear_other_peer_tokens`, so it can answer `PAIR_OK` with no token saved.
-  - **Contract** (updated): a new `ERROR storage` code, and ACK only on success (§B4.3).
-  - **Agent-guide §5 (Item 2).**
 - **F31 (found 2026-10-09, 13th pass) — a failed legacy import leaves the database open and writable.**
   - **Wrong failure mode:** on a row-count mismatch, `_run_legacy_import` (`game/autoloads/db.gd:343-346`) prints `storage: UNAVAILABLE — legacy import mismatch` but leaves `_db` open. The game keeps running and syncing into an empty world.
   - **Permanent mismatch:** the check compares **whole-table** counts with the JSON's. Once anything else has been written, every later boot's retry mismatches forever.

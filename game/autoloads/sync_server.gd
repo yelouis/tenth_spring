@@ -91,6 +91,15 @@ static func sha256_bytes(bytes: PackedByteArray) -> PackedByteArray:
 	ctx.update(bytes)
 	return ctx.finish()
 
+static func is_valid_phone_id(s: String) -> bool:
+	if s.length() != 32:
+		return false
+	for i in range(32):
+		var c = s.unicode_at(i)
+		if not ((c >= 48 and c <= 57) or (c >= 97 and c <= 102)):
+			return false
+	return true
+
 func create_dispatcher(custom_identity: PcIdentity = null, custom_pairing: PairingCodes = null) -> SessionDispatcher:
 	var id = custom_identity if custom_identity != null else get_identity()
 	var pc = custom_pairing if custom_pairing != null else pairing_codes
@@ -122,7 +131,8 @@ func handle_hello(payload: Dictionary) -> Dictionary:
 	return {"status": "ok", "peerId": peer_id}
 
 func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
-	DB.begin_transaction()
+	if not DB.begin_transaction():
+		return {"status": "error", "message": "storage error"}
 
 	var rows = batch_data.get("rows", [])
 
@@ -236,25 +246,38 @@ class SessionDispatcher extends RefCounted:
 				return {"type": "ERROR", "code": "protocol"}
 
 	func _handle_pair(frame: Dictionary) -> Dictionary:
+		var phone_id = frame.get("phoneId", null)
+		var token_b64 = frame.get("deviceToken", null)
+		if phone_id == null or token_b64 == null or typeof(phone_id) != TYPE_STRING or typeof(token_b64) != TYPE_STRING:
+			return {"type": "ERROR", "code": "protocol"}
+
+		if not SyncServer.is_valid_phone_id(str(phone_id)):
+			return {"type": "ERROR", "code": "protocol"}
+
+		var raw_token = Marshalls.base64_to_raw(str(token_b64))
+		if raw_token.size() != 32:
+			return {"type": "ERROR", "code": "protocol"}
+
 		var pair_code = str(frame.get("pair", ""))
 		var now = int(Time.get_unix_time_from_system())
 		if not pairing_codes.consume(pair_code, now):
 			return {"type": "ERROR", "code": "bad_pair_code"}
 
-		var phone_id = str(frame.get("phoneId", ""))
-		var token_b64 = str(frame.get("deviceToken", ""))
-		if phone_id == "" or token_b64 == "":
-			return {"type": "ERROR", "code": "bad_pair_code"}
-
-		var raw_token = Marshalls.base64_to_raw(token_b64)
-		if raw_token.is_empty():
-			return {"type": "ERROR", "code": "bad_pair_code"}
+		if not DB.begin_transaction():
+			return {"type": "ERROR", "code": "storage"}
 
 		var token_hash = SyncServer.sha256_bytes(raw_token)
-		DB.set_peer_token_hash(phone_id, token_hash)
-		DB.clear_other_peer_tokens(phone_id)
+		var set_ok = DB.set_peer_token_hash(str(phone_id), token_hash)
+		var clear_ok = DB.clear_other_peer_tokens(str(phone_id))
+		if not set_ok or not clear_ok or DB.last_error != "":
+			DB.rollback_transaction()
+			return {"type": "ERROR", "code": "storage"}
 
-		SyncServer.peer_paired.emit(phone_id)
+		if not DB.commit_transaction():
+			DB.rollback_transaction()
+			return {"type": "ERROR", "code": "storage"}
+
+		SyncServer.peer_paired.emit(str(phone_id))
 
 		return {
 			"type": "PAIR_OK",
@@ -355,6 +378,8 @@ class SessionDispatcher extends RefCounted:
 
 		# Apply batch using the authenticated session peer id
 		var result = SyncServer.process_batch(authenticated_peer_id, frame)
+		if result.get("status") != "ack":
+			return {"type": "ERROR", "code": "storage"}
 		result["type"] = "ACK"
 		return result
 

@@ -31,6 +31,10 @@ class ReportSchemaMismatch extends ReportResult {
   const ReportSchemaMismatch();
 }
 
+class ReportPcStorageError extends ReportResult {
+  const ReportPcStorageError();
+}
+
 class ReportProtocolError extends ReportResult {
   final String? message;
   const ReportProtocolError([this.message]);
@@ -46,6 +50,10 @@ class PairOk extends PairResult {
 
 class PairBadCode extends PairResult {
   const PairBadCode();
+}
+
+class PairPcStorageError extends PairResult {
+  const PairPcStorageError();
 }
 
 class PairUnreachable extends PairResult {
@@ -193,6 +201,9 @@ class ScoutLink {
       } else if (type == 'ERROR' && resp['code'] == 'bad_pair_code') {
         await framed.close();
         return const PairBadCode();
+      } else if (type == 'ERROR' && resp['code'] == 'storage') {
+        await framed.close();
+        return const PairPcStorageError();
       } else {
         await framed.close();
         return PairProtocolError(resp['code']?.toString());
@@ -266,6 +277,7 @@ class ScoutLink {
           return const ReportUnpaired();
         }
         if (code == 'schema_mismatch') return const ReportSchemaMismatch();
+        if (code == 'storage') return const ReportPcStorageError();
         return ReportProtocolError(code?.toString());
       }
 
@@ -305,12 +317,18 @@ class ScoutLink {
             return const ReportUnpaired();
           }
           if (code == 'schema_mismatch') return const ReportSchemaMismatch();
+          if (code == 'storage') return const ReportPcStorageError();
           return ReportProtocolError(code?.toString());
         }
 
         if (ackResp['type'] != 'ACK') {
           await framed.close();
           return const ReportProtocolError('Expected ACK');
+        }
+
+        if (ackResp['status'] != 'ack') {
+          await framed.close();
+          return const ReportProtocolError('ACK without ack status');
         }
 
         final ackedSeq = await transport.handleAckResponse(ackResp, db);

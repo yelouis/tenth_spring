@@ -228,6 +228,8 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
         _showErrorDialog("This phone isn't paired with that PC anymore — scan its code to pair again.");
       case ReportSchemaMismatch():
         _showErrorDialog("Schema mismatch with PC — please update your app or PC game.");
+      case ReportPcStorageError():
+        _showErrorDialog("Your PC couldn't file this scout report — nothing was lost. Try again in a moment.");
       case ReportProtocolError(:final message):
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Scout report error: ${message ?? 'protocol failure'}')),

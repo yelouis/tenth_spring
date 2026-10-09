@@ -59,6 +59,11 @@ class _PairingScreenState extends State<PairingScreen> {
             _isProcessing = false;
             _statusMessage = 'Pairing code expired — refresh the code on your PC and try again.';
           });
+        case PairPcStorageError():
+          setState(() {
+            _isProcessing = false;
+            _statusMessage = "Your PC couldn't save the pairing — refresh the code on your PC and try again.";
+          });
         case PairUnreachable():
           setState(() {
             _isProcessing = false;

@@ -33,6 +33,8 @@ func run_test() -> bool:
 		return false
 
 	# 2. Pair a test phone
+	var phone_alpha = "0123456789abcdef0123456789abcdef"
+	var phone_beta = "fedcba9876543210fedcba9876543210"
 	var now = int(Time.get_unix_time_from_system())
 	var code = test_pairing.new_code(now)
 	var crypto = Crypto.new()
@@ -41,7 +43,7 @@ func run_test() -> bool:
 
 	var pair_res = disp.handle_frame({
 		"type": "PAIR",
-		"phoneId": "phone_alpha",
+		"phoneId": phone_alpha,
 		"pair": code,
 		"deviceToken": valid_token_b64
 	})
@@ -55,7 +57,7 @@ func run_test() -> bool:
 	var wrong_token_b64 = Marshalls.raw_to_base64(wrong_token_bytes)
 	var hello_bad = disp.handle_frame({
 		"type": "HELLO",
-		"peerId": "phone_alpha",
+		"peerId": phone_alpha,
 		"schemaVersion": 1,
 		"deviceToken": wrong_token_b64
 	})
@@ -67,7 +69,7 @@ func run_test() -> bool:
 	# 4. Valid HELLO -> HELLO_OK
 	var hello_ok = disp.handle_frame({
 		"type": "HELLO",
-		"peerId": "phone_alpha",
+		"peerId": phone_alpha,
 		"schemaVersion": 1,
 		"deviceToken": valid_token_b64
 	})
@@ -108,7 +110,7 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	if not DB.is_visit_logged("phone_alpha", 1):
+	if not DB.is_visit_logged(phone_alpha, 1):
 		push_error("sync_session_test: row was not stored under authenticated peerId")
 		_cleanup()
 		return false
@@ -129,7 +131,7 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	var peer_check1 = DB.get_sync_peer("phone_alpha")
+	var peer_check1 = DB.get_sync_peer(phone_alpha)
 	if abs(float(peer_check1.get("last_body_lat", 0.0)) - 37.776) > 1e-6 or abs(float(peer_check1.get("last_body_lon", 0.0)) - (-122.420)) > 1e-6 or int(peer_check1.get("last_body_ts", 0)) != 2000:
 		push_error("sync_session_test: peer body fix not saved correctly: " + str(peer_check1))
 		_cleanup()
@@ -145,7 +147,7 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	var peer_check2 = DB.get_sync_peer("phone_alpha")
+	var peer_check2 = DB.get_sync_peer(phone_alpha)
 	if int(peer_check2.get("last_applied_seq", 0)) != 3:
 		push_error("sync_session_test: last_applied_seq was not updated to 3: " + str(peer_check2))
 		_cleanup()
@@ -166,7 +168,7 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	var peer_check3 = DB.get_sync_peer("phone_alpha")
+	var peer_check3 = DB.get_sync_peer(phone_alpha)
 	if int(peer_check3.get("last_applied_seq", 0)) != 4:
 		push_error("sync_session_test: last_applied_seq not updated on stale fix batch: " + str(peer_check3))
 		_cleanup()
@@ -199,14 +201,14 @@ func run_test() -> bool:
 		return false
 
 	# 11. Falsifying F33: multi-phone re-pair
-	# Phone A ("phone_alpha") was paired and got HELLO_OK in steps 2 & 4.
+	# Phone A was paired and got HELLO_OK in steps 2 & 4.
 	# Phone B pairs with a fresh code.
 	var code_b = test_pairing.new_code(now)
 	var token_b_bytes = crypto.generate_random_bytes(32)
 	var token_b_b64 = Marshalls.raw_to_base64(token_b_bytes)
 	var pair_b = disp.handle_frame({
 		"type": "PAIR",
-		"phoneId": "phone_beta",
+		"phoneId": phone_beta,
 		"pair": code_b,
 		"deviceToken": token_b_b64
 	})
@@ -218,7 +220,7 @@ func run_test() -> bool:
 	# Phone A's HELLO -> ERROR unpaired (PC cleared other tokens)
 	var hello_a_unpaired = disp.handle_frame({
 		"type": "HELLO",
-		"peerId": "phone_alpha",
+		"peerId": phone_alpha,
 		"schemaVersion": 1,
 		"deviceToken": valid_token_b64
 	})
@@ -233,7 +235,7 @@ func run_test() -> bool:
 	var token_a2_b64 = Marshalls.raw_to_base64(token_a2_bytes)
 	var pair_a2 = disp.handle_frame({
 		"type": "PAIR",
-		"phoneId": "phone_alpha",
+		"phoneId": phone_alpha,
 		"pair": code_a2,
 		"deviceToken": token_a2_b64
 	})
@@ -245,7 +247,7 @@ func run_test() -> bool:
 	# Phone A's HELLO -> HELLO_OK
 	var hello_a2 = disp.handle_frame({
 		"type": "HELLO",
-		"peerId": "phone_alpha",
+		"peerId": phone_alpha,
 		"schemaVersion": 1,
 		"deviceToken": token_a2_b64
 	})
@@ -255,10 +257,97 @@ func run_test() -> bool:
 		return false
 
 	# Earlier visit_log rows for Phone A are still present
-	if not DB.is_visit_logged("phone_alpha", 1):
+	if not DB.is_visit_logged(phone_alpha, 1):
 		push_error("sync_session_test: Phone A earlier visit_log missing after re-pair")
 		_cleanup()
 		return false
+
+	# 12. Falsifying F32: malformed PAIR (31-byte token) returns ERROR protocol without burning code
+	var code_gamma = test_pairing.new_code(now)
+	var short_token_bytes = crypto.generate_random_bytes(31)
+	var short_token_b64 = Marshalls.raw_to_base64(short_token_bytes)
+	var pair_short = disp.handle_frame({
+		"type": "PAIR",
+		"phoneId": "11111111111111111111111111111111",
+		"pair": code_gamma,
+		"deviceToken": short_token_b64
+	})
+	if pair_short.get("type") != "ERROR" or pair_short.get("code") != "protocol":
+		push_error("sync_session_test: 31-byte token PAIR did not return ERROR protocol: " + str(pair_short))
+		_cleanup()
+		return false
+
+	# Same code pairs successfully with 32-byte token (code not burned)
+	var valid_gamma_bytes = crypto.generate_random_bytes(32)
+	var valid_gamma_b64 = Marshalls.raw_to_base64(valid_gamma_bytes)
+	var pair_gamma = disp.handle_frame({
+		"type": "PAIR",
+		"phoneId": "11111111111111111111111111111111",
+		"pair": code_gamma,
+		"deviceToken": valid_gamma_b64
+	})
+	if pair_gamma.get("type") != "PAIR_OK":
+		push_error("sync_session_test: code was burned by malformed PAIR: " + str(pair_gamma))
+		_cleanup()
+		return false
+
+	# PAIR with DB closed -> ERROR storage
+	var code_closed = test_pairing.new_code(now)
+	DB.close()
+	var pair_closed = disp.handle_frame({
+		"type": "PAIR",
+		"phoneId": "22222222222222222222222222222222",
+		"pair": code_closed,
+		"deviceToken": valid_gamma_b64
+	})
+	if pair_closed.get("type") != "ERROR" or pair_closed.get("code") != "storage":
+		push_error("sync_session_test: PAIR with DB closed did not return ERROR storage: " + str(pair_closed))
+		_cleanup()
+		return false
+
+	# Re-open DB
+	DB.init_db()
+
+	# Fault injection without production hooks: pair and HELLO, then DB.close(), then dispatch valid BATCH -> ERROR storage
+	var code_fault = test_pairing.new_code(now)
+	var fault_token_bytes = crypto.generate_random_bytes(32)
+	var fault_token_b64 = Marshalls.raw_to_base64(fault_token_bytes)
+	var phone_fault = "33333333333333333333333333333333"
+	var pair_fault = disp.handle_frame({
+		"type": "PAIR",
+		"phoneId": phone_fault,
+		"pair": code_fault,
+		"deviceToken": fault_token_b64
+	})
+	if pair_fault.get("type") != "PAIR_OK":
+		push_error("sync_session_test: PAIR before fault injection failed: " + str(pair_fault))
+		_cleanup()
+		return false
+
+	var hello_fault = disp.handle_frame({
+		"type": "HELLO",
+		"peerId": phone_fault,
+		"schemaVersion": 1,
+		"deviceToken": fault_token_b64
+	})
+	if hello_fault.get("type") != "HELLO_OK":
+		push_error("sync_session_test: HELLO before fault injection failed: " + str(hello_fault))
+		_cleanup()
+		return false
+
+	# Close DB to simulate storage failure during BATCH
+	DB.close()
+	var batch_storage_err = disp.handle_frame({
+		"type": "BATCH",
+		"rows": [{"seq": 100, "kind": "visit", "lat": 37.776, "lon": -122.420, "startedAt": 100000, "dwellSeconds": 60}]
+	})
+	if batch_storage_err.get("type") != "ERROR" or batch_storage_err.get("code") != "storage":
+		push_error("sync_session_test: BATCH with DB closed did not return ERROR storage: " + str(batch_storage_err))
+		_cleanup()
+		return false
+
+	# Re-open DB for safe cleanup
+	DB.init_db()
 
 	_cleanup()
 	return true
