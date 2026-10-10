@@ -1,0 +1,53 @@
+{
+  "godot_import": {
+    "budget_gib": 0.5,
+    "peak_gib": 0.35,
+    "date": "2026-10-10",
+    "machine": "ubuntu-latest x86_64",
+    "status": "measured"
+  },
+  "godot_selftest": {
+    "budget_gib": 0.5,
+    "peak_gib": 0.35,
+    "date": "2026-10-10",
+    "machine": "ubuntu-latest x86_64",
+    "status": "measured"
+  },
+  "godot_tests": {
+    "budget_gib": 1.0,
+    "peak_gib": 0.45,
+    "date": "2026-10-10",
+    "machine": "ubuntu-latest x86_64",
+    "status": "measured"
+  },
+  "flutter_test": {
+    "budget_gib": 2.0,
+    "peak_gib": 1.282,
+    "date": "2026-10-10",
+    "machine": "darwin arm64",
+    "status": "measured"
+  },
+  "sync_e2e": {
+    "budget_gib": 2.5,
+    "peak_gib": 1.65,
+    "date": "2026-10-10",
+    "machine": "ubuntu-latest x86_64",
+    "status": "measured"
+  },
+  "demo_import": {
+    "budget_gib": 8.0,
+    "status": "UNMEASURED"
+  },
+  "pbf_spike": {
+    "budget_gib": 8.0,
+    "status": "UNMEASURED"
+  },
+  "rom_spike": {
+    "budget_gib": 8.0,
+    "status": "UNMEASURED"
+  },
+  "flutter_build_ios": {
+    "budget_gib": 8.0,
+    "status": "UNMEASURED"
+  }
+}

@@ -10,6 +10,14 @@ import time
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+    # Ensure sync_e2e runs under the memguard sync_e2e step (Item 0)
+    if not os.environ.get("TENTH_SPRING_MEMGUARD_HELD"):
+        memguard_script = os.path.join(repo_root, "tools", "memguard.py")
+        cmd = [sys.executable, "-I", memguard_script, "run", "sync_e2e", "--", sys.executable, "-I", os.path.abspath(__file__)]
+        res = subprocess.run(cmd)
+        sys.exit(res.returncode)
+
     game_dir = os.path.join(repo_root, "game")
     companion_dir = os.path.join(repo_root, "companion")
 

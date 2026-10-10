@@ -171,6 +171,18 @@ def main():
 		sys.exit(1)
 	print("[ISOLATION AUDIT OK] Test save isolation verified.\n")
 
+	# Developer Tooling Memory Guard Test Suite (F38)
+	memguard_tests_path = os.path.join(repo_root, "tools", "test_memguard.py")
+	if not os.path.exists(memguard_tests_path):
+		print("\n[MEMGUARD ERROR] Memguard test suite missing")
+		sys.exit(1)
+	print("=== Memguard Test Suite (F38) ===")
+	mem_res = subprocess.run([sys.executable, "-I", memguard_tests_path], cwd=repo_root)
+	if mem_res.returncode != 0:
+		print("\n[MEMGUARD TEST FAIL] Memguard unit tests failed.")
+		sys.exit(1)
+	print("[MEMGUARD TESTS OK] All memguard test cases passed.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)
@@ -202,18 +214,25 @@ def main():
 		user_dir = get_godot_user_dir()
 		pre_snap = snapshot_protected_files(user_dir)
 
+		memguard_script = os.path.join(repo_root, "tools", "memguard.py")
+
 		# 1. Harness self-test (TENTH_SPRING_HARNESS_SELFTEST=1 must exit 1 and report FAIL harness_selftest)
 		print("Running harness self-test...")
 		selftest_env = os.environ.copy()
 		selftest_env["TENTH_SPRING_HARNESS_SELFTEST"] = "1"
+		selftest_cmd = [godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"]
+		selftest_guarded = [sys.executable, "-I", memguard_script, "run", "godot_selftest", "--"] + selftest_cmd
 		selftest_res = subprocess.run(
-			[godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"],
+			selftest_guarded,
 			cwd=repo_root,
 			capture_output=True,
 			text=True,
 			env=selftest_env,
 			timeout=300
 		)
+		if selftest_res.returncode in (75, 76):
+			print(selftest_res.stderr or selftest_res.stdout)
+			sys.exit(selftest_res.returncode)
 		selftest_out = (selftest_res.stdout or "") + (selftest_res.stderr or "")
 		if selftest_res.returncode != 1 or "FAIL harness_selftest" not in selftest_out:
 			print(f"\n[HARNESS SELF-TEST FAILED] Expected exit code 1 with 'FAIL harness_selftest', got exit code {selftest_res.returncode}:\n{selftest_out}")
@@ -222,13 +241,18 @@ def main():
 
 		# 2. Main test suite
 		print("Running main game test suite...")
+		main_cmd = [godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"]
+		main_guarded = [sys.executable, "-I", memguard_script, "run", "godot_tests", "--"] + main_cmd
 		main_res = subprocess.run(
-			[godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"],
+			main_guarded,
 			cwd=repo_root,
 			capture_output=True,
 			text=True,
 			timeout=300
 		)
+		if main_res.returncode in (75, 76):
+			print(main_res.stderr or main_res.stdout)
+			sys.exit(main_res.returncode)
 		main_out = (main_res.stdout or "") + (main_res.stderr or "")
 		print(main_out)
 

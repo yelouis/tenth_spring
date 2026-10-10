@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Memguard doctor
+        run: python3 -I tools/memguard.py doctor
+
       - name: Verify no Nintendo assets or ROM files in pushed commits
         run: |
           if [ "${{ github.event_name }}" = "pull_request" ]; then

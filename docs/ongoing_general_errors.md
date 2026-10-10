@@ -7,19 +7,7 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 
 ## 🟠 Open Decisions
 
-> **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, needs you. Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
-
-### Decision 10: Which sprite style for Pokémon #1–493? — **needs your input (doesn't block starting; decides whether Platinum is needed at all)**
-You chose all 649 Pokémon (Decision 12). Pokémon #494–649 exist only in Black/White, so they always use Black/White's sprites. The question is the other 493, which both games contain, in different styles:
-- **Platinum:** the Diamond/Pearl look — 80×80, a single still frame.
-- **Black/White:** redrawn — 96×96, more detailed, and animated (they idle, sway, flicker).
-
-Black/White also holds all the data the game needs (stats, moves, names) for all 649, so it is required whichever option you pick.
-- **Option A — Mix them: Platinum sprites for #1–493, Black/White for #494–649.** Keeps the Diamond/Pearl look for three-quarters of the Pokédex. Cost: a battle between, say, Gengar and Chandelure shows two visibly different art styles side by side, and players need **two** cartridges (Platinum and Black or White).
-- **Option B — Black/White sprites for all 649.** One consistent, animated style. Players need only **one** cartridge (Black or White). Only one sprite format to decode. Cost: gives up the Diamond/Pearl sprite look, and Platinum (Decision 9) is no longer needed at all. *Recommended: consistency in every battle and one cartridge instead of two outweigh the older look, and the animation suits the Ghost types this setting is built around.*
-- **Option C — Let the player choose** (a setting, using whichever ROMs they imported). The most flexible, and the most work: both formats decoded, validated, and tested.
-- **You'll see both before deciding.** The ROM spike (agent-guide §8, Item 5) renders the same Pokémon in both styles into a comparison image on your machine. The image is never committed.
-- Your selection: _(pending)_
+> **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, was answered on 2026-10-09 (Option B). **Decision 13** (map data) was answered the same day: fully offline (Option C). Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
@@ -36,11 +24,33 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 - **Option A — run it next, right after F9 lands.** Closes Phase 0 properly and de-risks the battery budget before more is built on it. Cost: one day of carrying the phone. *Recommended: the battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and you want to learn that early.*
 - **Option B — batch it with the D4 device gate.** One combined session validates background capture *and* the Wireshark ciphertext check together. Cost: Phase 0 stays formally open for weeks; if the battery target fails you discover it after building transport on top.
 - **Option C — defer to the Phase 8 hardening pass.** Cheapest now, riskiest later: a battery failure that late invalidates the capture strategy after everything depends on it.
-- **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent-guide §1 (baseline) and §10 (roadmap).
+- **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent-guide §1 (baseline) and §9 (roadmap).
 
 ---
 
 ## ✅ Resolved Decisions
+
+### Decision 13 — Map data: fully offline regional OpenStreetMap files (Resolved 2026-10-09)
+- **Selection: Option C**, in the human's words: "the map should be preloaded onto your computer, the phone just lets you unlock the parts of the preloaded map that you've physically been to."
+- **Confirmed: that understanding is correct.** Details:
+  - **One download per region.** The PC downloads a whole regional OpenStreetMap file once — e.g. your US state, from Geofabrik (DC ≈ 21 MB, Washington ≈ 364 MB as of 2026-10-09). The download reveals only *which region* was chosen, never where you go inside it.
+  - **Everything else happens on your PC.** The game converts the file into its own fast map store, and every street and building is read locally from then on. No request ever names a place you've been.
+  - **The phone never handles map data.** It still only sends fuzzed visits and routes. The PC un-fogs the matching parts of the preloaded map — places you haven't been stay solid fog, so the preloaded data is never a spoiler.
+  - **Travel outside the region** — e.g. a trip to another state — shows those places as plain grey "unmapped" until you download that region's file too. The game asks first and shows the size.
+- **Consequences:**
+  - No Overpass and no per-area queries, ever. The map store is a separate, regenerable file per region (not the save).
+  - Map data files never enter the repo (`.gitignore` `*.osm.pbf`); tests use a synthetic file.
+  - OSM attribution (`© OpenStreetMap contributors`) is always visible on the map.
+  - **The open engineering risk is speed:** reading a several-hundred-MB file in GDScript may be slow. The slice-1 plan must measure it and choose a converter accordingly (agent-guide §6, Item 3).
+  - Contracts updated: `design_world_generation.md` §3 and §6, `design_privacy_and_location.md` §1, `implementation_plan_foundation.md` §B4.5, `README.md`, `e2e_testing_journeys.md` Journey 7.
+
+### Decision 10 — Sprite style: Black/White sprites for all 649; Platinum dropped (Resolved 2026-10-09)
+- **Selection: Option B — Black/White sprites for all 649.** Every battle uses one consistent, animated style (96×96). Players need **one** cartridge (Black or White), and the importer decodes one sprite format.
+- **Consequences:**
+  - **Platinum is no longer used at all** — this supersedes Decision 9's Platinum choice. Black/White now supplies everything: data, text, icons, and sprites. `TENTH_SPRING_ROM_PT`, the Platinum archive table, the Gen 4 sprite decryption, and the comparison image are all dropped.
+  - The overworld stays original Diamond/Pearl-*style* art (`design_art_direction.md`), which doesn't depend on any ROM.
+  - **The IP guard still blocks Platinum (and every other Gen 4–5 title)** — that is about keeping ROMs out of the repo, not about which one we import.
+  - Contracts updated: `design_rom_asset_pipeline.md` §2–§7, `design_art_direction.md` §1, `README.md`, `master_implementation_plan.md` Phase 2, and `e2e_testing_journeys.md` Journey 0.
 
 ### Decision 7 — How the native extension gets here: an agent vendors it, and CI proves it loads (Resolved 2026-10-08)
 - **Selection (2026-10-08, re-asked in chat after the pivot): Option B — an agent vendors it.** Specifically: **`godot-sqlite` v4.4** (2shady4u, MIT licence; its release notes target **Godot v4.3-stable** and **SQLite 3.46.1**). Only the desktop binaries (macOS universal, Windows x86_64, Linux x86_64; debug and release) are committed, under `game/addons/godot-sqlite/`, with a SHA-256 manifest that the battery re-checks.
@@ -93,7 +103,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
 - **Status (claimed July 22): REALIZED (Option A).** `pairing.dart` & `transport.dart` implemented with X25519 key exchange, HKDF-SHA256 session key derivation, AEAD ChaCha20-Poly1305 encrypted transport, HELLO/BATCH/ACK handling, and SecureStorage private key persistence. `flutter test` (17/17) verifies encryption, decryption, tampered ciphertext rejection, and outbox deletion on ACK.
 - **⛔ Status CORRECTED (July 22, 8th verification pass): NOT REALIZED — D4 remains OPEN.** What exists is real and useful, but it is *crypto primitives and payload builders, not a transport*: `grep -rn "Socket|MDnsClient|multicast_dns|connect(" companion/lib/` returns **nothing** — there is no socket, no mDNS discovery, and no connection code anywhere in the companion. On the PC side `game/autoloads/sync_server.gd` is unchanged: still a pure in-process function with **no TCP listener, no mDNS advertisement, and no crypto** (the game tree contains no libsodium or SQLite GDExtension at all). **The two devices cannot exchange a single byte.** Decision 4 asked which Godot-side libsodium/mDNS binding to adopt — that question is still entirely unanswered, so Option A cannot be said to be "realized." See **F12** for a crypto-primitive deviation, and agent-guide §6 (Item 3).
-- **Resolution (2026-10-08): superseded.** The crypto half is answered by **Decision 11** (Godot's built-in TLS — no libsodium, no extension). The mDNS half is tracked as **F27**: Godot has no mDNS responder, and the companion's raw-multicast client fails on real iPhones. v1 connects by remembered address plus QR re-scan; mDNS is deferred (agent-guide §9).
+- **Resolution (2026-10-08): superseded.** The crypto half is answered by **Decision 11** (Godot's built-in TLS — no libsodium, no extension). The mDNS half is tracked as **F27**: Godot has no mDNS responder, and the companion's raw-multicast client fails on real iPhones. v1 connects by remembered address plus QR re-scan; mDNS is deferred (agent-guide §8).
 
 ### Decision 1 — Stack: Godot (PC) + Flutter (companion); LAN-only sync (Resolved July 21)
 - **Selection**: PC game = **Godot 4** (free, 2D-first, clean Steam export); companion = **Flutter** (mature background location, matches the Gaslight toolchain).
@@ -213,6 +223,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Phone:** Replaced `_lastFixLat`/`_lastFixLon` with `_FixRecord? _lastFix` capturing `{lat, lon, tsUtcMs}` from real location fixes; deleted all hardcoded coordinates (`37.775`, `-122.419`) from `companion/lib/`; `_reportToPc()` passes `bodyFix` only when non-null; `SyncTransport.buildBatchPayload` omits `"bodyFix"` key when null; `ScoutLink.report` supports optional `bodyFix`.
   - **PC:** `game/autoloads/sync_server.gd` strictly validates `bodyFix` when present (Dictionary, fuzzed coordinates, `tsUtcMs > 0`) returning `ERROR protocol` on violation; `process_batch` conditionally updates body position via `DB.update_sync_peer` or calls `DB.update_sync_peer_seq` when `bodyFix` is omitted; `game/autoloads/db.gd` added `update_sync_peer_seq` and updated `update_sync_peer` conflict clause with `CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0)` to refuse stale fixes.
 - **F34 (fixed):** Verified in `game/tests/sync_session_test.gd` (falsifying test: BATCH with bodyFix then BATCH without bodyFix keeps stored position; stale fix rejected; 4-decimal and missing tsUtcMs rejected as ERROR protocol) and in `companion/test/sync_test.dart` (payload omits key when null; fake server receives no bodyFix).
+- **✅ M16 verified (2026-10-09, 14th pass).** Source matches: no location literals remain in `companion/lib` (grep empty); `_FixRecord` carries the fix's own `tsUtcMs`; `buildBatchPayload` omits a null `bodyFix`; the dispatcher requires `tsUtcMs > 0` and fuzzed coordinates; `process_batch` calls `update_sync_peer_seq` when there is no fix; the `CASE … last_body_ts` clause refuses stale fixes. Executed in `game_tests` 37970602659 and `sync_e2e` 37970602760. The manual *Scout here* path had the same San Francisco fallback, and it is fixed too. **Residual F36:** that path still uses a cached fix rather than a current one.
 
 **M17 — Re-pairing after unpaired actually re-pairs (F33, 2026-10-09).**
 - **What was solved:**
@@ -220,11 +231,15 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - In `ScoutLink.report()`, receiving `ERROR` with `code == "unpaired"` (to HELLO or BATCH) calls `store.clearDeviceToken()` before returning `ReportUnpaired()`, so `PairingStore.isPaired()` turns false.
   - In `ScoutLink.pair()`, short-circuits address/port refresh only if `storedPcId == qr.pcId && storedFp == qr.fp && (await store.getDeviceToken()) != null`. When deviceToken is null, runs full `PAIR` path reusing existing `phoneId`.
 - **F33 (fixed):** Verified in Dart unit tests (`sync_test.dart`: `pair()` without token connects and executes PAIR frame; `pair()` with token short-circuits without socket connection; `report()` with `ERROR unpaired` clears device token while preserving other fields) and Godot dispatcher test (`sync_session_test.gd`: Phone A pairs, Phone B pairs clearing A, Phone A HELLO returns ERROR unpaired, Phone A re-pairs with fresh code and gets PAIR_OK, Phone A HELLO succeeds and earlier `visit_log` rows remain intact).
+- **✅ M17 verified (2026-10-09, 14th pass).** `clearDeviceToken()` runs on `unpaired` from both HELLO and BATCH, and `pair()` short-circuits only when a token is present. Dart tests assert a real PAIR frame is sent when the token is missing, and that the token is null after `unpaired`. The Godot test drives the A → B → A re-pair, and A's history survives.
 
 **M18 — Storage failures surface as ERROR storage, never success (F32, 2026-10-09).**
 - **What was solved:**
   - **PC:** `process_batch` fails immediately with `storage error` if `DB.begin_transaction()` returns false. `SessionDispatcher._handle_batch` returns `{"type": "ERROR", "code": "storage"}` whenever batch processing status is not `ack`. `SessionDispatcher._handle_pair` strictly validates `phoneId` (32 lowercase hex chars via `SyncServer.is_valid_phone_id`) and `deviceToken` (base64 of 32 bytes) returning `ERROR protocol` before consuming the pairing code; wraps saving the token hash and clearing other tokens in a transaction returning `ERROR storage` on failure; only emits `peer_paired` and replies `PAIR_OK` on success.
   - **Phone:** Added `ReportPcStorageError` and `PairPcStorageError` result types. In `ScoutLink.report()`, maps `ERROR storage` to `ReportPcStorageError`, and requires `status == "ack"` on `ACK` frames (returning `ReportProtocolError('ACK without ack status')` otherwise). In `ScoutLink.pair()`, maps `ERROR storage` to `PairPcStorageError`. Added scout vocabulary copy in `ScoutLedgerScreen` and `PairingScreen`.
+- **F32 (fixed):** covered by Godot `sync_session_test` (DB-closed BATCH → `ERROR storage`; a malformed PAIR doesn't burn the code; DB-closed PAIR → `ERROR storage`) and Dart `sync_test` (`ERROR storage` → `ReportPcStorageError`, outbox preserved; an `ACK` with `status: error` → `ReportProtocolError`).
+- **✅ M18 verified (2026-10-09, 14th pass).** `_handle_pair` now validates `phoneId` (32 lowercase hex) and a 32-byte token **before** consuming the code, then saves in one transaction (`ERROR storage` on any failure). `_handle_batch` returns `ERROR storage` for any non-`ack` result. All covered by executed tests.
+
 **M19 — Failed legacy import closes database, protects backup, and checks statements (F31, 2026-10-09).**
 - **What was solved:**
   - **PC:** In `game/autoloads/db.gd`:
@@ -236,6 +251,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **F31 (fixed):** Verified in `game/tests/db_legacy_import_test.gd`:
   - Happy path first boot and second boot still pass without duplicating rows.
   - Falsifying test with duplicate `visit_log` entry (`peer_id` + `seq`) fails with UNIQUE constraint error, rolls back transaction, leaves `DB._db == null`, returns false from `DB.execute_query("SELECT 1;")`, keeps `.jsonbak` byte-identical to original fixture, and independent SQLite instance confirms no `legacy_import` row in `meta`.
+- **⚠️ M19 verified with one gap (2026-10-09, 14th pass).** Every import statement is checked, failures close the database, the precondition and per-table counts are in place, and `SQLite extension not available` no longer appears in CI logs. **New gap F35:** the rows precondition runs **before** the readability check, and an unreadable backup is never marked as handled. A player whose old save is unreadable plays one session, and from then on every launch is refused.
 **M20 — Runner-level save snapshot and evil-merge test coverage (F29 + F30, 2026-10-09).**
 - **What was solved:**
   - **F29 (Runner-level snapshot):** In `game/tests/test_runner.py`:
@@ -247,15 +263,49 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
     - Added `test_range_evil_merge_rom`: tests an evil merge commit introducing a CPUE-headed file only within the merge commit, asserting range scan exits 1 naming `evil.bin`.
     - Added `test_evil_merge_requires_m_flag`: executes the same scenario against a guard script copy with `"-m", ` removed, asserting exit code 0 and proving the test's dependency on the `-m` flag.
 - **F29, F30 (fixed):** Verified in IP guard test suite (13/13 passed) and runner execution.
+- **✅ M20 verified (2026-10-09, 14th pass).** Falsification run on `scratch-falsify-f29` (boot-time `init_db()` re-added): the in-process check still printed `PASS real_save_untouched`, while the runner printed `[REAL SAVE CHECK FAIL] tenth_spring.db changed during the test run`. This is exactly the blind spot, now closed. The CI log shows the computed user dir with `test/` present. Guard self-tests 13/13 pass locally, and `test_evil_merge_requires_m_flag` proves the flag dependency. The work was done on branches and fast-forwarded to `main`, with no force-pushes this pass.
+
+**M21 — Developer Tooling Memory Guard (F38, 2026-10-10).**
+- **What was solved:**
+  - Implemented `tools/memguard.py` (pure Python 3 stdlib, `python3 -I`):
+    - System memory reader on macOS (`vm_stat`, `sysctl`) and Linux (`/proc/meminfo`), with injectable test seams.
+    - Machine-wide `fcntl.flock` lock (`~/.cache/tenth_spring/locks/heavy.lock`) serializing heavy commands.
+    - Admission check: waits for available memory >= budget + FLOOR (max 4 GiB, 10% RAM) and pressure < 4; exits 75 on timeout.
+    - Watchdog: monitors child process group tree RSS from `ps -A -o pid=,ppid=,rss=`; terminates process group on critical pressure x2, available < FLOOR/2, or tree RSS > budget x 1.5; exits 76.
+    - Bypass for nested runs via `TENTH_SPRING_MEMGUARD_HELD`.
+    - JSON-lines run log at `~/.cache/tenth_spring/memguard.log`.
+    - CLI commands: `run`, `measure`, `doctor`.
+  - Created `tools/memguard_budgets.json` with measured steps (`flutter_test`, `godot_import`, `godot_selftest`, `godot_tests`, `sync_e2e`) and unmeasured 8 GiB steps (`demo_import`, `pbf_spike`, `rom_spike`, `flutter_build_ios`).
+  - Implemented `tools/test_memguard.py` covering all 7 test cases from `design_memory_and_resources.md` §4, wired fail-closed into `game/tests/test_runner.py`.
+  - Wired guarded runs into `test_runner.py` (Godot selftest and main tests), `sync_e2e.py` (wrapping whole run as `sync_e2e`), and CI workflows (`game_tests.yml`, `sync_e2e.yml`, `ip_guard.yml`).
 
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §9 (Deferred — trigger-gated).**
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §9 (Deferred — trigger-gated on playtest feedback).**
+
+- **F38 (resolved in M21) — heavy developer commands run with no memory guard.** Delivered via `tools/memguard.py`, `tools/memguard_budgets.json`, `tools/test_memguard.py`, runner wiring, and CI workflow updates.
+- **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
+  - **Map conversion:** the plan said to "convert" regional map files but set no memory limit. The obvious implementation — a dictionary of every node in a state — needs many GB and grows with region size.
+  - **Contract** (now written): streaming, bounded (≤ 1 GiB for the converter, ≤ 512 MiB for the ROM import), and **pausing rather than failing** when other programs take memory — `design_memory_and_resources.md` §3.
+  - **Folded into** the map-slice plan (**agent-guide §6, Item 3**) and the ROM spike (**§7, Item 4**).
+
+- **F37 (found 2026-10-09, 14th pass) — corridor reveal is narrower than designed.** `game/autoloads/sync_server.gd` `process_batch` reveals only the single 256 m cell containing each point (`latlon_to_cell` → one `upsert_map_cell`). `implementation_plan_foundation.md` §B4.5 says corridor rows reveal every cell within `corridorRevealMeters` (60 m) of the point, so a walk along a cell boundary should reveal both sides. Invisible until there's a map to look at, which is why it's folded into the first map slice. **Agent-guide §6 (Item 3).**
+- **F35 (found 2026-10-09, 14th pass) — an unreadable old save locks the game out after one session.** In `game/autoloads/db.gd` `_run_legacy_import`:
+  1. The "database already has rows" precondition (and its `close()`) runs **before** the backup is parsed.
+  2. When both the backup and its `.tmp` are unparseable, the function only prints `storage: legacy save unreadable — kept at <path>` and returns, **without marking the backup as handled**.
+  3. `_has_unimported_legacy_bak()` therefore stays true on every boot.
+
+  **Sequence:** first boot — unreadable, skipped, the player syncs (rows written). Second boot and every boot after — the precondition sees rows and closes the database (`storage: UNAVAILABLE — legacy import blocked`). This is the spec's own ordering gap: it defined the precondition and the unreadable case separately, and never said which runs first or that an unreadable file must be marked. **Agent-guide §4 (Item 1).**
+- **F36 (minor, found 2026-10-09, 14th pass) — *Scout here* logs a cached location as "now".** `companion/lib/ui/scout_ledger_screen.dart` `_triggerManualScout` inserts a visit at `_lastFix` with `startedAt = now`.
+  - **Why the cache can be wrong:** the capture stream uses a 25 m distance filter, so a fix can legitimately be hours old for someone sitting still — but it can also be stale after the app was suspended and the player moved.
+  - **Why it matters:** `design_privacy_and_location.md` §2 says the button logs the **current** location.
+  - **Fix direction:** request a fresh one-shot fix when the button is tapped. An age cutoff would wrongly reject stationary players.
+  - **Agent-guide §5 (Item 2).**
+- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred — trigger-gated).**
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §8 (Deferred — trigger-gated on playtest feedback).**
 - **Pending Physical Device Gates (Human Action Required):**
   - **D3 Device Soak (Phase 0 exit):** ≥ 8 h background carry on a real phone with app backgrounded; confirm scout ledger fills and app battery consumption is < 3%/day (Decision 5 = Option A).
-  - **Real-Device Sync Gate (Phase 1 exit):** Phone and PC on same Wi-Fi; pair via QR; report scouted route; verify records arrive on PC and Wireshark on port 7350 shows only TLS records (Agent guide §5).
+  - **Real-Device Sync Gate (Phase 1 exit):** Phone and PC on same Wi-Fi; pair via QR; report scouted route; verify records arrive on PC and Wireshark on port 7350 shows only TLS records (Agent guide §2, HUMAN actions).
 
 ---
 
@@ -294,3 +344,6 @@ Founding decisions made with the user during the design brainstorm, recorded her
       - The interim file fallback is retired once SQLite is live.
       - The v1 DDL is corrected in place once (F23), because no SQLite file exists anywhere yet.
       - Discovery is by remembered address plus QR re-scan; mDNS is deferred (F27).
+17. **Memory guards (2026-10-10).** The human asked for guards "so that we don't run out of memory," assuming "other program can start and stop which will take from the available memory." Investigation showed the 2026-10-09 out-of-memory event came from another project's processes, but the guards were designed anyway, because this project's next steps are heavy.
+    - **Pillar:** a start-time check is not enough. Work is bounded by construction, admitted only when there is room, and watched while it runs — paused or stopped cleanly and resumably, never left for the OS to kill.
+    - **Contract:** `design_memory_and_resources.md`.

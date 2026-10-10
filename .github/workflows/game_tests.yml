@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: Memguard doctor
+        run: python3 -I tools/memguard.py doctor
+
       - name: Install Godot 4.3
         run: |
           curl -fsSLO https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_linux.x86_64.zip
@@ -29,7 +32,7 @@ jobs:
           sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
 
       - name: Import Godot project assets
-        run: godot --headless --path game --import
+        run: python3 -I tools/memguard.py run godot_import -- godot --headless --path game --import
 
       - name: Run test runner
         run: python3 game/tests/test_runner.py

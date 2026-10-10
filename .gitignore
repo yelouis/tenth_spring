@@ -5,6 +5,11 @@
 # macOS
 .DS_Store
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
 # Flutter / Dart
 companion/.dart_tool/
 companion/.flutter-plugins

@@ -4,7 +4,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 
 **The setting:** a generation after a collapse. The streets are overgrown, the cities stand empty, and the Ghost types have moved in. The fog over the unexplored world is the Distortion — reality only holds where people still walk. Cemeteries, ruins, and abandoned hospitals are thick with Ghost Pokémon; at night they are everywhere. Hauntings spread outward if left alone. At the end, Giratina waits.
 
-**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import Pokémon ROMs **dumped from cartridges you own** — Pokémon Black or White, plus Platinum if you want the Diamond/Pearl-style sprites (pending Decision 10) — and reads sprites, species data, moves, and names from them on your own machine. All 649 Pokémon of Generations 1–5 are included. The project will never provide ROMs or help anyone find one. There is no Steam release, no sales, and no monetization. See `docs/design_rom_asset_pipeline.md`.
+**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import Pokémon ROMs **dumped from cartridges you own** — Pokémon Black or White — and reads sprites, species data, moves, and names from them on your own machine. All 649 Pokémon of Generations 1–5 are included. The project will never provide ROMs or help anyone find one. There is no Steam release, no sales, and no monetization. See `docs/design_rom_asset_pipeline.md`.
 
 **Platform split:** the PC game holds all gameplay. The phone companion is deliberately thin — location capture, a read-only memoir map, and sync — and contains no Pokémon content at all.
 
@@ -37,6 +37,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 | `docs/design_companion_and_sync.md` | Companion scope, pairing, phone→PC sync |
 | `docs/design_art_direction.md` | What art comes from the ROM vs. what is original; pixel spec |
 | `docs/design_privacy_and_location.md` | Location permissions, on-device processing, fuzzing |
+| `docs/design_memory_and_resources.md` | Memory guards: tooling admission + watchdog, bounded and pausable heavy work in the game |
 | `docs/implementation_plan_foundation.md` | Build steps for Phases 0–1 |
 | `docs/e2e_testing_journeys.md` | Manual end-to-end test journeys |
 | `docs/ongoing_general_errors.md` | Decisions, findings, engineering history |
@@ -46,7 +47,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 - **PC game: Godot 4.3.** SQLite for saves via the vendored `godot-sqlite` extension (Decisions 6–7). ROM import in pure GDScript.
 - **Companion: Flutter** — location capture, read-only memoir map, sync. No gameplay, no Nintendo content.
 - **Sync:** direct device-to-device over LAN — QR pairing, TLS with the PC's certificate pinned by the QR code (Decision 11), end-to-end encrypted.
-- **Map data:** OpenStreetMap (Overpass API), queried by the PC and cached locally. Never Google Maps — its terms forbid derivative map products.
+- **Map data:** OpenStreetMap, **fully offline** — the PC downloads a regional file (e.g. your state) once and reads it locally, so no map request ever names a place you've been (Decision 13). Never Google Maps — its terms forbid derivative map products.
 - **Distribution:** the asset-free client via GitHub Releases; the companion via the app stores.
 
 ## Setup notes
@@ -55,6 +56,31 @@ Configure git to use the repository's pre-commit hooks to ensure no prohibited R
 ```bash
 git config core.hooksPath .githooks
 ```
+
+### Memory guard for heavy commands
+Heavy developer commands (Godot runs, Flutter test suites, spikes, map converters) run through the memory guard so they never exhaust machine memory:
+```bash
+python3 -I tools/memguard.py run <step> -- <command...>
+```
+
+### Run the PC game
+Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. Today the game shows the pairing screen; the map arrives with world generation (Phase 3).
+
+### Install the companion on an iPhone (development build)
+Needs a Mac with Xcode and Flutter.
+1. Plug the iPhone into the Mac, unlock it, and tap **Trust**.
+2. On the iPhone: **Settings → Privacy & Security → Developer Mode → On** (the phone restarts).
+3. In Xcode, open `companion/ios/Runner.xcworkspace` → **Runner** target → **Signing & Capabilities** → set **Team** to your Apple ID (the free Personal Team works). If Xcode says the bundle identifier is unavailable, change `com.tenthspring.companion` to something unique, such as `com.<yourname>.tenthspring`.
+4. From `companion/`, with the phone selected:
+   ```bash
+   flutter run --release
+   ```
+5. On the iPhone: **Settings → General → VPN & Device Management** → trust your developer certificate.
+
+With a free Apple ID the app stops launching after 7 days; re-run step 4 to reinstall. A paid Apple Developer account removes that limit and enables TestFlight.
+
+### Your own location data stays local
+Route files (`.gpx`) of your real neighborhood, demo saves, and ROM dumps all live **outside** this repository. Never commit them — the repo is public.
 
 ## Status
 
