@@ -13,7 +13,7 @@ This document defines the schemas, enums, and persistence rules. **Storage split
   - `first_revealed_at` and `cell_seed` are set once;
   - `place_node.visit_count` accumulates;
   - `sync_peer.last_applied_seq` never decreases.
-- **One-time legacy import.** A fallback save is recognised because its first 16 bytes are not `SQLite format 3\0`. It is renamed to `user://tenth_spring.db.jsonbak` (`JSON_BAK_PATH`), imported in one transaction, and kept. It is never deleted. **Any import failure — a failed statement, or a row-count mismatch — rolls back and closes the database for the session** (`storage: UNAVAILABLE — legacy import failed: …`); the backup stays untouched and the next boot retries. An import never runs into a database that already holds `visit_log` or `map_cell` rows (F31).
+- **One-time legacy import.** A fallback save is recognised because its first 16 bytes are not `SQLite format 3\0`. It is renamed to `user://tenth_spring.db.jsonbak` (`JSON_BAK_PATH`), imported in one transaction, and kept. It is never deleted. **Any import failure — a failed statement, or a row-count mismatch — rolls back and closes the database for the session** (`storage: UNAVAILABLE — legacy import failed: …`); the backup stays untouched and the next boot retries. An import never runs into a database that already holds `visit_log` or `map_cell` rows (F31). **Order matters (F35):** parse the backup first. If it is unreadable, record `meta('legacy_import', '<file> (unreadable — kept)')` so it is never retried and never blocks a later boot. Only a *readable*, not-yet-imported backup is subject to the rows precondition.
 
 ## 1. World Clock (`WorldClock`)
 

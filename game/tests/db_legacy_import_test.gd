@@ -227,6 +227,73 @@ func run_test() -> bool:
 
 	DB.close()
 	_cleanup_test_files()
+
+	# 5. Falsifying F35: an unreadable old save never locks the game out
+	# Stage 'not json' at TEST_DB_PATH
+	var unreadable_content = "not json"
+	var fa_unread = FileAccess.open(TEST_DB_PATH, FileAccess.WRITE)
+	fa_unread.store_string(unreadable_content)
+	fa_unread.close()
+
+	# Boot 1: rotates to .jsonbak, marks unreadable in meta, DB remains open
+	DB.init_db()
+	if DB._db == null:
+		push_error("FAIL: DB._db should not be null after boot with unreadable legacy save")
+		_cleanup_test_files()
+		return false
+
+	var meta_unread_rows = DB._rows("SELECT value FROM meta WHERE key = 'legacy_import';")
+	if meta_unread_rows.is_empty():
+		push_error("FAIL: Expected legacy_import row in meta for unreadable save")
+		DB.close()
+		_cleanup_test_files()
+		return false
+
+	var meta_val = str(meta_unread_rows[0].get("value", ""))
+	if not meta_val.ends_with("(unreadable — kept)"):
+		push_error("FAIL: Expected legacy_import value to end with '(unreadable — kept)', got: " + meta_val)
+		DB.close()
+		_cleanup_test_files()
+		return false
+
+	# Play session writes a map cell
+	DB.upsert_map_cell(1, 1, 1)
+
+	# Boot 2: close and init_db() again -> DB._db != null (lockout prevented), map cell persists
+	DB.close()
+	DB.init_db()
+
+	if DB._db == null:
+		push_error("FAIL: DB._db is null on second boot (F35 permanent lockout regression)")
+		_cleanup_test_files()
+		return false
+
+	var cell_check = DB.get_map_cell(1, 1)
+	if cell_check.is_empty() or cell_check.get("reveal_state", 0) != 1:
+		push_error("FAIL: Map cell (1, 1) missing or wrong state after second boot")
+		DB.close()
+		_cleanup_test_files()
+		return false
+
+	# Verify backup is byte-identical to 'not json'
+	var unread_bak_path = TEST_DB_PATH + ".jsonbak"
+	if not FileAccess.file_exists(unread_bak_path):
+		push_error("FAIL: Expected unreadable backup at " + unread_bak_path)
+		DB.close()
+		_cleanup_test_files()
+		return false
+
+	var fa_bak_read = FileAccess.open(unread_bak_path, FileAccess.READ)
+	var bak_text = fa_bak_read.get_as_text()
+	fa_bak_read.close()
+	if bak_text != unreadable_content:
+		push_error("FAIL: Backup file was modified; expected '%s', got '%s'" % [unreadable_content, bak_text])
+		DB.close()
+		_cleanup_test_files()
+		return false
+
+	DB.close()
+	_cleanup_test_files()
 	DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 
 	print("PASS: db_legacy_import_test")

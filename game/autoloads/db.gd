@@ -227,17 +227,6 @@ func _run_legacy_import() -> void:
 	if bak_path == "":
 		return
 
-	var cell_check_rows = _rows("SELECT COUNT(*) as c FROM map_cell;")
-	var visit_check_rows = _rows("SELECT COUNT(*) as c FROM visit_log;")
-	var existing_cells = int(cell_check_rows[0].get("c", 0)) if not cell_check_rows.is_empty() else 0
-	var existing_visits = int(visit_check_rows[0].get("c", 0)) if not visit_check_rows.is_empty() else 0
-	if existing_cells > 0 or existing_visits > 0:
-		var blocked_msg = "storage: UNAVAILABLE — legacy import blocked: database already has rows"
-		print(blocked_msg)
-		push_error(blocked_msg)
-		close()
-		return
-
 	var data = null
 	if FileAccess.file_exists(bak_path):
 		var text = FileAccess.get_file_as_string(bak_path)
@@ -249,7 +238,27 @@ func _run_legacy_import() -> void:
 			data = JSON.parse_string(tmp_text)
 
 	if data == null or typeof(data) != TYPE_DICTIONARY:
+		var bak_filename = bak_path.get_file()
+		var unreadable_meta = bak_filename + " (unreadable — kept)"
+		if not begin_transaction():
+			_fail_legacy_import(last_error)
+			return
+		if not _q("INSERT INTO meta (key, value) VALUES ('legacy_import', ?);", [unreadable_meta]):
+			_fail_legacy_import(last_error)
+			return
+		commit_transaction()
 		print("storage: legacy save unreadable — kept at " + bak_path)
+		return
+
+	var cell_check_rows = _rows("SELECT COUNT(*) as c FROM map_cell;")
+	var visit_check_rows = _rows("SELECT COUNT(*) as c FROM visit_log;")
+	var existing_cells = int(cell_check_rows[0].get("c", 0)) if not cell_check_rows.is_empty() else 0
+	var existing_visits = int(visit_check_rows[0].get("c", 0)) if not visit_check_rows.is_empty() else 0
+	if existing_cells > 0 or existing_visits > 0:
+		var blocked_msg = "storage: UNAVAILABLE — legacy import blocked: database already has rows"
+		print(blocked_msg)
+		push_error(blocked_msg)
+		close()
 		return
 
 	if not begin_transaction():

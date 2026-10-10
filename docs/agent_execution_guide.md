@@ -499,7 +499,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ## Definition of Done (this build)
 - [x] **Item 0 (F38)** — `memguard` admits, serializes, and watches every heavy command; the runaway and "other program took the memory" tests stop runs with exit 76; budgets measured for the existing steps; all three CI workflows log `memguard` lines.
-- [ ] **Item 1 (F35)** — an unreadable old save is marked as handled; a second boot after playing opens normally; executed in CI.
+- [x] **Item 1 (F35)** — an unreadable old save is marked as handled; a second boot after playing opens normally; executed in CI.
 - [ ] **Item 2 (F36)** — *Scout here* records the fresh fix at its own time and never falls back to the cache; executed in CI.
 - [ ] **HUMAN: real-device sync gate passes** (the five steps in §2). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run** (Decision 5 = A). **Closes Phase 0.**

@@ -279,11 +279,19 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Implemented `tools/test_memguard.py` covering all 7 test cases from `design_memory_and_resources.md` §4, wired fail-closed into `game/tests/test_runner.py`.
   - Wired guarded runs into `test_runner.py` (Godot selftest and main tests), `sync_e2e.py` (wrapping whole run as `sync_e2e`), and CI workflows (`game_tests.yml`, `sync_e2e.yml`, `ip_guard.yml`).
 
+**M22 — Legacy Import Ordering and Unreadable Save Handling (F35, 2026-10-10).**
+- **What was solved:**
+  - In `game/autoloads/db.gd`: reordered `_run_legacy_import` so parsing of candidate backup and `.tmp` runs before the existing rows precondition.
+  - When candidate backup is unreadable (unparseable JSON), atomically insert `meta('legacy_import', '<bak filename> (unreadable — kept)')`, print `storage: legacy save unreadable — kept at <path>`, and allow booting to continue normally without modifying or deleting the backup file.
+  - Subsequent boots see the `legacy_import` meta key and bypass import checks, eliminating the permanent lockout bug where rows written in session 1 blocked boot 2.
+  - In `game/tests/db_legacy_import_test.gd`: added test case 5 verifying unreadable backup handling, meta recording, normal boot, writing map cells, and successful second boot without lockout.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
 - **F38 (resolved in M21) — heavy developer commands run with no memory guard.** Delivered via `tools/memguard.py`, `tools/memguard_budgets.json`, `tools/test_memguard.py`, runner wiring, and CI workflow updates.
+- **F35 (resolved in M22) — an unreadable old save locks the game out after one session.** Reordered `_run_legacy_import`, marked unreadable saves in `meta`, and verified in `db_legacy_import_test.gd`.
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Map conversion:** the plan said to "convert" regional map files but set no memory limit. The obvious implementation — a dictionary of every node in a state — needs many GB and grows with region size.
   - **Contract** (now written): streaming, bounded (≤ 1 GiB for the converter, ≤ 512 MiB for the ROM import), and **pausing rather than failing** when other programs take memory — `design_memory_and_resources.md` §3.
