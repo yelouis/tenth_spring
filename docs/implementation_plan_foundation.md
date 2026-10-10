@@ -112,7 +112,7 @@ Validation A5: schema round-trip test; `seq` strictly increases; a fixture DB mi
 Read-only. Groups today's `visit_outbox` rows and shows **names-free** entries — the phone has no OSM, and the reveal is reserved for the PC:
 - Header: "3 places scouted today · sync at your PC to add them to the map."
 - Rows: time + a coarse label ("a place near you", or a reverse-geocoded neighborhood at most). Never a POI name, never a map reveal.
-- A "scout here" button (manual visit for "While Using"-only users) and a "pause scouting" toggle.
+- A "scout here" button (manual visit for "While Using"-only users) and a "pause scouting" toggle. "Scout here" asks the `LocationSource` for a **fresh one-shot fix** (`currentFix()`), never the last cached one, and logs it at that fix's time (F36).
 
 Validation A6: widget test that the ledger renders from a seeded outbox and that no map/fog widget exists in the companion widget tree (guards invariant 4).
 
@@ -331,7 +331,7 @@ Phone: on ACK, delete outbox rows with `seq <= lastAppliedSeq`. If the connectio
 For each row (ingest has write access to `map_cell`, `place_node`, `visit_log` only):
 - Append the canonical `visit_log` row (`peer_id, seq, ...`).
 - Reveal the `map_cell(s)` containing the point → `reveal_state = known` if currently `unknown`; stamp `first_revealed_at`.
-- `visit` rows: find the nearest POI in `osm_cache` within `visitRadiusMeters`. If found → upsert `place_node` (`visit_count += 1`, update `last_real_visit_at`, set `reveal_state = known` if unknown). If the cell's OSM isn't cached yet → mark the cell `known`, enqueue an Overpass fetch for that cell, and resolve `place_node` when it returns (deferred; the "intel ceremony" plays over this in Phase 2).
+- `visit` rows: find the nearest POI in `osm_cache` within `visitRadiusMeters`. If found → upsert `place_node` (`visit_count += 1`, update `last_real_visit_at`, set `reveal_state = known` if unknown). The POI lookup reads the local **map store** (Decision 13 = C). If the cell lies outside every installed region → mark the cell `known` and resolve `place_node` once that region is installed (deferred; the "intel ceremony" plays over this in Phase 3). No network request is made.
 - `corridor` rows: reveal cells within `corridorRevealMeters` of the point as `known` terrain.
 
 ### B4.6 bodyFix & relocation handoff

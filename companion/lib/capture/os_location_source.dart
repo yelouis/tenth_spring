@@ -24,6 +24,27 @@ class OsLocationSource implements LocationSource {
   @override
   Stream<OsVisit>? nativeVisits() => null;
 
+  @override
+  Future<Fix?> currentFix() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.medium,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+      return Fix(
+        lat: position.latitude,
+        lon: position.longitude,
+        accuracyM: position.accuracy,
+        tsUtcMs: position.timestamp.millisecondsSinceEpoch,
+        speedMps: position.speed,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   LocationSettings buildLocationSettings() {
     if (defaultTargetPlatform == TargetPlatform.android) {
       return AndroidSettings(

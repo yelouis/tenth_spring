@@ -143,21 +143,35 @@ class _ScoutLedgerScreenState extends State<ScoutLedgerScreen>
   }
 
   Future<void> _triggerManualScout() async {
-    if (_lastFix == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No location fix available yet')),
-        );
-      }
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Finding your location…')),
+      );
+    }
+    final fix = await _locationSource?.currentFix();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).clearSnackBars();
+    if (fix == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Couldn't find your location — try again in a moment."),
+        ),
+      );
       return;
     }
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final p = fuzzPoint(fix.lat, fix.lon);
     await widget.database.insertVisit(
       kind: 'visit',
-      lat: _lastFix!.lat,
-      lon: _lastFix!.lon,
-      startedAt: now,
+      lat: p.lat,
+      lon: p.lon,
+      startedAt: fix.tsUtcMs,
       dwellSeconds: 120,
+    );
+    _lastFix = _FixRecord(
+      lat: p.lat,
+      lon: p.lon,
+      tsUtcMs: fix.tsUtcMs,
     );
     await _refreshLedger();
     if (mounted) {

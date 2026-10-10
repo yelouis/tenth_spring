@@ -286,29 +286,27 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Subsequent boots see the `legacy_import` meta key and bypass import checks, eliminating the permanent lockout bug where rows written in session 1 blocked boot 2.
   - In `game/tests/db_legacy_import_test.gd`: added test case 5 verifying unreadable backup handling, meta recording, normal boot, writing map cells, and successful second boot without lockout.
 
+**M23 — Fresh One-Shot Fix for Scout Here (F36, 2026-10-10).**
+- **What was solved:**
+  - In `companion/lib/capture/location_source.dart`: added `Future<Fix?> currentFix();` to `LocationSource` interface.
+  - In `companion/lib/capture/os_location_source.dart`: implemented `currentFix()` using `Geolocator.getCurrentPosition(locationSettings: LocationSettings(accuracy: LocationAccuracy.medium, timeLimit: Duration(seconds: 10)))`, mapped to a `Fix` stamped with its own timestamp (`position.timestamp.millisecondsSinceEpoch`), returning `null` on any exception.
+  - In `companion/lib/capture/gpx_replay_source.dart`: implemented `currentFix()` returning `_lastEmittedFix`.
+  - In `companion/lib/ui/scout_ledger_screen.dart`: updated `_triggerManualScout()` to display "Finding your location…", request `currentFix()`, immediately clear the waiting SnackBar, handle `null` by showing "Couldn't find your location — try again in a moment." without falling back to cached fix, and on valid fix insert the fuzzed point stamped with `fix.tsUtcMs` and update `_lastFix`.
+  - In `companion/test/widget_test.dart`: added 3 validation tests (falsifying test proving fix B at its own timestamp is used rather than cached stream fix A, null fallback test proving error SnackBar and no DB insert, and `GpxReplaySource` test).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
 - **F38 (resolved in M21) — heavy developer commands run with no memory guard.** Delivered via `tools/memguard.py`, `tools/memguard_budgets.json`, `tools/test_memguard.py`, runner wiring, and CI workflow updates.
 - **F35 (resolved in M22) — an unreadable old save locks the game out after one session.** Reordered `_run_legacy_import`, marked unreadable saves in `meta`, and verified in `db_legacy_import_test.gd`.
+- **F36 (resolved in M23) — *Scout here* logs a cached location as "now".** Resolved by adding `currentFix()` to `LocationSource`, updating `OsLocationSource`, `GpxReplaySource`, `_triggerManualScout`, and adding companion widget tests.
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Map conversion:** the plan said to "convert" regional map files but set no memory limit. The obvious implementation — a dictionary of every node in a state — needs many GB and grows with region size.
   - **Contract** (now written): streaming, bounded (≤ 1 GiB for the converter, ≤ 512 MiB for the ROM import), and **pausing rather than failing** when other programs take memory — `design_memory_and_resources.md` §3.
   - **Folded into** the map-slice plan (**agent-guide §6, Item 3**) and the ROM spike (**§7, Item 4**).
 
 - **F37 (found 2026-10-09, 14th pass) — corridor reveal is narrower than designed.** `game/autoloads/sync_server.gd` `process_batch` reveals only the single 256 m cell containing each point (`latlon_to_cell` → one `upsert_map_cell`). `implementation_plan_foundation.md` §B4.5 says corridor rows reveal every cell within `corridorRevealMeters` (60 m) of the point, so a walk along a cell boundary should reveal both sides. Invisible until there's a map to look at, which is why it's folded into the first map slice. **Agent-guide §6 (Item 3).**
-- **F35 (found 2026-10-09, 14th pass) — an unreadable old save locks the game out after one session.** In `game/autoloads/db.gd` `_run_legacy_import`:
-  1. The "database already has rows" precondition (and its `close()`) runs **before** the backup is parsed.
-  2. When both the backup and its `.tmp` are unparseable, the function only prints `storage: legacy save unreadable — kept at <path>` and returns, **without marking the backup as handled**.
-  3. `_has_unimported_legacy_bak()` therefore stays true on every boot.
-
-  **Sequence:** first boot — unreadable, skipped, the player syncs (rows written). Second boot and every boot after — the precondition sees rows and closes the database (`storage: UNAVAILABLE — legacy import blocked`). This is the spec's own ordering gap: it defined the precondition and the unreadable case separately, and never said which runs first or that an unreadable file must be marked. **Agent-guide §4 (Item 1).**
-- **F36 (minor, found 2026-10-09, 14th pass) — *Scout here* logs a cached location as "now".** `companion/lib/ui/scout_ledger_screen.dart` `_triggerManualScout` inserts a visit at `_lastFix` with `startedAt = now`.
-  - **Why the cache can be wrong:** the capture stream uses a 25 m distance filter, so a fix can legitimately be hours old for someone sitting still — but it can also be stale after the app was suspended and the player moved.
-  - **Why it matters:** `design_privacy_and_location.md` §2 says the button logs the **current** location.
-  - **Fix direction:** request a fresh one-shot fix when the button is tapped. An age cutoff would wrongly reject stationary players.
-  - **Agent-guide §5 (Item 2).**
 - **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred — trigger-gated).**
 - **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §8 (Deferred — trigger-gated on playtest feedback).**
 - **Pending Physical Device Gates (Human Action Required):**

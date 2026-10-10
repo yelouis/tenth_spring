@@ -46,4 +46,5 @@ abstract class LocationSource {
   Future<void> stop();
   Stream<Fix> fixes();
   Stream<OsVisit>? nativeVisits();
+  Future<Fix?> currentFix();
 }

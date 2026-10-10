@@ -6,7 +6,7 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 
 - **Your devices only**: raw GPS traces never leave the phone. Fuzzed `VisitLog` rows travel exactly one hop — phone → paired PC — over a direct, end-to-end-encrypted LAN channel (`design_companion_and_sync.md` §3). No account, no server, no cloud relay, no analytics containing coordinates. The game save stores map state at fuzzed precision only.
 - **Fuzzing at source**: coordinates are reduced to 3-decimal precision (~110 m) *on the phone before storage or sync* — higher precision never persists and never transits. The safehouse is stored only as a fuzzed cell (`homeFuzzMeters = 300` snap) — the exact home point never persists anywhere on either device.
-- **No third-party SDKs** with location access, on either app. OSM Overpass queries (PC-side) are made for *cell-sized regions*, not points, and only for already-revealed cells (a query can't leak a precise position).
+- **No third-party SDKs** with location access, on either app. **Map data is fully offline (Decision 13 = C).** The PC downloads whole regional OpenStreetMap files (e.g. a US state) and reads every street and building locally; no map request ever names a place or area the player has been. The only thing a download reveals is which region was chosen.
 - **Export & erase**: settings on both devices expose "export my map" (GeoJSON, from the PC) and "erase everything" (wipes phone outbox + PC world + pairing). Both are one tap, no dark patterns.
 - **Enforced separation**: the sync ingest has no write path into the bag, party, PC box, or Pokémon tables (see `design_resources_and_base.md` §5) — real movement unlocks access, never cargo or creatures, at the architecture level.
 
@@ -15,7 +15,7 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 - Capture lives entirely in the **companion app**. Primary: OS significant-location-change + visit APIs (iOS `CLVisit`, Android fused provider with PASSIVE/BALANCED priority). Target battery cost < 3%/day.
 - No continuous high-accuracy tracking, ever. Corridor traces come from SLC breadcrumbs interpolated along the road network, not from polling.
 - **Concrete settings (as implemented):** accuracy `medium`, distance filter **25 m**, interval **2 min**; Android runs a foreground service with a persistent low-priority notification, iOS uses `allowBackgroundLocationUpdates` with `pauseLocationUpdatesAutomatically`. These are the battery-budget levers — see the master plan's Core Configurations before touching them.
-- Graceful degradation: with "While Using" permission only, the pipeline still works — visits are detected while the companion is open and a manual "scout here" button logs the current place. "Always" permission is the *enhancement*, never the wall.
+- Graceful degradation: with "While Using" permission only, the pipeline still works — visits are detected while the companion is open and a manual "scout here" button logs the current place — from a **fresh one-shot fix taken when the button is tapped**, never a cached one, stamped with that fix's own time (F36). "Always" permission is the *enhancement*, never the wall.
 
 ## 3. Onboarding & Consent UX
 

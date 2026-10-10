@@ -26,12 +26,11 @@ All extracted content lands in **`user://rom_cache/`** on the player's machine �
 
 ## 2. Supported ROMs
 
-Two Nintendo DS games, each **dumped by the player from a cartridge they own**:
+**One Nintendo DS game, dumped by the player from a cartridge they own** (Decision 10 = B, 2026-10-09 — Black/White sprites for all 649, so Platinum is not used):
 
 | ROM | Game codes (header `0x0C`) | Provides | Required? |
 |---|---|---|---|
-| **Pokémon Black or White (USA)** | `IRBO` (Black) / `IRAO` (White) — **verify** both against the No-Intro DAT | **All data for all 649 species**: base stats, types, abilities, learnsets, evolutions, moves (559), items, item icons, and all names/text. Battle sprites for #494–649 (and, under Decision 10 = B or C, for #1–493). | **Always** |
-| **Pokémon Platinum (USA)** | `CPUE` | Battle sprites for #1–493 in the Diamond/Pearl style | **Only if Decision 10 = A or C** |
+| **Pokémon Black or White (USA)** | `IRBO` (Black) / `IRAO` (White) — **verify** both against the No-Intro DAT | **All data for all 649 species**: base stats, types, abilities, learnsets, evolutions, moves (559), items, item icons, and all names/text. Battle sprites (animated, 96×96) for **all 649**. | **Always — the only ROM** |
 
 **Black and White are interchangeable** for our purposes. Their version differences are wild-encounter tables and exclusive story content, neither of which we read. The importer accepts either and treats them identically.
 
@@ -49,7 +48,7 @@ Battle *rules* still follow Generation IV (`design_creatures_and_battles.md`); G
 
 ## 3. Import flow (first run, and on demand)
 
-Each ROM is imported independently; the cache records which ones are present.
+Only the Black/White ROM is imported (§2).
 
 ```
 1 LOCATE   Player picks a ROM file in a native file dialog. Store only its path.
@@ -58,12 +57,13 @@ Each ROM is imported independently; the cache records which ones are present.
 4 EXTRACT  Pull that ROM's archives in §5 by path; unpack each NARC.
 5 DECODE   Sprites → PNG. Data: fixed-layout records → species/move/item/evolution/learnset tables.
            Text: decrypt message banks → names.
-6 WRITE    user://rom_cache/ (layout §6). Write that ROM's manifest entry last.
-7 VALIDATE Spot-checks (§7) before marking that ROM's part of the cache valid.
+6 WRITE    user://rom_cache/ (layout §6). Write the manifest last.
+7 VALIDATE Spot-checks (§7) before marking the cache valid.
 ```
 - **Resumable and idempotent:** write into `user://rom_cache.tmp/`, then rename to `user://rom_cache/` only after the manifest is written. A crash leaves the old cache intact.
-- **The game runs in a degraded "no ROM" mode before import.** Onboarding, the map, and sync work with placeholder silhouettes; Pokémon content unlocks once the required ROMs (§2) are valid. If Decision 10 = A and only Black/White is imported, Gen 1–4 battles still work, showing a silhouette instead of a sprite.
+- **The game runs in a degraded "no ROM" mode before import.** Onboarding, the map, and sync work with placeholder silhouettes; Pokémon content unlocks once the Black/White import (§2) is valid.
 - **Pure GDScript:** the importer uses `FileAccess.get_buffer` and `PackedByteArray.decode_u16/u32`, and needs no native extension.
+- **Bounded memory:** archives are read by FAT offset (seek + `get_buffer`), never the whole ROM, with sprites decoded one at a time — peak ≤ 512 MiB, pausing when the computer runs low (`design_memory_and_resources.md` §3.2).
 
 ## 4. Formats (each **verify** must be confirmed by the spike and replaced with the confirmed rule)
 
@@ -72,10 +72,6 @@ Each ROM is imported independently; the cache records which ones are present.
 - **NARC:** magic `NARC`, then three chunks: `BTAF` (file allocation), `BTNF` (file names), `GMIF` (file images).
 - **NCGR / NCLR:** tile graphics (`RGCN`) and palettes (`RLCN`); 4bpp tiles; BGR555 palette entries.
 - **LZ compression:** if an extracted file's first byte is `0x10` (LZ77) or `0x11` (LZ11), decompress before parsing. Gen 5 archives are known to use LZ11 in places — **verify** which files.
-
-**Platinum — battle sprites (only if Decision 10 = A or C):**
-- Pixel data in the `RAHC`/`CHAR` block is encrypted with the Gen 4 PRNG: `seed = seed × 0x41C64E6D + 0x6073`, XOR applied per u16.
-- **The iteration direction and seed source differ between Diamond/Pearl and Platinum.** The spike decodes one known species and records the exact rule here, citing `pret/pokeplatinum`.
 
 **Black/White:**
 - **Battle sprites** are composed from parts, not stored as one image:
@@ -89,7 +85,6 @@ Each ROM is imported independently; the cache records which ones are present.
 - **Text banks:** UTF-16 code units, encrypted per string with a 16-bit key that is advanced after each character — **verify** the exact key schedule and record it here.
 
 **Reference sources** (documentation only — never sources of ROMs):
-- `pret/pokeplatinum` (Platinum decompilation).
 - Project Pokémon's raw database pages for Black (`projectpokemon.org/rawdb/black/`).
 
 ## 5. What to extract
@@ -107,12 +102,6 @@ Each ROM is imported independently; the cache records which ones are present.
 | `/a/0/0/4` (14,285) | Battle sprites, cells, animations, palettes | `sprites/front/{dex}.png`, `back/`, `front_shiny/`, `back_shiny/` |
 | *item icons — archive to be located by the spike* | Item icons + palettes. **Do not guess the path**; record it here once found | `icons/items/{item_id}.png` |
 
-**Platinum** (only if Decision 10 = A or C):
-
-| Archive | Contents | Cache output |
-|---|---|---|
-| `/poketool/pokegra/pl_pokegra.narc` (2,964) | Battle sprites + palettes. 2,964 = 494 × 6, consistent with six files per species at index `dex × 6` — **verify** | `sprites_dp/front/{dex}.png`, `back/`, `front_shiny/`, `back_shiny/` for #1–493 |
-
 **Not extracted:** overworld maps and buildings. Our world is generated from OpenStreetMap, and overworld tiles are original art (`design_art_direction.md`).
 
 ## 6. Cache layout and versioning
@@ -120,14 +109,13 @@ Each ROM is imported independently; the cache records which ones are present.
 ```
 user://rom_cache/
   manifest.json   { importerVersion,
-                    roms: { bw: {gameCode, sha1, importedAt},
-                            pt: {gameCode, sha1, importedAt} | absent },
+                    rom: {gameCode, sha1, importedAt},
                     speciesCount, moveCount }
-  sprites/  sprites_dp/  icons/  data/  text/en/
+  sprites/  icons/  data/  text/en/
 ```
 - **Re-import automatically** if `importerVersion` changes, or if a ROM's `sha1` no longer matches the file the player pointed at.
 - **The cache is regenerable, never a source of truth.** Saves store National Dex numbers and instance data, never extracted content. Deleting the cache must never lose player progress.
-- **Sprite style is chosen in one place:** `asset_db.sprite_front(dex, shiny)` reads `sprites_dp/` or `sprites/` per Decision 10. No other code knows sprites come from two sources.
+- **Sprites are reached in one place:** `asset_db.sprite_front(dex, shiny)`. No other code reads `sprites/` directly.
 
 ## 7. Import validation (the importer is not "done" until these pass)
 
@@ -148,7 +136,6 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
 - Names for #487, #609, and #1 decode to non-empty strings with no unmapped characters.
 - **Chandelure's static front sprite** is a real image, not noise. Two checks: ≤ 16 distinct colours per palette, and a pixel-variance threshold that "static" from a wrong decryption or wrong cell assembly cannot pass.
 
-**Platinum** (only if imported): Giratina's (`#487`) front sprite passes the same two image checks.
 
 ## 8. Legal and repository guardrails (non-negotiable)
 
@@ -186,7 +173,7 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
    - **If the pre-push SHA is unknown** (e.g. after a force-push), the scan falls back to full history.
 
    The hook is local, so a clone without it has no pre-publication defense. The local battery therefore **fails if `core.hooksPath` is not `.githooks`**. It skips that check only when `CI=true`, where the range and tree scans apply instead.
-4. **ROM-dependent tests** run **only** when a developer supplies ROMs locally (`TENTH_SPRING_ROM_BW`, and `TENTH_SPRING_ROM_PT` if Platinum is used). Otherwise they are skipped with an explicit message, never faked. CI never has a ROM.
+4. **ROM-dependent tests** run **only** when a developer supplies ROMs locally (`TENTH_SPRING_ROM_BW`). Otherwise they are skipped with an explicit message, never faked. CI never has a ROM.
 5. **No Nintendo trademarks in branding.** Do not use "Pokémon" or other Nintendo trademarks in the game's title, logo, store pages, or release names. The game is "Tenth Spring."
 6. **The phone companion contains no Nintendo assets or names**, ever (`design_companion_and_sync.md` §1). It is a location tracker and must stay store-listable.
 
@@ -199,11 +186,10 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
   - If a takedown notice ever arrives, comply immediately and stop distribution. Do not argue it in public.
 
 ## 10. Files
-* `game/rom/importer.gd` — orchestrates §3 per ROM; resumable, idempotent.
+* `game/rom/importer.gd` — orchestrates §3; resumable, idempotent.
 * `game/rom/nds_fs.gd` — header, FNT/FAT parsing.
 * `game/rom/narc.gd`, `game/rom/lz.gd` (LZ77 + LZ11), `game/rom/nitro_gfx.gd` (NCGR/NCLR → `Image`).
 * `game/rom/gen5_cells.gd` — NCER cell assembly for Black/White sprites.
-* `game/rom/gen4_sprite_crypt.gd` — Platinum sprite decryption (only if Decision 10 = A or C).
 * `game/rom/gen5_text.gd` — Black/White text decryption.
 * `game/rom/gen5_records.gd` — personal/learnset/evolution/move/item record parsers.
 * `game/rom/asset_db.gd` — runtime access API: `species(dex)`, `move(id)`, `sprite_front(dex, shiny)`, `item_icon(id)`, `name(kind, id)`. **The only seam the rest of the game may use.** No system reads the cache directly, so original creatures could be swapped in later without touching gameplay code.

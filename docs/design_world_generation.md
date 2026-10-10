@@ -26,7 +26,12 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 
 ## 3. OSM Ingestion & Tile Synthesis
 
-- **Query scope**: Overpass API queried lazily — only for map cells that have become `known`, never speculatively. Responses cached on-device (`osm_cache` table) with a 90-day TTL.
+- **Map data source — fully offline (Decision 13 = C):**
+  - **Download:** the PC downloads a whole **regional OpenStreetMap extract** (`.osm.pbf`, from Geofabrik) once per region — never per-place or per-area queries. The only thing a download reveals is which region was chosen.
+  - **Choosing a region:** the region is picked from Geofabrik's region index by where the player's revealed cells are, and the player confirms each download with its size.
+  - **Map store:** the extract is converted once — streaming, with peak memory ≤ 1 GiB and pausing when the computer runs low (`design_memory_and_resources.md` §3.1) — into a local, spatially indexed **map store** — its own SQLite file per region, separate from the save, regenerable, and deletable.
+  - **Rendering:** all tiles are read from that store. Revealed cells outside every installed region render as plain grey "unmapped" until that region is installed.
+  - **Attribution:** `© OpenStreetMap contributors` is always visible on the map.
 - **POI mapping**: OSM tags → `PlaceCategory` via the table in `design_resources_and_base.md`. Unmapped POIs become generic `ruin` (small mixed items).
 - **Spawn-zone derivation**: each cell is assigned a `zone` from its dominant OSM land use — residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds, plus the haunted zones **cemetery** (`landuse=cemetery`, `amenity=grave_yard`), **ruins** (`historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*`), and **hospital** (`amenity=hospital`). Haunted zones win ties. The zone drives spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2) and is stored on `map_cell`. Deterministic per cell.
 - **Tall grass placement**: tall-grass tiles fill OSM vegetation (park, meadow, grass, scrub, wood edges) and overgrown land (`landuse=brownfield`, vacant lots, abandoned sites). The collapse setting adds overgrowth: road and lot tiles convert to tall grass with probability rising by distance band from home (0%, 10%, 25%, 40%), seeded per cell so it is deterministic. Tall grass is where encounters happen — its placement *is* encounter design.
@@ -59,6 +64,6 @@ The map has no boundary. Travel anywhere real adds a distant island of `known` c
 
 ## 6. Files
 * `companion/lib/capture/visit_detector.dart` — dwell/corridor detection (phone).
-* `game/world/osm_ingest` — Overpass client + cache (PC).
+* `game/world/region_import` — regional extract download, verification, and conversion into the map store (PC).
 * `game/world/tile_synth` — deterministic geometry → tile rasterizer (PC).
 * `game/world/fog_store` — reveal-state persistence and queries (PC, canonical).

@@ -12,6 +12,7 @@ class GpxReplaySource implements LocationSource {
 
   final _fixController = StreamController<Fix>.broadcast();
   bool _isRunning = false;
+  Fix? _lastEmittedFix;
 
   GpxReplaySource(
     this.gpxXml, {
@@ -25,6 +26,9 @@ class GpxReplaySource implements LocationSource {
 
   @override
   Stream<OsVisit>? nativeVisits() => null;
+
+  @override
+  Future<Fix?> currentFix() async => _lastEmittedFix;
 
   @override
   Future<void> start() async {
@@ -73,6 +77,7 @@ class GpxReplaySource implements LocationSource {
         tsUtcMs: ts,
       );
 
+      _lastEmittedFix = fix;
       _fixController.add(fix);
     }
   }

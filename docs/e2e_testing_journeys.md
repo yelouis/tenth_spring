@@ -6,10 +6,10 @@ This document defines the key player journeys and step-by-step manual instructio
 
 ## 💾 Journey 0: ROM Import (Bring Your Own ROM)
 
-**Objective**: Verify the game runs without a ROM, imports valid dumps, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Black or White (USA) ROM — plus Platinum (USA) if Decision 10 uses it — **that the tester dumped from their own cartridges**, never downloaded ones.
+**Objective**: Verify the game runs without a ROM, imports valid dumps, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Black or White (USA) ROM **that the tester dumped from their own cartridge** — never a downloaded one.
 1. Fresh install, no ROM. Launch the PC game → verify it reaches the map in "no ROM" mode with placeholder silhouettes and a clear "import your ROM" prompt; onboarding, pairing, and sync all work.
 2. Offer a non-ROM file and a ROM with the wrong game code → both rejected with plain-language messages; no partial cache is left behind.
-3. Import the valid dump(s) → progress shown; `user://rom_cache/manifest.json` written last; the §7 validation passes (649 species, 559 moves; Giratina is Ghost/Dragon; Spiritomb is Ghost/Dark; Chandelure is Ghost/Fire; sprites decode to real images, not static).
+3. Import the valid dump(s) → progress shown; `user://rom_cache/manifest.json` written last; the §7 validation passes (649 species, 559 moves; Giratina is Ghost/Dragon; Spiritomb is Ghost/Dark; Chandelure is Ghost/Fire; Chandelure's sprite decodes to a real image, not static).
 4. Kill the game mid-import, relaunch → the old cache (or none) is intact and import resumes cleanly.
 5. Run `git status` in the repo → **nothing** from the ROM or cache appears; `tools/check_no_nintendo_assets.py` passes. Copy a `.nds` into the repo and stage it → the check **fails**.
 
@@ -71,5 +71,5 @@ This document defines the key player journeys and step-by-step manual instructio
 
 **Objective**: Verify the pillar-level guarantees across both devices.
 1. 48-hour phone carry with capture on: battery attribution < 3%/day.
-2. Sniff the sync channel: the phone→PC payload is ciphertext (no plaintext coordinates on the wire); precision never exceeds storage-fuzzed (~110 m). Sniff PC traffic: Overpass queries are cell-region-scoped and only for revealed cells; nothing leaves the PC containing coordinates (Steam Cloud, if on, carries only the fuzzed save).
+2. Sniff the sync channel: the phone→PC payload is ciphertext (no plaintext coordinates on the wire); precision never exceeds storage-fuzzed (~110 m). Sniff PC traffic: the only map-data traffic is whole-region file downloads the player confirmed; no request contains coordinates or names a cell.
 3. "Export my map" (PC) produces valid GeoJSON; "Erase everything" wipes the phone outbox + pairing **and** the PC world, returning both builds to first-launch state.

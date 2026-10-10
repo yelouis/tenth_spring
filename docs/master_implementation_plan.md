@@ -23,14 +23,14 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 **Phase 0 — Companion capture & scout ledger** *(code-complete; device gate pending)*
 Carrying the phone yields a fuzzed visit/corridor log within budget. **Exit:** ledger fills while backgrounded over ≥ 8 h at < 3%/day on a real device.
 
-**Phase 1 — Pairing, sync & data models** *(built & CI-verified; pass-13 fixes F32–F34 queued, then the physical device gate — see the agent guide §2)*
+**Phase 1 — Pairing, sync & data models** *(built, hardened & CI-verified — pass-13 fixes F29–F34 landed; only the human's real-device sync gate remains — see the agent guide §2)*
 A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Status:** All code delivered across Item 2 (real SQLite persistence, WAL, bound parameters) and Item 3a–c (pinned TLS listener, QR generator, pairing tokens, frame codec, scout reports, and cross-language loopback sync in CI). Verified in CI (`sync_e2e`, `game_tests`, `Public-Repo IP Guard`). **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records (pending human testing on physical phone + PC).
 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*
-Import player-supplied ROMs — Black or White (all data for the 649 Gen 1–5 species, plus sprites) and, if Decision 10 calls for it, Platinum (Diamond/Pearl-style sprites for #1–493) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
+Import a player-supplied Pokémon Black or White ROM (all data and sprites for the 649 Gen 1–5 species; Decision 10 = B) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
 
 **Phase 3 — World generation**
-OSM → deterministic tile overworld: spawn zones (incl. cemetery/ruins/hospital), **tall-grass placement**, landmark flagging with legendary assignment, two-fog rendering, and the intel ceremony. Contract: `design_world_generation.md`. **Exit:** identical tiles from `(cached OSM, cellSeed)` across runs; tall grass appears where the rules say.
+Offline regional OSM extracts (Decision 13 = C) → deterministic tile overworld: spawn zones (incl. cemetery/ruins/hospital), **tall-grass placement**, landmark flagging with legendary assignment, two-fog rendering, and the intel ceremony. Contract: `design_world_generation.md`. **Exit:** identical tiles from `(cached OSM, cellSeed)` across runs; tall grass appears where the rules say.
 
 **Phase 4 — Travel, time & fast travel** *(partly pre-built — extend, don't rewrite)*
 World clock, day/dusk/night bands, travel charged in game-time, bicycle, session-start relocation, stranded rule on the PC box. Contract: `design_travel_and_time.md`. **Exit:** a 12-mile destination reports ~48 min on foot (~24 by bicycle) and charges the clock accordingly.
