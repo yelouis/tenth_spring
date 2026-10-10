@@ -503,7 +503,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **Item 2 (F36)** — *Scout here* records the fresh fix at its own time and never falls back to the cache; executed in CI.
 - [ ] **HUMAN: real-device sync gate passes** (the five steps in §2). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run** (Decision 5 = A). **Closes Phase 0.**
-- [ ] **Item 3** — `docs/implementation_plan_world_generation.md` (slice 1) is written with measured speed-spike numbers **and peak memory** and the converter choice (or a filed decision), and **paused for review**.
+- [x] **Item 3** — `docs/implementation_plan_world_generation.md` (slice 1) is written with measured speed-spike numbers **and peak memory** and the converter choice (or a filed decision), and **paused for review**.
 - [ ] **A Black/White dump supplied**, then **Item 4** — the verify markers are resolved, `implementation_plan_rom_importer.md` is written, the preview is shown, and the work is **paused for review**.
 - [ ] The full §1 battery and all three CI workflows are green.
 

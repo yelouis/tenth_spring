@@ -51,3 +51,12 @@ game/export_presets.cfg
 roms/
 **/rom_cache/
 **/rom_cache.tmp/
+
+# Map data & GPX routes — never commit user routes or OSM downloads (public repo)
+*.gpx
+!companion/test/fixtures/*.gpx
+!game/tests/fixtures/*.gpx
+*.osm.pbf
+!game/tests/fixtures/*.osm.pbf
+map_data/
+demo/

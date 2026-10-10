@@ -21,6 +21,10 @@ enum PlaceRevealState { unknown, known, cleared }
 A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point for ≥ `visitDwellSeconds` (120 s). Driving past does *not* count as visiting a POI — it reveals the road corridor only.
 
 - **Corridor reveal**: any traversed route reveals map cells within `corridorRevealMeters` (60 m) of the trace as `known` terrain (streets, visible building outlines — silhouettes only).
+- **GPX rules for imported hand-drawn routes**:
+  - Track points (`<trkpt>`) = corridor trace.
+  - Waypoints (`<wpt>`) = visits, assigned a synthesized **10-minute** (600 s) dwell.
+  - Track points lacking `<time>` receive synthesized walking timestamps at **1.4 m/s** (5.04 km/h) relative to the prior point.
 - **Visit log**: every visit appends `(placeId, timestamp, dwellSeconds)`. Repeat visits increment familiarity (see §4).
 - **Clock rule**: convert all stored timestamps to UTC epoch; familiarity math uses count + recency, never wall dates.
 

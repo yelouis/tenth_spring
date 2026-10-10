@@ -29,7 +29,7 @@ A day of scouting lands as `visit_log` rows + `known` cells on the PC after one 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*
 Import a player-supplied Pokémon Black or White ROM (all data and sprites for the 649 Gen 1–5 species; Decision 10 = B) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
 
-**Phase 3 — World generation**
+**Phase 3 — World generation** *(slice 1 "Neighborhood preview" planned; building gates on human review)*
 Offline regional OSM extracts (Decision 13 = C) → deterministic tile overworld: spawn zones (incl. cemetery/ruins/hospital), **tall-grass placement**, landmark flagging with legendary assignment, two-fog rendering, and the intel ceremony. Contract: `design_world_generation.md`. **Exit:** identical tiles from `(cached OSM, cellSeed)` across runs; tall grass appears where the rules say.
 
 **Phase 4 — Travel, time & fast travel** *(partly pre-built — extend, don't rewrite)*

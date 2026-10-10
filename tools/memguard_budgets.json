@@ -39,8 +39,11 @@
     "status": "UNMEASURED"
   },
   "pbf_spike": {
-    "budget_gib": 8.0,
-    "status": "UNMEASURED"
+    "budget_gib": 1.0,
+    "peak_gib": 0.36,
+    "date": "2026-10-10",
+    "machine": "darwin arm64",
+    "status": "measured"
   },
   "rom_spike": {
     "budget_gib": 8.0,
