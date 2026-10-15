@@ -183,6 +183,18 @@ def main():
 		sys.exit(1)
 	print("[MEMGUARD TESTS OK] All memguard test cases passed.\n")
 
+	# Synthetic OSM PBF Generator Reproducibility Test
+	synthetic_pbf_test_path = os.path.join(repo_root, "tools", "test_generate_synthetic_pbf.py")
+	if not os.path.exists(synthetic_pbf_test_path):
+		print("\n[SYNTHETIC PBF ERROR] Synthetic PBF test suite missing")
+		sys.exit(1)
+	print("=== Synthetic OSM PBF Fixture Test Suite ===")
+	pbf_test_res = subprocess.run([sys.executable, "-I", synthetic_pbf_test_path], cwd=repo_root)
+	if pbf_test_res.returncode != 0:
+		print("\n[SYNTHETIC PBF TEST FAIL] Synthetic PBF unit tests failed.")
+		sys.exit(1)
+	print("[SYNTHETIC PBF TESTS OK] Synthetic PBF fixture byte-for-byte reproducibility verified.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)
@@ -201,6 +213,8 @@ def main():
 		"profile_paths_test",
 		"qr_code_test",
 		"real_save_untouched",
+		"region_import_pause_test",
+		"region_import_test",
 		"sync_ingest_isolation_test",
 		"sync_session_test"
 	]

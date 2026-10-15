@@ -181,21 +181,39 @@ CREATE TABLE import_state (
 );
 ```
 
-### 5.3 Speed & Memory Spike Results (Measured on Development Machine)
-The pure-GDScript streaming PBF reader prototype (`tools/pbf_spike.gd`) was executed under `memguard` on macOS Darwin arm64 (Apple Silicon) across single-threaded and multi-threaded (4 in flight) configurations:
+### 5.3 Converter Gate Results (Measured on Development Machine — Apple Silicon Darwin arm64)
 
-| Dataset | File Size | Mode | Elapsed Time | Throughput | Peak RSS | Extrapolated 1.2 GB CA |
-|---|---|---|---|---|---|---|
-| **District of Columbia** | 20.05 MB | Single-threaded (1 thread) | **0.526 s** | 38.12 MB/s | **0.359 GiB** | 31.5 s (0.52 min) |
-| **District of Columbia** | 20.05 MB | Multi-threaded (4 in flight) | **0.389 s** | 51.54 MB/s | **0.360 GiB** | 23.3 s (0.39 min) |
-| **Washington** | 347.51 MB | Single-threaded (1 thread) | **11.698 s** | 29.71 MB/s | **0.334 GiB** | 40.4 s (0.67 min) |
-| **Washington** | 347.51 MB | Multi-threaded (4 in flight) | **9.869 s** | 35.21 MB/s | **0.126 GiB** | 34.1 s (0.57 min) |
+The full three-pass streaming PBF converter (`region_converter.gd` + `map_store.gd`) was measured under `memguard` on macOS Darwin arm64 (Apple Silicon):
 
-#### Decision Rule Evaluation
-- Threshold: $\le 30\text{ min}$ and $\le 1.0\text{ GiB}$ peak RSS for the 348 MB file.
-- Actual: **9.869 seconds** and **0.126 GiB peak RSS**.
-- Extrapolated California (1.2 GB extract): **~34 seconds**.
-- **Converter Selection**: **Pure-GDScript converter running on a background `WorkerThreadPool`**, with a streaming progress bar and memory-pause watchdog. No native C++ extension or external converter tool is needed.
+| Dataset | File Size | Mode | Elapsed Time | Peak RSS | Feature Counts | Output DB Size | Canonical SHA-256 |
+|---|---|---|---|---|---|---|---|
+| **District of Columbia** | 20.05 MB | 3-pass streaming | **15.83 s** | **1.693 GiB** | 205,322 poly<br>136,362 line<br>3,002 place | **36 MB** | `5002878b61dee54e1ced3aef08d8d6cc7e7c5a2445d7e174f16c50e0ef2ed07d` |
+| **Washington** | 347.51 MB | 3-pass streaming | **~61 min** (Pass 1: ~1.5m, Pass 2: ~1.5m, Pass 3: ~58m) | **1.30 GiB** during conversion (spiked to 5.2 GiB on unchunked hash) | ~2,500,000 poly<br>~1,500,000 line<br>20,544 place | **1.0 GB** | Incomplete (stopped by memguard during hash) |
+
+#### Decision Rule Evaluation (Agent Guide Item 7)
+- **Gate Rule:** Washington $\le 30\text{ min}$ **and** $\le 1.0\text{ GiB}$ peak RSS.
+- **Evaluation:**
+  - Total elapsed time was **~61 minutes** (exceeded 30 min threshold).
+  - Peak RSS during conversion was **1.30 GiB** (exceeded 1.0 GiB threshold, driven by 753 MB of PackedInt64/PackedInt32 coordinate arrays for 47.2M nodes + Godot runtime and SQLite buffers).
+  - Rule triggers: **STOP — commit nothing further, and file a decision with options.**
+
+#### Decision 15: Regional Map Converter Architecture
+Given that full-state OSM extraction in pure GDScript exceeds the 30-minute and 1.0 GiB thresholds when scaling to 47+ million nodes, how should regional map ingestion be architected?
+
+- **Option A — Optimized Pure GDScript with Segment Traversal, Deferred Indices, and Disk Node Store**:
+  - Replace $O(W \times H)$ bounding-box cell checking in Pass 3 with line segment grid traversal ($O(L)$), eliminating redundant clipping on long spanning highways/rivers.
+  - Defer SQLite spatial index creation (`idx_poly_cell`, `idx_line_cell`) until after all rows are bulk inserted.
+  - Stream `canonical_dump_sha256` in paginated 5,000-row chunks directly into `HashingContext`.
+  - Store node coordinates in a temporary disk file or SQLite cache rather than 750 MB of in-memory arrays to stay strictly $\le 500\text{ MB}$ RSS.
+  - *Estimated performance:* ~10–15 min conversion time, $\le 500\text{ MB}$ peak RSS. Pure GDScript remains self-contained with no external binaries or server infrastructure.
+- **Option B — Pre-converted Regional Map Stores (CDN / GitHub Releases Distribution)** *(Recommended)*:
+  - Pre-convert regional OpenStreetMap extracts into ready-to-use SQLite `.db` stores on a build machine or GitHub Actions runner, and host them as release assets.
+  - The client simply downloads the compressed `.db` for their region (e.g. 20–100 MB compressed) directly into `user://map_data/`.
+  - Ingestion becomes an instant download with zero client CPU or RAM conversion penalty, completely eliminating client conversion bottlenecks and battery drain on portable devices.
+- **Option C — Native Converter (C++ GDExtension or Standalone CLI)**:
+  - Implement a fast native converter in Rust or C++ (using `libosmpbf`) either as a GDExtension or an external companion CLI.
+  - Converts Washington in $< 30\text{ s}$ with $< 200\text{ MB}$ RAM, but adds cross-compilation complexity across Windows, Linux, and macOS.
+- **Your selection (2026-10-15): Option B — Pre-converted Regional Map Stores (CDN / GitHub Releases Distribution).** The game client will download pre-built, ready-to-query SQLite `.db` stores for regions; the streaming converter pipeline is maintained for offline pre-generation and deterministic test fixture validation.
 
 ### 5.4 Unmapped & Out-of-Region Cells
 - If revealed cells fall outside all installed map stores, they render as uniform grey `#2a3242` tiles with a subtle floating chip: `Unmapped Region — Washington (348 MB)`. Clicking the chip prompts download.

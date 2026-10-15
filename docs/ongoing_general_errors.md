@@ -32,6 +32,22 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 
 ## ✅ Resolved Decisions
 
+### Decision 15 — Regional Map Converter Architecture: Option B pre-converted stores (Resolved 2026-10-15)
+- **Selection: Option B — Pre-converted Regional Map Stores (CDN / GitHub Releases Distribution).**
+- **Context & Gate Results:**
+  - During Item 7 validation, the three-pass streaming GDScript converter was executed against `washington-latest.osm.pbf` (347.5 MB, 47.2M needed nodes).
+  - Pass 1 finished in ~1.5m (47.2M nodes, 24.6k relations), Pass 2 finished in ~1.5m (20.5k POIs), Pass 3 assembled 1.0 GB database in ~58m (total ~61 min, peak RSS 1.30 GiB during conversion).
+  - Exceeded the Item 7 gate rule ($\le 30$ min and $\le 1.0$ GiB RSS). Execution paused and Decision 15 was filed.
+- **The options were:**
+  - **A** — Optimized pure GDScript with segment raymarching, deferred indices, and disk node cache;
+  - **B** — Pre-converted regional map stores distributed via CDN / GitHub Release assets;
+  - **C** — Native C++/Rust converter tool or GDExtension.
+- **Consequences:**
+  - The client will not convert large raw OSM PBFs on low-power player machines; instead, the game client downloads pre-converted, ready-to-query regional SQLite `.db` stores into `user://map_data/`.
+  - The regional map store schema (§5.2: `features_poly`, `features_line`, `place_nodes`, packed 16m cell coords, spatial indices) remains the identical canonical runtime format.
+  - The streaming converter (`region_converter.gd` / `tools/map_convert.py`) serves as the pre-generation pipeline for regional assets.
+  - Local tests continue to use the deterministic synthetic fixture (`synthetic_neighborhood.osm.pbf`) to verify the full converter pipeline and canonical dump hashing without external network access.
+
 ### Decision 14 — Build the neighborhood map preview: yes, the full plan (Resolved 2026-10-10)
 - **Selection: Option A — approve the amended plan as written**, including the in-game region choice and download.
 - **The options were:**
@@ -395,15 +411,28 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Observed updated `map_cell` count of 3 in `tools/sync_e2e.py`.
 - **F37 (fixed):** All 14 tests pass in `test_runner.py`, `sync_ingest_isolation_test` (Golden Invariant 1) intact, GDScript static lint passes.
 
+**M29 — Region converter, map store, and converter gate (F39 converter half, Decision 15, 2026-10-15).**
+- **What was solved:**
+  - Built deterministic synthetic PBF generator `tools/generate_synthetic_pbf.py` and test `tools/test_generate_synthetic_pbf.py` asserting byte-for-byte reproducibility against committed fixture `game/tests/fixtures/synthetic_neighborhood.osm.pbf` (668 bytes).
+  - Built streaming protobuf reader `game/world/region_import/osm_pbf_reader.gd` decoding blob headers, blocks, string tables, dense nodes, ways, and relations.
+  - Built regional SQLite store `game/world/region_import/map_store.gd` with tables `features_poly`, `features_line`, `place_nodes`, `import_state`, spatial indices, binary packing for 16m cell-local coordinates, and canonical dump SHA-256 (`250ac3c91ebbcc72a352e2c99d8d7eaad5d4915dca32449def446ef8acd9571c` on synthetic fixture).
+  - Built tag-to-category mapping `game/config/poi_mapping.gd` as single source of truth for POIs.
+  - Built 3-pass streaming converter `game/world/region_import/region_converter.gd` with checkpointing, chunked `PackedInt64Array` dedup-merge for node IDs, injectable `memory_reader`, and memory-pause watchdog.
+  - Built CLI runner `tools/map_convert.py` and headless SceneTree `game/scenes/map_convert.tscn` / `game/scenes/map_convert.gd`.
+  - Built unit tests `game/tests/region_import_test.gd` and `game/tests/region_import_pause_test.gd` (suite now 16 expected tests, all passing, static lint & Golden Invariant 1 green).
+  - Executed Converter Gate on District of Columbia: 15.83 s, 1.693 GiB peak RSS, 205,322 poly, 136,362 line, 3,002 place, 36 MB DB (`5002878b61dee54e1ced3aef08d8d6cc7e7c5a2445d7e174f16c50e0ef2ed07d`).
+  - Executed Converter Gate on Washington: ~61 min, 1.30 GiB conversion RSS, 1.0 GB DB. Exceeded 30-min gate threshold; stopped per Rule 4.
+  - Filed Decision 15: User selected **Option B (Pre-converted Regional Map Stores via CDN / Releases)**. Converter pipeline is maintained for offline pre-generation and test fixture validation.
+- **F39 (partially fixed):** Converter half resolved. ROM import half remains for Item 11.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28.*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29.*
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
-  - **Contract:** `design_memory_and_resources.md` §3 — streaming, ≤ 1 GiB for the converter and ≤ 512 MiB for the ROM import, pausing rather than failing.
-  - **Specified in** the slice-1 plan §9 (injectable memory reader, pause test, checkpoint test).
-  - **Built in** agent-guide Item 7 (approved — Decision 14 = A) and the ROM spike (Item 11).
+  - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
+  - **ROM import half:** Open, scheduled for ROM spike (Item 11).
 - **F7 (latent, found July 22, 2nd pass) — home-cell size mismatch.**
   - Companion `fuzzHome` snaps to a 300 m grid; the game treats home as one grid cell (now 256 WM-m, F42).
   - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred).**

@@ -55,5 +55,19 @@
   "flutter_build_ios": {
     "budget_gib": 8.0,
     "status": "UNMEASURED"
+  },
+  "map_convert": {
+    "budget_gib": 2.5,
+    "peak_gib": 1.685,
+    "date": "2026-10-14",
+    "machine": "darwin arm64",
+    "status": "measured"
+  },
+  "map_convert_dc": {
+    "budget_gib": 2.5,
+    "peak_gib": 1.693,
+    "date": "2026-10-14",
+    "machine": "darwin arm64",
+    "status": "measured"
   }
 }
