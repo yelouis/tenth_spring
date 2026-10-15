@@ -266,7 +266,7 @@ class TestMemguard(unittest.TestCase):
                 "-I",
                 MEMGUARD_PATH,
                 "run",
-                "test_c6_waiter",
+                "godot_selftest",
                 "--",
                 sys.executable,
                 "-c",

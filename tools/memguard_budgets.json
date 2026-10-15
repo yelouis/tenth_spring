@@ -1,9 +1,9 @@
 {
   "godot_import": {
-    "budget_gib": 0.5,
-    "peak_gib": 0.35,
-    "date": "2026-10-10",
-    "machine": "ubuntu-latest x86_64",
+    "budget_gib": 1.0,
+    "peak_gib": 0.728,
+    "date": "2026-10-14",
+    "machine": "darwin arm64",
     "status": "measured"
   },
   "godot_selftest": {

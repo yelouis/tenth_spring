@@ -27,3 +27,14 @@
 
 ## GDExtension Manifest
 `gdsqlite.gdextension` is kept unmodified (`compatibility_minimum = "4.3"`, `entry_symbol = "sqlite_library_init"`).
+
+## Local patch (2026-10-10, F40)
+Upstream packaging defect: `bin/libgdsqlite.macos.template_debug.framework/Resources/Info.plist` and `libgdsqlite.macos.template_release.framework/Resources/Info.plist` specify `CFBundleExecutable` as `libgdsqlite.template_debug` and `libgdsqlite.template_release`, but the binary inside the bundle is named `libmacos.libgdsqlite.template_debug` and `libmacos.libgdsqlite.template_release`. Godot 4.3 resolves dynamic libraries in macOS frameworks via `CFBundleExecutable`, causing `GDExtension dynamic library not found` on macOS.
+
+Fixed by correcting `CFBundleExecutable` in both plists:
+```bash
+cd game/addons/godot-sqlite/bin
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable libmacos.libgdsqlite.template_debug" libgdsqlite.macos.template_debug.framework/Resources/Info.plist
+/usr/libexec/PlistBuddy -c "Set :CFBundleExecutable libmacos.libgdsqlite.template_release" libgdsqlite.macos.template_release.framework/Resources/Info.plist
+```
+

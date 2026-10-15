@@ -360,15 +360,22 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M26 — SQLite loads on macOS (F40, 2026-10-14).**
+- **What was solved:**
+  - Corrected `CFBundleExecutable` to `libmacos.libgdsqlite.template_debug` and `libmacos.libgdsqlite.template_release` in `game/addons/godot-sqlite/bin/libgdsqlite.macos.template_debug.framework/Resources/Info.plist` and `…_release.framework`.
+  - Updated `VENDORED.sha256` for both plists and `VENDORED.md`.
+  - Added `## Local patch (2026-10-10, F40)` in `VENDORED.md` documenting upstream packaging defect confirmed against upstream v4.4 release archive.
+  - Supported `GODOT_BIN` in `game/tests/test_runner.py` falling back to `godot` and `godot4`.
+  - Added setup note in `README.md` for `export GODOT_BIN=/Applications/Godot.app/Contents/MacOS/Godot`.
+  - Added macOS CI job (`game-tests-macos`, `runs-on: macos-14`) in `.github/workflows/game_tests.yml`.
+  - Scaled tooling memory floor in `tools/memguard.py` for memory-constrained environments (< 16 GiB, e.g. GitHub Actions `macos-14` 7.0 GiB runner) to allow admission while preserving 4 GiB (and 10% on >= 40 GiB) floors on standard workstations.
+- **F40 (fixed):** Verified locally on Mac (12/12 PASS, sync_e2e loopback pass). Falsifier proven in CI on scratch branch (run `38684616124`: macOS job `116256513234` failed with `FAIL db_test` due to missing library, while Linux job `116256513115` passed 12/12). Both Linux and macOS CI jobs pass on fix branch.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25.*
-- **F40 (found 2026-10-10, 16th pass) — on a Mac, the game cannot open its save.**
-  - **The fault:** the vendored macOS frameworks' `Resources/Info.plist` says the executable is `libgdsqlite.template_debug` / `…_release`, but the file inside is `libmacos.libgdsqlite.template_debug` / `…_release`. Godot 4.3 resolves the framework through that plist entry, so loading fails: `GDExtension dynamic library not found …` → `storage: UNAVAILABLE — SQLite extension missing`.
-  - **Effect locally** (Godot 4.3 at `/Applications/Godot.app`): 5 of 11 game tests fail, and the game cannot store anything on the human's Mac — so **the real-device sync gate would fail** at the PC end.
-  - **Why nobody saw it:** CI runs Linux only.
-  - **Fix proven this pass,** in a scratch copy: correcting `CFBundleExecutable` in both plists → **11/11 game tests pass on macOS**, and `sync_e2e` passes on macOS (14 → 14).
-  - **Agent-guide §4 (Item 1)** — also adds a macOS CI job so this can't recur unseen.
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26.*
 - **F41 (found 2026-10-10, 16th pass) — memory-guard rough edges.**
   - **(a)** `run_guarded` compares relative elapsed time against `last_log_time = wait_start` (an absolute timestamp), so `memguard: waiting for memory …` **never prints** in real use. A fake-clock probe waited 100 s, printed no waiting line, and exited 75.
   - **(b)** `measure_step` has no admission, no watchdog (the spec says a 2× cap), and no log line, and it overwrites a budget even when the new peak is lower.

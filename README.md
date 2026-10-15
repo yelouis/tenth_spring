@@ -52,6 +52,8 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 
 ## Setup notes
 
+On a Mac, set `export GODOT_BIN=/Applications/Godot.app/Contents/MacOS/Godot` before running the battery.
+
 Configure git to use the repository's pre-commit hooks to ensure no prohibited ROM or Nintendo assets are committed:
 ```bash
 git config core.hooksPath .githooks

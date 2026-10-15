@@ -204,7 +204,7 @@ def main():
 	]
 
 	# Check for Godot executable to run runtime GDScript tests
-	godot_bin = shutil.which("godot") or shutil.which("godot4")
+	godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
 	if not godot_bin:
 		print("game runtime tests SKIPPED — Godot not installed; CI runs them\n")
 	else:

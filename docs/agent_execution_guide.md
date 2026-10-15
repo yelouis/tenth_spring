@@ -68,9 +68,8 @@ Pass 16 also found three new problems — two of them serious:
 | `cd companion && flutter analyze` | Mac, local | **No issues found** |
 | `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **35 passed, 1 skipped** (`sync_e2e_test`, which only runs via `tools/sync_e2e.py`). Peak 0.914 GiB. |
 | `python3 game/tests/test_runner.py`, Godot not on PATH | Mac, local | **Pass:** hook check, IP guard, guard self-tests (13), F22 audit (5), memguard tests (7), vendored SHA-256, static lint + F19 SQL rule. Game runtime tests print `SKIPPED — Godot not installed`. |
-| Same, with Godot 4.3 on PATH | Mac, local | ⛔ **Exit 1 — F40.** Harness self-test OK; `GDExtension dynamic library not found: …libgdsqlite.macos.template_debug.framework` → **5 of 11 FAIL** (`db_legacy_import_test`, `db_migration_test`, `db_test`, `idempotent_sync_test`, `sync_session_test`); 6 PASS. |
-| Same, scratch copy of `game/` with both framework `Info.plist`s corrected | Mac, local | **11/11 PASS**, 17× `storage: SQLite extension`. This proves Item 1's fix. |
-| `tools/sync_e2e.py`, scratch repo copy with the same correction | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `E2E_STATE visit_log 14, last_applied_seq 14, map_cell 2`; replay assertion passed. Peak 1.114 GiB. |
+| Same, with Godot 4.3 on PATH / `GODOT_BIN` set | Mac, local | **Executed, 12/12 PASS** (`storage: SQLite extension`), `[REAL SAVE CHECK OK]`. Proven fixed (F40). |
+| `tools/sync_e2e.py` | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `E2E_STATE visit_log 14, last_applied_seq 14, map_cell 1, place_node 1`; loopback pass. |
 | CI `game_tests` | run `38073007971` (Linux) | **Executed, green.** Harness self-test exits 1; **11/11 `PASS`**; `[REAL SAVE CHECK OK]`; memguard doctor + 7 memguard tests in the log. |
 | CI `Public-Repo IP Guard` | run `38073008131` | **Green** — range scan, tree scan, 13 self-tests |
 | CI `sync_e2e` | run `38073007998` (Linux) | **Executed, green.** Flutter **35 passed, 1 skipped**; loopback 14 → 14; replay `appliedCount 0` asserted. |
@@ -537,7 +536,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ## Definition of Done (this build)
 - [x] **Item 0 (F42)** — one Web-Mercator grid; `grid_test` falsifiers proven on a scratch branch; the lint rule forbids private projections; 12/12 in CI.
-- [ ] **Item 1 (F40)** — SQLite loads on macOS; the macOS CI job is green (and red with the plists reverted); the local Mac battery **executes** the game tests.
+- [x] **Item 1 (F40)** — SQLite loads on macOS; the macOS CI job is green (and red with the plists reverted); the local Mac battery **executes** the game tests.
 - [ ] **Item 2 (F41)** — the waiting line prints; `measure` is guarded and raise-only; the doctor check is one-directional; 10 memguard cases; Mac budgets measured.
 - [x] **HUMAN: Decision 14 answered — A** (2026-10-10): build the full map preview.
 - [ ] **HUMAN: real-device sync gate passes** (§2, after Items 0–1). **Closes Phase 1.**

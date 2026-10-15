@@ -36,3 +36,33 @@ jobs:
 
       - name: Run test runner
         run: python3 game/tests/test_runner.py
+
+  game-tests-macos:
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Memguard doctor
+        run: python3 -I tools/memguard.py doctor
+
+      - name: Install Godot 4.3
+        run: |
+          curl -fsSLO https://github.com/godotengine/godot/releases/download/4.3-stable/Godot_v4.3-stable_macos.universal.zip
+          curl -fsSLO https://github.com/godotengine/godot/releases/download/4.3-stable/SHA512-SUMS.txt
+          grep " Godot_v4.3-stable_macos.universal.zip$" SHA512-SUMS.txt | shasum -a 512 -c
+          unzip -q Godot_v4.3-stable_macos.universal.zip
+          echo "GODOT_BIN=$PWD/Godot.app/Contents/MacOS/Godot" >> $GITHUB_ENV
+
+      - name: Import Godot project assets
+        run: python3 -I tools/memguard.py run godot_import -- "$GODOT_BIN" --headless --path game --import
+
+      - name: Run test runner
+        run: python3 game/tests/test_runner.py

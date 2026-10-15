@@ -22,6 +22,7 @@ import time
 # --- Constants (design_memory_and_resources.md §2) ---
 FLOOR_MIN_BYTES = 4 * 1024 * 1024 * 1024  # 4 GiB
 FLOOR_RATIO = 0.10  # 10% of total RAM
+FLOOR_MAX_RATIO = 0.25  # at most 25% of total RAM on memory-constrained machines (< 16 GiB)
 POLL_SECONDS = 2.0
 ADMIT_TIMEOUT = 15 * 60.0  # 15 minutes
 STOP_GRACE = 10.0  # 10 seconds (SIGTERM -> SIGKILL)
@@ -95,8 +96,10 @@ def sleep(seconds: float) -> None:
 
 def get_floor_bytes(total_bytes: int | None) -> int:
     if total_bytes is not None and total_bytes > 0:
-        return max(FLOOR_MIN_BYTES, int(total_bytes * FLOOR_RATIO))
+        base_floor = min(FLOOR_MIN_BYTES, int(total_bytes * FLOOR_MAX_RATIO))
+        return max(base_floor, int(total_bytes * FLOOR_RATIO))
     return FLOOR_MIN_BYTES
+
 
 
 def _read_macos_memory() -> MemoryInfo:
