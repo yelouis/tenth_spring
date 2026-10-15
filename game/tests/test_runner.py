@@ -216,7 +216,8 @@ def main():
 		"region_import_pause_test",
 		"region_import_test",
 		"sync_ingest_isolation_test",
-		"sync_session_test"
+		"sync_session_test",
+		"tile_synth_test"
 	]
 
 	# Check for Godot executable to run runtime GDScript tests
