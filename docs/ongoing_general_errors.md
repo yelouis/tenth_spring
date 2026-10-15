@@ -373,16 +373,21 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M27 — Memory guard fixes (F41, 2026-10-14).**
+- **What was solved:**
+  - Fixed waiting line logging in `run_guarded` and `measure_step` by tracking elapsed relative time (`last_logged_elapsed`) crossing 30s intervals.
+  - Rebuilt `measure_step` with machine lock, admission check, 0.2s sampling, watchdog with 2× budget cap (exits 76 on runaway/pressure/floor breaches), structured outcome logging, and raise-only policy unless `--replace` is provided.
+  - Added `--replace` CLI option to `memguard measure`.
+  - Made `cmd_doctor` cross-check one-directional (`memguard avail% <= memory_pressure -Q free% + 10`).
+  - Added unit test cases 8, 9, 10 to `tools/test_memguard.py` (case 8: watchdog stops when available drops below floor/2; case 9: falsifying test with clock at 1.7e9 proving waiting line output; case 10: falsifying test proving measure_step watchdog and raise-only preservation).
+  - Measured Godot and sync_e2e steps on the Mac: `godot_import` (peak 0.737 GiB), `godot_selftest` (peak 0.131 GiB), `godot_tests` (peak 0.115 GiB), `sync_e2e` (peak 1.104 GiB).
+- **F41 (fixed):** Verified in `tools/test_memguard.py` (10/10 PASS); falsifying failure reproduced locally on cases 9 and 10 against old code; `memguard doctor` outputs `Cross-check OK: ...` line; `test_runner.py` reports 10 memguard cases; CI workflows green.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26.*
-- **F41 (found 2026-10-10, 16th pass) — memory-guard rough edges.**
-  - **(a)** `run_guarded` compares relative elapsed time against `last_log_time = wait_start` (an absolute timestamp), so `memguard: waiting for memory …` **never prints** in real use. A fake-clock probe waited 100 s, printed no waiting line, and exited 75.
-  - **(b)** `measure_step` has no admission, no watchdog (the spec says a 2× cap), and no log line, and it overwrites a budget even when the new peak is lower.
-  - **(c)** `doctor` cross-check: memguard reads 34% free and `memory_pressure -Q` reads 62%. The spec's two-way 10-point rule can't pass; it is now one-directional (`design_memory_and_resources.md` §1).
-  - **(d)** No test covers the "available below floor" stop.
-  - **(e)** The `godot_*` budgets were measured only on Linux CI, and `run`'s 2 s sampling reports peak 0.0 for short Godot runs.
-  - **Agent-guide §5 (Item 2).**
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27.*
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Contract:** `design_memory_and_resources.md` §3 — streaming, ≤ 1 GiB for the converter and ≤ 512 MiB for the ROM import, pausing rather than failing.
   - **Specified in** the slice-1 plan §9 (injectable memory reader, pause test, checkpoint test).

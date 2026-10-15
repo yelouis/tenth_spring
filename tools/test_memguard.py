@@ -316,6 +316,152 @@ class TestMemguard(unittest.TestCase):
         self.assertEqual(res.returncode, 0)
         self.assertIn("nested ok", res.stdout)
 
+    def test_case_8_stopped_when_available_below_floor(self):
+        """Case 8: Real sleep child is stopped when available memory drops below FLOOR / 2 (exit 76)."""
+        calls = [0]
+
+        def fake_reader():
+            calls[0] += 1
+            # Normal memory during admission, then drop below floor / 2 while running
+            # 64 GiB total -> floor 6.4 GiB -> floor / 2 is 3.2 GiB
+            avail = 20 * (1024**3) if calls[0] <= 1 else 2 * (1024**3)
+            return memguard.MemoryInfo(
+                available_bytes=avail,
+                total_bytes=64 * (1024**3),
+                pressure_level=1
+            )
+
+        memguard.set_memory_reader(fake_reader)
+        cmd = [sys.executable, "-c", "import time; time.sleep(10)"]
+
+        with self.assertRaises(SystemExit) as cm:
+            memguard.run_guarded(
+                "test_c8",
+                cmd,
+                override_budget_gib=1.0,
+                poll_seconds=0.05,
+                stop_grace=1.0,
+                allow_rss_check=False
+            )
+        self.assertEqual(cm.exception.code, 76)
+
+        log_file = memguard.get_log_file()
+        with open(log_file, "r", encoding="utf-8") as f:
+            records = [json.loads(l) for l in f if l.strip()]
+        c8_records = [r for r in records if r["step"] == "test_c8"]
+        self.assertTrue(c8_records)
+        self.assertEqual(c8_records[-1]["outcome"], "stopped:available below floor")
+
+    def test_case_9_waiting_line_printed_when_memory_low(self):
+        """Case 9: Waiting line is printed each 30s when memory is insufficient (fake clock near 1.7e9)."""
+        import io
+        from contextlib import redirect_stderr
+
+        fake_time = [1700000000.0]
+
+        def fake_clock():
+            return fake_time[0]
+
+        def fake_sleep(seconds):
+            fake_time[0] += seconds
+
+        memguard.set_clock(fake_clock)
+        memguard.set_sleep(fake_sleep)
+
+        def fake_reader():
+            elapsed = fake_time[0] - 1700000000.0
+            if elapsed < 35.0:
+                # Need 1.0 GiB budget + 6.4 GiB floor = 7.4 GiB, have 1.0 GiB
+                return memguard.MemoryInfo(
+                    available_bytes=1 * (1024**3),
+                    total_bytes=64 * (1024**3),
+                    pressure_level=1
+                )
+            return memguard.MemoryInfo(
+                available_bytes=20 * (1024**3),
+                total_bytes=64 * (1024**3),
+                pressure_level=1
+            )
+
+        memguard.set_memory_reader(fake_reader)
+        stderr_buf = io.StringIO()
+        cmd = [sys.executable, "-c", "import sys; sys.exit(0)"]
+        with redirect_stderr(stderr_buf):
+            code = memguard.run_guarded(
+                "test_c9",
+                cmd,
+                override_budget_gib=1.0,
+                poll_seconds=2.0
+            )
+        self.assertEqual(code, 0)
+        output = stderr_buf.getvalue()
+        self.assertIn("memguard: waiting for memory for test_c9: need 7.4 GiB, have 1.0 GiB", output)
+
+    def test_case_10_measure_is_guarded_and_raise_only(self):
+        """Case 10: measure_step is guarded by lock/watchdog and is raise-only unless --replace."""
+        import io
+        from contextlib import redirect_stdout
+
+        memguard.set_memory_reader(lambda: memguard.MemoryInfo(
+            available_bytes=20 * (1024**3),
+            total_bytes=64 * (1024**3),
+            pressure_level=1
+        ))
+
+        budgets_backup = memguard.load_budgets()
+        try:
+            budgets = memguard.load_budgets()
+            budgets["test_c10"] = {
+                "budget_gib": 2.0,
+                "peak_gib": 1.5,
+                "date": "2026-10-10",
+                "machine": "test",
+                "status": "measured"
+            }
+            memguard.save_budgets(budgets)
+
+            # 1. Raise-only: trivial command whose peak is ~0 GiB should keep 2.0 GiB budget
+            stdout_buf = io.StringIO()
+            with redirect_stdout(stdout_buf):
+                code = memguard.measure_step("test_c10", [sys.executable, "-c", "import sys; sys.exit(0)"])
+            self.assertEqual(code, 0)
+            b = memguard.load_budgets()["test_c10"]["budget_gib"]
+            self.assertEqual(b, 2.0)
+            self.assertIn("kept existing budget", stdout_buf.getvalue())
+
+            # 2. With replace=True, it should overwrite
+            stdout_buf = io.StringIO()
+            with redirect_stdout(stdout_buf):
+                code = memguard.measure_step("test_c10", [sys.executable, "-c", "import sys; sys.exit(0)"], replace=True)
+            self.assertEqual(code, 0)
+            b2 = memguard.load_budgets()["test_c10"]["budget_gib"]
+            self.assertEqual(b2, 0.5)
+
+            # 3. Watchdog: measure_step stops runaway process exceeding 2x cap (exit 76)
+            budgets["test_c10_runaway"] = {
+                "budget_gib": 0.05,
+                "peak_gib": 0.04,
+                "date": "2026-10-10",
+                "machine": "test",
+                "status": "measured"
+            }
+            memguard.save_budgets(budgets)
+
+            alloc_code = (
+                "import time\n"
+                "chunks = []\n"
+                "for _ in range(10):\n"
+                "    chunks.append(b'X' * (20 * 1024 * 1024))\n"
+                "    time.sleep(0.05)\n"
+                "time.sleep(1.0)\n"
+            )
+            with self.assertRaises(SystemExit) as cm:
+                memguard.measure_step("test_c10_runaway", [sys.executable, "-c", alloc_code])
+            self.assertEqual(cm.exception.code, 76)
+        finally:
+            memguard.save_budgets(budgets_backup)
+
 
 if __name__ == "__main__":
     unittest.main()
+

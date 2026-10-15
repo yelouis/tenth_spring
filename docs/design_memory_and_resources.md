@@ -20,7 +20,7 @@ This document defines how Tenth Spring — its developer tooling and the game it
 | Tooling elsewhere | Not measured: log `memguard: memory unreadable on <platform> — lock only`, and still serialize heavy steps with the lock. | yes |
 | The game (GDScript) | `OS.get_memory_info()` → `available` and `physical` (bytes; available in Godot 4.3) | a value of `-1` → "can't measure": use the bounded design only, with no pause logic |
 
-**Sanity check:** the tooling's `doctor` command compares its available-memory figure with `memory_pressure -Q`'s "free percentage" and warns if they disagree by more than 10 points.
+**Sanity check:** the tooling's `doctor` command compares its available-memory figure with `memory_pressure -Q`'s "free percentage". Because the kernel treats compressible memory as free, `available %` is normally lower than kernel `free %`. The doctor warns only if available percentage exceeds the kernel free percentage by more than 10 points (`avail_pct > free_pct + 10`). Otherwise, it reports `Cross-check OK: available (<A>%) <= memory_pressure -Q (<K>%) + 10`.
 
 ## 2. Developer tooling guard — `tools/memguard.py` (stdlib only, `python3 -I`)
 
@@ -108,7 +108,10 @@ Converting a regional `.osm.pbf` (hundreds of MB to over 1 GB) into the map stor
   4. a real `sleep` child is stopped when fake pressure turns critical twice (exit 76);
   5. **falsifying, real memory:** a child that allocates ~200 MiB under a 50 MiB budget is stopped as a runaway;
   6. a second process waits for the lock, and the lock frees when its holder is SIGKILLed;
-  7. a nested run with `TENTH_SPRING_MEMGUARD_HELD` set doesn't deadlock.
+  7. a nested run with `TENTH_SPRING_MEMGUARD_HELD` set doesn't deadlock;
+  8. a real `sleep` child is stopped when available memory drops below `FLOOR / 2` (exit 76);
+  9. **falsifying, waiting line:** waiting line is printed every 30s when memory is insufficient (clock starts near 1.7e9);
+  10. **falsifying, measure watchdog & raise-only:** `measure` stops runaway processes exceeding 2× cap, preserves existing budgets when new peak is lower, and allows overwrite with `--replace`.
 - **Game:** the map-conversion plan's speed spike must report **peak memory** alongside MB/s for both test files. Its unit tests run the converter on the synthetic PBF fixture with a fake `get_memory_info` that drops below the floor mid-run, and assert that it pauses, resumes, and produces an identical map store.
 
 ## 5. Files

@@ -345,7 +345,7 @@ def run_guarded(
             pass
 
         # 2. Wait for room (admission)
-        last_log_time = wait_start
+        last_logged_elapsed = 0.0
         while True:
             mem = read_memory()
             if mem.available_bytes is None:
@@ -373,8 +373,8 @@ def run_guarded(
                 _log_run(step, budget_gib, 0.0, int(elapsed * 1000), "timeout")
                 sys.exit(EXIT_ADMIT_TIMEOUT)
 
-            if elapsed - last_log_time >= 30.0:
-                last_log_time = elapsed
+            if elapsed - last_logged_elapsed >= 30.0:
+                last_logged_elapsed = elapsed
                 need_gib = required_bytes / (1024**3)
                 have_gib = mem.available_bytes / (1024**3)
                 print(
@@ -467,53 +467,202 @@ def run_guarded(
             pass
 
 
-def measure_step(step: str, cmd: list[str]) -> int:
-    """Measures peak process-tree RSS and updates memguard_budgets.json."""
+def measure_step(
+    step: str,
+    cmd: list[str],
+    replace: bool = False,
+    admit_timeout: float = ADMIT_TIMEOUT,
+    poll_seconds: float = 0.2,
+    stop_grace: float = STOP_GRACE,
+) -> int:
+    """Measures peak process-tree RSS, guarded by lock, admission, and 2x cap watchdog."""
+    # Nested run bypass
+    if os.environ.get(ENV_MEMGUARD_HELD):
+        res = subprocess.run(cmd)
+        return res.returncode
+
+    current_budget_gib, is_unmeasured = get_step_budget(step)
+    if is_unmeasured:
+        budget_gib = DEFAULT_UNMEASURED_BUDGET_GIB
+        cap_budget_gib = DEFAULT_UNMEASURED_BUDGET_GIB * 2.0
+        print(
+            f"memguard: WARNING: step '{step}' is UNMEASURED — using {budget_gib:.1f} GiB default budget "
+            f"(cap {cap_budget_gib:.1f} GiB)",
+            file=sys.stderr
+        )
+    else:
+        budget_gib = current_budget_gib
+        cap_budget_gib = current_budget_gib * 2.0
+
     lock_file = get_lock_file()
     os.makedirs(os.path.dirname(lock_file), exist_ok=True)
+
+    wait_start = now()
     lock_fd = open(lock_file, "a+")
-    fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
 
-    child_env = os.environ.copy()
-    child_env[ENV_MEMGUARD_HELD] = step
-
-    proc = subprocess.Popen(cmd, start_new_session=True, env=child_env)
-    peak_rss = 0
-
-    while proc.poll() is None:
-        sleep(0.2)
-        rss = get_process_tree_rss(proc.pid)
-        if rss > peak_rss:
-            peak_rss = rss
-
-    proc.wait()
     try:
-        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
-        lock_fd.close()
-    except Exception:
-        pass
+        # 1. Acquire machine-wide exclusive lock
+        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
+        try:
+            lock_fd.seek(0)
+            lock_fd.truncate()
+            lock_fd.write(f"{os.getpid()}\n")
+            lock_fd.flush()
+        except Exception:
+            pass
 
-    if proc.returncode != 0:
-        print(f"memguard measure: command failed with returncode {proc.returncode}", file=sys.stderr)
-        return proc.returncode
+        # 2. Wait for room (admission)
+        last_logged_elapsed = 0.0
+        while True:
+            mem = read_memory()
+            if mem.available_bytes is None:
+                # Platform unreadable: serialize with lock only
+                break
 
-    peak_gib = round(peak_rss / (1024**3), 3)
-    margin_budget = peak_gib * BUDGET_MARGIN
-    budget_gib = math.ceil(margin_budget * 2.0) / 2.0
-    if budget_gib < 0.5:
-        budget_gib = 0.5
+            floor_bytes = get_floor_bytes(mem.total_bytes)
+            budget_bytes = int(budget_gib * (1024**3))
+            required_bytes = budget_bytes + floor_bytes
 
-    budgets = load_budgets()
-    budgets[step] = {
-        "budget_gib": budget_gib,
-        "peak_gib": peak_gib,
-        "date": datetime.date.today().isoformat(),
-        "machine": f"{platform.system().lower()} {platform.machine()}",
-        "status": "measured"
-    }
-    save_budgets(budgets)
-    print(f"memguard: measured {step}: peak {peak_gib:.3f} GiB, budget {budget_gib:.1f} GiB (written to tools/memguard_budgets.json)")
-    return 0
+            if mem.available_bytes >= required_bytes and (mem.pressure_level is None or mem.pressure_level < 4):
+                # Room admitted
+                break
+
+            elapsed = now() - wait_start
+            if elapsed >= admit_timeout:
+                need_gib = required_bytes / (1024**3)
+                have_gib = mem.available_bytes / (1024**3)
+                msg = (
+                    f"memguard: not enough free memory for {step} "
+                    f"(need {need_gib:.1f} GiB, have {have_gib:.1f} GiB) — "
+                    f"other programs are using it; close some or try later"
+                )
+                print(msg, file=sys.stderr)
+                _log_run(step, budget_gib, 0.0, int(elapsed * 1000), "timeout")
+                sys.exit(EXIT_ADMIT_TIMEOUT)
+
+            if elapsed - last_logged_elapsed >= 30.0:
+                last_logged_elapsed = elapsed
+                need_gib = required_bytes / (1024**3)
+                have_gib = mem.available_bytes / (1024**3)
+                print(
+                    f"memguard: waiting for memory for {step}: need {need_gib:.1f} GiB, have {have_gib:.1f} GiB",
+                    file=sys.stderr
+                )
+
+            sleep(POLL_SECONDS)
+
+        waited_ms = int((now() - wait_start) * 1000)
+
+        # 3. Launch child in own process group and run watchdog (0.2s sampling, 2x cap)
+        child_env = os.environ.copy()
+        child_env[ENV_MEMGUARD_HELD] = step
+
+        proc = subprocess.Popen(cmd, start_new_session=True, env=child_env)
+
+        critical_pressure_count = 0
+        peak_rss = 0
+        cap_bytes = int(cap_budget_gib * (1024**3))
+
+        while proc.poll() is None:
+            sleep(poll_seconds)
+
+            current_rss = get_process_tree_rss(proc.pid)
+            if current_rss > peak_rss:
+                peak_rss = current_rss
+
+            mem = read_memory()
+            cause = None
+
+            if mem.pressure_level is not None and mem.pressure_level >= 4:
+                critical_pressure_count += 1
+                if critical_pressure_count >= 2:
+                    cause = "critical memory pressure"
+            else:
+                critical_pressure_count = 0
+
+            if not cause and mem.available_bytes is not None:
+                floor_bytes = get_floor_bytes(mem.total_bytes)
+                if mem.available_bytes < (floor_bytes / 2):
+                    cause = "available below floor"
+
+            if not cause and current_rss > cap_bytes:
+                cause = "tree RSS exceeded budget"
+
+            if cause:
+                try:
+                    os.killpg(proc.pid, signal.SIGTERM)
+                except ProcessLookupError:
+                    pass
+
+                grace_start = now()
+                while now() - grace_start < stop_grace:
+                    if proc.poll() is not None:
+                        break
+                    sleep(0.2)
+
+                if proc.poll() is None:
+                    try:
+                        os.killpg(proc.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    try:
+                        proc.wait(timeout=5.0)
+                    except Exception:
+                        pass
+
+                peak_gib = peak_rss / (1024**3)
+                print(f"memguard: stopped {step} — {cause}; peak {peak_gib:.1f} GiB", file=sys.stderr)
+                _log_run(step, budget_gib, peak_gib, waited_ms, f"stopped:{cause}")
+                sys.exit(EXIT_STOPPED_BY_GUARD)
+
+        proc.wait()
+        peak_gib = round(peak_rss / (1024**3), 3)
+
+        if proc.returncode != 0:
+            print(f"memguard measure: command failed with returncode {proc.returncode}", file=sys.stderr)
+            _log_run(step, budget_gib, peak_gib, waited_ms, f"failed:{proc.returncode}")
+            return proc.returncode
+
+        margin_budget = peak_gib * BUDGET_MARGIN
+        new_budget_gib = math.ceil(margin_budget * 2.0) / 2.0
+        if new_budget_gib < 0.5:
+            new_budget_gib = 0.5
+
+        budgets = load_budgets()
+        existing = budgets.get(step)
+        existing_budget = None
+        if existing is not None:
+            existing_budget = existing.get("budget_gib") if isinstance(existing, dict) else float(existing)
+
+        # Raise-only unless --replace is given
+        if existing_budget is not None and not is_unmeasured and not replace and new_budget_gib <= existing_budget:
+            _log_run(step, existing_budget, peak_gib, waited_ms, "measured")
+            print(
+                f"memguard: measured {step}: peak {peak_gib:.3f} GiB <= existing budget {existing_budget:.1f} GiB "
+                f"(kept existing budget; pass --replace to overwrite)"
+            )
+            return 0
+
+        budgets[step] = {
+            "budget_gib": new_budget_gib,
+            "peak_gib": peak_gib,
+            "date": datetime.date.today().isoformat(),
+            "machine": f"{platform.system().lower()} {platform.machine()}",
+            "status": "measured"
+        }
+        save_budgets(budgets)
+        _log_run(step, new_budget_gib, peak_gib, waited_ms, "measured")
+        print(f"memguard: measured {step}: peak {peak_gib:.3f} GiB, budget {new_budget_gib:.1f} GiB (written to tools/memguard_budgets.json)")
+        return 0
+    finally:
+        try:
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+        except Exception:
+            pass
+        try:
+            lock_fd.close()
+        except Exception:
+            pass
 
 
 def cmd_doctor() -> int:
@@ -554,14 +703,14 @@ def cmd_doctor() -> int:
                 if m:
                     free_pct = int(m.group(1))
                     avail_pct = (mem.available_bytes / mem.total_bytes) * 100
-                    diff = abs(free_pct - avail_pct)
-                    if diff > 10:
+                    if avail_pct > free_pct + 10:
+                        diff = avail_pct - free_pct
                         print(
-                            f"Warning: available memory percentage ({avail_pct:.1f}%) disagrees with "
+                            f"Warning: available memory percentage ({avail_pct:.1f}%) exceeds "
                             f"memory_pressure -Q free percentage ({free_pct}%) by > 10 points ({diff:.1f} points)"
                         )
                     else:
-                        print(f"Cross-check OK: memory_pressure -Q ({free_pct}%) agrees with available ({avail_pct:.1f}%) within 10 points")
+                        print(f"Cross-check OK: available ({avail_pct:.1f}%) <= memory_pressure -Q ({free_pct}%) + 10")
         except Exception as e:
             print(f"Could not run memory_pressure -Q: {e}")
 
@@ -612,22 +761,26 @@ def cmd_doctor() -> int:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: memguard [run <step> -- <cmd...> | measure <step> -- <cmd...> | doctor]", file=sys.stderr)
+        print("Usage: memguard [run <step> -- <cmd...> | measure [--replace] <step> -- <cmd...> | doctor]", file=sys.stderr)
         sys.exit(1)
 
     subcmd = sys.argv[1]
     if subcmd == "doctor":
         sys.exit(cmd_doctor())
     elif subcmd in ("run", "measure"):
-        if len(sys.argv) < 3:
-            print(f"Usage: memguard {subcmd} <step> -- <cmd...>", file=sys.stderr)
+        replace = False
+        args = sys.argv[2:]
+        if subcmd == "measure" and "--replace" in args:
+            replace = True
+            args.remove("--replace")
+
+        if len(args) < 1 or "--" not in args:
+            print(f"Usage: memguard {subcmd} {'[--replace] ' if subcmd == 'measure' else ''}<step> -- <cmd...>", file=sys.stderr)
             sys.exit(1)
-        step = sys.argv[2]
-        if "--" not in sys.argv:
-            print(f"Usage: memguard {subcmd} <step> -- <cmd...>", file=sys.stderr)
-            sys.exit(1)
-        dash_idx = sys.argv.index("--")
-        cmd = sys.argv[dash_idx + 1 :]
+
+        step = args[0]
+        dash_idx = args.index("--")
+        cmd = args[dash_idx + 1 :]
         if not cmd:
             print(f"memguard {subcmd}: no command specified after '--'", file=sys.stderr)
             sys.exit(1)
@@ -636,7 +789,7 @@ def main():
             code = run_guarded(step, cmd)
             sys.exit(code)
         else:
-            code = measure_step(step, cmd)
+            code = measure_step(step, cmd, replace=replace)
             sys.exit(code)
     else:
         print(f"Unknown memguard command: {subcmd}", file=sys.stderr)
@@ -645,3 +798,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
