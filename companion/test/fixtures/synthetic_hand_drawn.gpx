@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="TenthSpringTest">
+  <wpt lat="0.01000" lon="0.01000">
+    <name>Synthetic Park Center</name>
+  </wpt>
+  <trk>
+    <name>Synthetic Hand-Drawn Loop</name>
+    <trkseg>
+      <trkpt lat="0.01100" lon="0.01000"/>
+      <trkpt lat="0.01150" lon="0.01000"/>
+      <trkpt lat="0.01200" lon="0.01000"/>
+      <trkpt lat="0.01250" lon="0.01000"/>
+      <trkpt lat="0.01300" lon="0.01000"/>
+      <trkpt lat="0.01350" lon="0.01000"/>
+      <trkpt lat="0.01350" lon="0.01050"/>
+      <trkpt lat="0.01350" lon="0.01100"/>
+      <trkpt lat="0.01350" lon="0.01150"/>
+      <trkpt lat="0.01350" lon="0.01200"/>
+      <trkpt lat="0.01350" lon="0.01250"/>
+      <trkpt lat="0.01300" lon="0.01250"/>
+      <trkpt lat="0.01250" lon="0.01250"/>
+      <trkpt lat="0.01200" lon="0.01250"/>
+      <trkpt lat="0.01150" lon="0.01250"/>
+      <trkpt lat="0.01100" lon="0.01250"/>
+      <trkpt lat="0.01100" lon="0.01200"/>
+      <trkpt lat="0.01100" lon="0.01150"/>
+      <trkpt lat="0.01100" lon="0.01100"/>
+      <trkpt lat="0.01100" lon="0.01050"/>
+    </trkseg>
+  </trk>
+</gpx>
