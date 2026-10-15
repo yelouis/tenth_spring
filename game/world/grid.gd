@@ -43,3 +43,30 @@ static func ground_distance_m(lat1: float, lon1: float, lat2: float, lon2: float
 	var a := sin(delta_phi / 2.0) * sin(delta_phi / 2.0) + cos(phi1) * cos(phi2) * sin(delta_lambda / 2.0) * sin(delta_lambda / 2.0)
 	var c := 2.0 * atan2(sqrt(a), sqrt(maxf(0.0, 1.0 - a)))
 	return EARTH_MEAN_R * c
+
+static func cells_within_ground_radius(lat: float, lon: float, radius_m: float = 60.0) -> Array[Vector2i]:
+	var primary := latlon_to_cell(lat, lon)
+	var wm_p := latlon_to_wm(lat, lon)
+	var result: Array[Vector2i] = []
+
+	if radius_m >= 0.0:
+		result.append(primary)
+
+	for dy in [-1, 0, 1]:
+		for dx in [-1, 0, 1]:
+			if dx == 0 and dy == 0:
+				continue
+			var cell := Vector2i(primary.x + dx, primary.y + dy)
+			var min_x := float(cell.x) * CELL_WM
+			var max_x := float(cell.x + 1) * CELL_WM
+			var min_y := float(cell.y) * CELL_WM
+			var max_y := float(cell.y + 1) * CELL_WM
+			var closest_x := clampf(wm_p.x, min_x, max_x)
+			var closest_y := clampf(wm_p.y, min_y, max_y)
+			var closest_latlon := wm_to_latlon(Vector2(closest_x, closest_y))
+			var dist := ground_distance_m(lat, lon, closest_latlon.x, closest_latlon.y)
+			if dist <= radius_m:
+				result.append(cell)
+
+	return result
+

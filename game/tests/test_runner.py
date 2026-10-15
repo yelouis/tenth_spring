@@ -189,6 +189,7 @@ def main():
 	print("[VENDORED EXTENSION OK] All vendored files match VENDORED.sha256 exactly.\n")
 
 	EXPECTED = [
+		"corridor_reveal_radius_test",
 		"db_legacy_import_test",
 		"db_migration_test",
 		"db_test",

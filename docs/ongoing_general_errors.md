@@ -385,16 +385,25 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M28 — Corridor reveal 60 m radius implemented & verified (F37, 2026-10-14).**
+- **What was solved:**
+  - Added `Grid.cells_within_ground_radius(lat, lon, radius_m = 60.0)` in `game/world/grid.gd` checking candidate cells in range $[c_x - 1, c_x + 1] \times [c_y - 1, c_y + 1]$ and clamping to cell Web-Mercator bounding boxes to calculate exact Haversine ground distances.
+  - Added `CORRIDOR_REVEAL_METERS = 60.0` in `game/autoloads/sync_server.gd`.
+  - Updated `process_batch` in `sync_server.gd` so corridor rows upsert every cell returned within 60 m radius, while visit rows remain unchanged (upserting primary containing cell only).
+  - Created `game/tests/corridor_reveal_radius_test.gd` verifying 2 cells (edge-adjacent, 10m from boundary), 4 cells (corner-adjacent), and 1 cell (center / 100m from boundary) geometry; verifying edge-adjacent corridor batch writes 2 `map_cell` rows (falsification: previously 1) and replay changes nothing; and verifying visit rows write only 1 cell.
+  - Updated `EXPECTED` in `game/tests/test_runner.py` (14 tests total).
+  - Observed updated `map_cell` count of 3 in `tools/sync_e2e.py`.
+- **F37 (fixed):** All 14 tests pass in `test_runner.py`, `sync_ingest_isolation_test` (Golden Invariant 1) intact, GDScript static lint passes.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27.*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28.*
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Contract:** `design_memory_and_resources.md` §3 — streaming, ≤ 1 GiB for the converter and ≤ 512 MiB for the ROM import, pausing rather than failing.
   - **Specified in** the slice-1 plan §9 (injectable memory reader, pause test, checkpoint test).
   - **Built in** agent-guide Item 7 (approved — Decision 14 = A) and the ROM spike (Item 11).
-- **F37 (found 2026-10-09, 14th pass) — corridor reveal is narrower than designed.**
-  - `process_batch` reveals only the cell containing each point, while §B4.5 says corridor rows reveal every cell within 60 m.
-  - Specified in slice-1 plan §4, in the F42 grid; built in **agent-guide Item 5**.
 - **F7 (latent, found July 22, 2nd pass) — home-cell size mismatch.**
   - Companion `fuzzHome` snaps to a 300 m grid; the game treats home as one grid cell (now 256 WM-m, F42).
   - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred).**

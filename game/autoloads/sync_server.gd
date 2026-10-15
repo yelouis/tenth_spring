@@ -5,6 +5,7 @@ extends Node
 
 const PROTOCOL_VERSION: int = 1
 const DEFAULT_PORT: int = 7350
+const CORRIDOR_REVEAL_METERS: float = 60.0
 
 const Grid := preload("res://world/grid.gd")
 
@@ -170,27 +171,35 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 				max_seq = seq
 
 			# Reveal map cell(s)
-			var cell = latlon_to_cell(lat, lon)
-			DB.upsert_map_cell(cell.x, cell.y, 1) # 1 = Known
-			if DB.last_error != "":
-				DB.rollback_transaction()
-				return {"status": "error", "message": "storage error"}
-
-			if kind == "visit":
-				var place_id = "place_%d_%d" % [cell.x, cell.y]
-				DB.upsert_place_node({
-					"id": place_id,
-					"name": "Scouted Location",
-					"category": 1,
-					"cell_x": cell.x,
-					"cell_y": cell.y,
-					"reveal_state": 1,
-					"visit_count": 1,
-					"last_real_visit_at": started_at
-				})
+			if kind == "corridor":
+				var cells = Grid.cells_within_ground_radius(lat, lon, CORRIDOR_REVEAL_METERS)
+				for c in cells:
+					DB.upsert_map_cell(c.x, c.y, 1) # 1 = Known
+					if DB.last_error != "":
+						DB.rollback_transaction()
+						return {"status": "error", "message": "storage error"}
+			else:
+				var cell = latlon_to_cell(lat, lon)
+				DB.upsert_map_cell(cell.x, cell.y, 1) # 1 = Known
 				if DB.last_error != "":
 					DB.rollback_transaction()
 					return {"status": "error", "message": "storage error"}
+
+				if kind == "visit":
+					var place_id = "place_%d_%d" % [cell.x, cell.y]
+					DB.upsert_place_node({
+						"id": place_id,
+						"name": "Scouted Location",
+						"category": 1,
+						"cell_x": cell.x,
+						"cell_y": cell.y,
+						"reveal_state": 1,
+						"visit_count": 1,
+						"last_real_visit_at": started_at
+					})
+					if DB.last_error != "":
+						DB.rollback_transaction()
+						return {"status": "error", "message": "storage error"}
 
 	# Save last body position for relocation
 	var body_fix = batch_data.get("bodyFix", null)
