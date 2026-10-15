@@ -8,6 +8,8 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 ## 🟠 Open Decisions
 
 > **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, was answered on 2026-10-09 (Option B). **Decision 13** (map data) was answered the same day: fully offline (Option C). Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
+>
+> **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
@@ -30,6 +32,17 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 
 ## ✅ Resolved Decisions
 
+### Decision 14 — Build the neighborhood map preview: yes, the full plan (Resolved 2026-10-10)
+- **Selection: Option A — approve the amended plan as written**, including the in-game region choice and download.
+- **The options were:**
+  - **A** — the full plan;
+  - **B** — a smaller first version where the human downloads the map file by hand;
+  - **C** — hold.
+- **What it means:** agents build `docs/implementation_plan_world_generation.md` in the order of agent-guide Items 3–10, after the three prerequisite fixes (F42 grid, F40 macOS SQLite, F41 memory guard).
+  - **The converter is timed first** (Item 7's converter gate). If Washington takes more than 30 minutes or 1 GiB, the build STOPS and a new decision is filed.
+  - **Slice 1 ends with a pause** so the human can try it with their own route.
+- **Contracts:** the plan's status line, `master_implementation_plan.md` Phase 3, and the agent guide (§2, §6).
+
 ### Decision 13 — Map data: fully offline regional OpenStreetMap files (Resolved 2026-10-09)
 - **Selection: Option C**, in the human's words: "the map should be preloaded onto your computer, the phone just lets you unlock the parts of the preloaded map that you've physically been to."
 - **Confirmed: that understanding is correct.** Details:
@@ -41,7 +54,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - No Overpass and no per-area queries, ever. The map store is a separate, regenerable file per region (not the save).
   - Map data files never enter the repo (`.gitignore` `*.osm.pbf`); tests use a synthetic file.
   - OSM attribution (`© OpenStreetMap contributors`) is always visible on the map.
-  - **The open engineering risk is speed:** reading a several-hundred-MB file in GDScript may be slow. The slice-1 plan must measure it and choose a converter accordingly (agent-guide §6, Item 3).
+  - **The open engineering risk is speed:** reading a several-hundred-MB file in GDScript may be slow. The slice-1 plan must measure it and choose a converter accordingly — now the converter gate in `implementation_plan_world_generation.md` §5.3 (agent-guide §6.5, Item 7).
   - Contracts updated: `design_world_generation.md` §3 and §6, `design_privacy_and_location.md` §1, `implementation_plan_foundation.md` §B4.5, `README.md`, `e2e_testing_journeys.md` Journey 7.
 
 ### Decision 10 — Sprite style: Black/White sprites for all 649; Platinum dropped (Resolved 2026-10-09)
@@ -56,7 +69,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 - **Selection (2026-10-08, re-asked in chat after the pivot): Option B — an agent vendors it.** Specifically: **`godot-sqlite` v4.4** (2shady4u, MIT licence; its release notes target **Godot v4.3-stable** and **SQLite 3.46.1**). Only the desktop binaries (macOS universal, Windows x86_64, Linux x86_64; debug and release) are committed, under `game/addons/godot-sqlite/`, with a SHA-256 manifest that the battery re-checks.
 - **Why this is safe now, when it wasn't before:** three earlier agents *claimed* SQLite, and nothing could check them. Once agent-guide Item 0 lands, CI runs real headless Godot on every push, and the boot line `storage: SQLite extension` appears only if the binary actually loaded. A fake can no longer pass.
 - **libsodium is no longer needed** (Decision 11), so this covers SQLite only.
-- **Consequences:** Decision 6 = A becomes deliverable (agent-guide §5, Item 2). Once SQLite is verified live, the interim file fallback is retired, because the extension ships inside the build. Existing fallback saves are imported once, and the original file is kept.
+- **Consequences:** Decision 6 = A becomes deliverable (pass-12 agent-guide §5, Item 2). Once SQLite is verified live, the interim file fallback is retired, because the extension ships inside the build. Existing fallback saves are imported once, and the original file is kept.
 
 ### Decision 8 — Online play: single-player only for v1 (Resolved 2026-10-08)
 - **Selection: Option A.** No server, no accounts; LAN-only sync stays. The project adopts PokeMMO's *distribution* model (bring your own ROM), not its multiplayer service. **No design change** — the docs already describe single-player.
@@ -92,8 +105,8 @@ The implementation delivered **JSON file persistence** where the design specifie
 - **Option B — formally adopt file-based storage for v1.0.** Keep JSON, but harden it: atomic temp-file + rename (F11), a real versioned migration path, and update the design docs so SQLite is no longer the stated contract. Gains: no native dependency; simpler build; Decision 4 shrinks to just libsodium + mDNS. Cost: no ACID, no queries, O(world) writes per sync; likely forces a migration during Phase 2 or 4 anyway — with real player data at risk by then.
 - **Option C — hybrid: harden JSON now, revisit at Phase 2.** Do F11's atomic write immediately, defer the engine choice until world-gen's query needs are concrete. Gains: cheapest safe step; decision made with better information. Cost: the decision resurfaces mid-Phase-2, when it is more disruptive.
 - **Your selection (July 22): Option A — finish real SQLite as designed.** Rationale: the map is explicitly unrecoverable data, so engine-level ACID and a real `PRIMARY KEY (peer_id, seq)` are worth a native dependency; and Phase 2 world-gen needs region queries that a whole-file JSON blob cannot serve without loading everything. Retrofitting after players have real worlds would mean migrating live data.
-- **Consequences:** (1) **No design-doc change** — `design_game_state_and_models.md` and `implementation_plan_foundation.md` §B2/§B6 already specify SQLite, so this corrects the code *toward* the existing contract rather than amending it. (2) **Decision 4's scope grows**: the Godot side now needs a SQLite GDExtension *and* a libsodium binding — vet both together, and prefer one maintained source if it covers both. (3) F11's atomic-write discipline still applies to the SQLite file (WAL/journal must not be bypassed). **Agent-guide §5 (Item 2)** — was blocked on Decision 7 until 2026-10-08.
-- **Status (2026-10-08): DELIVERED.** Decision 7 = B supplied the extension; agent-guide §5 (Item 2) delivered the real SQLite engine and retired the file fallback.
+- **Consequences:** (1) **No design-doc change** — `design_game_state_and_models.md` and `implementation_plan_foundation.md` §B2/§B6 already specify SQLite, so this corrects the code *toward* the existing contract rather than amending it. (2) **Decision 4's scope grows**: the Godot side now needs a SQLite GDExtension *and* a libsodium binding — vet both together, and prefer one maintained source if it covers both. (3) F11's atomic-write discipline still applies to the SQLite file (WAL/journal must not be bypassed). **Pass-12 agent-guide §5 (Item 2)** — was blocked on Decision 7 until 2026-10-08.
+- **Status (2026-10-08): DELIVERED.** Decision 7 = B supplied the extension; pass-12 agent-guide §5 (Item 2) delivered the real SQLite engine and retired the file fallback.
 
 ### Decision 4 — Crypto + mDNS libraries on the Godot side (Superseded 2026-10-08)
 Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (X25519 + HKDF + XChaCha20-Poly1305 secretstream) and an mDNS responder on the PC.
@@ -102,7 +115,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - Recommendation: A if a maintained binding exists at build time; else B.
 - **Your selection (July 21): Option A (maintained free GDExtension) if a trustworthy, current one exists at build time; otherwise Option B (wrap libsodium ourselves).** Hard rule either way: never hand-roll the crypto — standard libsodium underneath.
 - **Status (claimed July 22): REALIZED (Option A).** `pairing.dart` & `transport.dart` implemented with X25519 key exchange, HKDF-SHA256 session key derivation, AEAD ChaCha20-Poly1305 encrypted transport, HELLO/BATCH/ACK handling, and SecureStorage private key persistence. `flutter test` (17/17) verifies encryption, decryption, tampered ciphertext rejection, and outbox deletion on ACK.
-- **⛔ Status CORRECTED (July 22, 8th verification pass): NOT REALIZED — D4 remains OPEN.** What exists is real and useful, but it is *crypto primitives and payload builders, not a transport*: `grep -rn "Socket|MDnsClient|multicast_dns|connect(" companion/lib/` returns **nothing** — there is no socket, no mDNS discovery, and no connection code anywhere in the companion. On the PC side `game/autoloads/sync_server.gd` is unchanged: still a pure in-process function with **no TCP listener, no mDNS advertisement, and no crypto** (the game tree contains no libsodium or SQLite GDExtension at all). **The two devices cannot exchange a single byte.** Decision 4 asked which Godot-side libsodium/mDNS binding to adopt — that question is still entirely unanswered, so Option A cannot be said to be "realized." See **F12** for a crypto-primitive deviation, and agent-guide §6 (Item 3).
+- **⛔ Status CORRECTED (July 22, 8th verification pass): NOT REALIZED — D4 remains OPEN.** What exists is real and useful, but it is *crypto primitives and payload builders, not a transport*: `grep -rn "Socket|MDnsClient|multicast_dns|connect(" companion/lib/` returns **nothing** — there is no socket, no mDNS discovery, and no connection code anywhere in the companion. On the PC side `game/autoloads/sync_server.gd` is unchanged: still a pure in-process function with **no TCP listener, no mDNS advertisement, and no crypto** (the game tree contains no libsodium or SQLite GDExtension at all). **The two devices cannot exchange a single byte.** Decision 4 asked which Godot-side libsodium/mDNS binding to adopt — that question is still entirely unanswered, so Option A cannot be said to be "realized." See **F12** for a crypto-primitive deviation, and the pass-12 agent-guide §6 (Item 3).
 - **Resolution (2026-10-08): superseded.** The crypto half is answered by **Decision 11** (Godot's built-in TLS — no libsodium, no extension). The mDNS half is tracked as **F27**: Godot has no mDNS responder, and the companion's raw-multicast client fails on real iPhones. v1 connects by remembered address plus QR re-scan; mDNS is deferred (agent-guide §8).
 
 ### Decision 1 — Stack: Godot (PC) + Flutter (companion); LAN-only sync (Resolved July 21)
@@ -278,6 +291,19 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Created `tools/memguard_budgets.json` with measured steps (`flutter_test`, `godot_import`, `godot_selftest`, `godot_tests`, `sync_e2e`) and unmeasured 8 GiB steps (`demo_import`, `pbf_spike`, `rom_spike`, `flutter_build_ios`).
   - Implemented `tools/test_memguard.py` covering all 7 test cases from `design_memory_and_resources.md` §4, wired fail-closed into `game/tests/test_runner.py`.
   - Wired guarded runs into `test_runner.py` (Godot selftest and main tests), `sync_e2e.py` (wrapping whole run as `sync_e2e`), and CI workflows (`game_tests.yml`, `sync_e2e.yml`, `ip_guard.yml`).
+- **⚠️ M21 verified, with residual F41 (2026-10-10, 16th pass).**
+  - **Source matches** `design_memory_and_resources.md` §1–§2: constants, the `flock` lock, admission with exit 75, the process-group watchdog with exit 76, the nested-run bypass, the JSON log, and `run` / `measure` / `doctor`.
+  - **Executed:**
+    - all 7 test cases, locally and in CI (`game_tests` 38073007971);
+    - CI logs show `memguard doctor` plus guarded `godot_import`, `flutter_test`, and `sync_e2e` steps;
+    - locally this session: guarded `flutter_test` peaked at 0.914 GiB, and guarded `sync_e2e` (macOS scratch copy) at 1.114 GiB.
+  - **Residual F41:**
+    - the "waiting for memory" line never prints (confirmed with a fake-clock probe);
+    - `measure` has no cap or admission, and can lower a budget;
+    - `doctor` warns on this Mac (34% vs 62%) — a spec flaw, now fixed in §1;
+    - no test covers the "available below floor" stop;
+    - the Godot budgets were measured only on Linux.
+  - **Not run, deliberately:** the "other program takes the memory" hog test from guide Item 0. On this shared 64 GB Mac it means pushing available memory below 3.2 GiB. F41 replaces it with a fake-reader test (§4 case 8).
 
 **M22 — Legacy Import Ordering and Unreadable Save Handling (F35, 2026-10-10).**
 - **What was solved:**
@@ -285,6 +311,10 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - When candidate backup is unreadable (unparseable JSON), atomically insert `meta('legacy_import', '<bak filename> (unreadable — kept)')`, print `storage: legacy save unreadable — kept at <path>`, and allow booting to continue normally without modifying or deleting the backup file.
   - Subsequent boots see the `legacy_import` meta key and bypass import checks, eliminating the permanent lockout bug where rows written in session 1 blocked boot 2.
   - In `game/tests/db_legacy_import_test.gd`: added test case 5 verifying unreadable backup handling, meta recording, normal boot, writing map cells, and successful second boot without lockout.
+- **✅ M22 verified (2026-10-10, 16th pass).**
+  - **Source:** `_run_legacy_import` now parses the backup and its `.tmp` **before** the rows precondition. An unreadable backup gets `meta('legacy_import', '<file> (unreadable — kept)')` in its own transaction, then the exact log line, then a return. A readable one still meets the precondition. The backup is never touched.
+  - **Test 5** walks the full lockout sequence: boot → write a cell → close → boot again → the database is open, the cell is there, and the backup is byte-identical.
+  - **Executed** in CI 38073007971 (`PASS db_legacy_import_test`; the log shows `storage: legacy save unreadable — kept at user://test/tenth_spring_test.db.jsonbak`), and locally on macOS in a scratch copy carrying F40's fix.
 
 **M23 — Fresh One-Shot Fix for Scout Here (F36, 2026-10-10).**
 - **What was solved:**
@@ -293,25 +323,73 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - In `companion/lib/capture/gpx_replay_source.dart`: implemented `currentFix()` returning `_lastEmittedFix`.
   - In `companion/lib/ui/scout_ledger_screen.dart`: updated `_triggerManualScout()` to display "Finding your location…", request `currentFix()`, immediately clear the waiting SnackBar, handle `null` by showing "Couldn't find your location — try again in a moment." without falling back to cached fix, and on valid fix insert the fuzzed point stamped with `fix.tsUtcMs` and update `_lastFix`.
   - In `companion/test/widget_test.dart`: added 3 validation tests (falsifying test proving fix B at its own timestamp is used rather than cached stream fix A, null fallback test proving error SnackBar and no DB insert, and `GpxReplaySource` test).
+- **✅ M23 verified (2026-10-10, 16th pass).**
+  - **Source:** `currentFix()` is on the interface and implemented on both sources. `OsLocationSource` uses `getCurrentPosition` (medium accuracy, 10 s limit), stamps the fix's own time, and returns `null` on any error. `_triggerManualScout` fuzzes **before** inserting, stamps `fix.tsUtcMs`, updates `_lastFix`, never falls back, and uses both strings exactly.
+  - **Tests:** the falsifying A/B test asserts B's fuzzed coordinates at ts 9000.
+  - **Executed:** `flutter test` — **35 passed, 1 skipped** locally (this session, under memguard) and in CI; `flutter analyze` is clean.
+
+**M24 — Phase 3 slice-1 plan and PBF speed spike (Item 3, 2026-10-10; commit `49e7470`).**
+- **What was solved:**
+  - wrote `docs/implementation_plan_world_generation.md` (demo profile, `demo_import.py`, GPX rules, the 60 m corridor fix, the offline map store, tiles, two-state fog, ODbL attribution, the memory pause, zero-network CI);
+  - ran `tools/pbf_spike.gd` under memguard on the human's Mac against DC (20 MB) and Washington (348 MB);
+  - added `*.gpx`, `*.osm.pbf`, `map_data/`, and `demo/` to `.gitignore`, with fixture exceptions.
+- **⚠️ M24 verified, with corrections (2026-10-10, 16th pass).**
+  - **Confirmed:**
+    - the plan covers the guide's 11 points and lists the non-goals;
+    - the GPX rules were promoted to `design_world_generation.md` §2;
+    - nothing map- or route-related is tracked (`git ls-files` shows only the three original fixture GPX files);
+    - the spike's four runs appear in the memguard log with the stated peaks.
+  - **Correction 1 — the spike measured a lower bound.** It counts dense-node id deltas and **skips** coordinates, tags, way node lists, relations, and the string table, and writes nothing. So "Washington in 9.87 s" and "California in ~34 s" are not conversion times. The converter choice now waits on a **converter gate** run on the real converter (plan §5.3).
+    - *What the guide left vague:* it asked for "a PBF reader … and time it" without saying the reader must decode everything the converter needs.
+  - **Correction 2 — spec gaps fixed in the plan, in place** (see the plan's "Amendments"):
+    - the demo handshake omitted the pin fingerprint and pairing code (and used a literal `demo_pc` id);
+    - the waypoint → detector path was undefined;
+    - downloads went to `~/.cache`;
+    - the region rule, MD5 flow, geometry encoding, and tag table were unpinned;
+    - the CI demo test was placed inside a Godot test (it needs Flutter), and would have been refused by the tool's own in-repo rule;
+  - **Status:** approved by the human — **Decision 14 = A** (2026-10-10). Built in agent-guide Items 3–10.
+
+**M25 — One Web-Mercator grid (F42, 2026-10-14).**
+- **What was solved:**
+  - Implemented canonical Web-Mercator grid projection in `game/world/grid.gd` (EPSG:3857, 256 WM-m cells, 16 WM-m tiles, $R = 6,378,137\text{ m}$; Haversine ground distances with $R = 6,371,008.8\text{ m}$).
+  - Delegated `latlon_to_cell` and `latlon_to_tile` in `game/autoloads/sync_server.gd` to `Grid`.
+  - Updated `game/scripts/relocation_manager.gd` to calculate `distance_to_home_m` using `Grid.ground_distance_m` and derive spawn cell/tile via `Grid`.
+  - Added static lint check in `game/tests/test_runner.py` forbidding private projection constants (`111000`, `111320`, `METERS_PER_DEGREE`) across all `.gd` files except `game/world/grid.gd`.
+  - Added unit test suite `game/tests/grid_test.gd` (12 expected tests) covering: north-staying-north (falsifying test), known projection values, round-trip conversions, ground distance, cell ground size, and stranded distance check.
+- **F42 (fixed):** Verified in `grid_test.gd`, falsifier proven in CI on scratch branch, 12/12 tests passing.
 
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-- **F38 (resolved in M21) — heavy developer commands run with no memory guard.** Delivered via `tools/memguard.py`, `tools/memguard_budgets.json`, `tools/test_memguard.py`, runner wiring, and CI workflow updates.
-- **F35 (resolved in M22) — an unreadable old save locks the game out after one session.** Reordered `_run_legacy_import`, marked unreadable saves in `meta`, and verified in `db_legacy_import_test.gd`.
-- **F36 (resolved in M23) — *Scout here* logs a cached location as "now".** Resolved by adding `currentFix()` to `LocationSource`, updating `OsLocationSource`, `GpxReplaySource`, `_triggerManualScout`, and adding companion widget tests.
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25.*
+- **F40 (found 2026-10-10, 16th pass) — on a Mac, the game cannot open its save.**
+  - **The fault:** the vendored macOS frameworks' `Resources/Info.plist` says the executable is `libgdsqlite.template_debug` / `…_release`, but the file inside is `libmacos.libgdsqlite.template_debug` / `…_release`. Godot 4.3 resolves the framework through that plist entry, so loading fails: `GDExtension dynamic library not found …` → `storage: UNAVAILABLE — SQLite extension missing`.
+  - **Effect locally** (Godot 4.3 at `/Applications/Godot.app`): 5 of 11 game tests fail, and the game cannot store anything on the human's Mac — so **the real-device sync gate would fail** at the PC end.
+  - **Why nobody saw it:** CI runs Linux only.
+  - **Fix proven this pass,** in a scratch copy: correcting `CFBundleExecutable` in both plists → **11/11 game tests pass on macOS**, and `sync_e2e` passes on macOS (14 → 14).
+  - **Agent-guide §4 (Item 1)** — also adds a macOS CI job so this can't recur unseen.
+- **F41 (found 2026-10-10, 16th pass) — memory-guard rough edges.**
+  - **(a)** `run_guarded` compares relative elapsed time against `last_log_time = wait_start` (an absolute timestamp), so `memguard: waiting for memory …` **never prints** in real use. A fake-clock probe waited 100 s, printed no waiting line, and exited 75.
+  - **(b)** `measure_step` has no admission, no watchdog (the spec says a 2× cap), and no log line, and it overwrites a budget even when the new peak is lower.
+  - **(c)** `doctor` cross-check: memguard reads 34% free and `memory_pressure -Q` reads 62%. The spec's two-way 10-point rule can't pass; it is now one-directional (`design_memory_and_resources.md` §1).
+  - **(d)** No test covers the "available below floor" stop.
+  - **(e)** The `godot_*` budgets were measured only on Linux CI, and `run`'s 2 s sampling reports peak 0.0 for short Godot runs.
+  - **Agent-guide §5 (Item 2).**
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
-  - **Map conversion:** the plan said to "convert" regional map files but set no memory limit. The obvious implementation — a dictionary of every node in a state — needs many GB and grows with region size.
-  - **Contract** (now written): streaming, bounded (≤ 1 GiB for the converter, ≤ 512 MiB for the ROM import), and **pausing rather than failing** when other programs take memory — `design_memory_and_resources.md` §3.
-  - **Folded into** the map-slice plan (**agent-guide §6, Item 3**) and the ROM spike (**§7, Item 4**).
-
-- **F37 (found 2026-10-09, 14th pass) — corridor reveal is narrower than designed.** `game/autoloads/sync_server.gd` `process_batch` reveals only the single 256 m cell containing each point (`latlon_to_cell` → one `upsert_map_cell`). `implementation_plan_foundation.md` §B4.5 says corridor rows reveal every cell within `corridorRevealMeters` (60 m) of the point, so a walk along a cell boundary should reveal both sides. Invisible until there's a map to look at, which is why it's folded into the first map slice. **Agent-guide §6 (Item 3).**
-- **F7 (latent, found July 22 2nd pass) — home-cell size mismatch.** Companion `fuzzHome` snaps to a 300 m grid (`homeFuzzMeters`); the game treats the home cell as a 256 m `CELL_METERS` cell. These must reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred — trigger-gated).**
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** Godot has no built-in mDNS responder, and raw multicast from the phone requires a restricted Apple entitlement on iOS. v1 connects by remembered IP + QR re-scan. **Agent-guide §8 (Deferred — trigger-gated on playtest feedback).**
-- **Pending Physical Device Gates (Human Action Required):**
-  - **D3 Device Soak (Phase 0 exit):** ≥ 8 h background carry on a real phone with app backgrounded; confirm scout ledger fills and app battery consumption is < 3%/day (Decision 5 = Option A).
-  - **Real-Device Sync Gate (Phase 1 exit):** Phone and PC on same Wi-Fi; pair via QR; report scouted route; verify records arrive on PC and Wireshark on port 7350 shows only TLS records (Agent guide §2, HUMAN actions).
+  - **Contract:** `design_memory_and_resources.md` §3 — streaming, ≤ 1 GiB for the converter and ≤ 512 MiB for the ROM import, pausing rather than failing.
+  - **Specified in** the slice-1 plan §9 (injectable memory reader, pause test, checkpoint test).
+  - **Built in** agent-guide Item 7 (approved — Decision 14 = A) and the ROM spike (Item 11).
+- **F37 (found 2026-10-09, 14th pass) — corridor reveal is narrower than designed.**
+  - `process_batch` reveals only the cell containing each point, while §B4.5 says corridor rows reveal every cell within 60 m.
+  - Specified in slice-1 plan §4, in the F42 grid; built in **agent-guide Item 5**.
+- **F7 (latent, found July 22, 2nd pass) — home-cell size mismatch.**
+  - Companion `fuzzHome` snaps to a 300 m grid; the game treats home as one grid cell (now 256 WM-m, F42).
+  - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred).**
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent-guide §8 (Deferred).**
+- **Pending physical-device gates (human action required):**
+  - **D3 device soak (Phase 0 exit):** ≥ 8 h of background carry; the scout ledger fills, and battery use is < 3%/day (Decision 5 = Option A). Can run any time.
+  - **Real-device sync gate (Phase 1 exit):** the five steps in agent-guide §2. **Wait until Items 0 (F42) and 1 (F40) are on `main`.** Before then, the Mac can't store anything (F40), and a save made before F42 would carry skewed cells.
 
 ---
 
@@ -353,3 +431,7 @@ Founding decisions made with the user during the design brainstorm, recorded her
 17. **Memory guards (2026-10-10).** The human asked for guards "so that we don't run out of memory," assuming "other program can start and stop which will take from the available memory." Investigation showed the 2026-10-09 out-of-memory event came from another project's processes, but the guards were designed anyway, because this project's next steps are heavy.
     - **Pillar:** a start-time check is not enough. Work is bounded by construction, admitted only when there is room, and watched while it runs — paused or stopped cleanly and resumably, never left for the OS to kill.
     - **Contract:** `design_memory_and_resources.md`.
+18. **The map grid is Web Mercator (2026-10-10, pass 16, F42).** The code had drifted to a Greenwich-centred sinusoidal projection that skews the US map by 40–58°.
+    - **The fix:** plain EPSG:3857 with 256 WM-m cells, in one file (`game/world/grid.gd`).
+    - **Why plain Web Mercator:** it is conformal (north is up and angles are true everywhere, including distant "islands"), it is the grid every slippy map uses, and it needs no per-world state — so the per-region map stores (Decision 13) are keyed identically for every world.
+    - **Cost:** cells are smaller on the ground away from the equator (≈ 173 m in Seattle). Gameplay distances are ground metres, so play is unaffected.

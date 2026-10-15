@@ -26,8 +26,13 @@ Single-row table driving all simulation.
 
 ## 2. Map Cell (`MapCell`)
 
-The fog atom. A cell is a ~256 m square (16×16 tiles at `tileMeters = 16`).
-* `cellX`, `cellY` (int): global grid coordinates (Web-Mercator-derived).
+The fog atom. A cell is **256 × 256 Web-Mercator metres** (16 × 16 tiles of 16 WM-m).
+* `cellX`, `cellY` (int): global grid coordinates on **Web Mercator (EPSG:3857)** — one implementation, `game/world/grid.gd` (F42, 2026-10-10):
+  * `x = R·λ`, `y = R·ln(tan(π/4 + φ/2))`, with `R = 6,378,137 m`, λ and φ in radians, latitude clamped to ±85.05112878°, and y pointing north;
+  * `cell = (floor(x / 256), floor(y / 256))`; `tile = (floor(x / 16), floor(y / 16))`.
+  * **On the ground**, a cell is 256·cos(latitude) metres on a side — ≈ 173 m in Seattle, ≈ 199 m in Washington DC, 256 m at the equator. Web Mercator is conformal, so north is always up and street angles are true everywhere.
+  * **Gameplay distances are ground metres**, never grid units: corridor reveal, visit radius, `baseAccessMeters`, and travel miles use `Grid.ground_distance_m` (haversine, R = 6,371,008.8 m) or `radius / cos(latitude)` conversions.
+  * **Never re-implement the projection.** The earlier `lon·111000·cos(lat)` formula sheared the grid by 40–58° across the US and is retired.
 * `revealState` (PlaceRevealState): `unknown | known | cleared` — cells use `known` when corridor/visit-revealed; `cleared` is place-level, mirrored here for region queries.
 * `tileBlob` (Uint8List): synthesized tile indices (deterministic; regenerable — cache, not source of truth).
 * `zone` (SpawnZone): residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds / **cemetery / ruins / hospital**. Selects the spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2). Deterministic from OSM.

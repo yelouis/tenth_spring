@@ -330,7 +330,7 @@ Phone: on ACK, delete outbox rows with `seq <= lastAppliedSeq`. If the connectio
 ### B4.5 Applying a visit/corridor row → map reveal (**map tables only**)
 For each row (ingest has write access to `map_cell`, `place_node`, `visit_log` only):
 - Append the canonical `visit_log` row (`peer_id, seq, ...`).
-- Reveal the `map_cell(s)` containing the point → `reveal_state = known` if currently `unknown`; stamp `first_revealed_at`.
+- Reveal the `map_cell(s)` containing the point → `reveal_state = known` if currently `unknown`; stamp `first_revealed_at`. Cells come from the Web-Mercator grid in `game/world/grid.gd` (`design_game_state_and_models.md` §2, F42) — never a local formula.
 - `visit` rows: find the nearest POI in `osm_cache` within `visitRadiusMeters`. If found → upsert `place_node` (`visit_count += 1`, update `last_real_visit_at`, set `reveal_state = known` if unknown). The POI lookup reads the local **map store** (Decision 13 = C). If the cell lies outside every installed region → mark the cell `known` and resolve `place_node` once that region is installed (deferred; the "intel ceremony" plays over this in Phase 3). No network request is made.
 - `corridor` rows: reveal cells within `corridorRevealMeters` of the point as `known` terrain.
 

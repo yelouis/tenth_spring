@@ -40,6 +40,7 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 - **Spawn-zone derivation**: each cell is assigned a `zone` from its dominant OSM land use — residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds, plus the haunted zones **cemetery** (`landuse=cemetery`, `amenity=grave_yard`), **ruins** (`historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*`), and **hospital** (`amenity=hospital`). Haunted zones win ties. The zone drives spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2) and is stored on `map_cell`. Deterministic per cell.
 - **Tall grass placement**: tall-grass tiles fill OSM vegetation (park, meadow, grass, scrub, wood edges) and overgrown land (`landuse=brownfield`, vacant lots, abandoned sites). The collapse setting adds overgrowth: road and lot tiles convert to tall grass with probability rising by distance band from home (0%, 10%, 25%, 40%), seeded per cell so it is deterministic. Tall grass is where encounters happen — its placement *is* encounter design.
 - **Landmark flagging**: POIs tagged as famous places (e.g. `boundary=national_park`, `leisure=nature_reserve`, `tourism=attraction`, `historic=monument`, `leisure=stadium`) are flagged `isLandmark` and assigned a legendary from their archetype's pool (`design_encounters_and_haunted_zones.md` §7). Assignment is deterministic and independent of player proximity.
+- **The grid**: cells and tiles are Web Mercator (`design_game_state_and_models.md` §2, `game/world/grid.gd`), so north is up and street angles are true everywhere. A tile is 16 WM-m, i.e. 16·cos(latitude) m on the ground.
 - **Geometry → tiles**: real geometry is rasterized onto the tile grid at `tileMeters = 16` per tile, then cleaned:
   1. Streets → road tiles (min width 1 tile), snapped to 4/8-directional runs.
   2. Buildings → rectangularized footprints (min 2×2 tiles) with a door tile facing the nearest road.
@@ -68,6 +69,7 @@ The map has no boundary. Travel anywhere real adds a distant island of `known` c
 
 ## 6. Files
 * `companion/lib/capture/visit_detector.dart` — dwell/corridor detection (phone).
+* `game/world/grid.gd` — the one lat/lon ↔ Web-Mercator cell/tile projection and ground-distance helpers (PC). Nothing else projects coordinates.
 * `game/world/region_import` — regional extract download, verification, and conversion into the map store (PC).
 * `game/world/tile_synth` — deterministic geometry → tile rasterizer (PC).
 * `game/world/fog_store` — reveal-state persistence and queries (PC, canonical).

@@ -5,9 +5,8 @@ extends Node
 
 const PROTOCOL_VERSION: int = 1
 const DEFAULT_PORT: int = 7350
-const TILE_METERS: float = 16.0
-const CELL_METERS: float = 256.0 # 16x16 tiles at 16m
-const METERS_PER_DEGREE: float = 111000.0
+
+const Grid := preload("res://world/grid.gd")
 
 signal sync_completed(peer_id: String, applied_count: int)
 signal peer_paired(phone_id: String)
@@ -105,21 +104,13 @@ func create_dispatcher(custom_identity: PcIdentity = null, custom_pairing: Pairi
 	var pc = custom_pairing if custom_pairing != null else pairing_codes
 	return SessionDispatcher.new(id, pc)
 
-# Converts fuzzed Lat/Lon coordinate to cell coordinate (~256m cells)
+# Converts fuzzed Lat/Lon coordinate to cell coordinate (256 WM-m cells)
 func latlon_to_cell(lat: float, lon: float) -> Vector2i:
-	var lat_meters = lat * METERS_PER_DEGREE
-	var lon_meters = lon * METERS_PER_DEGREE * cos(deg_to_rad(lat))
-	var cell_x = int(floor(lon_meters / CELL_METERS))
-	var cell_y = int(floor(lat_meters / CELL_METERS))
-	return Vector2i(cell_x, cell_y)
+	return Grid.latlon_to_cell(lat, lon)
 
-# Converts fuzzed Lat/Lon coordinate to tile coordinate (16m tiles)
+# Converts fuzzed Lat/Lon coordinate to tile coordinate (16 WM-m tiles)
 func latlon_to_tile(lat: float, lon: float) -> Vector2i:
-	var lat_meters = lat * METERS_PER_DEGREE
-	var lon_meters = lon * METERS_PER_DEGREE * cos(deg_to_rad(lat))
-	var tile_x = int(floor(lon_meters / TILE_METERS))
-	var tile_y = int(floor(lat_meters / TILE_METERS))
-	return Vector2i(tile_x, tile_y)
+	return Grid.latlon_to_tile(lat, lon)
 
 func handle_hello(payload: Dictionary) -> Dictionary:
 	var peer_id = payload.get("peerId", "")

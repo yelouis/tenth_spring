@@ -193,6 +193,7 @@ def main():
 		"db_migration_test",
 		"db_test",
 		"frame_codec_test",
+		"grid_test",
 		"idempotent_sync_test",
 		"pairing_codes_test",
 		"pc_identity_test",
@@ -343,6 +344,21 @@ def main():
 				print(f"\n[F19 SQL INJECTION HAZARD] Line {idx} in db.gd contains SQL keyword and string formatting/concatenation:")
 				print(f"  {line.strip()}")
 				total_errors += 1
+
+	# F42 Static Rule: Forbid private projection constants outside game/world/grid.gd
+	grid_gd_rel = os.path.join("world", "grid.gd")
+	forbidden_proj = ["111000", "111320", "METERS_PER_DEGREE"]
+	for gdf in gd_files:
+		rel_path = os.path.relpath(gdf, game_dir)
+		if rel_path == grid_gd_rel:
+			continue
+		with open(gdf, 'r', encoding='utf-8') as f:
+			content = f.read()
+		for token in forbidden_proj:
+			if token in content:
+				print(f"\n[LINT FAIL] {rel_path}: private projection constant — use res://world/grid.gd (F42)")
+				total_errors += 1
+				break
 
 	if total_errors > 0:
 		print(f"\nStatic lint failed with {total_errors} error(s).")

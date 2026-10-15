@@ -7,7 +7,7 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 
 - **`walkSpeedMph = 15`** — foot speed against *real* geography (`gameMinutesPerMile = 4`); **`bicycleSpeedMultiplier = 2.0`**.
 - **`wallSecondsPerGameMinute = 2.0`** — a full in-game day ≈ 48 wall minutes.
-- **`tileMeters = 16`**; cells are 16×16 tiles ≈ 256 m.
+- **`tileMeters = 16`** — 16 **Web-Mercator** metres; cells are 16×16 tiles = 256 WM-m (`design_game_state_and_models.md` §2). On the ground that is 16·cos(latitude) m per tile — ≈ 11 m in Seattle. Gameplay distances are always ground metres.
 - **`visitRadiusMeters = 75`**, **`visitDwellSeconds = 120`** — thresholds for a real-world visit.
 - **`captureDistanceFilterMeters = 25`**, **`captureIntervalMinutes = 2`**, accuracy **`medium`** — the **battery-budget levers**. Change only with a fresh device measurement.
 - **`corridorRevealMeters = 60`**; **`familiarityTiers = {1: known, 3: familiar, 10: mastered}`**.
@@ -23,13 +23,13 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 **Phase 0 — Companion capture & scout ledger** *(code-complete; device gate pending)*
 Carrying the phone yields a fuzzed visit/corridor log within budget. **Exit:** ledger fills while backgrounded over ≥ 8 h at < 3%/day on a real device.
 
-**Phase 1 — Pairing, sync & data models** *(built, hardened & CI-verified — pass-13 fixes F29–F34 landed; only the human's real-device sync gate remains — see the agent guide §2)*
+**Phase 1 — Pairing, sync & data models** *(built, hardened & CI-verified — pass-13 fixes F29–F34 landed; only the human's real-device sync gate remains, to be run after F42 (grid) and F40 (macOS SQLite) land — see the agent guide §2)*
 A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Status:** All code delivered across Item 2 (real SQLite persistence, WAL, bound parameters) and Item 3a–c (pinned TLS listener, QR generator, pairing tokens, frame codec, scout reports, and cross-language loopback sync in CI). Verified in CI (`sync_e2e`, `game_tests`, `Public-Repo IP Guard`). **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records (pending human testing on physical phone + PC).
 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*
 Import a player-supplied Pokémon Black or White ROM (all data and sprites for the 649 Gen 1–5 species; Decision 10 = B) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
 
-**Phase 3 — World generation** *(slice 1 "Neighborhood preview" planned; building gates on human review)*
+**Phase 3 — World generation** *(slice 1 "Neighborhood preview" planned, amended in pass 16, and **approved 2026-10-10 (Decision 14 = A)**; building starts after F42/F40/F41 land — agent guide Items 3–10)*
 Offline regional OSM extracts (Decision 13 = C) → deterministic tile overworld: spawn zones (incl. cemetery/ruins/hospital), **tall-grass placement**, landmark flagging with legendary assignment, two-fog rendering, and the intel ceremony. Contract: `design_world_generation.md`. **Exit:** identical tiles from `(cached OSM, cellSeed)` across runs; tall grass appears where the rules say.
 
 **Phase 4 — Travel, time & fast travel** *(partly pre-built — extend, don't rewrite)*
