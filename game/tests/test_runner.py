@@ -197,6 +197,7 @@ def main():
 		"idempotent_sync_test",
 		"pairing_codes_test",
 		"pc_identity_test",
+		"profile_paths_test",
 		"qr_code_test",
 		"real_save_untouched",
 		"sync_ingest_isolation_test",

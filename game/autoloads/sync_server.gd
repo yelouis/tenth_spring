@@ -36,6 +36,7 @@ func get_port() -> int:
 func start_server(port: int = DEFAULT_PORT) -> Error:
 	if _identity == null:
 		_identity = PcIdentity.new()
+	if _identity.key == null or _identity.cert == null:
 		if not _identity.load_or_create():
 			print("SyncServer: Failed to load or create PC identity; server will not listen")
 			return FAILED
