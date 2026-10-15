@@ -35,8 +35,11 @@
     "status": "measured"
   },
   "demo_import": {
-    "budget_gib": 8.0,
-    "status": "UNMEASURED"
+    "budget_gib": 1.5,
+    "peak_gib": 1.104,
+    "date": "2026-10-14",
+    "machine": "darwin arm64",
+    "status": "measured"
   },
   "pbf_spike": {
     "budget_gib": 1.0,

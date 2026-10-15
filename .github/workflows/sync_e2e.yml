@@ -56,3 +56,23 @@ jobs:
 
       - name: Cross-language loopback sync
         run: python3 -I tools/memguard.py run sync_e2e -- python3 -I tools/sync_e2e.py
+
+      - name: Demo GPX import
+        run: |
+          cp companion/test/fixtures/synthetic_hand_drawn.gpx /tmp/demo_scratch.gpx
+          python3 -I tools/memguard.py run demo_import -- python3 -I tools/demo_import.py --gpx /tmp/demo_scratch.gpx
+          python3 -c "
+          import sqlite3, os
+          db = os.path.expanduser('~/.local/share/godot/app_userdata/Tenth Spring/demo/tenth_spring.db')
+          assert os.path.isfile(db), f'Demo DB not found at {db}'
+          conn = sqlite3.connect(db)
+          c = conn.cursor()
+          c.execute(\"SELECT count(*) FROM visit_log WHERE kind='visit';\")
+          v = c.fetchone()[0]
+          c.execute(\"SELECT count(*) FROM visit_log WHERE kind='corridor';\")
+          cor = c.fetchone()[0]
+          assert v == 1, f'Expected 1 visit, got {v}'
+          assert cor == 38, f'Expected 38 corridors, got {cor}'
+          print(f'Demo DB verification OK: {v} visit, {cor} corridors')
+          "
+          rm -f /tmp/demo_scratch.gpx

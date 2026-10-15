@@ -14,7 +14,10 @@ const ERR_COLLIDES_WITH_PRIMARY: String = "demo directory cannot collide with pr
 const ERR_MISSING_DEMO_DIR_ARG: String = "missing argument for --demo-dir"
 
 static func resolve_from_cmdline() -> Dictionary:
-	return resolve(OS.get_cmdline_user_args())
+	var user_args = OS.get_cmdline_user_args()
+	if not user_args.is_empty():
+		return resolve(user_args)
+	return resolve(OS.get_cmdline_args())
 
 static func resolve(args: Array = []) -> Dictionary:
 	var is_demo: bool = false
