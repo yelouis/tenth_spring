@@ -1,21 +1,35 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://world/map_view.gd" id="1_map_view"]
+[ext_resource type="Shader" path="res://world/shaders/known_tint.gdshader" id="2_known_shader"]
+[ext_resource type="Shader" path="res://world/shaders/distortion_fog.gdshader" id="3_fog_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_known"]
+shader = ExtResource("2_known_shader")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fog"]
+shader = ExtResource("3_fog_shader")
 
 [node name="MapViewer" type="Node2D"]
 script = ExtResource("1_map_view")
 
 [node name="BackgroundLayer" type="ColorRect" parent="."]
-offset_left = -100000.0
-offset_top = -100000.0
-offset_right = 100000.0
-offset_bottom = 100000.0
+offset_left = -1000000.0
+offset_top = -1000000.0
+offset_right = 1000000.0
+offset_bottom = 1000000.0
 mouse_filter = 2
 color = Color(0.0509804, 0.0666667, 0.0980392, 1)
 
-[node name="WorldTileMap" type="TileMapLayer" parent="."]
+[node name="WorldKnown" type="TileMapLayer" parent="."]
+material = SubResource("ShaderMaterial_known")
 
-[node name="FogOverlayLayer" type="TileMapLayer" parent="."]
+[node name="WorldCleared" type="TileMapLayer" parent="."]
+
+[node name="FogLayer" type="TileMapLayer" parent="."]
+material = SubResource("ShaderMaterial_fog")
+
+[node name="OverviewLayer" type="Node2D" parent="."]
 
 [node name="MapCamera" type="Camera2D" parent="."]
 
@@ -45,10 +59,10 @@ anchor_left = 1.0
 anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 0.0
-offset_left = -110.0
+offset_left = -300.0
 offset_top = 10.0
 offset_right = -10.0
-offset_bottom = -33.0
+offset_bottom = 33.0
 grow_horizontal = 0
 theme_override_colors/font_color = Color(1, 0.8, 0.2, 1)
 theme_override_font_sizes/font_size = 12
@@ -123,3 +137,11 @@ vertical_alignment = 1
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Cancel"
+
+[node name="SignTooltip" type="Label" parent="AttributionUI"]
+visible = false
+offset_right = 150.0
+offset_bottom = 24.0
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)

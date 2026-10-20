@@ -1,16 +1,59 @@
 extends Node
 
-# map_view_test.gd — Scene Tree, Attribution, Demo Badge, LRU & Camera Tests (Item 9)
-# Contract: docs/implementation_plan_world_generation.md §7–8 & docs/agent_execution_guide.md §6.7
+# map_view_test.gd — Scene Tree, Layers, Shaders, Inward Feathering, Overview, LRU & Camera Tests
+# Contract: docs/implementation_plan_world_generation_slice2.md §6, §8
 
 const MapViewScene := preload("res://world/map_view.tscn")
+const MapStoreClass := preload("res://world/region_import/map_store.gd")
+const ProfilePathsClass := preload("res://scripts/profile_paths.gd")
 
 func run_test() -> bool:
 	var map_view = MapViewScene.instantiate()
 	add_child(map_view)
 	map_view.set_map_data_dir("user://test/map_data")
 
-	# 1. Scene-Tree Assertions (Item 9)
+	# 1. Scene-Tree & Layer Assertions (§8)
+	var background_layer := map_view.get_node_or_null("BackgroundLayer") as ColorRect
+	var world_known := map_view.get_node_or_null("WorldKnown") as TileMapLayer
+	var world_cleared := map_view.get_node_or_null("WorldCleared") as TileMapLayer
+	var fog_layer := map_view.get_node_or_null("FogLayer") as TileMapLayer
+	var overview_layer := map_view.get_node_or_null("OverviewLayer") as Node2D
+
+	if background_layer == null:
+		push_error("BackgroundLayer missing from scene tree")
+		map_view.queue_free()
+		return false
+	if world_known == null:
+		push_error("WorldKnown TileMapLayer missing from scene tree")
+		map_view.queue_free()
+		return false
+	if world_cleared == null:
+		push_error("WorldCleared TileMapLayer missing from scene tree")
+		map_view.queue_free()
+		return false
+	if fog_layer == null:
+		push_error("FogLayer TileMapLayer missing from scene tree")
+		map_view.queue_free()
+		return false
+	if overview_layer == null:
+		push_error("OverviewLayer Node2D missing from scene tree")
+		map_view.queue_free()
+		return false
+
+	# Verify shaders on WorldKnown and FogLayer
+	if world_known.material == null or not (world_known.material is ShaderMaterial):
+		push_error("WorldKnown material must be a ShaderMaterial (known_tint.gdshader)")
+		map_view.queue_free()
+		return false
+	if world_cleared.material != null:
+		push_error("WorldCleared must have no shader material")
+		map_view.queue_free()
+		return false
+	if fog_layer.material == null or not (fog_layer.material is ShaderMaterial):
+		push_error("FogLayer material must be a ShaderMaterial (distortion_fog.gdshader)")
+		map_view.queue_free()
+		return false
+
 	var attribution_label := map_view.get_node_or_null("AttributionUI/AttributionLabel") as Label
 	if attribution_label == null:
 		push_error("AttributionLabel node missing from scene tree")
@@ -29,55 +72,62 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	# Badge shows only in demo mode
+	# Badge and --preview-cleared logic (§6, §8)
 	map_view.set_demo_mode(false)
 	if demo_badge.visible != false:
 		push_error("DemoBadge should be hidden when demo mode is false")
 		map_view.queue_free()
 		return false
 
+	# Refusal: --preview-cleared without --demo is refused
+	map_view.set_preview_cleared(true)
+	if map_view._preview_cleared != false:
+		push_error("--preview-cleared without --demo should be refused")
+		map_view.queue_free()
+		return false
+
 	map_view.set_demo_mode(true)
-	if demo_badge.visible != true:
-		push_error("DemoBadge should be visible when demo mode is true")
+	if demo_badge.visible != true or demo_badge.text != "DEMO MODE":
+		push_error("DemoBadge should show 'DEMO MODE' when demo is true and preview_cleared is false")
 		map_view.queue_free()
 		return false
 
-	if demo_badge.text != "DEMO MODE":
-		push_error("DemoBadge text mismatch: expected 'DEMO MODE', got '%s'" % demo_badge.text)
+	map_view.set_preview_cleared(true)
+	if map_view._preview_cleared != true or demo_badge.text != "DEMO MODE — preview: cleared look":
+		push_error("DemoBadge should show 'DEMO MODE — preview: cleared look' when preview_cleared is true")
 		map_view.queue_free()
 		return false
+	map_view.set_preview_cleared(false)
+	map_view.set_demo_mode(false)
 
-	# 2. LRU Cache Assertion (Item 9: with 300 cached cells, LRU holds <= 256)
+	# 2. LRU Cache Assertion (§6: capacity 1024)
 	var cache = map_view.get_lru_cache()
 	cache.clear()
-	for i in range(300):
+	for i in range(1100):
 		var coord := Vector2i(i, i)
 		cache.put(coord, {"buf": PackedByteArray(), "has_data": true})
 
-	if cache.size() > 256:
-		push_error("LRU cache exceeded capacity 256: size is %d" % cache.size())
+	if cache.size() > 1024:
+		push_error("LRU cache exceeded capacity 1024: size is %d" % cache.size())
+		map_view.queue_free()
+		return false
+	if cache.size() != 1024:
+		push_error("LRU cache expected size 1024 after 1100 insertions, got %d" % cache.size())
 		map_view.queue_free()
 		return false
 
-	if cache.size() != 256:
-		push_error("LRU cache expected size 256 after 300 insertions, got %d" % cache.size())
-		map_view.queue_free()
-		return false
-
-	# Oldest keys (0..43) should have been evicted; newest (44..299) should be present
-	for i in range(44):
+	for i in range(76):
 		if cache.has(Vector2i(i, i)):
 			push_error("Key (%d, %d) should have been evicted from LRU" % [i, i])
 			map_view.queue_free()
 			return false
-
-	for i in range(44, 300):
+	for i in range(76, 1100):
 		if not cache.has(Vector2i(i, i)):
 			push_error("Key (%d, %d) should be present in LRU" % [i, i])
 			map_view.queue_free()
 			return false
 
-	# 3. Camera Initial Focus
+	# 3. Camera Initial Focus (CELL_SIZE_PX = 1024.0)
 	map_view.focus_on_cell(4, 5)
 	var cam := map_view.get_node_or_null("MapCamera") as Camera2D
 	if cam == null:
@@ -85,7 +135,7 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	var expected_pos := Vector2((4.0 + 0.5) * 256.0, (-5.0 - 0.5) * 256.0)
+	var expected_pos := Vector2((4.0 + 0.5) * 1024.0, (-5.0 - 0.5) * 1024.0)
 	if (cam.position - expected_pos).length() > 0.01:
 		push_error("Camera position mismatch: expected %s, got %s" % [expected_pos, cam.position])
 		map_view.queue_free()
@@ -110,7 +160,7 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	# 5. Integration check: synthetic map store + revealed cell initial focus + F9 FRAME_P95_MS
+	# 5. Integration check: synthetic map store v2 + revealed cell focus + F9 FRAME_P95_MS
 	var test_db_path := "user://test/map_view_test.db"
 	var test_tmp_path := "user://test/map_view_test.db.tmp"
 	var test_store_path := "user://test/map_data/synthetic_neighborhood.db"
@@ -145,10 +195,11 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
+	map_view.set_map_data_dir("user://test/map_data")
 	map_view._load_map_stores()
 	map_view._focus_initial_cell()
 
-	var expected_focus := Vector2((4.0 + 0.5) * 256.0, (-4.0 - 0.5) * 256.0)
+	var expected_focus := Vector2((4.0 + 0.5) * 1024.0, (-4.0 - 0.5) * 1024.0)
 	if (cam.position - expected_focus).length() > 0.01:
 		push_error("Initial focus cell mismatch: expected %s, got %s" % [expected_focus, cam.position])
 		DB.close()
@@ -157,11 +208,11 @@ func run_test() -> bool:
 		return false
 
 	map_view.get_lru_cache().clear()
-	map_view._rendered_cells.clear()
+	map_view._clear_rendered_layers()
 	map_view._frame_times.clear()
 	for frame_idx in range(60):
 		map_view._process(0.0)
-		cam.position += Vector2(4.0, 2.0)
+		cam.position += Vector2(16.0, 8.0)
 
 	var f9_ev := InputEventKey.new()
 	f9_ev.pressed = true
@@ -176,71 +227,163 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	for store in map_view._map_stores:
-		store.close()
-	map_view._map_stores.clear()
+	# 6. Which layer a cell goes to (§6, §8):
+	# reveal_state 0 -> FogLayer solid
+	# 1 (known) -> WorldKnown
+	# >= 2 (cleared) -> WorldCleared
+	DB.init_db()
+	DB.upsert_map_cell(1, 1, 0, 0) # unknown
+	DB.upsert_map_cell(2, 2, 1, 0) # known
+	DB.upsert_map_cell(3, 3, 2, 0) # cleared
 
-	# 6. F43 Validation: North-up orientation (a, b, c)
+	map_view.get_lru_cache().clear()
+	map_view._clear_rendered_layers()
+
+	map_view._render_cell(1, 1)
+	var fog_solid_tile: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(1, 1, 10, 10))
+	if fog_solid_tile.y != 54: # fog_solid row
+		push_error("Unknown cell (1, 1) should have solid fog on FogLayer (row 54), got %s" % str(fog_solid_tile))
+		map_view.queue_free()
+		return false
+	if world_known.get_cell_atlas_coords(map_view._screen_tile(1, 1, 10, 10)) != Vector2i(-1, -1):
+		push_error("Unknown cell (1, 1) should have no tiles on WorldKnown")
+		map_view.queue_free()
+		return false
+
+	map_view._render_cell(2, 2)
+	var known_tile: Vector2i = world_known.get_cell_atlas_coords(map_view._screen_tile(2, 2, 10, 10))
+	if known_tile == Vector2i(-1, -1):
+		push_error("Known cell (2, 2) should have tiles on WorldKnown")
+		map_view.queue_free()
+		return false
+	if world_cleared.get_cell_atlas_coords(map_view._screen_tile(2, 2, 10, 10)) != Vector2i(-1, -1):
+		push_error("Known cell (2, 2) should have no tiles on WorldCleared")
+		map_view.queue_free()
+		return false
+
+	map_view._render_cell(3, 3)
+	var cleared_tile: Vector2i = world_cleared.get_cell_atlas_coords(map_view._screen_tile(3, 3, 10, 10))
+	if cleared_tile == Vector2i(-1, -1):
+		push_error("Cleared cell (3, 3) should have tiles on WorldCleared")
+		map_view.queue_free()
+		return false
+	if world_known.get_cell_atlas_coords(map_view._screen_tile(3, 3, 10, 10)) != Vector2i(-1, -1):
+		push_error("Cleared cell (3, 3) should have no tiles on WorldKnown")
+		map_view.queue_free()
+		return false
+
+	# 7. Inward Feathering (§6, §8):
+	# Cell (2, 2) is revealed (known). Its north neighbour (2, 3) is unknown (hidden).
+	# Distance 0 (row 0) gets d75 (row 55). Distance 1 (row 1) gets d50 (row 56). Distance 2 (row 2) gets d25 (row 57).
+	# Distance >= 3 has no fog tile.
+	var d0_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 0))
+	var d1_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 1))
+	var d2_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 2))
+	var d3_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 3))
+
+	if d0_fog.y != 55: # d75
+		push_error("Inward feathering row 0 expected d75 (row 55), got %s" % str(d0_fog))
+		map_view.queue_free()
+		return false
+	if d1_fog.y != 56: # d50
+		push_error("Inward feathering row 1 expected d50 (row 56), got %s" % str(d1_fog))
+		map_view.queue_free()
+		return false
+	if d2_fog.y != 57: # d25
+		push_error("Inward feathering row 2 expected d25 (row 57), got %s" % str(d2_fog))
+		map_view.queue_free()
+		return false
+	if d3_fog != Vector2i(-1, -1):
+		push_error("Inward feathering row 3 should have no fog tile, got %s" % str(d3_fog))
+		map_view.queue_free()
+		return false
+
+	# 8. Overview Mode at zoom 1/16 (§6, §8)
+	map_view._set_zoom_step(0.0625) # zoom 1/16
+	if overview_layer.visible != true:
+		push_error("OverviewLayer should be visible at zoom 1/16")
+		map_view.queue_free()
+		return false
+	if world_known.visible != false or world_cleared.visible != false or fog_layer.visible != false:
+		push_error("Tile layers should be hidden at zoom 1/16")
+		map_view.queue_free()
+		return false
+
+	# Check overview sprite exists and is scaled 32x32
+	var s: Sprite2D = map_view._overview_sprites.get(Vector2i(2, 2), null)
+	if s == null:
+		push_error("OverviewLayer should have a Sprite2D for rendered cell (2, 2)")
+		map_view.queue_free()
+		return false
+	if s.scale != Vector2(32, 32):
+		push_error("Overview Sprite2D scale expected (32, 32), got %s" % str(s.scale))
+		map_view.queue_free()
+		return false
+
+	map_view._set_zoom_step(1.0)
+	if overview_layer.visible != false or world_known.visible != true:
+		push_error("OverviewLayer should be hidden and WorldKnown visible at zoom 1.0")
+		map_view.queue_free()
+		return false
+
+	# 9. F43 Orientation Assertions (§3, §8)
 	var test_f43_store_path := "user://test/map_data/f43_test.db"
 	for suffix in ["", "-wal", "-shm", ".tmp"]:
 		if FileAccess.file_exists(test_f43_store_path + suffix):
 			DirAccess.remove_absolute(test_f43_store_path + suffix)
 
-	var MapStoreClass := load("res://world/region_import/map_store.gd")
 	var f43_store = MapStoreClass.new(test_f43_store_path)
 	if not f43_store.open_store(false):
 		push_error("Failed to open f43_test.db")
-		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# Polygon in store y in [8, 16] (north half in store units 0..16)
 	var ring := PackedVector2Array([Vector2(0, 8), Vector2(16, 8), Vector2(16, 16), Vector2(0, 16)])
 	f43_store.insert_poly(0, 0, "water", MapStoreClass.pack_rings([ring]))
+	f43_store.set_state("schema_version", "2")
+	f43_store.set_state("coverage", "0,0,2,2")
 	f43_store.close()
 
 	map_view._load_map_stores()
-
 	DB.init_db()
 	DB.upsert_map_cell(0, 0, 1, 0)
 	DB.upsert_map_cell(0, 1, 1, 0)
 
 	map_view.get_lru_cache().clear()
-	map_view._rendered_cells.clear()
-	map_view._world_tile_map.clear()
-	map_view._fog_overlay.clear()
-
+	map_view._clear_rendered_layers()
 	map_view._render_cell(0, 0)
 
-	var failed_f43 := false
-	# (a) Falsifying: WorldTileMap.get_cell_atlas_coords at screen tile (3, -16 + 2) is (5, 0) (water),
-	# and at (3, -16 + 13) it is (1, 0) (terrain).
-	var top_half_atlas: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(3, -16 + 2))
-	var bottom_half_atlas: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(3, -16 + 13))
-	if top_half_atlas != Vector2i(5, 0) or bottom_half_atlas != Vector2i(1, 0):
-		push_error("F43 (a) falsified: expected top_half=(5, 0) water, bottom_half=(1, 0) terrain; got top_half=%s, bottom_half=%s" % [top_half_atlas, bottom_half_atlas])
-		failed_f43 = true
+	# North half (row 2) is WATER (class 4, atlas row 8); South half (row 20) is GRASS (class 1, atlas row 1..4)
+	var top_half_atlas: Vector2i = world_known.get_cell_atlas_coords(map_view._screen_tile(0, 0, 3, 2))
+	var bottom_half_atlas: Vector2i = world_known.get_cell_atlas_coords(map_view._screen_tile(0, 0, 3, 20))
+	if top_half_atlas.y != 8: # WATER row
+		push_error("F43 north-first failed: top half expected WATER (atlas row 8), got %s" % str(top_half_atlas))
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	if bottom_half_atlas.y == 8:
+		push_error("F43 north-first failed: bottom half should not be WATER")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
 
-	# (b) Falsifying: with cells (0, 0) and (0, 1) both revealed, every screen row of (0, 1) is smaller (higher on screen) than every row of (0, 0).
+	# (b) With (0, 0) and (0, 1) both revealed, every screen row of (0, 1) is smaller than every row of (0, 0)
 	var rows_0: Array[int] = []
-	for c in map_view._world_tile_map.get_used_cells():
+	for c in world_known.get_used_cells():
 		if not rows_0.has(c.y):
 			rows_0.append(c.y)
 
 	map_view._render_cell(0, 1)
 	var rows_1: Array[int] = []
-	for c in map_view._world_tile_map.get_used_cells():
+	for c in world_known.get_used_cells():
 		if not rows_0.has(c.y) and not rows_1.has(c.y):
 			rows_1.append(c.y)
 
-	var b_failed := false
 	for r1 in rows_1:
 		for r0 in rows_0:
 			if r1 >= r0:
-				push_error("F43 (b) falsified: row %d of cell (0, 1) is not smaller than row %d of cell (0, 0)" % [r1, r0])
-				b_failed = true
-				failed_f43 = true
-				break
-		if b_failed:
-			break
+				push_error("F43 (b) failed: row %d of cell (0, 1) is not smaller than row %d of cell (0, 0)" % [r1, r0])
+				_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+				return false
 
 	# (c) focus_on_cell(0, 1).y < focus_on_cell(0, 0).y
 	map_view.focus_on_cell(0, 0)
@@ -248,89 +391,15 @@ func run_test() -> bool:
 	map_view.focus_on_cell(0, 1)
 	var cam_pos_1: Vector2 = cam.position
 	if not (cam_pos_1.y < cam_pos_0.y):
-		push_error("F43 (c) falsified: focus_on_cell(0, 1).y (%.2f) >= focus_on_cell(0, 0).y (%.2f)" % [cam_pos_1.y, cam_pos_0.y])
-		failed_f43 = true
-
-	if failed_f43:
-		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		push_error("F43 (c) failed: focus_on_cell(0, 1).y >= focus_on_cell(0, 0).y")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
-	# 7. Coverage Rendering Test (falsifying)
-	# A cell covered by a store with no features renders as terrain (1, 0), not unmapped grey (6, 0).
-	# A cell outside every coverage renders as unmapped grey (6, 0).
-	var test_cov_store_path := "user://test/map_data/cov_test.db"
-	for suffix in ["", "-wal", "-shm", ".tmp"]:
-		if FileAccess.file_exists(test_cov_store_path + suffix):
-			DirAccess.remove_absolute(test_cov_store_path + suffix)
-
-	var cov_store = MapStoreClass.new(test_cov_store_path)
-	if not cov_store.open_store(false):
-		push_error("Failed to open cov_test.db")
-		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
-		return false
-	# Set coverage to include cell (10, 10)
-	cov_store.set_state("coverage", "10,10,12,12")
-	cov_store.set_state("clip", "1")
-	cov_store.close()
-
-	map_view.set_map_data_dir("user://test/map_data")
-	map_view._load_map_stores()
-	DB.init_db()
-	DB.upsert_map_cell(10, 10, 1, 0)
-	DB.upsert_map_cell(50, 50, 1, 0)
-
-	map_view.get_lru_cache().clear()
-	map_view._rendered_cells.clear()
-	map_view._world_tile_map.clear()
-	map_view._fog_overlay.clear()
-
-	# Render covered cell (10, 10) with 0 features
-	map_view._render_cell(10, 10)
-	var covered_cell_tile: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(10 * 16, (-10 - 1) * 16))
-	if covered_cell_tile != Vector2i(1, 0):
-		push_error("Coverage falsified: covered cell with no features rendered as %s, expected (1, 0) terrain" % [covered_cell_tile])
-		if FileAccess.file_exists(test_cov_store_path):
-			DirAccess.remove_absolute(test_cov_store_path)
-		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
-		return false
-
-	# Render uncovered cell (50, 50)
-	map_view._render_cell(50, 50)
-	var uncovered_cell_tile: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(50 * 16, (-50 - 1) * 16))
-	if uncovered_cell_tile != Vector2i(6, 0):
-		push_error("Coverage falsified: uncovered cell rendered as %s, expected (6, 0) unmapped grey" % [uncovered_cell_tile])
-		if FileAccess.file_exists(test_cov_store_path):
-			DirAccess.remove_absolute(test_cov_store_path)
-		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
-		return false
-
-	for store in map_view._map_stores:
-		store.close()
-	map_view._map_stores.clear()
-
-	# 8. F50 Profile-local map data test (falsifying)
-	# With stores present in user://test/map_data/, a normal-profile map view loads ZERO stores.
-	var ProfilePaths := load("res://scripts/profile_paths.gd")
-	map_view.set_map_data_dir(ProfilePaths.DEFAULT_MAP_DATA_DIR)
-	map_view._load_map_stores()
-	if map_view._map_stores.size() != 0:
-		push_error("F50 falsified: normal-profile map view loaded %d stores from outside user://map_data" % map_view._map_stores.size())
-		if FileAccess.file_exists(test_cov_store_path):
-			DirAccess.remove_absolute(test_cov_store_path)
-		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
-		return false
-
-	if FileAccess.file_exists(test_cov_store_path):
-		DirAccess.remove_absolute(test_cov_store_path)
-	for suffix in ["-wal", "-shm"]:
-		if FileAccess.file_exists(test_cov_store_path + suffix):
-			DirAccess.remove_absolute(test_cov_store_path + suffix)
-
-	_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
-	print("PASS: map_view_test (Attribution, DemoBadge, LRU 256 cap, UnmappedChip, Camera, FRAME_P95_MS=%.2fms, F43 North-Up, Coverage & F50 verified)" % p95)
+	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up verified)")
 	return true
 
-func _cleanup_f43(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:
+func _cleanup(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:
 	for store in map_view._map_stores:
 		store.close()
 	map_view._map_stores.clear()

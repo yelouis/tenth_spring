@@ -21,10 +21,15 @@ def parse_args():
     )
     parser.add_argument(
         "--zoom",
-        type=int,
+        type=str,
         action="append",
         dest="zooms",
-        help="Zoom level to capture (can be specified multiple times, e.g. --zoom 1 --zoom 3). Defaults to [1]."
+        help="Zoom level to capture (can be specified multiple times, e.g. --zoom 1 --zoom 0.0625). Defaults to ['1']."
+    )
+    parser.add_argument(
+        "--preview-cleared",
+        action="store_true",
+        help="Preview cleared look in demo mode."
     )
     parser.add_argument(
         "--frames",
@@ -79,10 +84,11 @@ def main():
         print("[FAIL] Godot executable not found in PATH or GODOT_BIN", file=sys.stderr)
         sys.exit(1)
 
-    zooms = args.zooms if args.zooms else [1]
+    zooms = args.zooms if args.zooms else ["1"]
 
     for z in zooms:
-        out_png = os.path.join(real_out, f"shot_z{z}.png")
+        suffix = "_cleared" if args.preview_cleared else ""
+        out_png = os.path.join(real_out, f"shot_z{z}{suffix}.png")
         godot_cmd = [
             godot_bin,
             "--path",
@@ -95,6 +101,8 @@ def main():
             f"--zoom={z}",
             f"--frames={args.frames}",
         ]
+        if args.preview_cleared:
+            godot_cmd.append("--preview-cleared")
         print(f"Running screenshot capture at zoom {z}: {' '.join(godot_cmd)}")
         res = subprocess.run(godot_cmd, cwd=repo_root)
         if res.returncode != 0:

@@ -1,25 +1,60 @@
 extends Node2D
 
-# map_view.gd — Map View Scene Controller (Plan §7–8, Item 9)
-# Contract: docs/implementation_plan_world_generation.md §7–8 & docs/agent_execution_guide.md §6.7
+# map_view.gd — Map View Scene Controller (Slice 2, Renderer v2)
+# Contract: docs/implementation_plan_world_generation_slice2.md §6 & docs/agent_execution_guide.md §7.5
 
-const TileSynth := preload("res://world/tile_synth/tile_synth.gd")
+const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const MapFetcher := preload("res://world/region_import/map_fetcher.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
+const AssetDB := preload("res://rom/asset_db.gd")
 
-const CELL_SIZE_PX := 256.0
-const TILE_SIZE_PX := 16
-const PAN_SPEED := 400.0
-const MAX_CACHED_CELLS := 256
+const CELL_SIZE_PX := 1024.0
+const TILE_SIZE_PX := 32
+const CELL_TILES := 32
+const PAN_SPEED := 600.0
 
-# LRU Cache for decoded/synthesized cell buffers (Plan §9.2)
+const MAX_SYNTH_CELLS := 1024
+const MAX_STORE_CELLS := 256
+const SYNTH_BUDGET_USEC := 8000 # 8 ms budget per frame
+
+const ZOOM_STEPS: Array = [0.0625, 0.25, 1.0, 2.0]
+
+# Palette colors for overview texture (§5.3)
+const MAP_COLORS := {
+	0: Color("#2a3242"),  # VOID
+	1: Color("#78c850"),  # GRASS
+	2: Color("#4f9a3a"),  # TALL_GRASS
+	3: Color("#3a7d3a"),  # TREE
+	4: Color("#4a90d8"),  # WATER
+	5: Color("#e8d8a0"),  # SAND
+	6: Color("#6a9a6a"),  # MARSH
+	7: Color("#d8c090"),  # PATH
+	8: Color("#8a8a90"),  # ROAD
+	9: Color("#6b6b6b"),  # RAIL
+	10: Color("#b07840"), # BRIDGE
+	11: Color("#b0b0b8"), # PLAZA
+	13: Color("#e8e0d0"), # WALL
+	14: Color("#7a5028"), # DOOR
+	15: Color("#f0f0f0"), # FENCE
+	16: Color("#f85878"), # FLOWERS
+	17: Color("#a0a0a8"), # GRAVE
+	18: Color("#b07840"), # SIGN
+	19: Color("#a8c060"), # CROP
+}
+
+const ROOF_BASE_COLORS := [
+	Color("#c0504a"), Color("#3a9a9a"), Color("#5a9a4a"), Color("#8a5ab0"),
+	Color("#4a78c8"), Color("#e08a3a"), Color("#b090c8"), Color("#8a8a90")
+]
+
+# Generic LRU Cache
 class LruCache:
-	var capacity: int = MAX_CACHED_CELLS
+	var capacity: int = 256
 	var _map: Dictionary = {}
 	var _order: Array[Vector2i] = []
 
-	func _init(cap: int = MAX_CACHED_CELLS) -> void:
+	func _init(cap: int = 256) -> void:
 		capacity = cap
 
 	func get_item(key: Vector2i):
@@ -48,12 +83,18 @@ class LruCache:
 		_map.clear()
 		_order.clear()
 
-var lru_cache := LruCache.new(MAX_CACHED_CELLS)
+var _synth_cache := LruCache.new(MAX_SYNTH_CELLS)
+var _store_cache := LruCache.new(MAX_STORE_CELLS)
 var _rendered_cells: Dictionary = {} # Vector2i -> bool
 
 var _camera: Camera2D = null
-var _world_tile_map: TileMapLayer = null
-var _fog_overlay: TileMapLayer = null
+var _background_layer: ColorRect = null
+var _world_known: TileMapLayer = null
+var _world_cleared: TileMapLayer = null
+var _fog_layer: TileMapLayer = null
+var _overview_layer: Node2D = null
+var _overview_sprites: Dictionary = {} # Vector2i -> Sprite2D
+
 var _demo_badge: Label = null
 var _attribution_label: Label = null
 var _unmapped_chip: PanelContainer = null
@@ -63,6 +104,7 @@ var _download_dialog: ConfirmationDialog = null
 var _install_panel: PanelContainer = null
 var _install_label: Label = null
 var _cancel_button: Button = null
+var _sign_tooltip: Label = null
 
 var _map_fetcher = MapFetcher.new()
 var _pending_region: Dictionary = {}
@@ -78,17 +120,24 @@ var _pending_lookup_result: Variant = null
 
 var _is_dragging: bool = false
 var _drag_start_pos: Vector2 = Vector2.ZERO
-var _current_zoom_step: int = 1 # 1, 2, 3
+var _current_zoom_step: float = 1.0 # 0.0625, 0.25, 1.0, 2.0
+var _preview_cleared: bool = false
 
 var _frame_times: Array[float] = []
 var _is_demo: bool = false
 var _map_stores: Array[MapStore] = []
 var _map_data_dir: String = ""
 
-# Screenshot mode state (§7.4 rule 3)
+# Atlas lookup mapping
+var _class_variant_to_row: Dictionary = {}
+var _class_any_variant: Dictionary = {}
+var _masked_classes: Dictionary = {}
+var _fog_rows: Dictionary = {}
+
+# Screenshot mode state
 var _screenshot_mode: bool = false
 var _screenshot_path: String = ""
-var _screenshot_zoom: int = 1
+var _screenshot_zoom: float = 1.0
 var _screenshot_target_frames: int = 10
 var _screenshot_frames_waited: int = 0
 var _screenshot_saved: bool = false
@@ -101,8 +150,13 @@ func _ready() -> void:
 		_camera.limit_top = -30000000
 		_camera.limit_right = 30000000
 		_camera.limit_bottom = 30000000
-	_world_tile_map = get_node_or_null("WorldTileMap") as TileMapLayer
-	_fog_overlay = get_node_or_null("FogOverlayLayer") as TileMapLayer
+
+	_background_layer = get_node_or_null("BackgroundLayer") as ColorRect
+	_world_known = get_node_or_null("WorldKnown") as TileMapLayer
+	_world_cleared = get_node_or_null("WorldCleared") as TileMapLayer
+	_fog_layer = get_node_or_null("FogLayer") as TileMapLayer
+	_overview_layer = get_node_or_null("OverviewLayer") as Node2D
+
 	_demo_badge = get_node_or_null("AttributionUI/DemoBadge") as Label
 	_attribution_label = get_node_or_null("AttributionUI/AttributionLabel") as Label
 	_unmapped_chip = get_node_or_null("AttributionUI/UnmappedChip") as PanelContainer
@@ -122,96 +176,185 @@ func _ready() -> void:
 		_cancel_button = _install_panel.get_node_or_null("HBox/CancelButton") as Button
 		if _cancel_button != null:
 			_cancel_button.pressed.connect(_on_install_cancel_pressed)
+	_sign_tooltip = get_node_or_null("AttributionUI/SignTooltip") as Label
 
 	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
 	_init_tile_sets()
 	_load_map_stores()
+	_set_zoom_step(1.0)
 	_focus_initial_cell()
 
 func _check_demo_mode() -> void:
 	var profile = ProfilePaths.resolve_from_cmdline()
 	_is_demo = profile.get("is_demo", false)
+
+	var preview_cleared_arg := false
 	for arg in OS.get_cmdline_user_args():
 		if arg == "--demo":
 			_is_demo = true
+		elif arg == "--preview-cleared":
+			preview_cleared_arg = true
 	for arg in OS.get_cmdline_args():
 		if arg == "--demo":
 			_is_demo = true
+		elif arg == "--preview-cleared":
+			preview_cleared_arg = true
 
+	if preview_cleared_arg:
+		if _is_demo:
+			_preview_cleared = true
+		else:
+			print("map: --preview-cleared needs --demo")
+			_preview_cleared = false
+
+	_update_demo_badge()
+
+func _update_demo_badge() -> void:
 	if _demo_badge != null:
-		_demo_badge.visible = _is_demo
+		if _is_demo:
+			_demo_badge.visible = true
+			if _preview_cleared:
+				_demo_badge.text = "DEMO MODE — preview: cleared look"
+			else:
+				_demo_badge.text = "DEMO MODE"
+		else:
+			_demo_badge.visible = false
 
 func set_demo_mode(enabled: bool) -> void:
 	_is_demo = enabled
-	if _demo_badge != null:
-		_demo_badge.visible = enabled
+	_update_demo_badge()
+
+func set_preview_cleared(enabled: bool) -> void:
+	if enabled and not _is_demo:
+		print("map: --preview-cleared needs --demo")
+		_preview_cleared = false
+	else:
+		_preview_cleared = enabled
+	_update_demo_badge()
+	_clear_rendered_layers()
+	_update_frustum_culling()
+
+func _clear_rendered_layers() -> void:
+	if _world_known != null:
+		_world_known.clear()
+	if _world_cleared != null:
+		_world_cleared.clear()
+	if _fog_layer != null:
+		_fog_layer.clear()
+	for s in _overview_sprites.values():
+		s.queue_free()
+	_overview_sprites.clear()
+	_rendered_cells.clear()
 
 func _init_tile_sets() -> void:
-	# 1. World TileSet: 6 palette tiles + 1 unmapped tile
-	var world_ts := TileSet.new()
-	world_ts.tile_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
+	var atlas_data: Variant = AssetDB.tile_atlas()
+	var texture: Texture2D = null
+	var json_dict: Dictionary = {}
 
-	var world_img := Image.create(TILE_SIZE_PX * 7, TILE_SIZE_PX, false, Image.FORMAT_RGBA8)
-	var world_colors = [
-		TileSynth.PALETTE[TileSynth.TILE_VOID],     # 0: Void #0d1119
-		TileSynth.PALETTE[TileSynth.TILE_TERRAIN],  # 1: Terrain #475e46
-		TileSynth.PALETTE[TileSynth.TILE_ROAD],     # 2: Road #5a5d64
-		TileSynth.PALETTE[TileSynth.TILE_BUILDING], # 3: Building #2e3238
-		TileSynth.PALETTE[TileSynth.TILE_PARK],     # 4: Park #3e7d44
-		TileSynth.PALETTE[TileSynth.TILE_WATER],    # 5: Water #1f385c
-		Color("#2a3242")                           # 6: Unmapped grey
-	]
-	for i in 7:
-		world_img.fill_rect(Rect2i(i * TILE_SIZE_PX, 0, TILE_SIZE_PX, TILE_SIZE_PX), world_colors[i])
-	var world_tex := ImageTexture.create_from_image(world_img)
+	if atlas_data != null and atlas_data is Dictionary and atlas_data.has("texture") and atlas_data.has("json"):
+		texture = atlas_data["texture"]
+		json_dict = atlas_data["json"]
+	else:
+		if ResourceLoader.exists("res://assets/tiles/placeholder_v1.png"):
+			texture = load("res://assets/tiles/placeholder_v1.png") as Texture2D
+		if texture == null:
+			var abs_p := ProjectSettings.globalize_path("res://assets/tiles/placeholder_v1.png")
+			if FileAccess.file_exists(abs_p):
+				var img := Image.load_from_file(abs_p)
+				if img != null and not img.is_empty():
+					texture = ImageTexture.create_from_image(img)
 
-	var world_source := TileSetAtlasSource.new()
-	world_source.texture = world_tex
-	world_source.texture_region_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
-	for i in 7:
-		world_source.create_tile(Vector2i(i, 0))
-	world_ts.add_source(world_source, 0)
-	if _world_tile_map != null:
-		_world_tile_map.tile_set = world_ts
+		var json_path := "res://assets/tiles/placeholder_v1.json"
+		var json_text := ""
+		if FileAccess.file_exists(json_path):
+			var f := FileAccess.open(json_path, FileAccess.READ)
+			if f != null:
+				json_text = f.get_as_text()
+				f.close()
+		else:
+			var abs_jp := ProjectSettings.globalize_path(json_path)
+			if FileAccess.file_exists(abs_jp):
+				var f := FileAccess.open(abs_jp, FileAccess.READ)
+				if f != null:
+					json_text = f.get_as_text()
+					f.close()
+		if not json_text.is_empty():
+			var parsed = JSON.parse_string(json_text)
+			if parsed is Dictionary:
+				json_dict = parsed
 
-	# 2. Fog TileSet:
-	# Fog 0: Solid #0d1119 (unknown)
-	# Fog 1: Dark overlay #141923 at 0.55 opacity (known)
-	# Fog 2: Fully transparent (familiar/mastered)
-	var fog_ts := TileSet.new()
-	fog_ts.tile_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
+	_class_variant_to_row.clear()
+	_class_any_variant.clear()
+	_masked_classes.clear()
+	_fog_rows = json_dict.get("fog_rows", {
+		"solid": 54,
+		"d75": 55,
+		"d50": 56,
+		"d25": 57
+	})
 
-	var fog_img := Image.create(TILE_SIZE_PX * 3, TILE_SIZE_PX, false, Image.FORMAT_RGBA8)
-	var fog_colors = [
-		Color("#0d1119"),                          # 0: Unknown fog (solid)
-		Color(0.078, 0.098, 0.137, 0.55),          # 1: Known fog (dark overlay #141923 at 0.55 opacity)
-		Color(0.0, 0.0, 0.0, 0.0)                  # 2: Cleared fog (transparent)
-	]
-	for i in 3:
-		fog_img.fill_rect(Rect2i(i * TILE_SIZE_PX, 0, TILE_SIZE_PX, TILE_SIZE_PX), fog_colors[i])
-	var fog_tex := ImageTexture.create_from_image(fog_img)
+	var rows_list: Array = json_dict.get("rows", [])
+	var max_row := 57
+	for item in rows_list:
+		if item is Dictionary:
+			var c: int = item.get("class", 0)
+			var v: int = item.get("variant", 0)
+			var r: int = item.get("row", 0)
+			var m: bool = item.get("masked", false)
+			_masked_classes[c] = m
+			_class_variant_to_row[Vector2i(c, v)] = r
+			if item.get("any_variant", false):
+				_class_any_variant[c] = r
+			if r > max_row:
+				max_row = r
 
-	var fog_source := TileSetAtlasSource.new()
-	fog_source.texture = fog_tex
-	fog_source.texture_region_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
-	for i in 3:
-		fog_source.create_tile(Vector2i(i, 0))
-	fog_ts.add_source(fog_source, 0)
-	if _fog_overlay != null:
-		_fog_overlay.tile_set = fog_ts
+	var tileset := TileSet.new()
+	tileset.tile_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
+
+	var source := TileSetAtlasSource.new()
+	source.texture = texture
+	source.texture_region_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
+	if texture != null:
+		for r in range(max_row + 1):
+			for c in range(16):
+				var coord := Vector2i(c, r)
+				if not source.has_tile(coord):
+					source.create_tile(coord)
+	tileset.add_source(source, 0)
+
+	if _world_known != null:
+		_world_known.tile_set = tileset
+	if _world_cleared != null:
+		_world_cleared.tile_set = tileset
+	if _fog_layer != null:
+		_fog_layer.tile_set = tileset
+
+func get_atlas_coords(cls: int, variant: int, mask: int) -> Vector2i:
+	var row := 0
+	if _class_any_variant.has(cls):
+		row = _class_any_variant[cls]
+	elif _class_variant_to_row.has(Vector2i(cls, variant)):
+		row = _class_variant_to_row[Vector2i(cls, variant)]
+	elif _class_variant_to_row.has(Vector2i(cls, 0)):
+		row = _class_variant_to_row[Vector2i(cls, 0)]
+
+	var col := mask if _masked_classes.get(cls, false) else 0
+	return Vector2i(col, row)
 
 func set_map_data_dir(dir_path: String) -> void:
 	_map_data_dir = dir_path
 	_load_map_stores()
-	lru_cache.clear()
-	_rendered_cells.clear()
+	_synth_cache.clear()
+	_store_cache.clear()
+	_clear_rendered_layers()
 	_update_frustum_culling()
 
 func _load_map_stores() -> void:
 	for s in _map_stores:
 		s.close()
 	_map_stores.clear()
+	_store_cache.clear()
 	var target_dir := _map_data_dir
 	if target_dir.is_empty():
 		target_dir = ProfilePaths.get_map_data_dir()
@@ -280,11 +423,38 @@ func _process(delta: float) -> void:
 	if lookup_res != null and lookup_res is Dictionary:
 		_on_region_lookup_done(lookup_res)
 	_poll_unmapped_cells(delta)
+	_update_sign_tooltip()
 	var elapsed_ms := float(Time.get_ticks_usec() - t0) / 1000.0
 	var sample_ms := delta * 1000.0 if delta > 0.0 else elapsed_ms
 	_frame_times.append(sample_ms)
 	if _frame_times.size() > 120:
 		_frame_times.pop_front()
+
+func _update_sign_tooltip() -> void:
+	if _sign_tooltip == null:
+		return
+
+	var mouse_world := get_global_mouse_position()
+	var st := Vector2i(floori(mouse_world.x / 32.0), floori(mouse_world.y / 32.0))
+	var cx := floori(float(st.x) / 32.0)
+	var col := posmod(st.x, 32)
+	var cell_row := floori(float(st.y) / 32.0)
+	var cy := -cell_row - 1
+	var row := posmod(st.y, 32)
+	var cell := Vector2i(cx, cy)
+
+	if _synth_cache.has(cell):
+		var item = _synth_cache.get_item(cell)
+		if item is Dictionary and item.get("reveal_state", 0) > 0:
+			var signs: Array = item.get("signs", [])
+			for s in signs:
+				if s is Dictionary and s.get("pos", Vector2i(-1, -1)) == Vector2i(col, row):
+					_sign_tooltip.text = s.get("name", "")
+					_sign_tooltip.global_position = get_viewport().get_mouse_position() + Vector2(12, 12)
+					_sign_tooltip.visible = true
+					return
+
+	_sign_tooltip.visible = false
 
 func _poll_unmapped_cells(delta: float) -> void:
 	_unmapped_poll_timer += delta
@@ -359,9 +529,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			else:
 				_is_dragging = false
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
-			_set_zoom_step(_current_zoom_step + 1)
+			_step_zoom(1)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
-			_set_zoom_step(_current_zoom_step - 1)
+			_step_zoom(-1)
 
 	elif event is InputEventMouseMotion and _is_dragging:
 		var mm := event as InputEventMouseMotion
@@ -373,13 +543,32 @@ func _unhandled_input(event: InputEvent) -> void:
 		if ke.pressed and ke.keycode == KEY_F9:
 			print_p95_frame_time()
 
-func _set_zoom_step(step: int) -> void:
-	_current_zoom_step = clampi(step, 1, 3)
+func _step_zoom(direction: int) -> void:
+	var curr_idx := 2
+	for i in range(ZOOM_STEPS.size()):
+		if is_equal_approx(_current_zoom_step, float(ZOOM_STEPS[i])):
+			curr_idx = i
+			break
+	var next_idx: int = clampi(curr_idx + direction, 0, ZOOM_STEPS.size() - 1)
+	_set_zoom_step(float(ZOOM_STEPS[next_idx]))
+
+func _set_zoom_step(zoom_val: float) -> void:
+	_current_zoom_step = zoom_val
 	if _camera != null:
-		_camera.zoom = Vector2(_current_zoom_step, _current_zoom_step)
+		_camera.zoom = Vector2(zoom_val, zoom_val)
+
+	var show_overview := (_current_zoom_step < 1.0)
+	if _overview_layer != null:
+		_overview_layer.visible = show_overview
+	if _world_known != null:
+		_world_known.visible = not show_overview
+	if _world_cleared != null:
+		_world_cleared.visible = not show_overview
+	if _fog_layer != null:
+		_fog_layer.visible = not show_overview
 
 func _update_frustum_culling() -> void:
-	if _camera == null or _world_tile_map == null or _fog_overlay == null:
+	if _camera == null:
 		return
 
 	var vp_size := get_viewport_rect().size / _camera.zoom.x
@@ -397,6 +586,7 @@ func _update_frustum_culling() -> void:
 
 	var visible_cell_set: Dictionary = {}
 	var has_unmapped_revealed_cell := false
+	var frame_start_usec := Time.get_ticks_usec()
 
 	for cy in range(min_cy, max_cy + 1):
 		for cx in range(min_cx, max_cx + 1):
@@ -404,12 +594,14 @@ func _update_frustum_culling() -> void:
 			visible_cell_set[cell] = true
 
 			if not _rendered_cells.has(cell):
-				var is_unmapped := _render_cell(cx, cy)
+				var budget_exceeded: bool = (Time.get_ticks_usec() - frame_start_usec > SYNTH_BUDGET_USEC)
+				var is_unmapped: bool = _render_cell(cx, cy, budget_exceeded)
 				if is_unmapped:
 					has_unmapped_revealed_cell = true
-				_rendered_cells[cell] = true
+				if not budget_exceeded:
+					_rendered_cells[cell] = true
 
-	# Unrender cells that scrolled out of view (Plan §7.3)
+	# Unrender cells that scrolled out of view
 	var to_remove: Array[Vector2i] = []
 	for cell in _rendered_cells.keys():
 		if not visible_cell_set.has(cell):
@@ -422,13 +614,46 @@ func _update_frustum_culling() -> void:
 		_unmapped_chip.visible = has_unmapped_revealed_cell
 
 func _screen_tile(cx: int, cy: int, tx: int, ty: int) -> Vector2i:
-	return Vector2i(cx * 16 + tx, (-cy - 1) * 16 + (15 - ty))
+	return Vector2i(cx * 32 + tx, (-cy - 1) * 32 + ty)
 
-func _render_cell(cx: int, cy: int) -> bool:
+func _is_cell_hidden(cx: int, cy: int) -> bool:
+	var db = _get_db()
+	if db != null and db.is_open():
+		var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cx, cy])
+		if not rows.is_empty():
+			return int(rows[0].get("reveal_state", 0)) == 0
+	return true # Unknown if not in DB
+
+func _get_cell_features(cell_x: int, cell_y: int) -> Dictionary:
+	var key := Vector2i(cell_x, cell_y)
+	if _store_cache.has(key):
+		return _store_cache.get_item(key)
+
+	var features := {"polys": [], "lines": [], "places": [], "sea": 0, "has_data": false, "covered": false, "is_covered": false}
+	for store in _map_stores:
+		var polys = store.get_features_poly(cell_x, cell_y)
+		var lines = store.get_features_line(cell_x, cell_y)
+		var places = store.get_place_nodes(cell_x, cell_y)
+		if not polys.is_empty() or not lines.is_empty() or not places.is_empty():
+			features["polys"].append_array(polys)
+			features["lines"].append_array(lines)
+			features["places"].append_array(places)
+			features["has_data"] = true
+		if store.covers_cell(cell_x, cell_y):
+			features["covered"] = true
+			features["is_covered"] = true
+			var sea = store.get_cell_sea(cell_x, cell_y)
+			if sea > 0:
+				features["sea"] = sea
+
+	_store_cache.put(key, features)
+	return features
+
+func _render_cell(cx: int, cy: int, budget_exceeded: bool = false) -> bool:
 	var cell := Vector2i(cx, cy)
 
 	# 1. Determine reveal state from DB
-	var reveal_state := 0 # unknown
+	var reveal_state := 0 # 0=unknown, 1=known, 2=cleared
 	var db = _get_db()
 	if db != null and db.is_open():
 		var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cx, cy])
@@ -437,58 +662,145 @@ func _render_cell(cx: int, cy: int) -> bool:
 
 	# 2. Get or synthesize tile buffer
 	var tile_buf: PackedByteArray = PackedByteArray()
+	var signs_list: Array = []
 	var has_map_data := false
+	var overview_tex: ImageTexture = null
 
-	if lru_cache.has(cell):
-		var item = lru_cache.get_item(cell)
+	if _synth_cache.has(cell):
+		var item = _synth_cache.get_item(cell)
 		if item is Dictionary:
 			tile_buf = item.get("buf", PackedByteArray())
+			signs_list = item.get("signs", [])
 			has_map_data = item.get("has_data", false)
+			overview_tex = item.get("tex", null)
+	elif reveal_state > 0 and budget_exceeded:
+		# Exceeded 8ms budget: render solid fog placeholder for this frame
+		_render_solid_fog(cx, cy)
+		return false
 	else:
-		# Search installed map stores
-		var features := {"polys": [], "lines": [], "places": []}
+		# Assemble 3x3 neighbourhood area for TileSynth2
+		var area: Dictionary = {}
 		var is_covered_by_store := false
-		for store in _map_stores:
-			var polys = store.get_features_poly(cx, cy)
-			var lines = store.get_features_line(cx, cy)
-			var places = store.get_place_nodes(cx, cy)
-			if not polys.is_empty() or not lines.is_empty() or not places.is_empty():
-				features["polys"].append_array(polys)
-				features["lines"].append_array(lines)
-				features["places"].append_array(places)
-				has_map_data = true
-			if not is_covered_by_store and store.covers_cell(cx, cy):
-				is_covered_by_store = true
+
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				var n_cell := Vector2i(cx + dx, cy + dy)
+				var n_feat := _get_cell_features(n_cell.x, n_cell.y)
+				area[Vector2i(dx, dy)] = n_feat
+				if n_feat.get("has_data", false):
+					has_map_data = true
+				if n_feat.get("is_covered", false):
+					is_covered_by_store = true
 
 		if has_map_data or is_covered_by_store:
-			tile_buf = TileSynth.synthesize_cell(cx, cy, features, 0)
+			var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area, 0)
+			tile_buf = synth_res.get("tiles", PackedByteArray())
+			signs_list = synth_res.get("signs", [])
 			has_map_data = true
 		else:
-			# Unmapped fill: 16x16 of tile 6
-			tile_buf.resize(256)
-			tile_buf.fill(6) # Tile 6: Unmapped grey
+			# Unmapped fill: 32x32 tiles of VOID (class 0, variant 0, mask 0)
+			tile_buf.resize(32 * 32 * 3)
+			tile_buf.fill(0)
 
-		lru_cache.put(cell, {"buf": tile_buf, "has_data": has_map_data})
+		# Build 32x32 overview ImageTexture
+		var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		var apply_cpu_tint := (reveal_state == 1 and not _preview_cleared)
+		for r in 32:
+			for c in 32:
+				var idx := (r * 32 + c) * 3
+				var cls: int = tile_buf[idx]
+				var v: int = tile_buf[idx + 1]
+				var base_col: Color
+				if reveal_state == 0:
+					base_col = Color("#0d1119")
+				elif cls == 12: # ROOF
+					base_col = ROOF_BASE_COLORS[v % 8]
+				else:
+					base_col = MAP_COLORS.get(cls, Color("#2a3242"))
 
-	# 3. Blit to WorldTileMap
-	for ty in 16:
-		for tx in 16:
-			var tid: int = tile_buf[ty * 16 + tx]
-			_world_tile_map.set_cell(_screen_tile(cx, cy, tx, ty), 0, Vector2i(tid, 0))
+				if apply_cpu_tint:
+					var g := 0.299 * base_col.r + 0.587 * base_col.g + 0.114 * base_col.b
+					base_col = Color(
+						(g * 0.4 + base_col.r * 0.6) * 0.82,
+						(g * 0.4 + base_col.g * 0.6) * 0.82,
+						(g * 0.4 + base_col.b * 0.6) * 0.82,
+						1.0
+					)
+				img.set_pixel(c, r, base_col)
 
-	# 4. Blit to FogOverlayLayer
-	# Fog state: 0 (unknown), 1 (known), 2 (cleared)
-	var fog_tile := 0
+		overview_tex = ImageTexture.create_from_image(img)
+		_synth_cache.put(cell, {
+			"buf": tile_buf,
+			"signs": signs_list,
+			"has_data": has_map_data,
+			"tex": overview_tex,
+			"reveal_state": reveal_state
+		})
+
+	# 3. Layer placement (§6)
 	if reveal_state == 0:
-		fog_tile = 0 # Unknown solid
-	elif reveal_state == 1:
-		fog_tile = 1 # Known dark overlay
+		# Unknown cell -> FogLayer solid
+		_render_solid_fog(cx, cy)
 	else:
-		fog_tile = 2 # Cleared transparent
+		# Target tilemap layer: WorldCleared if cleared or --preview-cleared, else WorldKnown
+		var target_layer: TileMapLayer = _world_cleared if (_preview_cleared or reveal_state >= 2) else _world_known
+		var other_layer: TileMapLayer = _world_known if target_layer == _world_cleared else _world_cleared
 
-	for ty in 16:
-		for tx in 16:
-			_fog_overlay.set_cell(_screen_tile(cx, cy, tx, ty), 0, Vector2i(fog_tile, 0))
+		for ty in 32:
+			for tx in 32:
+				var idx := (ty * 32 + tx) * 3
+				var cls: int = tile_buf[idx]
+				var v: int = tile_buf[idx + 1]
+				var mask: int = tile_buf[idx + 2]
+				var st := _screen_tile(cx, cy, tx, ty)
+				target_layer.set_cell(st, 0, get_atlas_coords(cls, v, mask))
+				other_layer.erase_cell(st)
+
+		# 4. Inward feathering on FogLayer (§6)
+		# A tile that is 0, 1, or 2 tiles from an edge shared with an unknown neighbour gets a dither tile
+		var n_hidden := _is_cell_hidden(cx, cy + 1)
+		var e_hidden := _is_cell_hidden(cx + 1, cy)
+		var s_hidden := _is_cell_hidden(cx, cy - 1)
+		var w_hidden := _is_cell_hidden(cx - 1, cy)
+
+		var fog_d75: int = _fog_rows.get("d75", 55)
+		var fog_d50: int = _fog_rows.get("d50", 56)
+		var fog_d25: int = _fog_rows.get("d25", 57)
+
+		for ty in 32:
+			for tx in 32:
+				var st := _screen_tile(cx, cy, tx, ty)
+				var min_dist := 999
+				if n_hidden:
+					min_dist = mini(min_dist, ty)
+				if s_hidden:
+					min_dist = mini(min_dist, 31 - ty)
+				if w_hidden:
+					min_dist = mini(min_dist, tx)
+				if e_hidden:
+					min_dist = mini(min_dist, 31 - tx)
+
+				if min_dist == 0:
+					_fog_layer.set_cell(st, 0, Vector2i(0, fog_d75))
+				elif min_dist == 1:
+					_fog_layer.set_cell(st, 0, Vector2i(0, fog_d50))
+				elif min_dist == 2:
+					_fog_layer.set_cell(st, 0, Vector2i(0, fog_d25))
+				else:
+					_fog_layer.erase_cell(st)
+
+	# 5. Overview sprite in OverviewLayer
+	if _overview_layer != null:
+		var sprite: Sprite2D = _overview_sprites.get(cell, null)
+		if sprite == null:
+			sprite = Sprite2D.new()
+			sprite.centered = false
+			sprite.position = Vector2(cx * CELL_SIZE_PX, (-cy - 1) * CELL_SIZE_PX)
+			sprite.scale = Vector2(32, 32)
+			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			_overview_layer.add_child(sprite)
+			_overview_sprites[cell] = sprite
+		sprite.texture = overview_tex
 
 	var is_unmapped := (reveal_state > 0 and not has_map_data)
 	if is_unmapped:
@@ -498,16 +810,39 @@ func _render_cell(cx: int, cy: int) -> bool:
 
 	return is_unmapped
 
+func _render_solid_fog(cx: int, cy: int) -> void:
+	var solid_fog_row: int = _fog_rows.get("solid", 54)
+	for ty in 32:
+		for tx in 32:
+			var st := _screen_tile(cx, cy, tx, ty)
+			if _fog_layer != null:
+				_fog_layer.set_cell(st, 0, Vector2i(0, solid_fog_row))
+			if _world_known != null:
+				_world_known.erase_cell(st)
+			if _world_cleared != null:
+				_world_cleared.erase_cell(st)
+
 func _unrender_cell(cx: int, cy: int) -> void:
-	_unmapped_revealed_cells.erase(Vector2i(cx, cy))
-	for ty in 16:
-		for tx in 16:
+	var cell := Vector2i(cx, cy)
+	_unmapped_revealed_cells.erase(cell)
+	for ty in 32:
+		for tx in 32:
 			var coord := _screen_tile(cx, cy, tx, ty)
-			_world_tile_map.erase_cell(coord)
-			_fog_overlay.erase_cell(coord)
+			if _world_known != null:
+				_world_known.erase_cell(coord)
+			if _world_cleared != null:
+				_world_cleared.erase_cell(coord)
+			if _fog_layer != null:
+				_fog_layer.erase_cell(coord)
+
+	if _overview_sprites.has(cell):
+		var s: Sprite2D = _overview_sprites[cell]
+		_overview_sprites.erase(cell)
+		if is_instance_valid(s):
+			s.queue_free()
 
 func get_lru_cache() -> LruCache:
-	return lru_cache
+	return _synth_cache
 
 func get_frame_p95_ms() -> float:
 	if _frame_times.is_empty():
@@ -523,11 +858,12 @@ func print_p95_frame_time() -> float:
 	return p95
 
 func pending_cell_count() -> int:
-	if _camera == null or _world_tile_map == null:
+	if _camera == null:
 		return 0
 	var vp_size := get_viewport_rect().size / _camera.zoom.x
 	var cam_pos := _camera.position
 	var vis_rect := Rect2(cam_pos - vp_size * 0.5, vp_size).grow(CELL_SIZE_PX)
+
 	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX))
 	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX))
 	var r0 := int(floor(vis_rect.position.y / CELL_SIZE_PX))
@@ -542,7 +878,7 @@ func pending_cell_count() -> int:
 				pending += 1
 	return pending
 
-func setup_screenshot(path: String, zoom_step: int, frames: int) -> void:
+func setup_screenshot(path: String, zoom_step: float, frames: int) -> void:
 	_screenshot_mode = true
 	_screenshot_path = path
 	_screenshot_zoom = zoom_step
@@ -665,8 +1001,9 @@ func confirm_download_dialog() -> Dictionary:
 	var res: Dictionary = _map_fetcher.download_and_install_region(_pending_region)
 	if res.get("ok", false):
 		_load_map_stores()
-		lru_cache.clear()
-		_rendered_cells.clear()
+		_synth_cache.clear()
+		_store_cache.clear()
+		_clear_rendered_layers()
 		_update_frustum_culling()
 		if _update_map_button != null:
 			_update_map_button.visible = true
@@ -691,8 +1028,9 @@ func _on_install_finished(result: Dictionary) -> void:
 		_install_panel.visible = false
 	if result.get("ok", false):
 		_load_map_stores()
-		lru_cache.clear()
-		_rendered_cells.clear()
+		_synth_cache.clear()
+		_store_cache.clear()
+		_clear_rendered_layers()
 		_update_frustum_culling()
 		if _unmapped_chip != null:
 			_unmapped_chip.visible = false
@@ -716,8 +1054,9 @@ func trigger_update_map_data() -> Dictionary:
 	var res: Dictionary = _map_fetcher.update_region(_pending_region)
 	if res.get("ok", false):
 		_load_map_stores()
-		lru_cache.clear()
-		_rendered_cells.clear()
+		_synth_cache.clear()
+		_store_cache.clear()
+		_clear_rendered_layers()
 		_update_frustum_culling()
 	return res
 

@@ -657,6 +657,27 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M41 — Renderer v2 (Item 8, 2026-10-20).**
+- **What was solved:**
+  - Deleted legacy `game/world/tile_synth/tile_synth.gd` and `game/tests/tile_synth_test.gd` (superseded by `TileSynth2` and `tile_synth2_test.gd`).
+  - Implemented Renderer v2 in `game/world/map_view.gd` and `map_view.tscn`:
+    - Scene tree layers: `BackgroundLayer` (ColorRect #0d1119), `WorldKnown` (TileMapLayer with `known_tint.gdshader`), `WorldCleared` (TileMapLayer, unshaded), `FogLayer` (TileMapLayer with `distortion_fog.gdshader`), `OverviewLayer` (Node2D), `AttributionUI/SignTooltip`.
+    - 8 WM-m tile scaling: 32×32 tiles of 32×32 px per cell (`CELL_SIZE_PX = 1024.0`).
+    - Caching & budget: 1024-entry LRU for synthesized cell buffers + overview textures (`_synth_cache`) and 256-entry LRU for raw store features (`_store_cache`). 8 ms frame synthesis budget (`SYNTH_BUDGET_USEC = 8000`).
+    - Shaders: `known_tint.gdshader` (desaturate 0.4, dim 0.82) and `distortion_fog.gdshader` (subtle 2-octave noise UV displacement, 3.0 s period, 2 px amplitude).
+    - Inward feathering: cells bordering unknown cells render Bayer dither fog (`d75` row 55 at dist 0, `d50` row 56 at dist 1, `d25` row 57 at dist 2).
+    - Zoom steps: 1/16, 1/4, 1.0, 2.0. At zoom < 1.0, tile layers hide and `OverviewLayer` displays 32×32 CPU-tinted `ImageTexture`s scaled 32× with nearest-neighbour filtering.
+    - Sign tooltip: tracks mouse over sign tiles (placed from POIs and named polygons) and displays name.
+    - F9 key prints `FRAME_P95_MS` and logs frame timing over the last 120 frames. Target: p95 ≤ 16.6 ms.
+    - `--preview-cleared`: command-line flag enabling cleared rendering in demo mode.
+    - Added minimal `game/rom/asset_db.gd` stub.
+    - Updated `game/scripts/screenshot_config.gd` and `tools/demo_screenshot.py` with support for all zoom steps and `--preview-cleared`.
+    - Updated documentation across `design_world_generation.md`, `design_game_state_and_models.md`, `master_implementation_plan.md`, `design_memory_and_resources.md`.
+    - Added comprehensive unit tests in `game/tests/map_view_test.gd` covering all 9 test points from slice 2 plan §8.
+- **Validation:** All 20 game tests PASS, Python test runner PASS, Flutter analyze & tests PASS (37 tests), sync E2E PASS, static lint PASS.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*

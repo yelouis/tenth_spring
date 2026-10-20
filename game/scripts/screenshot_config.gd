@@ -8,12 +8,12 @@ const ERR_IN_REPO: String = "[FAIL] screenshot path must be outside the reposito
 const ERR_UNSUPPORTED_ZOOM: String = "[FAIL] unsupported zoom %s"
 const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
 
-const SUPPORTED_ZOOMS: Array[int] = [1, 2, 3]
+const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 1, 2, 3]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""
 	var zoom_str := ""
-	var zoom_val := 1
+	var zoom_val: float = 1.0
 	var frames_val := 10
 	var has_screenshot := false
 
@@ -58,9 +58,16 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 
 	# Refusal 2: Unknown zoom (§7.4 rule 2)
 	if not zoom_str.is_empty():
-		if not zoom_str.is_valid_int() or not (zoom_str.to_int() in SUPPORTED_ZOOMS):
+		var valid_zoom := false
+		if zoom_str.is_valid_float():
+			var z_val := zoom_str.to_float()
+			for sz in [0.0625, 0.25, 1.0, 2.0, 3.0]:
+				if is_equal_approx(z_val, float(sz)):
+					zoom_val = z_val
+					valid_zoom = true
+					break
+		if not valid_zoom:
 			return {"ok": false, "error": ERR_UNSUPPORTED_ZOOM % zoom_str, "exit_code": 2}
-		zoom_val = zoom_str.to_int()
 
 	# Refusal 3: In-repo path (§7.4 rule 2)
 	if screenshot_path.is_empty() or not screenshot_path.ends_with(".png"):

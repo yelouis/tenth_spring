@@ -86,7 +86,7 @@ Converting a regional `.osm.pbf` (hundreds of MB to over 1 GB) into the map stor
 - **Bounded peak:** the import peaks at ≤ **512 MiB** RSS and follows the same pause rule as §3.1.
 
 ### 3.3 While playing
-- **Map rendering:** keep only the cells in view plus a 1-cell margin, in an LRU cache of at most **256** decoded cells.
+- **Map rendering:** keep only the cells in view plus a 1-cell margin; map-view caches are 1024 synthesized cells (`_synth_cache`, 32×32 tiles + overview texture) and 256 raw-row cells (`_store_cache`).
 - **Sprites and icons:** through `asset_db`, an LRU of at most **128** battle sprites.
 - **SQLite:**
   - the save runs with `PRAGMA cache_size = -65536` (64 MiB); map stores are opened read-only with `-32768` (32 MiB);

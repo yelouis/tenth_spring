@@ -40,13 +40,14 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 - **Spawn-zone derivation**: each cell is assigned a `zone` from its dominant OSM land use — residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds, plus the haunted zones **cemetery** (`landuse=cemetery`, `amenity=grave_yard`), **ruins** (`historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*`), and **hospital** (`amenity=hospital`). Haunted zones win ties. The zone drives spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2) and is stored on `map_cell`. Deterministic per cell.
 - **Tall grass placement**: tall-grass tiles fill OSM vegetation (park, meadow, grass, scrub, wood edges) and overgrown land (`landuse=brownfield`, vacant lots, abandoned sites). The collapse setting adds overgrowth: road and lot tiles convert to tall grass with probability rising by distance band from home (0%, 10%, 25%, 40%), seeded per cell so it is deterministic. Tall grass is where encounters happen — its placement *is* encounter design.
 - **Landmark flagging**: POIs tagged as famous places (e.g. `boundary=national_park`, `leisure=nature_reserve`, `tourism=attraction`, `historic=monument`, `leisure=stadium`) are flagged `isLandmark` and assigned a legendary from their archetype's pool (`design_encounters_and_haunted_zones.md` §7). Assignment is deterministic and independent of player proximity.
-- **The grid**: cells and tiles are Web Mercator (`design_game_state_and_models.md` §2, `game/world/grid.gd`), so north is up and street angles are true everywhere. A tile is 16 WM-m, i.e. 16·cos(latitude) m on the ground.
-- **Geometry → tiles**: real geometry is rasterized onto the tile grid at `tileMeters = 16` per tile, then cleaned:
-  1. Streets → road tiles (min width 1 tile), snapped to 4/8-directional runs.
-  2. Buildings → rectangularized footprints (min 2×2 tiles) with a door tile facing the nearest road.
-  3. Parks/forest → grass + tree-line autotiles; water bodies → water autotiles.
-  4. Everything else → wilderness fill (grass with density noise; "overgrown" ruin props seeded by building-age heuristics).
-  - **Status (pass 17):** slice 1 built none of steps 1–4's Pokémon grammar — it fills 16 m squares with six flat colours — and the human rejected the look. The target is a map assembled from walking-scale Pokémon pieces (paths, roofed buildings with south-facing doors, tree borders, tall grass, shorelines, signs). **Decision 17 = A** (2026-10-19) chose real streets rebuilt from those pieces; `implementation_plan_world_generation_slice2.md` replaces this list when it lands.
+- **The grid**: cells and tiles are Web Mercator (`design_game_state_and_models.md` §2, `game/world/grid.gd`), so north is up and street angles are true everywhere. A tile is 8 WM-m, i.e. 8·cos(latitude) m on the ground (`CELL_SIZE_METERS = 256.0`, 32 × 32 tiles per cell).
+- **Geometry → tiles**: real geometry is rasterized onto the tile grid at `tileMeters = 8` per tile via `TileSynth2` (`game/world/tile_synth/tile_synth2.gd`, detailed in `implementation_plan_world_generation_slice2.md` §3–§4):
+  1. Base terrain (grass or unmapped void) & coastlines.
+  2. Polygons rasterized by land cover in strict priority order (farmland, scrub, forest, park, cemetery, sand, wetland, parking, water, residential).
+  3. Lines rasterized with width and snapping (waterway, rail, road, path) and bridge crossings.
+  4. Building footprints placed with roofs, walls, south-facing doors, and setbacks.
+  5. Edge autotiling (16-mask scheme for shorelines, tree borders, paths, roads, roofs, walls).
+  6. Props, signs (from POIs and named polygons), and tall grass placement.
 - **Determinism**: synthesis is a pure function of `(OSM data, cell seed)`. The same neighborhood always generates the same tiles. Cell seed = hash of cell coordinates + a per-player world seed.
 - **Home**: the player designates the safehouse once during onboarding (defaults to most-dwelled location). Its stored coordinates are fuzzed per `design_privacy_and_location.md` before ever touching the map layer.
 
