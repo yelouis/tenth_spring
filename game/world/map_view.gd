@@ -85,8 +85,22 @@ var _is_demo: bool = false
 var _map_stores: Array[MapStore] = []
 var _map_data_dir: String = ""
 
+# Screenshot mode state (§7.4 rule 3)
+var _screenshot_mode: bool = false
+var _screenshot_path: String = ""
+var _screenshot_zoom: int = 1
+var _screenshot_target_frames: int = 10
+var _screenshot_frames_waited: int = 0
+var _screenshot_saved: bool = false
+var _total_rendered_frames: int = 0
+
 func _ready() -> void:
 	_camera = get_node_or_null("MapCamera") as Camera2D
+	if _camera != null:
+		_camera.limit_left = -30000000
+		_camera.limit_top = -30000000
+		_camera.limit_right = 30000000
+		_camera.limit_bottom = 30000000
 	_world_tile_map = get_node_or_null("WorldTileMap") as TileMapLayer
 	_fog_overlay = get_node_or_null("FogOverlayLayer") as TileMapLayer
 	_demo_badge = get_node_or_null("AttributionUI/DemoBadge") as Label
@@ -502,6 +516,64 @@ func print_p95_frame_time() -> float:
 	var p95 := get_frame_p95_ms()
 	print("FRAME_P95_MS: %.2f" % p95)
 	return p95
+
+func pending_cell_count() -> int:
+	if _camera == null or _world_tile_map == null:
+		return 0
+	var vp_size := get_viewport_rect().size / _camera.zoom.x
+	var cam_pos := _camera.position
+	var vis_rect := Rect2(cam_pos - vp_size * 0.5, vp_size).grow(CELL_SIZE_PX)
+	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX))
+	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX))
+	var r0 := int(floor(vis_rect.position.y / CELL_SIZE_PX))
+	var r1 := int(floor((vis_rect.position.y + vis_rect.size.y) / CELL_SIZE_PX))
+	var min_cy := -r1 - 1
+	var max_cy := -r0 - 1
+	var pending := 0
+	for cy in range(min_cy, max_cy + 1):
+		for cx in range(min_cx, max_cx + 1):
+			var cell := Vector2i(cx, cy)
+			if not _rendered_cells.has(cell):
+				pending += 1
+	return pending
+
+func setup_screenshot(path: String, zoom_step: int, frames: int) -> void:
+	_screenshot_mode = true
+	_screenshot_path = path
+	_screenshot_zoom = zoom_step
+	_screenshot_target_frames = frames
+	_set_zoom_step(zoom_step)
+	if not RenderingServer.frame_post_draw.is_connected(_on_frame_post_draw):
+		RenderingServer.frame_post_draw.connect(_on_frame_post_draw)
+
+func _on_frame_post_draw() -> void:
+	if not _screenshot_mode:
+		return
+	_total_rendered_frames += 1
+
+	if not _screenshot_saved:
+		if pending_cell_count() > 0:
+			return
+		_screenshot_frames_waited += 1
+		if _screenshot_frames_waited >= _screenshot_target_frames:
+			var img: Image = get_viewport().get_texture().get_image()
+			if img != null and not img.is_empty():
+				var err := img.save_png(_screenshot_path)
+				if err != OK:
+					printerr("[FAIL] Failed to save screenshot to %s: %d" % [_screenshot_path, err])
+					get_tree().quit(1)
+					return
+				print("SCREENSHOT_SAVED %s" % _screenshot_path.get_file())
+				_screenshot_saved = true
+			else:
+				printerr("[FAIL] Viewport texture returned empty image")
+				get_tree().quit(1)
+				return
+
+	if _screenshot_saved and _total_rendered_frames >= 120:
+		var p95 := get_frame_p95_ms()
+		print("FRAME_P95_MS: %.2f" % p95)
+		get_tree().quit(0)
 
 func set_map_fetcher(fetcher) -> void:
 	if _map_fetcher != null and _map_fetcher is Object:

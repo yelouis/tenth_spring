@@ -551,11 +551,28 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M35 — Screenshot harness & honest windowed frame-time baseline (Item 3, F47, 2026-10-19).**
+- **What was solved:**
+  - Built `game/scripts/screenshot_config.gd` to parse and validate user arguments (`--screenshot`, `--zoom`, `--frames`), enforcing exact refusals for in-repo target paths, unknown zoom levels, and `--headless` execution (each exiting 2).
+  - Wired `game/scenes/main.gd` screenshot mode to load profile and map view directly without pairing screen or sync server.
+  - Expanded `MapCamera` bounds in `game/world/map_view.gd` to $\pm 30,000,000\text{ px}$ so the camera can view all Web-Mercator coordinates without hitting Godot's default 10M-pixel camera limits.
+  - Implemented `pending_cell_count()`, settled-frame capture, viewport texture save, and $\ge 120$-frame `FRAME_P95_MS` calculation before clean exit in `game/world/map_view.gd`.
+  - Built CLI runner `tools/demo_screenshot.py` enforcing out-dir repo tree isolation and memguard step `demo_screenshot`.
+  - Added unit test `game/tests/screenshot_args_test.gd` (added to `EXPECTED` in `game/tests/test_runner.py`, 20 tests total) and `tools/test_demo_screenshot.py`.
+  - Measured `demo_screenshot` memguard budget: peak 0.264 GiB $\le 0.5\text{ GiB}$ budget recorded in `tools/memguard_budgets.json`.
+  - Measured windowed render performance on macOS Darwin arm64:
+    - Zoom 1: `FRAME_P95_MS: 8.46 ms` ($\le 16.6\text{ ms}$ budget met).
+    - Zoom 3: `FRAME_P95_MS: 9.26 ms` ($\le 16.6\text{ ms}$ budget met).
+  - Captured `shot_z1.png` and `shot_z3.png` in `~/tenth_spring_private/screens/` (1280×720, non-interlaced RGB).
+- **F47 (fixed):** Windowed frame times measured and recorded in plan §7.3; harness refusals proven by automated tests; marked resolved.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2).*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3).*
 - **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting Decision 15 re-ask.
-- **F47 (minor) — the frame-time number isn't a frame time.** `FRAME_P95_MS` samples `delta` inside a headless test (0.07 ms). The 16.6 ms budget has never been measured with real rendering or real map data. **Item 3** measures it in a windowed run.
+- **F47 (resolved in M35).**
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).

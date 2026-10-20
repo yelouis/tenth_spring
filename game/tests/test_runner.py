@@ -195,6 +195,18 @@ def main():
 		sys.exit(1)
 	print("[SYNTHETIC PBF TESTS OK] Synthetic PBF fixture byte-for-byte reproducibility verified.\n")
 
+	# Demo Screenshot In-Repo Path Refusal Test Suite (F47)
+	demo_screenshot_test_path = os.path.join(repo_root, "tools", "test_demo_screenshot.py")
+	if not os.path.exists(demo_screenshot_test_path):
+		print("\n[DEMO SCREENSHOT ERROR] Demo screenshot test suite missing")
+		sys.exit(1)
+	print("=== Demo Screenshot Fixture & Argument Test Suite ===")
+	demo_test_res = subprocess.run([sys.executable, "-I", demo_screenshot_test_path], cwd=repo_root)
+	if demo_test_res.returncode != 0:
+		print("\n[DEMO SCREENSHOT TEST FAIL] Demo screenshot unit tests failed.")
+		sys.exit(1)
+	print("[DEMO SCREENSHOT TESTS OK] Demo screenshot unit tests passed.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)
@@ -217,6 +229,7 @@ def main():
 		"region_import_pause_test",
 		"region_import_test",
 		"region_select_test",
+		"screenshot_args_test",
 		"sync_ingest_isolation_test",
 		"sync_session_test",
 		"tile_synth_test"

@@ -318,6 +318,10 @@ Slice 2's buffers are north-first and drop the `15 − ty` flip (slice-2 plan §
 ### 7.3 Performance Budget & Frustum Culling
 - Target: Solid **60 FPS** on desktop hardware ($\le 16.6\text{ ms}$ frame time).
 - Frustum Culling: Only cells overlapping the camera's viewport plus a 1-cell margin are active in the `TileMapLayer`. Cells scrolling out of view are unrendered.
+- **Measured Performance (Item 3, 2026-10-19)**: Measured on Darwin arm64 under rendered windowed harness (Vulkan Forward+, 1280×720, 120+ frames):
+  - Zoom 1: `FRAME_P95_MS: 8.46 ms` ($\le 16.6\text{ ms}$ target met).
+  - Zoom 3: `FRAME_P95_MS: 9.26 ms` ($\le 16.6\text{ ms}$ target met).
+  - Memory: Peak RSS 0.264 GiB (budget 0.5 GiB, `demo_screenshot`).
 
 ### 7.4 Screenshot Harness (pass 17 — F47; agent guide Item 3)
 **Why:** the only acceptable proof of what the map looks like is an image the game itself saved from real data (M31's process finding).
