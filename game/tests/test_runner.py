@@ -232,6 +232,7 @@ def main():
 		"screenshot_args_test",
 		"sync_ingest_isolation_test",
 		"sync_session_test",
+		"tile_synth2_test",
 		"tile_synth_test"
 	]
 

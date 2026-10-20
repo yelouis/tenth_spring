@@ -599,6 +599,29 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M38 — Synthesis Part 1 (Item 5, 2026-10-20).**
+- **What was solved:**
+  - Built `game/world/tile_synth/tile_synth2.gd`: 40 × 40 working grid with 4-tile margin, 19-class tile vocabulary and 10 mask families.
+  - Implemented 32-bit FNV-1a hashing (`fnv1a32`), uniform random float generator (`u_rand`), and 2D bilinear lattice value noise (`value_noise`).
+  - Base layer coverage vs void, sea & coast side-testing against 3 × 3 neighbourhood coastline segments.
+  - Land cover polygons painted in exact plan order (farmland with alternating crop/grass rows, scrub tall grass, forest trees, park grass, cemetery grass, sand, wetland marsh, parking plaza, water).
+  - 4-connected Bresenham supercover line rasterization with subkind-specific widths for waterway, rail, road, and path.
+  - Line intersections: road over rail (level crossing), road over waterway line (culvert), road/rail over water with `:bridge` subkind (bridge producing `BRIDGE` tiles).
+  - Parks & forest clearings: tall grass on noise > 0.55, park perimeter tree borders, forest clearings on noise > 0.70.
+  - Cemeteries: grave scatter on `gx % 2 == 0 and gy % 3 == 0` with perimeter fences.
+  - Tree scatter: 8% chance in residential polygons, 5% elsewhere with 8-neighbour obstacle and bridge/water clearance.
+  - Output 3072-byte row-major north-first buffer (`[class, variant, mask]`) with 4-neighbour autotile mask byte.
+  - Built `game/tests/tile_synth2_test.gd` verifying:
+    - §8 (c) North-first orientation (rows 0–15 WATER, 16–31 non-WATER).
+    - §8 (e) Falsifier — coastline side flips which side is water when orientation is reversed.
+    - §8 (f) Tunnel produces no ROAD or PATH tiles.
+    - §8 (g) Seamless road boundary crossing between neighbouring cells with matching classes and reciprocal mask bits.
+    - §8 (h) Culvert keeps road continuous across stream; bridge road over river produces `BRIDGE` tiles.
+    - Stage 1 golden hash `d2d954efe5934433f74867ac43a3fb2eb5fbe160126d3d58a165647fca44d406` over cells (4,4), (4,5), (5,4), (5,5) and their sign lists. (Note: this golden hash changes in Item 6 when buildings, fallback houses, doors, and signs land).
+- **Validation:** All 21 game tests PASS, Flutter tests PASS (37 tests), sync E2E PASS, IP guard PASS (17 tests), static lint PASS.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*
