@@ -640,6 +640,23 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M40 — Placeholder Atlas (Item 7, 2026-10-20).**
+- **What was solved:**
+  - Built `tools/gen_placeholder_atlas.py` in pure Python 3 stdlib using `zlib` + `struct` without dependencies or Nintendo assets:
+    - `game/assets/tiles/placeholder_v1.png`: 512 × 1856 px, 32 × 32 tiles, 16 columns, 58 rows (54 tile rows + 4 fog rows).
+    - `game/assets/tiles/placeholder_v1.json`: tile metadata covering all 20 tile classes (0..19) and all variants emitted by `tile_synth2.gd`, plus Bayer 4×4 2-px dither fog rows (`solid`, `d75`, `d50`, `d25`).
+    - `assets/palette/tenth_spring.gpl`: master palette with 53 colors (≤ 64 colors) in GIMP palette format.
+  - Built unit test `tools/test_gen_placeholder_atlas.py`:
+    - Verified byte-for-byte reproducibility against committed assets.
+    - Verified determinism across repeated runs.
+    - Verified complete coverage of all `(class, variant)` pairs emitted by `tile_synth2.gd`.
+    - Verified palette structure and color bounds.
+  - Hooked test suite into `game/tests/test_runner.py`.
+  - Updated `docs/design_art_direction.md` §3 to document the placeholder 16-mask autotile format.
+- **Validation:** All 21 game tests PASS, Python test runner PASS (including IP guard, synthetic PBF, demo screenshot, and placeholder atlas), Flutter analyze & tests PASS (37 tests), sync E2E PASS, static lint PASS.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*

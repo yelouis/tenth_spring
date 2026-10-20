@@ -207,6 +207,18 @@ def main():
 		sys.exit(1)
 	print("[DEMO SCREENSHOT TESTS OK] Demo screenshot unit tests passed.\n")
 
+	# Placeholder Atlas Generator Reproducibility & Coverage Test Suite (Item 7)
+	atlas_test_path = os.path.join(repo_root, "tools", "test_gen_placeholder_atlas.py")
+	if not os.path.exists(atlas_test_path):
+		print("\n[PLACEHOLDER ATLAS ERROR] Placeholder atlas test suite missing")
+		sys.exit(1)
+	print("=== Placeholder Atlas Generator Test Suite ===")
+	atlas_test_res = subprocess.run([sys.executable, "-I", atlas_test_path], cwd=repo_root)
+	if atlas_test_res.returncode != 0:
+		print("\n[PLACEHOLDER ATLAS TEST FAIL] Placeholder atlas unit tests failed.")
+		sys.exit(1)
+	print("[PLACEHOLDER ATLAS TESTS OK] Placeholder atlas reproducibility and coverage verified.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)

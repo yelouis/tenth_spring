@@ -32,7 +32,7 @@ This applies to every piece of art that **isn't** read from the player's ROM at 
 
 - **Tiles:** 32×32 px, integer scaling only.
 - **Palette:** one master palette ≤ 64 colours (`assets/palette/tenth_spring.gpl`). Day/dusk/night and **haunted-territory distortion** are shader tints over the same tiles, never separate tile sets.
-- **Autotiles:** 47-blob format for grass/tall-grass/road/water/tree-line transitions; buildings from a 9-slice wall set + roof set.
+- **Autotiles:** placeholder autotiles use the 16-mask scheme until final art (47-blob format for grass/tall-grass/road/water/tree-line transitions; buildings from a 9-slice wall set + roof set).
 - **Tall grass must read instantly** as "encounters happen here" — the single most important tile in the game.
 - **Fog states:** `unknown` = solid `#0d1119` with a slow distortion shimmer (the Distortion); `known` = desaturated 40% + dark overlay; `cleared` = full palette.
 - ROM sprites render at integer scale over original battle backgrounds; never recolor them.

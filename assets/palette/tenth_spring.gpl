@@ -1,0 +1,62 @@
+GIMP Palette
+Name: Tenth Spring
+Columns: 8
+#
+120 200  80	grass
+ 95 168  63	grass tuft
+ 79 154  58	tall grass
+ 47 107  36	tall blades
+143 216 106	tall tips
+ 58 125  58	tree canopy
+ 36  92  42	tree outline
+ 90 160  90	tree highlight
+107  74  43	tree trunk
+ 74 144 216	water
+120 180 240	water waves
+ 47 106 168	water deep
+232 216 160	shore
+208 188 128	sand speckle
+106 154 106	marsh
+ 74 122 138	marsh puddle
+216 192 144	path
+184 160 112	path pebble
+176 144  96	path edge
+138 138 144	road
+154 154 160	road speckle
+200 200 200	road curb
+ 90  90  96	road crack
+107 107 107	rail
+176 120  64	bridge plank
+122  80  40	bridge rail
+176 176 184	plaza
+152 152 160	plaza joint
+192  80  74	roof0 base
+138  52  48	roof0 shade
+ 58 154 154	roof1 base
+ 37 106 106	roof1 shade
+ 90 154  74	roof2 base
+ 58 106  48	roof2 shade
+138  90 176	roof3 base
+ 90  58 122	roof3 shade
+ 74 120 200	roof4 base
+ 48  80 138	roof4 shade
+224 138  58	roof5 base
+160  90  32	roof5 shade
+176 144 200	roof6 base
+122  96 144	roof6 shade
+232 224 208	wall
+168 152 128	wall outline
+106 176 224	window
+ 58  90 128	window frame
+ 74  48  24	door frame
+240 240 240	fence
+248  88 120	flower pink
+248 208  48	flower yellow
+255 255 255	flower white
+160 160 168	grave
+112 112 120	grave outline
+168 192  96	crop
+120 136  48	crop furrow
+ 42  50  66	void
+ 13  17  25	fog
+ 26  26  32	ink outline
