@@ -86,7 +86,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - **The map covers** the 50 states, DC, Puerto Rico, and the US Virgin Islands — every region Geofabrik lists under `north-america/us/` (55 files on 2026-10-19, counting California's north and south halves).
   - **Places outside the USA are "beyond the map."** If your phone records a trip abroad, those spots stay in fog labelled `Beyond the map — Tenth Spring covers the USA`. They are never offered for download and never count toward anything.
   - **A bonus for later slices:** US federal map data — USGS elevation and land cover — is public domain, so real hills (ledges, terraces) and biomes can be added without licensing trouble.
-- **Contracts updated:** `design_world_generation.md` §3 and §5, `implementation_plan_world_generation.md` §5.1a, `master_implementation_plan.md` Phase 3, `README.md`, and decision record item 19. Built in agent guide Item 1.
+- **Contracts updated:** `design_world_generation.md` §3 and §5, `implementation_plan_world_generation.md` §5.1a, `master_implementation_plan.md` Phase 3, `README.md`, and decision record item 19. Built in agent guide Item 1 (M33).
 
 ### Decision 15 — Regional Map Converter Architecture: Option B pre-converted stores (Resolved 2026-10-15)
 - **Selection: Option B — Pre-converted Regional Map Stores (CDN / GitHub Releases Distribution).**
@@ -524,20 +524,26 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Added falsifying validation test in `game/tests/map_view_test.gd` verifying top/bottom half atlas coords on a water-polygon cell, screen row ordering between cell (0, 1) and (0, 0), and camera focus direction. Falsification reproduced against pre-fix code (atlas coords mismatch `(-1, -1)`, row 16 >= row 0, and `focus_on_cell(0, 1).y (384.00) >= focus_on_cell(0, 0).y (128.00)`).
 - **F43 (fixed):** Verified in `map_view_test.gd`; 19/19 game tests PASS on Mac, `[REAL SAVE CHECK OK]`, static lint PASS, loopback sync E2E PASS.
 
+**M33 — USA scope and download mechanics (Decision 16, F44, F45 a/b/c/e, Item 1, 2026-10-19).**
+- **What was solved:**
+  - Implemented US prefix filter (`https://download.geofabrik.de/north-america/us/`) in `map_fetcher.gd`, keeping only US states, DC, PR, VI, and norcal/socal subregions; multi-state groupings and non-US regions are rejected.
+  - Implemented per-cell region resolution with plurality voting, tie-breaking by smallest area and lexically earlier id, session caching, and `{"beyond_the_map": true}` return shape.
+  - Implemented HTTP redirect loop (<= 5 hops, strictly restricted to `download.geofabrik.de`) and HTTP status check (200..299).
+  - Implemented streaming download with `read_chunk_size = 1048576` and `max_buffered_bytes <= 1048576`, writing chunks directly to `.part` files without accumulating the body in memory.
+  - Implemented threaded install via `start_install` / `cancel_install` on a dedicated `Thread`, emitting `install_progress` and `install_finished` signals, with cancellation checkpoints across download and conversion.
+  - Added `AttributionUI/InstallPanel` with `InstallLabel` and `CancelButton` in `map_view.tscn`, and wired deferred progress / cancellation handling in `map_view.gd`.
+  - Wired 2.0s background unmapped cell polling in `map_view.gd` (F44 wiring), updating the chip to `Unmapped — looking up map data…` and then the resolved region download prompt or non-clickable `Beyond the map — Tenth Spring covers the USA`.
+  - Extended `FakeTransport` in `region_select_test.gd` with `{code, headers, chunks}` scripted redirects, 404 cleanup, chunked streaming growth verification, and async thread cancellation.
+  - All 19 Godot unit tests pass, GDScript static lint passes, cross-language loopback sync E2E passes, Flutter analyze and test suite passes.
+- **F44 (fixed):** `_poll_unmapped_cells` runs every 2.0s and prompts the download chip in the running game.
+- **F45 (partially fixed):** (a), (b), (c), and (e) resolved; (d) whole-region conversion remains open pending Decision 15 re-ask.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0).*
-- **F44 — the "Unmapped" chip can never start a download in the real game.** `configure_unmapped_region()` is called only by `region_select_test.gd:142`. Nothing in the running game calls it, so `_pending_region` stays empty, the chip shows its fallback text, and clicking it does nothing (`map_view.gd:443-444`). The slice-1 pause step "click the chip, then **Download**" cannot happen. **Item 1.**
-- **F45 — the real download path can't work, and would exhaust memory and freeze the game** (`game/world/region_import/map_fetcher.gd`).
-  - **(a) No redirects.** Geofabrik answers every `-latest` URL with **307** to a dated file (checked 2026-10-19). `_real_http_request` (`:388`) doesn't follow it, so `HEAD` reports size 0 (the chip falls back) and `GET` returns no body ("Failed to download PBF"). It never checks the status code either (`:428`).
-  - **(b) The whole file is held in memory** (`body.append_array`, `:441`) before anything is written — hundreds of MB for a typical state (Washington's file is 348 MB).
-  - **(c) It runs on the main thread**, so the window freezes for the whole download and conversion, with no progress and no cancel.
-  - **(d) It then converts the entire state on the player's PC** (`:215`) — the path Decision 15 rejected.
-  - **(e) It chooses from the whole-world index** (`:95`); after Decision 16 it may choose only US regions.
-  - The tests use a fake transport, so none of this ever ran.
-  - **Item 1** fixes (a)–(c) and (e). (d) waits on the Decision 15 re-ask.
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built".*
+- **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting Decision 15 re-ask.
 - **F46 — whole neighbourhoods are painted as park.** `tile_synth.gd:75` paints `residential`, `industrial`, `commercial`, `retail`, and `cemetery` land use with the park colour, and the converter stores *every other* land use as `park` (`region_converter.gd:772`). **Item 2.**
 - **F47 (minor) — the frame-time number isn't a frame time.** `FRAME_P95_MS` samples `delta` inside a headless test (0.07 ms). The 16.6 ms budget has never been measured with real rendering or real map data. **Item 3** measures it in a windowed run.
 - **F50 (minor) — the map view loads test map stores in every profile.** `_load_map_stores` searches both `user://map_data/` and `user://test/map_data/` (`map_view.gd:176-177`), so the real game and the demo would show any store a test left behind — and a demo store, which reveals where the human has been, sits in the shared `user://map_data/` rather than the demo profile. **Item 2:** each profile reads only its own `map_data/` folder.

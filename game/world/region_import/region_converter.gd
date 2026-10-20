@@ -17,6 +17,7 @@ var required_resume_consecutive_ms: int = 10000
 var stop_after_pass: int = -1 # If > 0, halts after completing this pass for checkpoint testing
 var pause_count: int = 0
 var resume_count: int = 0
+var cancel_requested: bool = false
 
 # Signals/Events
 signal progress_updated(stage: String, current: int, total: int)
@@ -175,8 +176,22 @@ static func clip_segment_to_box(p1: Vector2, p2: Vector2, box_min: Vector2, box_
 # Main Conversion Routine
 # -------------------------------------------------------------
 
+func _cleanup_cancel(out_db_path: String, store: Object) -> Dictionary:
+	if store != null:
+		store.close()
+	for p in [out_db_path + ".nodes.tmp", out_db_path + ".rels.tmp"]:
+		if FileAccess.file_exists(p):
+			DirAccess.remove_absolute(p)
+	for sfx in ["", "-wal", "-shm"]:
+		if FileAccess.file_exists(out_db_path + sfx):
+			DirAccess.remove_absolute(out_db_path + sfx)
+	return {"ok": false, "error": "Cancelled"}
+
 func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 	var t0 := Time.get_ticks_msec()
+
+	if cancel_requested:
+		return _cleanup_cancel(out_db_path, null)
 
 	if not FileAccess.file_exists(pbf_path):
 		return {"ok": false, "error": "PBF file not found: " + pbf_path}
@@ -216,6 +231,7 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 
 	if start_pass < 1:
 		print("--- Pass 1: Scanning relations and ways ---")
+		progress_updated.emit("convert", 1, 3)
 		var f := FileAccess.open(pbf_path, FileAccess.READ)
 		if not f:
 			store.close()
@@ -227,6 +243,9 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 
 		# Step 1A: Scan relations first to collect kept multipolygons and their member way IDs
 		while f.get_position() < file_size:
+			if cancel_requested:
+				f.close()
+				return _cleanup_cancel(out_db_path, store)
 			_check_memory_pause()
 			var blob := OsmPbfReader.read_blob_header_and_data(f)
 			if blob.is_empty():
@@ -335,6 +354,9 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 		# Step 1B: Rewind and scan ways
 		f.seek(0)
 		while f.get_position() < file_size:
+			if cancel_requested:
+				f.close()
+				return _cleanup_cancel(out_db_path, store)
 			_check_memory_pause()
 			var blob := OsmPbfReader.read_blob_header_and_data(f)
 			if blob.is_empty():
@@ -489,6 +511,7 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 
 	if start_pass < 2:
 		print("--- Pass 2: Streaming dense nodes ---")
+		progress_updated.emit("convert", 2, 3)
 		var f := FileAccess.open(pbf_path, FileAccess.READ)
 		if not f:
 			store.close()
@@ -500,6 +523,10 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 		store.begin_transaction()
 
 		while f.get_position() < file_size:
+			if cancel_requested:
+				store.rollback()
+				f.close()
+				return _cleanup_cancel(out_db_path, store)
 			_check_memory_pause()
 			var blob := OsmPbfReader.read_blob_header_and_data(f)
 			if blob.is_empty():
@@ -650,6 +677,7 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 	# PASS 3: Assemble way geometries, rings & multipolygons
 	# =========================================================
 	print("--- Pass 3: Assembling geometries and writing map store ---")
+	progress_updated.emit("convert", 3, 3)
 	var f := FileAccess.open(pbf_path, FileAccess.READ)
 	if not f:
 		store.close()
@@ -661,6 +689,10 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 	store.begin_transaction()
 
 	while f.get_position() < file_size:
+		if cancel_requested:
+			store.rollback()
+			f.close()
+			return _cleanup_cancel(out_db_path, store)
 		_check_memory_pause()
 		var blob := OsmPbfReader.read_blob_header_and_data(f)
 		if blob.is_empty():

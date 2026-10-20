@@ -60,10 +60,21 @@ var _unmapped_chip: PanelContainer = null
 var _chip_label: Label = null
 var _update_map_button: Button = null
 var _download_dialog: ConfirmationDialog = null
+var _install_panel: PanelContainer = null
+var _install_label: Label = null
+var _cancel_button: Button = null
 
 var _map_fetcher = MapFetcher.new()
 var _pending_region: Dictionary = {}
 var _pending_size_mb: int = 0
+var _is_beyond_the_map: bool = false
+
+var _unmapped_poll_timer: float = 0.0
+var _last_unmapped_cells: Array[Vector2i] = []
+var _unmapped_revealed_cells: Dictionary = {} # Vector2i -> bool
+var _lookup_thread: Thread = null
+var _lookup_mutex := Mutex.new()
+var _pending_lookup_result: Variant = null
 
 var _is_dragging: bool = false
 var _drag_start_pos: Vector2 = Vector2.ZERO
@@ -88,9 +99,16 @@ func _ready() -> void:
 		_update_map_button.pressed.connect(trigger_update_map_data)
 	_download_dialog = get_node_or_null("AttributionUI/DownloadDialog") as ConfirmationDialog
 	if _download_dialog != null:
-		_download_dialog.confirmed.connect(confirm_download_dialog)
+		_download_dialog.confirmed.connect(_on_download_dialog_confirmed)
 		_download_dialog.canceled.connect(cancel_download_dialog)
+	_install_panel = get_node_or_null("AttributionUI/InstallPanel") as PanelContainer
+	if _install_panel != null:
+		_install_label = _install_panel.get_node_or_null("HBox/InstallLabel") as Label
+		_cancel_button = _install_panel.get_node_or_null("HBox/CancelButton") as Button
+		if _cancel_button != null:
+			_cancel_button.pressed.connect(_on_install_cancel_pressed)
 
+	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
 	_init_tile_sets()
 	_load_map_stores()
@@ -228,11 +246,65 @@ func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
 	_handle_keyboard_pan(delta)
 	_update_frustum_culling()
+	_lookup_mutex.lock()
+	var lookup_res: Variant = _pending_lookup_result
+	_pending_lookup_result = null
+	_lookup_mutex.unlock()
+	if lookup_res != null and lookup_res is Dictionary:
+		_on_region_lookup_done(lookup_res)
+	_poll_unmapped_cells(delta)
 	var elapsed_ms := float(Time.get_ticks_usec() - t0) / 1000.0
 	var sample_ms := delta * 1000.0 if delta > 0.0 else elapsed_ms
 	_frame_times.append(sample_ms)
 	if _frame_times.size() > 120:
 		_frame_times.pop_front()
+
+func _poll_unmapped_cells(delta: float) -> void:
+	_unmapped_poll_timer += delta
+	if _unmapped_poll_timer < 2.0:
+		return
+	_unmapped_poll_timer = 0.0
+
+	var unmapped: Array[Vector2i] = []
+	for c in _unmapped_revealed_cells.keys():
+		unmapped.append(c)
+	unmapped.sort()
+
+	if unmapped.is_empty():
+		_last_unmapped_cells.clear()
+		return
+
+	if unmapped == _last_unmapped_cells:
+		return
+
+	_last_unmapped_cells = unmapped.duplicate()
+
+	if _chip_label != null:
+		_chip_label.text = "Unmapped — looking up map data…"
+	if _unmapped_chip != null:
+		_unmapped_chip.visible = true
+
+	if _map_fetcher == null:
+		return
+
+	if _lookup_thread != null and _lookup_thread.is_alive():
+		return
+	if _lookup_thread != null:
+		_lookup_thread.wait_to_finish()
+	_lookup_thread = Thread.new()
+	_lookup_thread.start(_thread_lookup_worker.bind(unmapped))
+
+func _thread_lookup_worker(cells: Array) -> void:
+	var res: Dictionary = _map_fetcher.select_region_for_cells(cells)
+	_lookup_mutex.lock()
+	_pending_lookup_result = res
+	_lookup_mutex.unlock()
+
+func _on_region_lookup_done(res: Dictionary) -> void:
+	if _lookup_thread != null and not _lookup_thread.is_alive():
+		_lookup_thread.wait_to_finish()
+		_lookup_thread = null
+	configure_unmapped_region_data(res)
 
 func _handle_keyboard_pan(delta: float) -> void:
 	if _camera == null:
@@ -387,9 +459,16 @@ func _render_cell(cx: int, cy: int) -> bool:
 		for tx in 16:
 			_fog_overlay.set_cell(_screen_tile(cx, cy, tx, ty), 0, Vector2i(fog_tile, 0))
 
-	return (reveal_state > 0 and not has_map_data)
+	var is_unmapped := (reveal_state > 0 and not has_map_data)
+	if is_unmapped:
+		_unmapped_revealed_cells[cell] = true
+	else:
+		_unmapped_revealed_cells.erase(cell)
+
+	return is_unmapped
 
 func _unrender_cell(cx: int, cy: int) -> void:
+	_unmapped_revealed_cells.erase(Vector2i(cx, cy))
 	for ty in 16:
 		for tx in 16:
 			var coord := _screen_tile(cx, cy, tx, ty)
@@ -413,20 +492,44 @@ func print_p95_frame_time() -> float:
 	return p95
 
 func set_map_fetcher(fetcher) -> void:
+	if _map_fetcher != null and _map_fetcher is Object:
+		if _map_fetcher.is_connected("install_progress", Callable(self, "_on_install_progress")):
+			_map_fetcher.disconnect("install_progress", Callable(self, "_on_install_progress"))
+		if _map_fetcher.is_connected("install_finished", Callable(self, "_on_install_finished")):
+			_map_fetcher.disconnect("install_finished", Callable(self, "_on_install_finished"))
 	_map_fetcher = fetcher
+	if _map_fetcher != null and _map_fetcher is Object:
+		if _map_fetcher.has_signal("install_progress") and not _map_fetcher.is_connected("install_progress", Callable(self, "_on_install_progress")):
+			_map_fetcher.connect("install_progress", Callable(self, "_on_install_progress"), Object.CONNECT_DEFERRED)
+		if _map_fetcher.has_signal("install_finished") and not _map_fetcher.is_connected("install_finished", Callable(self, "_on_install_finished")):
+			_map_fetcher.connect("install_finished", Callable(self, "_on_install_finished"), Object.CONNECT_DEFERRED)
 
 func configure_unmapped_region(cells: Array) -> Dictionary:
 	if _map_fetcher == null:
 		return {}
-	_pending_region = _map_fetcher.select_region_for_cells(cells)
-	if _pending_region.is_empty():
+	var res: Dictionary = _map_fetcher.select_region_for_cells(cells)
+	return configure_unmapped_region_data(res)
+
+func configure_unmapped_region_data(reg_data: Dictionary) -> Dictionary:
+	_pending_region = reg_data
+	if reg_data.get("beyond_the_map", false):
+		_is_beyond_the_map = true
+		_pending_size_mb = 0
+		if _chip_label != null:
+			_chip_label.text = "Beyond the map — Tenth Spring covers the USA"
+		if _unmapped_chip != null:
+			_unmapped_chip.visible = true
+		return reg_data
+
+	_is_beyond_the_map = false
+	if reg_data.is_empty():
 		_pending_size_mb = 0
 		if _chip_label != null:
 			_chip_label.text = MapFetcher.UNMAPPED_FALLBACK_TEXT
 		return {}
 
-	var r_name: String = str(_pending_region.get("name", ""))
-	_pending_size_mb = _map_fetcher.fetch_region_size_mb(_pending_region)
+	var r_name: String = str(reg_data.get("name", ""))
+	_pending_size_mb = _map_fetcher.fetch_region_size_mb(reg_data)
 	if _chip_label != null:
 		_chip_label.text = MapFetcher.format_unmapped_chip_text(r_name, _pending_size_mb)
 	if _download_dialog != null:
@@ -441,15 +544,29 @@ func _on_unmapped_chip_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+			if _is_beyond_the_map:
+				return
 			open_download_dialog()
 
 func open_download_dialog() -> void:
+	if _is_beyond_the_map:
+		return
 	if _download_dialog != null and not _pending_region.is_empty():
 		_download_dialog.popup_centered()
 
 func cancel_download_dialog() -> void:
 	if _download_dialog != null:
 		_download_dialog.hide()
+
+func _on_download_dialog_confirmed() -> void:
+	if _download_dialog != null:
+		_download_dialog.hide()
+	if _map_fetcher != null and not _pending_region.is_empty():
+		if _install_panel != null:
+			_install_panel.visible = true
+		if _install_label != null:
+			_install_label.text = "Downloading %s — 0 / %d MB" % [_pending_region.get("name", ""), _pending_size_mb]
+		_map_fetcher.start_install(_pending_region)
 
 func confirm_download_dialog() -> Dictionary:
 	if _download_dialog != null:
@@ -466,6 +583,44 @@ func confirm_download_dialog() -> Dictionary:
 			_update_map_button.visible = true
 	return res
 
+func _on_install_progress(stage: String, done: int, total: int) -> void:
+	if _install_panel != null:
+		_install_panel.visible = true
+	if _install_label == null:
+		return
+	if stage == "download":
+		var done_mb := int(round(float(done) / (1024.0 * 1024.0)))
+		var total_mb := int(round(float(total) / (1024.0 * 1024.0)))
+		_install_label.text = "Downloading %s — %d / %d MB" % [_pending_region.get("name", ""), done_mb, total_mb]
+	elif stage == "verify":
+		_install_label.text = "Checking download…"
+	elif stage == "convert":
+		_install_label.text = "Preparing map — pass %d of 3" % done
+
+func _on_install_finished(result: Dictionary) -> void:
+	if _install_panel != null:
+		_install_panel.visible = false
+	if result.get("ok", false):
+		_load_map_stores()
+		lru_cache.clear()
+		_rendered_cells.clear()
+		_update_frustum_culling()
+		if _unmapped_chip != null:
+			_unmapped_chip.visible = false
+		if _update_map_button != null:
+			_update_map_button.visible = true
+		_pending_region = {}
+	else:
+		var err := str(result.get("error", "Download failed"))
+		if _unmapped_chip != null:
+			_unmapped_chip.visible = true
+		if _chip_label != null:
+			_chip_label.text = "Download failed — %s. Click to retry." % err
+
+func _on_install_cancel_pressed() -> void:
+	if _map_fetcher != null and _map_fetcher.has_method("cancel_install"):
+		_map_fetcher.cancel_install()
+
 func trigger_update_map_data() -> Dictionary:
 	if _map_fetcher == null or _pending_region.is_empty():
 		return {"ok": false, "error": "No region configured for update"}
@@ -478,6 +633,9 @@ func trigger_update_map_data() -> Dictionary:
 	return res
 
 func _exit_tree() -> void:
+	if _lookup_thread != null and _lookup_thread.is_alive():
+		_lookup_thread.wait_to_finish()
+		_lookup_thread = null
 	for store in _map_stores:
 		store.close()
 	_map_stores.clear()
