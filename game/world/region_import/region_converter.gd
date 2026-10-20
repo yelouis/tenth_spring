@@ -187,7 +187,7 @@ func _cleanup_cancel(out_db_path: String, store: Object) -> Dictionary:
 			DirAccess.remove_absolute(out_db_path + sfx)
 	return {"ok": false, "error": "Cancelled"}
 
-func convert(pbf_path: String, out_db_path: String) -> Dictionary:
+func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, coverage_box: Variant = null) -> Dictionary:
 	var t0 := Time.get_ticks_msec()
 
 	if cancel_requested:
@@ -224,11 +224,134 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 	var temp_coords_path := out_db_path + ".coords.tmp"
 	var temp_rels_path := out_db_path + ".rels.tmp"
 
+	var start_pass := cur_state_pass.to_int()
+
+	# =========================================================
+	# PRE-PASS: Collect node IDs inside clip rectangle (if clipping)
+	# =========================================================
+	var S := PackedInt64Array()
+	var is_clipping := (clip_rect != null)
+	var clip_min_x := -INF
+	var clip_max_x := INF
+	var clip_min_y := -INF
+	var clip_max_y := INF
+	if is_clipping:
+		if clip_rect is Rect2:
+			clip_min_x = clip_rect.position.x
+			clip_max_x = clip_rect.position.x + clip_rect.size.x
+			clip_min_y = clip_rect.position.y
+			clip_max_y = clip_rect.position.y + clip_rect.size.y
+		elif clip_rect is Dictionary:
+			clip_min_x = float(clip_rect.get("min_x", -INF))
+			clip_max_x = float(clip_rect.get("max_x", INF))
+			clip_min_y = float(clip_rect.get("min_y", -INF))
+			clip_max_y = float(clip_rect.get("max_y", INF))
+
+		if start_pass < 1:
+			print("--- Pre-pass: Streaming dense nodes for clip rectangle ---")
+			var f_pre := FileAccess.open(pbf_path, FileAccess.READ)
+			if not f_pre:
+				store.close()
+				return {"ok": false, "error": "Cannot open PBF file for pre-pass"}
+			var file_size_pre := f_pre.get_length()
+			var s_chunk := PackedInt64Array()
+			const S_CHUNK_SIZE := 2000000
+
+			while f_pre.get_position() < file_size_pre:
+				if cancel_requested:
+					f_pre.close()
+					return _cleanup_cancel(out_db_path, store)
+				_check_memory_pause()
+				var blob := OsmPbfReader.read_blob_header_and_data(f_pre)
+				if blob.is_empty():
+					break
+				if blob.get("type", "") != "OSMData":
+					continue
+
+				var decomp: PackedByteArray = blob.get("decompressed", PackedByteArray())
+				if decomp.is_empty():
+					continue
+
+				var pr := OsmPbfReader.ProtoReader.new(decomp)
+				while pr.has_more():
+					var tag := pr.read_varint()
+					var fn := tag >> 3
+					var wt := tag & 0x7
+					if fn == 2 and wt == 2: # PrimitiveGroup
+						var glen := pr.read_varint()
+						var gr_end := pr.pos + glen
+						while pr.pos < gr_end:
+							var gtag := pr.read_varint()
+							var gfn := gtag >> 3
+							var gwt := gtag & 0x7
+							if gfn == 2 and gwt == 2: # DenseNodes
+								var dlen := pr.read_varint()
+								var dend := pr.pos + dlen
+								var id_deltas: Array[int] = []
+								var lat_deltas: Array[int] = []
+								var lon_deltas: Array[int] = []
+								while pr.pos < dend:
+									var dtag := pr.read_varint()
+									var dfn := dtag >> 3
+									var dwt := dtag & 0x7
+									if dfn == 1 and dwt == 2:
+										var l := pr.read_varint()
+										var lend := pr.pos + l
+										while pr.pos < lend:
+											id_deltas.append(pr.read_sint64())
+									elif dfn == 8 and dwt == 2:
+										var l := pr.read_varint()
+										var lend := pr.pos + l
+										while pr.pos < lend:
+											lat_deltas.append(pr.read_sint64())
+									elif dfn == 9 and dwt == 2:
+										var l := pr.read_varint()
+										var lend := pr.pos + l
+										while pr.pos < lend:
+											lon_deltas.append(pr.read_sint64())
+									elif dwt == 2:
+										pr.skip(pr.read_varint())
+									elif dwt == 0:
+										pr.read_varint()
+
+								var cur_id := 0
+								var cur_lat := 0
+								var cur_lon := 0
+								for di in id_deltas.size():
+									cur_id += id_deltas[di]
+									cur_lat += lat_deltas[di]
+									cur_lon += lon_deltas[di]
+									var lat_f := float(cur_lat) * 1e-7
+									var lon_f := float(cur_lon) * 1e-7
+									var wm: Vector2 = Grid.latlon_to_wm(lat_f, lon_f)
+									if wm.x >= clip_min_x and wm.x < clip_max_x and wm.y >= clip_min_y and wm.y < clip_max_y:
+										s_chunk.append(cur_id)
+										if s_chunk.size() >= S_CHUNK_SIZE:
+											s_chunk.sort()
+											s_chunk = _dedup_sorted(s_chunk)
+											S = _merge_sorted_dedup(S, s_chunk)
+											s_chunk = PackedInt64Array()
+							elif gwt == 2:
+								pr.skip(pr.read_varint())
+							elif gwt == 0:
+								pr.read_varint()
+					elif wt == 2:
+						pr.skip(pr.read_varint())
+					elif wt == 0:
+						pr.read_varint()
+			f_pre.close()
+
+			if not s_chunk.is_empty():
+				s_chunk.sort()
+				s_chunk = _dedup_sorted(s_chunk)
+				S = _merge_sorted_dedup(S, s_chunk)
+				s_chunk = PackedInt64Array()
+
+			print("Pre-pass finished: %d nodes in clip rectangle" % S.size())
+
 	# =========================================================
 	# PASS 1: Scan relations and ways, collect needed node IDs
 	# =========================================================
-	var start_pass := cur_state_pass.to_int()
-
 	if start_pass < 1:
 		print("--- Pass 1: Scanning relations and ways ---")
 		progress_updated.emit("convert", 1, 3)
@@ -241,7 +364,12 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 		var id_chunk := PackedInt64Array()
 		const ID_CHUNK_SIZE := 2000000
 
-		# Step 1A: Scan relations first to collect kept multipolygons and their member way IDs
+		var candidate_relations: Array = []
+		var candidate_rel_way_ids: Dictionary = {}
+		var rel_way_refs: Dictionary = {}
+		var rel_ways_in_clip: Dictionary = {}
+
+		# Step 1A: Scan relations first to collect candidate multipolygons and their member way IDs
 		while f.get_position() < file_size:
 			if cancel_requested:
 				f.close()
@@ -335,9 +463,9 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 									var m_role: String = string_table[r_roles[m_i]] if m_i < r_roles.size() and r_roles[m_i] < string_table.size() else ""
 									var m_id: int = r_memids[m_i]
 									if m_type == 1: # WAY
-										relation_way_ids[m_id] = true
+										candidate_rel_way_ids[m_id] = true
 										members.append({"id": m_id, "role": m_role})
-								kept_relations.append({
+								candidate_relations.append({
 									"id": rid,
 									"tags": tags,
 									"members": members
@@ -421,21 +549,49 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 								elif wwt == 0:
 									pr.read_varint()
 
-							var is_kept := relation_way_ids.has(wid)
+							var has_standalone_tags := false
 							for k_i in w_keys.size():
 								var k_str := string_table[w_keys[k_i]] if k_i < w_keys.size() and w_keys[k_i] < string_table.size() else ""
-								if k_str in ["highway", "waterway", "building", "leisure", "natural", "landuse", "water"]:
-									is_kept = true
+								if k_str in ["highway", "waterway", "building", "leisure", "natural", "water"]:
+									has_standalone_tags = true
 									break
+								elif k_str == "landuse":
+									var v_str := string_table[w_vals[k_i]] if k_i < w_vals.size() and w_vals[k_i] < string_table.size() else ""
+									if v_str in ["grass", "meadow", "village_green", "recreation_ground", "residential", "industrial", "commercial", "retail", "cemetery"]:
+										has_standalone_tags = true
+										break
 
-							if is_kept:
+							var is_candidate_way: bool = candidate_rel_way_ids.has(wid)
+							if is_clipping:
+								var has_clip_node := false
 								for r in w_refs:
-									id_chunk.append(r)
-								if id_chunk.size() >= ID_CHUNK_SIZE:
-									id_chunk.sort()
-									id_chunk = _dedup_sorted(id_chunk)
-									needed_node_ids = _merge_sorted_dedup(needed_node_ids, id_chunk)
-									id_chunk = PackedInt64Array()
+									var idx := S.bsearch(r)
+									if idx < S.size() and S[idx] == r:
+										has_clip_node = true
+										break
+								if is_candidate_way:
+									rel_way_refs[wid] = w_refs
+									if has_clip_node:
+										rel_ways_in_clip[wid] = true
+								if has_standalone_tags and has_clip_node:
+									for r in w_refs:
+										id_chunk.append(r)
+									if id_chunk.size() >= ID_CHUNK_SIZE:
+										id_chunk.sort()
+										id_chunk = _dedup_sorted(id_chunk)
+										needed_node_ids = _merge_sorted_dedup(needed_node_ids, id_chunk)
+										id_chunk = PackedInt64Array()
+							else:
+								if is_candidate_way:
+									rel_way_refs[wid] = w_refs
+								if is_candidate_way or has_standalone_tags:
+									for r in w_refs:
+										id_chunk.append(r)
+									if id_chunk.size() >= ID_CHUNK_SIZE:
+										id_chunk.sort()
+										id_chunk = _dedup_sorted(id_chunk)
+										needed_node_ids = _merge_sorted_dedup(needed_node_ids, id_chunk)
+										id_chunk = PackedInt64Array()
 						elif gwt == 2:
 							pr.skip(pr.read_varint())
 						elif gwt == 0:
@@ -447,12 +603,37 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 
 		f.close()
 
+		# Resolve candidate relations
+		for crel in candidate_relations:
+			var keep_rel := false
+			if is_clipping:
+				for m in crel.members:
+					if rel_ways_in_clip.has(m.id):
+						keep_rel = true
+						break
+			else:
+				keep_rel = true
+
+			if keep_rel:
+				kept_relations.append(crel)
+				for m in crel.members:
+					relation_way_ids[m.id] = true
+					if is_clipping and rel_way_refs.has(m.id):
+						for r in rel_way_refs[m.id]:
+							id_chunk.append(r)
+						if id_chunk.size() >= ID_CHUNK_SIZE:
+							id_chunk.sort()
+							id_chunk = _dedup_sorted(id_chunk)
+							needed_node_ids = _merge_sorted_dedup(needed_node_ids, id_chunk)
+							id_chunk = PackedInt64Array()
+
 		# Flush remaining chunk into needed_node_ids
 		if not id_chunk.is_empty():
 			id_chunk.sort()
 			id_chunk = _dedup_sorted(id_chunk)
 			needed_node_ids = _merge_sorted_dedup(needed_node_ids, id_chunk)
 			id_chunk = PackedInt64Array()
+		needed_node_ids = _dedup_sorted(needed_node_ids)
 
 		print("Pass 1 finished: %d needed nodes, %d kept relations" % [needed_node_ids.size(), kept_relations.size()])
 
@@ -628,12 +809,17 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 								if not tags.is_empty():
 									var cat := PoiMapping.resolve_category(tags)
 									if cat != "":
-										var lat_f := float(cur_lat) * 1e-7
-										var lon_f := float(cur_lon) * 1e-7
-										var cell := Grid.latlon_to_cell(lat_f, lon_f)
-										var name := str(tags.get("name", ""))
-										store.insert_place(cur_id, cell.x, cell.y, name, cat, lat_f, lon_f)
-										poi_count += 1
+										var keep_poi := true
+										if is_clipping:
+											var s_idx := S.bsearch(cur_id)
+											keep_poi = (s_idx < S.size() and S[s_idx] == cur_id)
+										if keep_poi:
+											var lat_f := float(cur_lat) * 1e-7
+											var lon_f := float(cur_lon) * 1e-7
+											var cell := Grid.latlon_to_cell(lat_f, lon_f)
+											var name := str(tags.get("name", ""))
+											store.insert_place(cur_id, cell.x, cell.y, name, cat, lat_f, lon_f)
+											poi_count += 1
 						elif gwt == 2:
 							pr.skip(pr.read_varint())
 						elif gwt == 0:
@@ -799,9 +985,13 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 							is_standalone_poly = true
 							poly_kind = "water"
 						elif tags.has("landuse"):
-							is_standalone_poly = true
 							var lu: String = tags["landuse"]
-							poly_kind = lu if lu in ["residential", "industrial", "commercial", "retail", "cemetery"] else "park"
+							if lu in ["grass", "meadow", "village_green", "recreation_ground"]:
+								is_standalone_poly = true
+								poly_kind = "park"
+							elif lu in ["residential", "industrial", "commercial", "retail", "cemetery"]:
+								is_standalone_poly = true
+								poly_kind = lu
 
 						var is_line := false
 						var line_kind := ""
@@ -865,7 +1055,16 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 		if tags.get("leisure", "") == "park":
 			kind = "park"
 		elif tags.has("landuse"):
-			kind = tags["landuse"]
+			var lu: String = tags["landuse"]
+			if lu in ["grass", "meadow", "village_green", "recreation_ground"]:
+				kind = "park"
+			elif lu in ["residential", "industrial", "commercial", "retail", "cemetery"]:
+				kind = lu
+			else:
+				kind = ""
+
+		if kind == "":
+			continue
 
 		var all_rings: Array[PackedVector2Array] = []
 		all_rings.append_array(outer_rings)
@@ -877,6 +1076,45 @@ func convert(pbf_path: String, out_db_path: String) -> Dictionary:
 	f.close()
 
 	store.set_state("pass", "completed")
+
+	# Record coverage & clip state (§5.5 rule 5)
+	if is_clipping:
+		store.set_state("clip", "1")
+		if coverage_box != null and coverage_box is Array and coverage_box.size() >= 4:
+			store.set_state("coverage", "%d,%d,%d,%d" % [coverage_box[0], coverage_box[1], coverage_box[2], coverage_box[3]])
+		elif coverage_box != null and coverage_box is Dictionary:
+			store.set_state("coverage", "%d,%d,%d,%d" % [
+				coverage_box.get("min_cx", 0), coverage_box.get("min_cy", 0),
+				coverage_box.get("max_cx", 0), coverage_box.get("max_cy", 0)
+			])
+		else:
+			var c_min_cx := int(floor(clip_min_x / Grid.CELL_WM))
+			var c_min_cy := int(floor(clip_min_y / Grid.CELL_WM))
+			var c_max_cx := int(ceil(clip_max_x / Grid.CELL_WM)) - 1
+			var c_max_cy := int(ceil(clip_max_y / Grid.CELL_WM)) - 1
+			store.set_state("coverage", "%d,%d,%d,%d" % [c_min_cx, c_min_cy, c_max_cx, c_max_cy])
+	else:
+		# Unclipped: bounding box of all written features
+		var min_cx := INF
+		var min_cy := INF
+		var max_cx := -INF
+		var max_cy := -INF
+		for q in [
+			"SELECT min(cell_x) AS min_cx, min(cell_y) AS min_cy, max(cell_x) AS max_cx, max(cell_y) AS max_cy FROM features_poly;",
+			"SELECT min(cell_x) AS min_cx, min(cell_y) AS min_cy, max(cell_x) AS max_cx, max(cell_y) AS max_cy FROM features_line;",
+			"SELECT min(cell_x) AS min_cx, min(cell_y) AS min_cy, max(cell_x) AS max_cx, max(cell_y) AS max_cy FROM place_nodes;"
+		]:
+			var r = store._rows(q)
+			if not r.is_empty() and r[0]["min_cx"] != null:
+				min_cx = minf(min_cx, float(r[0]["min_cx"]))
+				min_cy = minf(min_cy, float(r[0]["min_cy"]))
+				max_cx = maxf(max_cx, float(r[0]["max_cx"]))
+				max_cy = maxf(max_cy, float(r[0]["max_cy"]))
+		if min_cx != INF:
+			store.set_state("coverage", "%d,%d,%d,%d" % [int(min_cx), int(min_cy), int(max_cx), int(max_cy)])
+		else:
+			store.set_state("coverage", "0,0,0,0")
+		store.set_state("clip", "0")
 
 	# Clean up temporary index files
 	if FileAccess.file_exists(temp_nodes_path):

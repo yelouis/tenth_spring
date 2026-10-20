@@ -538,15 +538,24 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **F44 (fixed):** `_poll_unmapped_cells` runs every 2.0s and prompts the download chip in the running game.
 - **F45 (partially fixed):** (a), (b), (c), and (e) resolved; (d) whole-region conversion remains open pending Decision 15 re-ask.
 
+**M34 — Clip conversion, store coverage, and profile isolation (F46, F50, Item 2, 2026-10-19).**
+- **What was solved:**
+  - **Pre-pass & Pass 1-3 clipping:** Implemented dense node streaming into sorted/de-duplicated `PackedInt64Array S` during pre-pass under memguard watchdog. Kept ways having >= 1 node ref in S; kept multipolygon relations having >= 1 member way in S along with all member ways. Passes 2-3 run on reduced sets, writing whole ways clipped per cell.
+  - **Coverage semantics:** Pass 3 records `coverage` (inclusive cell bounding box `min_cx,min_cy,max_cx,max_cy`) and `clip` (`1` if clipped, `0` if full). Added `get_coverage_box()` and `covers_cell(cx, cy)` in `map_store.gd`. Updated `map_view.gd` to render cells covered by a store with no features as `TILE_TERRAIN` (`(1, 0)`), and only unmapped uncovered cells as grey `(6, 0)`.
+  - **F46 (land use classification):** In `region_converter.gd`, stopped storing unknown land uses as `park`; `grass|meadow|village_green|recreation_ground` -> `park`; `residential`, `industrial`, `commercial`, `retail`, `cemetery` preserve their tags; other land uses omitted. In `tile_synth.gd`, only `park`, `garden`, `playground`, `pitch`, `nature_reserve`, `cemetery` paint as `TILE_PARK`; `residential`, `industrial`, `commercial`, `retail` remain as `TILE_TERRAIN`.
+  - **F50 (profile isolation):** Added `ProfilePaths.map_data_dir` (`user://map_data` for normal, `<demo_dir>/map_data` for demo). `map_view.gd` loads stores only from `_map_data_dir`; removed shared search of `user://test/map_data/`.
+  - **CLI & tools:** Added `--print-region`, `--clip-to-save`, and `--margin-cells` (default 6) to `map_convert.gd` and `tools/map_convert.py`.
+  - **Measured:** Tested under `memguard measure map_convert_clip` on a 38 × 33 cell clip of the human's area: completed in 325.15 s (~5.4 min, well below 10 min target), peak RSS 0.710 GiB (below 1.0 GiB target, budget 1.0 GiB), output DB 8.2 MB with 48,715 poly, 30,482 line, 451 place nodes; canonical SHA-256 `a066b5fdf2f9debd46bcddab9d9b076d282f3835ba26fd510fbdb0880b9d44af`.
+  - **Validation:** Added tests in `region_import_test.gd` (equivalence to golden unclipped hash, partial clip keeping whole crossing road and multipolygon lake while omitting east building, empty ocean clip with 0 features), `map_view_test.gd` (coverage rendering terrain vs unmapped grey, F50 normal profile loading 0 stores from test directory), and `tile_synth_test.gd` (F46 residential polygon rendering as terrain, not park). All 19 game tests PASS, loopback sync E2E PASS, Flutter tests PASS.
+- **F46 & F50 (fixed):** Verified in test suite and on real clipped data; marked resolved.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built".*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2).*
 - **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting Decision 15 re-ask.
-- **F46 — whole neighbourhoods are painted as park.** `tile_synth.gd:75` paints `residential`, `industrial`, `commercial`, `retail`, and `cemetery` land use with the park colour, and the converter stores *every other* land use as `park` (`region_converter.gd:772`). **Item 2.**
 - **F47 (minor) — the frame-time number isn't a frame time.** `FRAME_P95_MS` samples `delta` inside a headless test (0.07 ms). The 16.6 ms budget has never been measured with real rendering or real map data. **Item 3** measures it in a windowed run.
-- **F50 (minor) — the map view loads test map stores in every profile.** `_load_map_stores` searches both `user://map_data/` and `user://test/map_data/` (`map_view.gd:176-177`), so the real game and the demo would show any store a test left behind — and a demo store, which reveals where the human has been, sits in the shared `user://map_data/` rather than the demo profile. **Item 2:** each profile reads only its own `map_data/` folder.
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).

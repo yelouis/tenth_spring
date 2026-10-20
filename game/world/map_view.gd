@@ -83,6 +83,7 @@ var _current_zoom_step: int = 1 # 1, 2, 3
 var _frame_times: Array[float] = []
 var _is_demo: bool = false
 var _map_stores: Array[MapStore] = []
+var _map_data_dir: String = ""
 
 func _ready() -> void:
 	_camera = get_node_or_null("MapCamera") as Camera2D
@@ -186,23 +187,30 @@ func _init_tile_sets() -> void:
 	if _fog_overlay != null:
 		_fog_overlay.tile_set = fog_ts
 
+func set_map_data_dir(dir_path: String) -> void:
+	_map_data_dir = dir_path
+	_load_map_stores()
+	lru_cache.clear()
+	_rendered_cells.clear()
+	_update_frustum_culling()
+
 func _load_map_stores() -> void:
 	for s in _map_stores:
 		s.close()
 	_map_stores.clear()
-	var search_dirs = [
-		"user://map_data/",
-		"user://test/map_data/"
-	]
-	for d in search_dirs:
-		if DirAccess.dir_exists_absolute(d):
-			var files = DirAccess.get_files_at(d)
-			for f in files:
-				if f.ends_with(".db") and not f.ends_with(".tmp.db"):
-					var p: String = d + f
-					var store := MapStore.new(p)
-					if store.open_store(true):
-						_map_stores.append(store)
+	var target_dir := _map_data_dir
+	if target_dir.is_empty():
+		target_dir = ProfilePaths.get_map_data_dir()
+	if not target_dir.ends_with("/"):
+		target_dir += "/"
+	if DirAccess.dir_exists_absolute(target_dir):
+		var files = DirAccess.get_files_at(target_dir)
+		for f in files:
+			if f.ends_with(".db") and not f.ends_with(".tmp.db"):
+				var p: String = target_dir + f
+				var store := MapStore.new(p)
+				if store.open_store(true):
+					_map_stores.append(store)
 
 func _get_db() -> Node:
 	return get_node_or_null("/root/DB")
@@ -420,6 +428,7 @@ func _render_cell(cx: int, cy: int) -> bool:
 	else:
 		# Search installed map stores
 		var features := {"polys": [], "lines": [], "places": []}
+		var is_covered_by_store := false
 		for store in _map_stores:
 			var polys = store.get_features_poly(cx, cy)
 			var lines = store.get_features_line(cx, cy)
@@ -429,9 +438,12 @@ func _render_cell(cx: int, cy: int) -> bool:
 				features["lines"].append_array(lines)
 				features["places"].append_array(places)
 				has_map_data = true
+			if not is_covered_by_store and store.covers_cell(cx, cy):
+				is_covered_by_store = true
 
-		if has_map_data:
+		if has_map_data or is_covered_by_store:
 			tile_buf = TileSynth.synthesize_cell(cx, cy, features, 0)
+			has_map_data = true
 		else:
 			# Unmapped fill: 16x16 of tile 6
 			tile_buf.resize(256)

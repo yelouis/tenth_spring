@@ -8,6 +8,7 @@ const MapViewScene := preload("res://world/map_view.tscn")
 func run_test() -> bool:
 	var map_view = MapViewScene.instantiate()
 	add_child(map_view)
+	map_view.set_map_data_dir("user://test/map_data")
 
 	# 1. Scene-Tree Assertions (Item 9)
 	var attribution_label := map_view.get_node_or_null("AttributionUI/AttributionLabel") as Label
@@ -254,8 +255,79 @@ func run_test() -> bool:
 		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# 7. Coverage Rendering Test (falsifying)
+	# A cell covered by a store with no features renders as terrain (1, 0), not unmapped grey (6, 0).
+	# A cell outside every coverage renders as unmapped grey (6, 0).
+	var test_cov_store_path := "user://test/map_data/cov_test.db"
+	for suffix in ["", "-wal", "-shm", ".tmp"]:
+		if FileAccess.file_exists(test_cov_store_path + suffix):
+			DirAccess.remove_absolute(test_cov_store_path + suffix)
+
+	var cov_store = MapStoreClass.new(test_cov_store_path)
+	if not cov_store.open_store(false):
+		push_error("Failed to open cov_test.db")
+		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	# Set coverage to include cell (10, 10)
+	cov_store.set_state("coverage", "10,10,12,12")
+	cov_store.set_state("clip", "1")
+	cov_store.close()
+
+	map_view.set_map_data_dir("user://test/map_data")
+	map_view._load_map_stores()
+	DB.init_db()
+	DB.upsert_map_cell(10, 10, 1, 0)
+	DB.upsert_map_cell(50, 50, 1, 0)
+
+	map_view.get_lru_cache().clear()
+	map_view._rendered_cells.clear()
+	map_view._world_tile_map.clear()
+	map_view._fog_overlay.clear()
+
+	# Render covered cell (10, 10) with 0 features
+	map_view._render_cell(10, 10)
+	var covered_cell_tile: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(10 * 16, (-10 - 1) * 16))
+	if covered_cell_tile != Vector2i(1, 0):
+		push_error("Coverage falsified: covered cell with no features rendered as %s, expected (1, 0) terrain" % [covered_cell_tile])
+		if FileAccess.file_exists(test_cov_store_path):
+			DirAccess.remove_absolute(test_cov_store_path)
+		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# Render uncovered cell (50, 50)
+	map_view._render_cell(50, 50)
+	var uncovered_cell_tile: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(50 * 16, (-50 - 1) * 16))
+	if uncovered_cell_tile != Vector2i(6, 0):
+		push_error("Coverage falsified: uncovered cell rendered as %s, expected (6, 0) unmapped grey" % [uncovered_cell_tile])
+		if FileAccess.file_exists(test_cov_store_path):
+			DirAccess.remove_absolute(test_cov_store_path)
+		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	for store in map_view._map_stores:
+		store.close()
+	map_view._map_stores.clear()
+
+	# 8. F50 Profile-local map data test (falsifying)
+	# With stores present in user://test/map_data/, a normal-profile map view loads ZERO stores.
+	var ProfilePaths := load("res://scripts/profile_paths.gd")
+	map_view.set_map_data_dir(ProfilePaths.DEFAULT_MAP_DATA_DIR)
+	map_view._load_map_stores()
+	if map_view._map_stores.size() != 0:
+		push_error("F50 falsified: normal-profile map view loaded %d stores from outside user://map_data" % map_view._map_stores.size())
+		if FileAccess.file_exists(test_cov_store_path):
+			DirAccess.remove_absolute(test_cov_store_path)
+		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	if FileAccess.file_exists(test_cov_store_path):
+		DirAccess.remove_absolute(test_cov_store_path)
+	for suffix in ["-wal", "-shm"]:
+		if FileAccess.file_exists(test_cov_store_path + suffix):
+			DirAccess.remove_absolute(test_cov_store_path + suffix)
+
 	_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
-	print("PASS: map_view_test (Attribution, DemoBadge, LRU 256 cap, UnmappedChip, Camera, FRAME_P95_MS=%.2fms, F43 North-Up verified)" % p95)
+	print("PASS: map_view_test (Attribution, DemoBadge, LRU 256 cap, UnmappedChip, Camera, FRAME_P95_MS=%.2fms, F43 North-Up, Coverage & F50 verified)" % p95)
 	return true
 
 func _cleanup_f43(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:

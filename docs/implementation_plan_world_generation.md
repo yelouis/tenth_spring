@@ -205,6 +205,7 @@ The full three-pass streaming PBF converter (`region_converter.gd` + `map_store.
 |---|---|---|---|---|---|---|---|
 | **District of Columbia** | 20.05 MB | 3-pass streaming | **15.83 s** | **1.693 GiB** | 205,322 poly<br>136,362 line<br>3,002 place | **36 MB** | `5002878b61dee54e1ced3aef08d8d6cc7e7c5a2445d7e174f16c50e0ef2ed07d` |
 | **Washington** | 347.51 MB | 3-pass streaming | **~61 min** (Pass 1: ~1.5m, Pass 2: ~1.5m, Pass 3: ~58m) | **1.30 GiB** during conversion (spiked to 5.2 GiB on unchunked hash) | ~2,500,000 poly<br>~1,500,000 line<br>20,544 place | **1.0 GB** | Incomplete (stopped by memguard during hash) |
+| **Clip — 38 × 33 cells (the human's area)** | — | Pre-pass + 3-pass clip | **325.15 s** (~5.4 min) | **0.710 GiB** | 48,715 poly<br>30,482 line<br>451 place | **8.2 MB** | `a066b5fdf2f9debd46bcddab9d9b076d282f3835ba26fd510fbdb0880b9d44af` |
 
 #### Decision Rule Evaluation (Agent Guide Item 7)
 - **Gate Rule:** Washington $\le 30\text{ min}$ **and** $\le 1.0\text{ GiB}$ peak RSS.

@@ -13,12 +13,12 @@ func run_test() -> bool:
 	if not r1.ok or r1.is_demo != false or r1.error != "":
 		push_error("Row 1 failed: expected ok=true, is_demo=false, error='', got: %s" % str(r1))
 		return false
-	if r1.db_path != "user://tenth_spring.db" or r1.db_tmp_path != "user://tenth_spring.db.tmp" or r1.identity_dir != "user://sync_identity/":
+	if r1.db_path != "user://tenth_spring.db" or r1.db_tmp_path != "user://tenth_spring.db.tmp" or r1.identity_dir != "user://sync_identity/" or r1.get("map_data_dir", "") != "user://map_data":
 		push_error("Row 1 failed: incorrect paths: %s" % str(r1))
 		return false
 
 	var r1_extra = ProfilePaths.resolve(["--fullscreen", "--verbose"])
-	if not r1_extra.ok or r1_extra.is_demo != false or r1_extra.db_path != "user://tenth_spring.db":
+	if not r1_extra.ok or r1_extra.is_demo != false or r1_extra.db_path != "user://tenth_spring.db" or r1_extra.get("map_data_dir", "") != "user://map_data":
 		push_error("Row 1 with extra args failed: %s" % str(r1_extra))
 		return false
 
@@ -29,7 +29,7 @@ func run_test() -> bool:
 	if not r2.ok or r2.is_demo != true or r2.error != "":
 		push_error("Row 2 failed: expected ok=true, is_demo=true, error='', got: %s" % str(r2))
 		return false
-	if r2.db_path != "user://demo/tenth_spring.db" or r2.db_tmp_path != "user://demo/tenth_spring.db.tmp" or r2.identity_dir != "user://demo/sync_identity/":
+	if r2.db_path != "user://demo/tenth_spring.db" or r2.db_tmp_path != "user://demo/tenth_spring.db.tmp" or r2.identity_dir != "user://demo/sync_identity/" or r2.get("map_data_dir", "") != "user://demo/map_data":
 		push_error("Row 2 failed: incorrect paths: %s" % str(r2))
 		return false
 
@@ -40,7 +40,7 @@ func run_test() -> bool:
 	if not r3.ok or r3.is_demo != true or r3.error != "":
 		push_error("Row 3 failed: expected ok=true, is_demo=true, error='', got: %s" % str(r3))
 		return false
-	if r3.db_path != "user://test/demo/tenth_spring.db" or r3.db_tmp_path != "user://test/demo/tenth_spring.db.tmp" or r3.identity_dir != "user://test/demo/sync_identity/":
+	if r3.db_path != "user://test/demo/tenth_spring.db" or r3.db_tmp_path != "user://test/demo/tenth_spring.db.tmp" or r3.identity_dir != "user://test/demo/sync_identity/" or r3.get("map_data_dir", "") != "user://test/demo/map_data":
 		push_error("Row 3 failed: incorrect paths: %s" % str(r3))
 		return false
 

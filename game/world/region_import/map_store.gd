@@ -245,6 +245,34 @@ func get_place_nodes(cell_x: int, cell_y: int) -> Array:
 		[cell_x, cell_y]
 	)
 
+func get_coverage_box() -> Variant:
+	var cov_str := get_state("coverage", "")
+	if cov_str.is_empty():
+		return null
+	var parts := cov_str.split(",")
+	if parts.size() < 4:
+		return null
+	var min_cx := int(parts[0].strip_edges())
+	var min_cy := int(parts[1].strip_edges())
+	var max_cx := int(parts[2].strip_edges())
+	var max_cy := int(parts[3].strip_edges())
+	return Rect2i(min_cx, min_cy, max_cx - min_cx + 1, max_cy - min_cy + 1)
+
+func covers_cell(cx: int, cy: int) -> bool:
+	var box = get_coverage_box()
+	if box != null and box is Rect2i:
+		var r: Rect2i = box
+		return cx >= r.position.x and cx < r.position.x + r.size.x and cy >= r.position.y and cy < r.position.y + r.size.y
+	# Pre-pass-17 fallback: covers only cells with features
+	var p_rows := _rows("SELECT 1 FROM features_poly WHERE cell_x = ? AND cell_y = ? LIMIT 1;", [cx, cy])
+	if not p_rows.is_empty():
+		return true
+	var l_rows := _rows("SELECT 1 FROM features_line WHERE cell_x = ? AND cell_y = ? LIMIT 1;", [cx, cy])
+	if not l_rows.is_empty():
+		return true
+	var n_rows := _rows("SELECT 1 FROM place_nodes WHERE cell_x = ? AND cell_y = ? LIMIT 1;", [cx, cy])
+	return not n_rows.is_empty()
+
 # -------------------------------------------------------------
 # Canonical Dump and Hash for Verification
 # -------------------------------------------------------------

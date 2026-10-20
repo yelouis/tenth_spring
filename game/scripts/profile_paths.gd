@@ -9,6 +9,7 @@ const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const DEFAULT_IDENTITY_DIR: String = "user://sync_identity/"
 const DEFAULT_DEMO_DIR: String = "user://demo"
+const DEFAULT_MAP_DATA_DIR: String = "user://map_data"
 
 const ERR_COLLIDES_WITH_PRIMARY: String = "demo directory cannot collide with primary save path"
 const ERR_MISSING_DEMO_DIR_ARG: String = "missing argument for --demo-dir"
@@ -42,7 +43,8 @@ static func resolve(args: Array = []) -> Dictionary:
 					"is_demo": true,
 					"db_path": "",
 					"db_tmp_path": "",
-					"identity_dir": ""
+					"identity_dir": "",
+					"map_data_dir": ""
 				}
 		elif arg.begins_with("--demo-dir="):
 			is_demo = true
@@ -57,7 +59,8 @@ static func resolve(args: Array = []) -> Dictionary:
 			"is_demo": false,
 			"db_path": DEFAULT_DB_PATH,
 			"db_tmp_path": DEFAULT_DB_TMP_PATH,
-			"identity_dir": DEFAULT_IDENTITY_DIR
+			"identity_dir": DEFAULT_IDENTITY_DIR,
+			"map_data_dir": DEFAULT_MAP_DATA_DIR
 		}
 
 	var demo_dir: String = custom_demo_dir if has_custom_demo_dir else DEFAULT_DEMO_DIR
@@ -72,7 +75,8 @@ static func resolve(args: Array = []) -> Dictionary:
 			"is_demo": true,
 			"db_path": "",
 			"db_tmp_path": "",
-			"identity_dir": ""
+			"identity_dir": "",
+			"map_data_dir": ""
 		}
 
 	var candidate_db = demo_dir + "/tenth_spring.db"
@@ -84,7 +88,8 @@ static func resolve(args: Array = []) -> Dictionary:
 			"is_demo": true,
 			"db_path": "",
 			"db_tmp_path": "",
-			"identity_dir": ""
+			"identity_dir": "",
+			"map_data_dir": ""
 		}
 
 	return {
@@ -93,5 +98,10 @@ static func resolve(args: Array = []) -> Dictionary:
 		"is_demo": true,
 		"db_path": candidate_db,
 		"db_tmp_path": candidate_db + ".tmp",
-		"identity_dir": candidate_id
+		"identity_dir": candidate_id,
+		"map_data_dir": demo_dir + "/map_data"
 	}
+
+static func get_map_data_dir() -> String:
+	var res := resolve_from_cmdline()
+	return str(res.get("map_data_dir", DEFAULT_MAP_DATA_DIR))

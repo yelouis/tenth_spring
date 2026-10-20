@@ -128,6 +128,181 @@ func run_test() -> bool:
 		return false
 
 	_cleanup()
+
+	# ---------------------------------------------------------
+	# 4. Equivalence Test (falsifying): Clip covering full fixture
+	# Canonical dump hash MUST be identical to unclipped run.
+	# ---------------------------------------------------------
+	var full_clip := Rect2(1000.0, 1000.0, 600.0, 600.0)
+	var conv_eq := RegionConverter.new()
+	var res_eq := conv_eq.convert(FIXTURE_PBF, TEST_DB_PATH, full_clip)
+	if not res_eq.get("ok", false):
+		push_error("Full clip conversion failed: %s" % res_eq.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var eq_store := MapStore.new(TEST_DB_PATH)
+	if not eq_store.open_store(false):
+		push_error("Failed to open eq store: %s" % eq_store.last_error)
+		_cleanup()
+		return false
+
+	var eq_hash := eq_store.canonical_dump_sha256()
+	if eq_hash != GOLDEN_CANONICAL_HASH:
+		push_error("Clip equivalence hash mismatch: expected %s, got %s" % [GOLDEN_CANONICAL_HASH, eq_hash])
+		eq_store.close()
+		_cleanup()
+		return false
+
+	if eq_store.get_state("clip") != "1":
+		push_error("Expected clip state '1', got '%s'" % eq_store.get_state("clip"))
+		eq_store.close()
+		_cleanup()
+		return false
+
+	var eq_cov: Variant = eq_store.get_coverage_box()
+	if eq_cov == null:
+		push_error("Expected non-null coverage box in clipped store")
+		eq_store.close()
+		_cleanup()
+		return false
+
+	eq_store.close()
+	_cleanup()
+
+	# ---------------------------------------------------------
+	# 5. Partial Clip Test: West half
+	# East-only building absent, crossing road present and whole, lake present
+	# ---------------------------------------------------------
+	var west_clip := Rect2(1000.0, 1000.0, 350.0, 600.0)
+	var conv_west := RegionConverter.new()
+	var res_west := conv_west.convert(FIXTURE_PBF, TEST_DB_PATH, west_clip)
+	if not res_west.get("ok", false):
+		push_error("West clip conversion failed: %s" % res_west.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var west_store := MapStore.new(TEST_DB_PATH)
+	if not west_store.open_store(false):
+		push_error("Failed to open west store: %s" % west_store.last_error)
+		_cleanup()
+		return false
+
+	# East-only building (Maple House in cell (5, 4)) must be absent
+	var b2_rows := west_store._rows("SELECT count(*) as c FROM features_poly WHERE cell_x = 5 AND cell_y = 4 AND kind = 'building';")
+	if int(b2_rows[0]["c"]) != 0:
+		push_error("Partial clip failed: east-only building in cell (5, 4) should be absent")
+		west_store.close()
+		_cleanup()
+		return false
+
+	# West building (City Hall in cell (4, 4)) must be present
+	var b1_rows := west_store._rows("SELECT count(*) as c FROM features_poly WHERE cell_x = 4 AND cell_y = 4 AND kind = 'building';")
+	if int(b1_rows[0]["c"]) != 1:
+		push_error("Partial clip failed: west building in cell (4, 4) should be present")
+		west_store.close()
+		_cleanup()
+		return false
+
+	# Crossing road (Lakeside Trail in cell (5, 5)) has first node inside (x=1296) and rest outside;
+	# must be present and whole (all 4 vertices preserved)
+	var r4_rows := west_store._rows("SELECT geom_pts FROM features_line WHERE cell_x = 5 AND cell_y = 5 AND kind = 'path';")
+	if r4_rows.is_empty():
+		push_error("Partial clip failed: crossing road in cell (5, 5) should be present")
+		west_store.close()
+		_cleanup()
+		return false
+	var r4_pts := MapStore.unpack_pts(r4_rows[0]["geom_pts"])
+	if r4_pts.size() != 4:
+		push_error("Partial clip failed: crossing road should be whole (4 pts), got %d" % r4_pts.size())
+		west_store.close()
+		_cleanup()
+		return false
+
+	# Multipolygon lake has outer ring node inside (x=1312) and inner ring outside;
+	# lake relation must be kept with both rings
+	var lake_rows_w := west_store._rows("SELECT geom_rings FROM features_poly WHERE kind = 'water';")
+	if lake_rows_w.is_empty():
+		push_error("Partial clip failed: lake should be present when one member way has node inside")
+		west_store.close()
+		_cleanup()
+		return false
+	var lake_rings_w := MapStore.unpack_rings(lake_rows_w[0]["geom_rings"])
+	if lake_rings_w.size() != 2:
+		push_error("Partial clip failed: lake should have both rings (outer + inner), got %d" % lake_rings_w.size())
+		west_store.close()
+		_cleanup()
+		return false
+
+	west_store.close()
+	_cleanup()
+
+	# When clip boundary is strictly west of cell 5 (x < 1280), lake has no nodes inside and must be absent
+	var strict_west_clip := Rect2(1000.0, 1000.0, 270.0, 600.0)
+	var conv_sw := RegionConverter.new()
+	var res_sw := conv_sw.convert(FIXTURE_PBF, TEST_DB_PATH, strict_west_clip)
+	if not res_sw.get("ok", false):
+		push_error("Strict west clip failed: %s" % res_sw.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var sw_store := MapStore.new(TEST_DB_PATH)
+	if not sw_store.open_store(false):
+		push_error("Failed to open strict west store: %s" % sw_store.last_error)
+		_cleanup()
+		return false
+
+	var sw_lake := sw_store._rows("SELECT count(*) as c FROM features_poly WHERE kind = 'water';")
+	if int(sw_lake[0]["c"]) != 0:
+		push_error("Strict west clip failed: lake should be absent when no member nodes inside")
+		sw_store.close()
+		_cleanup()
+		return false
+
+	sw_store.close()
+	_cleanup()
+
+	# ---------------------------------------------------------
+	# 6. Empty Clip Test: Rectangle in empty ocean
+	# 0 features, coverage recorded, exits 0
+	# ---------------------------------------------------------
+	var ocean_clip := Rect2(0.0, 0.0, 100.0, 100.0)
+	var conv_ocean := RegionConverter.new()
+	var res_ocean := conv_ocean.convert(FIXTURE_PBF, TEST_DB_PATH, ocean_clip)
+	if not res_ocean.get("ok", false):
+		push_error("Empty ocean clip conversion failed: %s" % res_ocean.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var ocean_store := MapStore.new(TEST_DB_PATH)
+	if not ocean_store.open_store(false):
+		push_error("Failed to open ocean store: %s" % ocean_store.last_error)
+		_cleanup()
+		return false
+
+	var o_poly: int = int(ocean_store._rows("SELECT count(*) as c FROM features_poly;")[0]["c"])
+	var o_line: int = int(ocean_store._rows("SELECT count(*) as c FROM features_line;")[0]["c"])
+	var o_node: int = int(ocean_store._rows("SELECT count(*) as c FROM place_nodes;")[0]["c"])
+	if o_poly != 0 or o_line != 0 or o_node != 0:
+		push_error("Empty ocean clip expected 0 features, got %d poly, %d line, %d nodes" % [o_poly, o_line, o_node])
+		ocean_store.close()
+		_cleanup()
+		return false
+
+	if ocean_store.get_state("clip") != "1":
+		push_error("Empty ocean clip expected clip='1', got '%s'" % ocean_store.get_state("clip"))
+		ocean_store.close()
+		_cleanup()
+		return false
+
+	if ocean_store.get_coverage_box() == null:
+		push_error("Empty ocean clip expected recorded coverage box, got null")
+		ocean_store.close()
+		_cleanup()
+		return false
+
+	ocean_store.close()
+	_cleanup()
 	return true
 
 func _cleanup() -> void:

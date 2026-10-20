@@ -72,7 +72,7 @@ static func synthesize_cell(cell_x: int, cell_y: int, features: Dictionary, worl
 
 		if kind == "water":
 			water_polys.append(rings)
-		elif kind in ["park", "garden", "playground", "pitch", "nature_reserve", "residential", "industrial", "commercial", "retail", "cemetery"]:
+		elif kind in ["park", "garden", "playground", "pitch", "nature_reserve", "cemetery"]:
 			park_polys.append(rings)
 		elif kind == "building":
 			building_polys.append(rings)

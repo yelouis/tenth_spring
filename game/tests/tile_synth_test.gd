@@ -173,7 +173,35 @@ func run_test() -> bool:
 		push_error("Falsification failed: moving building vertex by 32 WM-m did NOT change the hash!")
 		return false
 
-	print("PASS: tile_synth_test (golden hash %s verified, falsification verified)" % GOLDEN_SYNTH_HASH)
+	# 7. F46 (falsifying): residential polygon renders TILE_TERRAIN, not TILE_PARK
+	var res_poly := PackedVector2Array([
+		Vector2(2.0, 2.0), Vector2(10.0, 2.0), Vector2(10.0, 10.0), Vector2(2.0, 10.0)
+	])
+	var res_features := {
+		"polys": [{"kind": "residential", "geom_rings": [res_poly]}],
+		"lines": []
+	}
+	var res_buf := TileSynth.synthesize_cell(0, 0, res_features, 0)
+	var res_counts := _count_tiles(res_buf)
+	if res_counts.get(TileSynth.TILE_PARK, 0) != 0:
+		push_error("F46 falsified: residential polygon rendered as park tiles (%d tiles)" % res_counts.get(TileSynth.TILE_PARK, 0))
+		return false
+	if res_counts.get(TileSynth.TILE_TERRAIN, 0) != 256:
+		push_error("F46: expected residential polygon to remain terrain (256 tiles), got %d" % res_counts.get(TileSynth.TILE_TERRAIN, 0))
+		return false
+
+	# Confirm park polygon does render as TILE_PARK
+	var park_features := {
+		"polys": [{"kind": "park", "geom_rings": [res_poly]}],
+		"lines": []
+	}
+	var park_buf := TileSynth.synthesize_cell(0, 0, park_features, 0)
+	var park_counts := _count_tiles(park_buf)
+	if park_counts.get(TileSynth.TILE_PARK, 0) == 0:
+		push_error("Park polygon failed to render as park tiles")
+		return false
+
+	print("PASS: tile_synth_test (golden hash %s verified, falsification verified, F46 verified)" % GOLDEN_SYNTH_HASH)
 	return true
 
 func _count_tiles(buf: PackedByteArray) -> Dictionary:

@@ -596,7 +596,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ## Definition of Done (this build)
 - [x] **Item 0 (F43)** — north is up; the falsifiers failed on the old code and pass now.
 - [x] **Item 1 (Decision 16, F44, F45 a/b/c/e)** — US-only regions; beyond-the-map chip; redirects, status checks, streaming, threaded install with progress and cancel; the chip wired in the running game.
-- [ ] **Item 2 (F46, F50)** — clip conversion with its equivalence falsifier; coverage rendering; profile-local map data; the human's demo save and clipped map built locally; clip timings recorded in plan §5.3; Item 1's manual check done.
+- [x] **Item 2 (F46, F50)** — clip conversion with its equivalence falsifier; coverage rendering; profile-local map data; the human's demo save and clipped map built locally; clip timings recorded in plan §5.3; Item 1's manual check done.
 - [ ] **Item 3 (F47)** — the harness exists; the honest slice-1 screenshots of the human's area were **shown to them**; windowed `FRAME_P95_MS` recorded.
 - [x] **HUMAN: Decisions 17, 18, and 19 answered** (2026-10-19): 17 = A, 18 = B with the Echo story, 19 = Emerald.
 - [ ] **Item 11** — the guard blocks GBA ROM headers; 17 guard self-tests.

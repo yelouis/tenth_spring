@@ -31,6 +31,19 @@ var _install_thread: Thread = null
 var _active_converter: RegionConverter = null
 var _current_download_total: int = 0
 var _current_download_done: int = 0
+var _cached_tls_options: TLSOptions = null
+
+func _get_client_tls_options() -> TLSOptions:
+	if _cached_tls_options != null:
+		return _cached_tls_options
+	var ca := OS.get_system_ca_certificates()
+	if not ca.is_empty():
+		var cert := X509Certificate.new()
+		if cert.load_from_string(ca) == OK:
+			_cached_tls_options = TLSOptions.client(cert)
+			return _cached_tls_options
+	_cached_tls_options = TLSOptions.client()
+	return _cached_tls_options
 
 func _init(target_dir: String = DEFAULT_MAP_DATA_DIR, transport: Variant = null) -> void:
 	map_data_dir = target_dir.trim_suffix("/")
@@ -525,7 +538,7 @@ func _fetch_http(url: String, method: int, out_file: FileAccess) -> Dictionary:
 
 		var client := HTTPClient.new()
 		client.read_chunk_size = 1048576
-		var tls_opts: TLSOptions = TLSOptions.client() if use_tls else null
+		var tls_opts: TLSOptions = _get_client_tls_options() if use_tls else null
 		var err := client.connect_to_host(host, port, tls_opts)
 		if err != OK:
 			return {"ok": false, "error": "Cannot connect to %s" % host}
@@ -593,8 +606,10 @@ func _fetch_http(url: String, method: int, out_file: FileAccess) -> Dictionary:
 			return {"ok": true, "code": code, "headers": resp_headers, "content_length": content_len}
 
 		var body := PackedByteArray()
-		if client.has_response():
+		if client.has_response() or client.get_status() == HTTPClient.STATUS_BODY:
+			var poll_cnt := 0
 			while client.get_status() == HTTPClient.STATUS_BODY:
+				poll_cnt += 1
 				client.poll()
 				if cancel_requested:
 					client.close()
