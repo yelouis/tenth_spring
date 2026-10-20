@@ -47,7 +47,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 - **PC game: Godot 4.3.** SQLite for saves via the vendored `godot-sqlite` extension (Decisions 6–7). ROM import in pure GDScript.
 - **Companion: Flutter** — location capture, read-only memoir map, sync. No gameplay, no Nintendo content.
 - **Sync:** direct device-to-device over LAN — QR pairing, TLS with the PC's certificate pinned by the QR code (Decision 11), end-to-end encrypted.
-- **Map data:** OpenStreetMap, **fully offline** — the PC downloads a regional file (e.g. your state) once and reads it locally, so no map request ever names a place you've been (Decision 13). Never Google Maps — its terms forbid derivative map products.
+- **Map data:** OpenStreetMap, **fully offline** — the PC downloads a regional file (your US state — the map covers the USA only, Decision 16) once and reads it locally, so no map request ever names a place you've been (Decision 13). Never Google Maps — its terms forbid derivative map products.
 - **Distribution:** the asset-free client via GitHub Releases; the companion via the app stores.
 
 ## Setup notes
@@ -66,7 +66,7 @@ python3 -I tools/memguard.py run <step> -- <command...>
 ```
 
 ### Run the PC game
-Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. Today the game shows the pairing screen; the map arrives with world generation (Phase 3).
+Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. With no revealed places the game shows the pairing screen; once a sync (or a demo import) has revealed places, it opens the map view. The map is still the slice-1 preview — flat colour squares — until slice 2 (`docs/implementation_plan_world_generation_slice2.md`) lands.
 
 ### Install the companion on an iPhone (development build)
 Needs a Mac with Xcode and Flutter.

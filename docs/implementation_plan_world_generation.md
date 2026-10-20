@@ -4,6 +4,15 @@ This document specifies **Slice 1 ("Neighborhood Preview")** of Phase 3 World Ge
 
 Contracts: `docs/design_world_generation.md`, `docs/design_memory_and_resources.md`, `docs/design_privacy_and_location.md`, `docs/design_art_direction.md`.
 
+> **Status (2026-10-19, pass 17).** Slice 1 is built (agent guide Items 3–10) and verified with corrections (`ongoing_general_errors.md` M31). The pass-16 amendments to this plan were lost before reaching `main` (F48), so on the points below **the code is the truth**, not the text further down:
+> - downloads go under `user://map_data/`, never `~/.cache`;
+> - the demo handshake passes the fingerprint, pairing code, and PC id from `DEMO_READY` — there is no literal `demo_pc` id;
+> - only `index-v1.json` is used (it carries the download URLs too);
+> - §12 #5's speed numbers were a skim, superseded by §5.3's converter gate;
+> - the demo-profile test is `profile_paths_test.gd`, the CI demo import is a step in `sync_e2e.yml`, and per-item tests replaced §10.2's single `slice1_world_gen_test.gd`.
+>
+> **Pass 17 adds** §5.1a (USA scope, Decision 16), §5.4a (download mechanics, F44/F45), §5.5 (clip conversion and store coverage, F46), §7.1a (screen orientation, F43), and §7.4 (screenshot harness, F47) — agent guide Items 0–3, approved now. **The look itself is replaced by slice 2** (`implementation_plan_world_generation_slice2.md`, gated on Decisions 17 and 19).
+
 ---
 
 ## 0. Slice 1 Scope & Non-Goals
@@ -135,6 +144,13 @@ For a corridor point $P = (\mathrm{lat}, \mathrm{lon})$:
      `Download offline map for Washington (348 MB)?`
   4. On confirmation, download to `~/.cache/tenth_spring/downloads/<region>.osm.pbf`, verify MD5, and begin conversion.
 
+### 5.1a USA Scope (pass 17 — Decision 16; agent guide Item 1)
+- **Index filter.** `map_fetcher.gd` keeps only index features whose `properties.urls.pbf` starts with `https://download.geofabrik.de/north-america/us/` — 55 on 2026-10-19: the 50 states, DC, Puerto Rico, the US Virgin Islands, and California's `norcal` and `socal`. Everything else is ignored, including the whole-country `us` file and the multi-state groupings (`us-west`, `us-pacific`, …), whose URLs sit directly under `north-america/`. The smallest enclosing polygon still wins, so a Californian point resolves to `norcal` or `socal`.
+- **Per-cell regions.** For each revealed, visible cell that no store covers (§5.5), find the kept region containing the cell centre (`Grid.cell_center_latlon`); cache the answer per cell for the session. Cells in no kept region are **beyond the map**.
+- **Which region the chip offers:** the region containing the most of those cells; ties go to the smaller polygon area, then the lexically smaller `id`.
+- **Beyond the map.** Beyond-the-map cells render fog-solid. If every unmapped visible revealed cell is beyond the map, the chip reads exactly `Beyond the map — Tenth Spring covers the USA` and is not clickable. They are never offered for download.
+- **Return shape.** `select_region_for_cells(cells)` returns the chosen region dictionary as today, `{"beyond_the_map": true}` when every cell is beyond the map, or `{}` only when the index is unavailable.
+
 ### 5.2 Map Store Schema (`user://map_data/<region_id>.db`)
 The converted extract lives in its own SQLite database per region, separate from the save:
 
@@ -219,6 +235,29 @@ Given that full-state OSM extraction in pure GDScript exceeds the 30-minute and 
 - If revealed cells fall outside all installed map stores, they render as uniform grey `#2a3242` tiles with a subtle floating chip: `Unmapped Region — Washington (348 MB)`. Clicking the chip prompts download.
 - Map updates: An "Update Regional Map" button re-downloads the extract, writes to `user://map_data/<region_id>.tmp.db`, and replaces the database atomically.
 
+### 5.4a Download Mechanics (pass 17 — F44, F45; agent guide Item 1)
+1. **Redirects.** Follow at most 5 redirects with status 301, 302, 303, 307, or 308. `Location` may be absolute or start with `/`. Follow only to `https://download.geofabrik.de/`; any other target fails with `Unexpected redirect to <host>`. Geofabrik answers every `-latest` URL with 307 to a dated file (checked 2026-10-19), so this is required for any real download. A `HEAD`'s size is the `Content-Length` of the final 2xx response.
+2. **Status.** A final status outside 200–299 fails with `HTTP <code>`, and no body is written.
+3. **Streaming.** Set `client.read_chunk_size = 1048576`. A `GET` writes each body chunk straight to `<id>.osm.pbf.part` through an open `FileAccess`; the fetcher never holds more than one chunk. Expose `max_buffered_bytes` (the largest chunk held) for tests.
+4. **Off the main thread.** `start_install(region)` runs download → MD5 → rename → convert → atomic replace on a `Thread`, calling the existing synchronous `download_and_install_region` (kept for tests). Progress reaches the scene through `call_deferred`, as signals `install_progress(stage: String, done: int, total: int)` — stage `download` (bytes), `verify`, or `convert` (pass 1–3) — and `install_finished(result: Dictionary)`.
+5. **Cancel.** `cancel_install()` sets a flag checked between body chunks and, through a new `RegionConverter.cancel_requested`, before each blob. Cancelling removes `.part`, `.md5`, `.osm.pbf`, and `.tmp.db` (with its `-wal`/`-shm`) and finishes with `{"ok": false, "error": "Cancelled"}`.
+6. **Progress panel** (`AttributionUI/InstallPanel`): a label reading exactly `Downloading <Name> — <done> / <total> MB`, then `Checking download…`, then `Preparing map — pass <p> of 3`, and a `Cancel` button. It hides when the install ends. On failure the chip reads `Download failed — <error>. Click to retry.`
+7. **Wiring (F44).** Every 2.0 s the map view gathers the revealed, visible cells that no store covers. When that set is non-empty and differs from the last one, it resolves their region off the main thread (§5.1a — the first call may download and parse the index), showing `Unmapped — looking up map data…` meanwhile, then calls `configure_unmapped_region` with the result. No network call ever happens on the main thread.
+8. **Unchanged this pass:** what gets installed. The whole-region conversion stays until Decision 15 is re-asked (F45(d)).
+
+### 5.5 Clip Conversion & Store Coverage (pass 17 — F46; agent guide Item 2)
+**Why:** converting a whole state took ~61 min for Washington, but the game only needs the area around the places the player has been. Clipping makes converting the human's own area a minutes-long developer step, and its measurements feed the Decision 15 re-ask.
+
+1. **Interface.** `tools/map_convert.py --pbf <file> --out-dir <user://…> --clip-to-save <user:// path of a save> [--margin-cells 6]`. The Godot side opens that save **read-only**, reads `map_cell` rows with `reveal_state > 0`, and computes the inclusive cell rectangle `R = [min_cx − m, max_cx + m] × [min_cy − m, max_cy + m]` (m = margin, default 6). The clip rectangle in Web-Mercator metres is `[R.min_cx·256, (R.max_cx + 1)·256) × [R.min_cy·256, (R.max_cy + 1)·256)`. No latitude, longitude, or place name ever appears on the command line or in a log; the tool prints only counts, timings, and the rectangle's size, e.g. `clip: 41 x 37 cells`.
+2. **Pre-pass** (only when clipping). Stream the dense nodes once; collect the ids of nodes inside the clip rectangle into a sorted, de-duplicated `PackedInt64Array` S, using Pass 1's chunked merge.
+3. **Pass 1.** Keep a way only if at least one of its refs is in S. Keep a multipolygon relation only if at least one member way is kept — and then keep **all** its member ways, adding their refs to the needed set. If Pass 1 sees relations before ways, record member way ids and decide once both are known.
+4. **Passes 2–3** run unchanged on the reduced sets. A way partly inside the rectangle is written whole and clipped per cell as usual.
+5. **Coverage.** Every store records `import_state('coverage', '<min_cx>,<min_cy>,<max_cx>,<max_cy>')` — R for a clipped conversion, or the cell bounding box of all written features for an unclipped one — and `import_state('clip', '1' or '0')`.
+6. **Coverage rendering.** A cell is *mapped* when it lies inside some store's coverage rectangle. A mapped cell with no features renders as plain terrain, not unmapped grey. A store without a `coverage` key (pre-pass-17) covers only cells that have features — the old rule.
+7. **F46.** The converter stops storing unknown land uses as `park`: `landuse=grass|meadow|village_green|recreation_ground` → `park`; `residential`, `industrial`, `commercial`, `retail`, and `cemetery` keep their names; any other land use is not stored. `tile_synth.gd` paints only `park`, `garden`, `playground`, `pitch`, `nature_reserve`, and `cemetery` with the park colour — `residential`, `industrial`, `commercial`, and `retail` are left as terrain.
+8. **Each profile reads only its own map data (F50).** `ProfilePaths` gains `map_data_dir`: `user://map_data` for the normal profile, `<demo dir>/map_data` for the demo (so a clipped store of the human's area stays in the demo profile). The map view loads stores only from that folder; tests set `user://test/map_data` explicitly through a setter. The shared search of `user://test/map_data/` is removed.
+9. **Memory.** The pre-pass set and the reduced Pass 1 set stay within the converter's 1 GiB design (`design_memory_and_resources.md` §3.1); the memory-pause watchdog runs in the pre-pass too.
+
 ---
 
 ## 6. Tile Synthesis Specification (16 m Tiles)
@@ -260,6 +299,15 @@ MapViewer (Node2D)
     └── DemoBadge ("DEMO MODE")
 ```
 
+### 7.1a Screen Orientation (pass 17 — F43; agent guide Item 0)
+Godot's screen `y` grows downward; Web-Mercator `y` grows north. So:
+- cell `(cx, cy)` occupies screen tile rows `(−cy − 1)·16` to `(−cy − 1)·16 + 15`; columns `cx·16` to `cx·16 + 15`, unchanged;
+- slice-1 tile buffers count rows from the cell's **south** edge, so buffer row `ty` is drawn at screen row `(−cy − 1)·16 + (15 − ty)`;
+- the camera focus for a cell is `x = (cx + 0.5)·256`, `y = (−cy − 0.5)·256` pixels;
+- culling turns a screen row band `[y0, y1]` back into cells with `cy ∈ [−floor(y1 / 256) − 1, −floor(y0 / 256) − 1]`.
+
+Slice 2's buffers are north-first and drop the `15 − ty` flip (slice-2 plan §3).
+
 ### 7.2 Camera Controls
 - **WASD / Arrow Keys**: Smooth pan.
 - **Mouse Drag**: Middle or Left click-and-drag panning.
@@ -269,6 +317,18 @@ MapViewer (Node2D)
 ### 7.3 Performance Budget & Frustum Culling
 - Target: Solid **60 FPS** on desktop hardware ($\le 16.6\text{ ms}$ frame time).
 - Frustum Culling: Only cells overlapping the camera's viewport plus a 1-cell margin are active in the `TileMapLayer`. Cells scrolling out of view are unrendered.
+
+### 7.4 Screenshot Harness (pass 17 — F47; agent guide Item 3)
+**Why:** the only acceptable proof of what the map looks like is an image the game itself saved from real data (M31's process finding).
+1. **User args** (after `--`): `--screenshot=<absolute path ending in .png>`, plus optional `--zoom=<one of the view's zoom steps>` (slice 1: `1`, `2`, `3`; default `1`) and `--frames=<n>` (default 10).
+2. **Refusals**, each exiting 2 before any window opens:
+   - the path's real path is inside the repository → `[FAIL] screenshot path must be outside the repository`;
+   - an unknown zoom → `[FAIL] unsupported zoom <z>`;
+   - `--headless` → `[FAIL] screenshots need a window`.
+3. **Run.** In screenshot mode `main.gd` resolves the profile, opens the save, and opens the map view; it does **not** start the sync server or show the pairing screen. The map view waits until no visible cell is pending, renders `--frames` more frames, then saves `get_viewport().get_texture().get_image()` as PNG. It prints `SCREENSHOT_SAVED <file name only>`, then `FRAME_P95_MS: <x>` over the frames rendered since the map opened (at least 120 — keep rendering until there are), then quits with 0.
+4. **Window.** The wrapper passes `--resolution 1280x720`. The saved PNG is 1280×720, or exactly 2560×1440 on a HiDPI screen; report which.
+5. **Wrapper.** `tools/demo_screenshot.py --out-dir <directory outside the repo> [--zoom <z> ...]` runs Godot with `--demo` under memguard step `demo_screenshot` (measured the first time), refuses an in-repo `--out-dir` with exit 2, and names files `shot_z<zoom>.png`. It honours `GODOT_BIN`.
+6. **Where it runs.** CI can't open a window, so the automated test covers argument parsing and the refusals only. The actual capture runs on the human's Mac, and the agent says so.
 
 ---
 

@@ -32,7 +32,7 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
 
 - **Map data source — fully offline (Decision 13 = C):**
   - **Download:** the PC downloads a whole **regional OpenStreetMap extract** (`.osm.pbf`, from Geofabrik) once per region — never per-place or per-area queries. The only thing a download reveals is which region was chosen.
-  - **Choosing a region:** the region is picked from Geofabrik's region index by where the player's revealed cells are, and the player confirms each download with its size.
+  - **Choosing a region:** the region is picked from Geofabrik's region index by where the player's revealed cells are, and the player confirms each download with its size. **Only US regions count** (Decision 16): index entries whose download URL lies under `https://download.geofabrik.de/north-america/us/` — 55 on 2026-10-19 (the 50 states, DC, Puerto Rico, the US Virgin Islands, and California's `norcal`/`socal` halves). The smallest enclosing one wins.
   - **Map store:** the extract is converted once — streaming, with peak memory ≤ 1 GiB and pausing when the computer runs low (`design_memory_and_resources.md` §3.1) — into a local, spatially indexed **map store** — its own SQLite file per region, separate from the save, regenerable, and deletable.
   - **Rendering:** all tiles are read from that store. Revealed cells outside every installed region render as plain grey "unmapped" until that region is installed.
   - **Attribution:** `© OpenStreetMap contributors` is always visible on the map.
@@ -46,6 +46,7 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
   2. Buildings → rectangularized footprints (min 2×2 tiles) with a door tile facing the nearest road.
   3. Parks/forest → grass + tree-line autotiles; water bodies → water autotiles.
   4. Everything else → wilderness fill (grass with density noise; "overgrown" ruin props seeded by building-age heuristics).
+  - **Status (pass 17):** slice 1 built none of steps 1–4's Pokémon grammar — it fills 16 m squares with six flat colours — and the human rejected the look. The target is a map assembled from walking-scale Pokémon pieces (paths, roofed buildings with south-facing doors, tree borders, tall grass, shorelines, signs). How real geography becomes those pieces is **Decision 17**; the draft for its recommended option is `implementation_plan_world_generation_slice2.md`, which replaces this list once approved.
 - **Determinism**: synthesis is a pure function of `(OSM data, cell seed)`. The same neighborhood always generates the same tiles. Cell seed = hash of cell coordinates + a per-player world seed.
 - **Home**: the player designates the safehouse once during onboarding (defaults to most-dwelled location). Its stored coordinates are fuzzed per `design_privacy_and_location.md` before ever touching the map layer.
 
@@ -63,9 +64,16 @@ enum IntelLevel { known, familiar, mastered }  // 1+, 3+, 10+ visits
 | `familiar` | Room layout and item spots pre-revealed; −25% encounter rate. |
 | `mastered` | Full interior pre-mapped incl. item spots; −50% encounter rate; exit route marked. |
 
-## 5. Global Scope (The Archipelago)
+## 5. Scope — the USA (Decision 16, 2026-10-19)
 
-The map has no boundary. Travel anywhere real adds a distant island of `known` cells. Islands are stitched into one world map at true geographic offsets — in-game travel between them is possible but priced honestly by `design_travel_and_time.md` (a 500-mile island is a multi-game-day trek, even by bicycle, or a real-life return trip).
+The map is the USA: the 50 states, DC, Puerto Rico, and the US Virgin Islands — exactly the regions in §3's filter. Within it the map has no inner boundary: travel anywhere in the USA adds a distant island of `known` cells, stitched into one world map at true geographic offsets. In-game travel between islands is possible but priced honestly by `design_travel_and_time.md` — a 500-mile island is a multi-game-day trek, even by bicycle, or a real-life return trip. Alaska, Hawaii, and Puerto Rico are literal islands.
+
+**Beyond the map.** A revealed cell whose centre lies in no US region is *beyond the map*:
+- it renders as fog with the chip `Beyond the map — Tenth Spring covers the USA`;
+- it is never offered for download and never counts toward anything (Pokédex, events, familiarity);
+- the sync ingest still stores it like any other cell (golden invariants unchanged), so the rule lives entirely in rendering and region choice.
+
+**Why the USA is enough.** A cross-country game is already far larger than any Pokémon region, and US federal map data — USGS elevation and land cover — is public domain, so later slices can add real terrain (ledges, cliffs, terraces) and biomes without licensing trouble. How availability is spread across the country so that travel matters is Decision 18.
 
 ## 6. Files
 * `companion/lib/capture/visit_detector.dart` — dwell/corridor detection (phone).

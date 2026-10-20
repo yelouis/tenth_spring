@@ -10,6 +10,45 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 > **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, was answered on 2026-10-09 (Option B). **Decision 13** (map data) was answered the same day: fully offline (Option C). Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
 >
 > **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.
+>
+> **2026-10-19 (pass 17) — three new decisions need you: 17, 18, and 19.** You saw the slice-1 map and said it "looks nothing like a pokemon game map", and you narrowed the world to the USA (now **Decision 16**, under Resolved). Decision 17 is the important one — it decides what the walkable map is built from. Fill in each `Your selection:` line. Until Decisions 17 and 19 are answered, agents only fix the slice-1 bugs and produce real screenshots of what the game draws today (agent guide Items 0–3).
+
+### Decision 17: What the walkable map looks like — **needs your input**
+**What this is about.** A Pokémon map is built from a small kit of pieces at the scale of someone walking: paths a few squares wide, houses with a roof and a door, trees walling off the edges, patches of tall grass, ponds with shorelines, fences, and signs. Slice 1 instead colours every ~13 m square of the real world one flat colour, so a house becomes a grey dot and a street a one-square line. No recolouring can make that look like Pokémon. Before more is built, you need to pick how real geography gets turned into Pokémon pieces.
+- **Option A — Real streets, Pokémon pieces** *(recommended)*. The map stays one continuous, real USA. Each square shrinks to 8 m (from 16 m), and instead of colouring squares, the game *builds* the map from Pokémon pieces in the real places:
+  - streets become 2–4-square paths and roads; rail lines become tracks;
+  - each real building becomes a roofed building with a door on its south side, and named places get a sign with their real name;
+  - parks get a tree border and tall-grass patches; lakes and the bay get shorelines; cemeteries get rows of graves behind a fence.
+
+  You'd recognise your own streets and landmarks, and your walks reveal exactly the streets you walked.
+  - *Cost:* towns are real size — crossing a 5 km town on foot takes about 3–4 minutes of play — and real places are messier than designed towns. It will look like "a Pokémon map drawn over your real town", not a hand-made town.
+  - **Choosing A approves the draft `docs/implementation_plan_world_generation_slice2.md` as written** (agent guide Items 4–9).
+- **Option B — Towns and routes.** The real USA becomes a Pokémon-style network. Each real town or neighbourhood is generated as a compact Pokémon town (about 40 × 40 squares) holding its real landmarks in roughly the right directions. The real roads between towns become Pokémon routes (tall grass, trees, ledges) whose length grows with the real distance.
+  - *Gains:* looks and plays most like a real Pokémon game.
+  - *Cost:* your actual streets disappear — visiting a town reveals "that town", not the blocks you walked — and the fog works per town and route. A bigger rewrite: the slice-2 draft is void, and a new plan is written and reviewed first.
+- **Option C — Keep slice 1's flat squares and polish the colours.** Cheapest, but it will still look like a data map, not Pokémon. Not recommended.
+- **Recommendation: A.** It keeps the founding promise — "your map is the places you have actually been" — down to the street, reuses everything slice 1 built, and the USA's public map data supports it everywhere.
+- **Your selection:**
+
+### Decision 18: How travel becomes the only way to truly complete the game — **needs your input**
+**What this is about.** In Pokémon, "completing" a game means filling the Pokédex (and beating the big battles). Today's design hands out most Pokémon by *kind of place* — parks, cemeteries, downtowns — and those exist in every town. So a player who never leaves home could still catch nearly everything; travel only raises levels and unlocks a few landmark legendaries. For the size of the USA to matter, which Pokémon you can find has to depend on *where in the USA* you are. This doesn't block the map work (slice 2); it shapes slice 3, where spawns are built.
+- **Option A — Travel for 100%** *(recommended)*. The story can be finished on home turf, but a full Pokédex needs real travel.
+  - Each map area gets a **biome** from its real land cover and climate: desert, forest, coast, mountains, wetland, plains, snow, or city.
+  - The USA is split into **9 regions** — the Census divisions: New England, Middle Atlantic, South Atlantic, East South Central, West South Central, East North Central, West North Central, Mountain, Pacific.
+  - Every species gets a home: about a third live everywhere, about 40% only in certain biomes, about 20% only in one region, and the legendaries sit at specific real landmarks (national parks, monuments).
+  - Finishing the Pokédex means visiting every biome and every region.
+- **Option B — Travel for everything.** As A, plus one **region trial** — a boss battle at that region's most famous landmark — in each of the 9 regions, and the finale (Giratina) requires all 9. Nobody finishes the story without crossing the country.
+- **Option C — Keep today's design.** Pokémon by kind of place everywhere; travel raises levels and unlocks landmark legendaries only.
+- **Recommendation: A.** It makes the whole USA worth exploring while keeping the game finishable for someone who rarely travels.
+- **Your selection:**
+
+### Decision 19: Where the map's tile art comes from, for now — **needs your input**
+**What this is about.** The art rules say the overworld uses **original** art — never ripped Pokémon tiles, because this public repo can't hold Nintendo art — and that flat "programmer art" is fine until the art pass (Phase 9). Your feedback says the look matters now. Agents can draw simple original tiles in code; they can't draw polished pixel art.
+- **Option A — Code-drawn placeholder tiles now** *(recommended)*. The agent generates a simple, original tile set — grass, tall grass, trees, water with shores, paths, roofs, walls, doors, fences, graves, signs — in a Pokémon-like layout. It will read as a Pokémon map, because the *structure* is right, but look like an early fan game. Swapping in better art later is a file swap, not a code change.
+- **Option B — You license a tileset now.** You buy an original top-down tileset in a Diamond/Pearl-like style (for example on itch.io) and give the agent the files; the agent maps it in. Looks much better sooner. You must confirm it's the artist's own work, with written commercial-or-better terms — many "D/P tilesets" online are rips (`design_art_direction.md` §2).
+- **Option C — Commission an artist** for a custom set. Best result; slowest and most expensive.
+- **Recommendation: A now**, then B or C before the art pass. The map's *structure* is what's wrong today, and A fixes that without waiting on art.
+- **Your selection:**
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
@@ -26,11 +65,19 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 - **Option A — run it next, right after F9 lands.** Closes Phase 0 properly and de-risks the battery budget before more is built on it. Cost: one day of carrying the phone. *Recommended: the battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and you want to learn that early.*
 - **Option B — batch it with the D4 device gate.** One combined session validates background capture *and* the Wireshark ciphertext check together. Cost: Phase 0 stays formally open for weeks; if the battery target fails you discover it after building transport on top.
 - **Option C — defer to the Phase 8 hardening pass.** Cheapest now, riskiest later: a battery failure that late invalidates the capture strategy after everything depends on it.
-- **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent-guide §1 (baseline) and §9 (roadmap).
+- **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent guide §1 (baseline) and §10 (roadmap).
 
 ---
 
 ## ✅ Resolved Decisions
+
+### Decision 16 — World scope: the USA only (Resolved 2026-10-19 — your directive)
+- **In your words:** "lets reduce the scope slightly by not mapping out the entire world and only focus on the USA."
+- **What it means:**
+  - **The map covers** the 50 states, DC, Puerto Rico, and the US Virgin Islands — every region Geofabrik lists under `north-america/us/` (55 files on 2026-10-19, counting California's north and south halves).
+  - **Places outside the USA are "beyond the map."** If your phone records a trip abroad, those spots stay in fog labelled `Beyond the map — Tenth Spring covers the USA`. They are never offered for download and never count toward anything.
+  - **A bonus for later slices:** US federal map data — USGS elevation and land cover — is public domain, so real hills (ledges, terraces) and biomes can be added without licensing trouble.
+- **Contracts updated:** `design_world_generation.md` §3 and §5, `implementation_plan_world_generation.md` §5.1a, `master_implementation_plan.md` Phase 3, `README.md`, and decision record item 19. Built in agent guide Item 1.
 
 ### Decision 15 — Regional Map Converter Architecture: Option B pre-converted stores (Resolved 2026-10-15)
 - **Selection: Option B — Pre-converted Regional Map Stores (CDN / GitHub Releases Distribution).**
@@ -47,6 +94,12 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - The regional map store schema (§5.2: `features_poly`, `features_line`, `place_nodes`, packed 16m cell coords, spatial indices) remains the identical canonical runtime format.
   - The streaming converter (`region_converter.gd` / `tools/map_convert.py`) serves as the pre-generation pipeline for regional assets.
   - Local tests continue to use the deterministic synthetic fixture (`synthetic_neighborhood.osm.pbf`) to verify the full converter pipeline and canonical dump hashing without external network access.
+- **⚠️ Status (2026-10-19, pass 17): selected, not implemented — to be re-asked before any release work.**
+  - **Nothing builds or hosts stores yet.** The in-game Download still fetches the whole state file and converts all of it on the player's PC — the path the gate rejected (~61 min for Washington). See F45(d).
+  - **Two premises changed:**
+    1. The option text estimated "20–100 MB compressed" stores, but the Washington store measured **1.0 GB**. Hosting would mean multi-GB public release assets — which, as derived OpenStreetMap databases, must also carry the ODbL licence — plus a build pipeline for 55 regions.
+    2. Agent guide Item 2 adds **clip conversion** — converting only the area around the places you've been — which may bring on-PC conversion down to minutes.
+  - **The next verification pass re-asks this decision** with Item 2's measurements. Until then, no agent builds or publishes stores.
 
 ### Decision 14 — Build the neighborhood map preview: yes, the full plan (Resolved 2026-10-10)
 - **Selection: Option A — approve the amended plan as written**, including the in-game region choice and download.
@@ -431,21 +484,60 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Item 9 (The Map View, `a93cd79`):** Built `game/world/map_view.tscn` and `game/world/map_view.gd` with `WorldTileMap`, `FogOverlayLayer` (`unknown` solid `#0d1119` and `known` `#141923` at 0.55 opacity), `MapCamera` (WASD/arrow pan, mouse drag, 1×–3× integer wheel zoom, initial focus on most visited place/revealed cell), `AttributionUI` (`© OpenStreetMap contributors`, `DEMO MODE` badge, `UnmappedChip`), frustum culling, and 256-cell LRU cache. Updated `game/scenes/main.gd` to open `map_view.tscn` when ≥ 1 cell is revealed. Verified in `game/tests/map_view_test.gd` (measured `FRAME_P95_MS: 0.06` ms on Mac, well below 16.6 ms budget).
   - **Item 10 (Region Choice & Download):** Built `game/world/region_import/map_fetcher.gd` (the sole file permitted to use `HTTPRequest`/`HTTPClient`, enforced by static lint gate in `test_runner.py` and `region_select_test.gd`) implementing `index-v1.json` caching, smallest-enclosing GeoJSON Polygon/MultiPolygon selection via `Grid`, `HEAD` size lookup, `Unmapped Region — <Name> (<N> MB)` chip text, `Download offline map for <Name> (<N> MB)?` confirmation modal (`Download` / `Not now`), `.part` → MD5 verification → rename → convert → cleanup flow, and `Update map data` atomic store replacement. Verified in `game/tests/region_select_test.gd` (19/19 game tests passing).
 
+**M31 — Slice 1 (Items 3–10) verified, with corrections (2026-10-19, pass 17, HEAD `78e6f23`).**
+- **Executed this pass:**
+  - companion: `flutter analyze` clean; `flutter test` (under memguard) **37 passed, 2 skipped** — the two CI-only harnesses, `sync_e2e_test` and `demo_import_test`;
+  - game battery on the human's Mac with `GODOT_BIN`: **19/19 `PASS`**, `[REAL SAVE CHECK OK]`, IP guard and memguard self-tests OK, static lint OK;
+  - `tools/sync_e2e.py` on the Mac: `E2E_SENT rows 14` → `E2E_STATE visit_log 14, last_applied_seq 14, map_cell 3, place_node 1`;
+  - `demo_import.py --gpx <in-repo fixture>` → exit **2** before memguard starts (Item 6's falsifier, re-run);
+  - CI on `78e6f23`: `game_tests` 39367963628 (19/19 on Linux **and** macOS), IP guard 39367963620, `sync_e2e` 39367963563 — all green.
+- **Confirmed in source:**
+  - **Item 3:** `profile_paths.gd` with the refusal strings; `main.gd` resolves the profile before opening anything.
+  - **Item 4:** hand-drawn GPX rules — t0 `1770000000000`, 1.4 m/s, 600 s waypoints.
+  - **Item 5 (F37):** 60 m corridor radius.
+  - **Item 6:** the demo handshake carries the fingerprint, pairing code, and PC id from `DEMO_READY` (the pass-16 amendment, honoured in code).
+  - **Item 7:** three-pass converter, pause test, canonical hash, and the gate that produced Decision 15.
+  - **Item 8:** deterministic synthesis, with the golden hash identical on both OSes.
+  - **Item 9:** scene tree, attribution, demo badge, LRU 256.
+- **Corrections — new findings, listed below:** F43 (the map is drawn north-down), F44 (the download chip is never wired), F45 (the real download can't work, and would hold the whole file in memory), F46 (neighbourhoods painted as park), F47 (frame time measured headless), F49 (memguard logs a 0.0 peak for short steps), F50 (test map stores load in every profile).
+- **F48 (docs) — fixed in this pass.** The pass-16 amendments to the slice-1 plan never reached `main`: the plan still said downloads go to `~/.cache`, the demo used a literal `demo_pc` id, and §12 #5 listed the speed skim as acceptance. The code had followed the guide instead. The plan now opens with a status block saying where the code is the truth.
+- **Process finding — the neighbourhood image shown to the human at the slice-1 pause was not produced by the game.** On the human's Mac there is no demo profile (`user://demo/`), no map store (`user://map_data/`), and no route file. The image also shows spawn zones and Pokémon pools — slice-1 non-goals with no code behind them. **From now on, proof images come only from the game's own screenshot harness** (agent guide Item 3), with the exact command in the commit body.
+  - *What the guide left vague:* "give the human the exact steps" never required the agent to run those steps on real data and show the game's own output.
+- **The deeper problem — slice 1 can't look like Pokémon.** Even with every finding fixed, 16 m flat-colour squares turn houses into dots and streets into one-square lines. That is a design question, not a bug: filed as **Decision 17**, with a draft plan for the recommended option (`implementation_plan_world_generation_slice2.md`).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29.*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there.*
+- **F43 (found 2026-10-19, pass 17) — the map is drawn upside-down: north is at the bottom.** Web-Mercator `y` grows northward; Godot's screen `y` grows downward.
+  - `map_view.gd` places cell `(cx, cy)` at screen row `cy·16` (`game/world/map_view.gd:365`, `:389`) and a buffer row `ty` — which counts from the cell's *south* edge — at `+ty` (`:369`, `:383`). `focus_on_cell` (`:225`) and the culling rows (`:292-293`) use the same unflipped `y`.
+  - Result: the whole map is mirrored top-to-bottom. A bay north of a town would be drawn south of it.
+  - `grid_test`'s "north stays north" checks the grid, not the screen, so nothing caught it.
+  - **Agent guide Item 0.**
+- **F44 — the "Unmapped" chip can never start a download in the real game.** `configure_unmapped_region()` is called only by `region_select_test.gd:142`. Nothing in the running game calls it, so `_pending_region` stays empty, the chip shows its fallback text, and clicking it does nothing (`map_view.gd:443-444`). The slice-1 pause step "click the chip, then **Download**" cannot happen. **Item 1.**
+- **F45 — the real download path can't work, and would exhaust memory and freeze the game** (`game/world/region_import/map_fetcher.gd`).
+  - **(a) No redirects.** Geofabrik answers every `-latest` URL with **307** to a dated file (checked 2026-10-19). `_real_http_request` (`:388`) doesn't follow it, so `HEAD` reports size 0 (the chip falls back) and `GET` returns no body ("Failed to download PBF"). It never checks the status code either (`:428`).
+  - **(b) The whole file is held in memory** (`body.append_array`, `:441`) before anything is written — hundreds of MB for a typical state (Washington's file is 348 MB).
+  - **(c) It runs on the main thread**, so the window freezes for the whole download and conversion, with no progress and no cancel.
+  - **(d) It then converts the entire state on the player's PC** (`:215`) — the path Decision 15 rejected.
+  - **(e) It chooses from the whole-world index** (`:95`); after Decision 16 it may choose only US regions.
+  - The tests use a fake transport, so none of this ever ran.
+  - **Item 1** fixes (a)–(c) and (e). (d) waits on the Decision 15 re-ask.
+- **F46 — whole neighbourhoods are painted as park.** `tile_synth.gd:75` paints `residential`, `industrial`, `commercial`, `retail`, and `cemetery` land use with the park colour, and the converter stores *every other* land use as `park` (`region_converter.gd:772`). **Item 2.**
+- **F47 (minor) — the frame-time number isn't a frame time.** `FRAME_P95_MS` samples `delta` inside a headless test (0.07 ms). The 16.6 ms budget has never been measured with real rendering or real map data. **Item 3** measures it in a windowed run.
+- **F50 (minor) — the map view loads test map stores in every profile.** `_load_map_stores` searches both `user://map_data/` and `user://test/map_data/` (`map_view.gd:176-177`), so the real game and the demo would show any store a test left behind — and a demo store, which reveals where the human has been, sits in the shared `user://map_data/` rather than the demo profile. **Item 2:** each profile reads only its own `map_data/` folder.
+- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
   - **ROM import half:** Open, scheduled for ROM spike (Item 11).
 - **F7 (latent, found July 22, 2nd pass) — home-cell size mismatch.**
   - Companion `fuzzHome` snaps to a 300 m grid; the game treats home as one grid cell (now 256 WM-m, F42).
-  - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent-guide §8 (Deferred).**
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent-guide §8 (Deferred).**
+  - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent guide §9 (Deferred).**
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §9 (Deferred).**
 - **Pending physical-device gates (human action required):**
   - **D3 device soak (Phase 0 exit):** ≥ 8 h of background carry; the scout ledger fills, and battery use is < 3%/day (Decision 5 = Option A). Can run any time.
-  - **Real-device sync gate (Phase 1 exit):** the five steps in agent-guide §2. **Wait until Items 0 (F42) and 1 (F40) are on `main`.** Before then, the Mac can't store anything (F40), and a save made before F42 would carry skewed cells.
+  - **Real-device sync gate (Phase 1 exit):** the five steps in agent guide §2. **Ready now** — F42 and F40, which blocked it, are on `main` (M25, M26).
 
 ---
 
@@ -491,3 +583,5 @@ Founding decisions made with the user during the design brainstorm, recorded her
     - **The fix:** plain EPSG:3857 with 256 WM-m cells, in one file (`game/world/grid.gd`).
     - **Why plain Web Mercator:** it is conformal (north is up and angles are true everywhere, including distant "islands"), it is the grid every slippy map uses, and it needs no per-world state — so the per-region map stores (Decision 13) are keyed identically for every world.
     - **Cost:** cells are smaller on the ground away from the equator (≈ 173 m in Seattle). Gameplay distances are ground metres, so play is unaffected.
+19. **The world is the USA (2026-10-19, pass 17, Decision 16).** The human narrowed the map from the whole planet to the USA. The archipelago idea survives inside it — Alaska, Hawaii, and Puerto Rico are literal islands — and outside the USA is "beyond the map." US federal elevation and land-cover data are public domain, which opens real terrain and biomes to later slices.
+20. **"Looks like Pokémon" is a requirement, not polish (2026-10-19, pass 17).** The human rejected slice 1's flat 16 m squares: a Pokémon map is assembled from walking-scale pieces (paths, roofed buildings with doors, tree borders, tall grass, shorelines, signs). How real geography becomes those pieces is **Decision 17**; the draft for the recommended option is `implementation_plan_world_generation_slice2.md`.
