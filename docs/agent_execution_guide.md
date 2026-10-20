@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Map Fixes and a Real-Data Proof (F43–F47, F50), then Slice 2 "Pokémon Look" once Decisions 17 and 19 Are Answered (verified 2026-10-19, pass 17)
+# Agent Execution Guide — Active Build: Map Fixes and a Real-Data Proof (F43–F47, F50), then Slice 2 "Pokémon Look" (verified 2026-10-19, pass 17; decisions 17–19 answered the same day)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
@@ -6,7 +6,8 @@
 
 **The game:** a **Pokémon game** — Diamond/Pearl style, Ghost-heavy, set after a collapse — whose overworld is the places the player has physically been, **in the USA** (Decision 16).
 - **Pokémon content** comes from a ROM **the player supplies**, read on their own machine (the PokeMMO model).
-- **Scope:** all **649 Pokémon of Generations 1–5**. **Black/White** supplies all data **and all sprites** (Decision 10 = B).
+- **Scope:** all **649 Pokémon of Generations 1–5**. **Black/White** supplies all data **and all sprites** (Decision 10 = B). **Emerald** supplies the overworld map tiles (Decision 19).
+- **Story:** an original one — the Stillness, the Distortion, nine regional Wardens, and the Echo. `docs/design_story_and_world.md` is the theme contract for everything player-facing.
 - **No commerce:** no Steam, no sales.
 
 **Where things stand.**
@@ -19,16 +20,17 @@
   - **F47** — the frame-time number came from a headless run, not a rendered frame.
   - **F50** — the map view loads test map stores in every profile.
   - **The image shown to the human as proof was not made by the game.** Their Mac has no demo profile, no map store, and no route file.
-- **The human rejected the look.** In their words, the map "looks nothing like a pokemon game map". They want a Pokémon-guidebook look and "a massive map … the only way to true complete the game is to travel", and they narrowed the world to the USA. Three decisions follow, all in `docs/ongoing_general_errors.md`:
-  - **Decision 17** — what the walkable map is built from (the important one);
-  - **Decision 18** — how travel gates completion (shapes slice 3, not this build);
-  - **Decision 19** — where the tile art comes from for now.
+- **The human rejected the look.** In their words, the map "looks nothing like a pokemon game map". They want a Pokémon-guidebook look and "a massive map … the only way to true complete the game is to travel", and they narrowed the world to the USA (Decision 16). **Their answers, all on 2026-10-19:**
+  - **Decision 17 = A** — real streets, rebuilt from walking-scale Pokémon pieces. This **approves** `docs/implementation_plan_world_generation_slice2.md` as written.
+  - **Decision 18 = B, with a new story** — a boss trial in each of the 9 US regions gates the finale, which is a stronger mirror of your own party (the Echo), not Giratina. A full Pokédex needs travel: species spread by region, Distortion Fields that bring other regions' species, and legendaries that must be caught or defeated at their region's landmarks. Built in later phases (slice 3, Phase 8) — not in this build.
+  - **Decision 19 = Emerald** — the map's real tiles come from the player's Pokémon Emerald ROM. The code-drawn placeholder tiles are still built: they are the no-ROM look and what tests use.
 
-  The draft plan for the recommended answers is `docs/implementation_plan_world_generation_slice2.md`.
+**What is approved for build right now: Items 0–9 and 11** (§2):
+- Items 0–3 fix slice 1 and show the human what the game *actually* draws of their area today.
+- Item 11 extends the ROM guard to Game Boy Advance ROMs before anyone handles one.
+- Items 4–9 build slice 2.
 
-**What is approved for build right now: Items 0–3** (§2). They fix what is broken in every possible answer to the decisions, and end by showing the human what the game *actually* draws of their area today.
-
-**Items 4–9 (slice 2) are gated.** Start them only when `ongoing_general_errors.md` shows **Decision 17 = A** and Decision 19 answered (§7 has the gate check). Item 10 waits on a ROM.
+**Waiting on the human:** Item 10 waits on a Black/White dump, Item 12 on an Emerald dump.
 
 **What NOT to touch:**
 - §11 — already delivered;
@@ -42,7 +44,7 @@
 - **If the design itself cannot work:** **STOP and file it in `docs/ongoing_general_errors.md` with options for the human. Do not improvise.**
 
 **Standing constraints (apply to every item):**
-1. **The repository is PUBLIC. Never commit, download, or link to a ROM or anything extracted from one** — no `.nds`, sprites, text banks, or stat tables, not even in a fixture or a debug PNG. Never help anyone find a ROM. ROMs come only from the human, through `TENTH_SPRING_ROM_BW`, which points **outside** the repo (`design_rom_asset_pipeline.md` §8).
+1. **The repository is PUBLIC. Never commit, download, or link to a ROM or anything extracted from one** — no `.nds` or `.gba`, sprites, tiles, palettes, text banks, or stat tables, not even in a fixture or a debug PNG. Never help anyone find a ROM. ROMs come only from the human, through `TENTH_SPRING_ROM_BW` and `TENTH_SPRING_ROM_GBA`, which point **outside** the repo (`design_rom_asset_pipeline.md` §8). Mapping tables may reference ROM data **by number** only.
 2. **Activate the commit hook in your clone before your first commit:** `git config core.hooksPath .githooks`. The local battery fails without it.
 3. **Never force-push `main`.** Work on a branch, get all workflows green, then fast-forward `main`. Every pass since 14 has done exactly this — keep doing it.
 4. **Tests never write to the player's real state:**
@@ -72,6 +74,7 @@
 13. **One item = one Conventional Commit**, WHY in the body. Record the resolution in `ongoing_general_errors.md` as part of the item.
 14. **Say what actually ran.** "Source-verified," "statically checked," and "executed" are three different claims. Name the machine (Linux CI, macOS CI, the human's Mac). Game-side claims count as executed only when a run printed the `PASS` lines (`gh run view <id> --log`, or your local transcript).
 15. **Proof images come only from the game.** A picture shown to the human as "this is what the game draws" must be saved by the game's screenshot harness (Item 3) from real data, with the exact command in the commit body or your message. Never present a mock-up, a hand-made render, or another tool's output as the game's (M31).
+16. **Follow the story.** Any player-facing text, name, or content — chips, dialog, item descriptions, trial names — fits `docs/design_story_and_world.md` and its writing rules (§9). Nothing from Nintendo's stories.
 
 ---
 
@@ -103,17 +106,18 @@
 | 0 | **F43 — north up** | Every later picture depends on it, and it's small. |
 | 1 | **USA scope + download mechanics** (Decision 16; F44; F45 a, b, c, e) | Its region choice tells Item 2 which file to fetch; the whole-world index must never be used again. |
 | 2 | **Clip conversion, coverage, F46, F50 — and the human's demo save** | Needs Item 1's region choice. Produces the data Item 3 photographs, and its timings feed the Decision 15 re-ask. |
-| 3 | **Screenshot harness + the honest baseline** (F47) → show the human | Needs Items 0–2. Ends the ungated work. **If Decisions 17 and 19 are still blank, stop here: the queue is empty.** |
-| 4 | ⛔ **Slice 2: scale + map store v2** (plan §1–2) | Gated. Everything in slice 2 reads store v2. |
-| 5 | ⛔ **Slice 2: synthesis part 1 — terrain, water, lines, vegetation** (plan §3, §4.0–4.1) | Gated. Needs store v2. |
-| 6 | ⛔ **Slice 2: synthesis part 2 — buildings, fallback houses, signs** (plan §4.2–4.4) | Gated. Builds on part 1's grid; building placement checks the tiles part 1 painted. |
-| 7 | ⛔ **Slice 2: placeholder atlas** (plan §5) — or map the human's tileset | Gated. Only the renderer needs it. If Decision 19 = B/C and no tileset has arrived, stop before this item. |
-| 8 | ⛔ **Slice 2: renderer v2** (plan §6) | Gated. Needs the atlas and both synthesis parts. |
-| 9 | ⛔ **Slice 2: proof** (plan §7) → **PAUSE** | Gated. The human judges the look. |
-| 10 | **Phase 2 — ROM spike + importer plan** | ⛔ Waits on the human supplying a Black/White dump. |
+| 3 | **Screenshot harness + the honest baseline** (F47) → show the human | Needs Items 0–2. The human sees today's map before slice 2 replaces it — then continue. |
+| 11 | **IP guard: block Game Boy Advance ROMs** (Decision 19) | Tiny and independent. It must land before an Emerald dump exists on any machine that commits to this repo, so it goes ahead of slice 2. |
+| 4 | **Slice 2: scale + map store v2** (plan §1–2) | Everything in slice 2 reads store v2. |
+| 5 | **Slice 2: synthesis part 1 — terrain, water, lines, vegetation** (plan §3, §4.0–4.1) | Needs store v2. |
+| 6 | **Slice 2: synthesis part 2 — buildings, fallback houses, signs** (plan §4.2–4.4) | Builds on part 1's grid; building placement checks the tiles part 1 painted. |
+| 7 | **Slice 2: placeholder atlas** (plan §5) — the no-ROM look | Only the renderer needs it. Built even though the real art comes from Emerald: it's the fallback and the only atlas tests see. |
+| 8 | **Slice 2: renderer v2** (plan §6) | Needs the atlas and both synthesis parts. |
+| 9 | **Slice 2: proof** (plan §7) → **PAUSE** | The human judges the look (with placeholder art until Item 12). |
+| 10 | **Phase 2 — ROM spike + importer plan** (Black/White) | ⛔ Waits on the human supplying a Black/White dump. |
+| 12 | **Emerald tile spike + tile-importer plan** (Decision 19) | ⛔ Waits on the human supplying an Emerald dump, **and** on Item 8 (it fills the renderer's atlas slot). |
 
 **▶ HUMAN actions:**
-- **Answer Decisions 17, 18, and 19** in `docs/ongoing_general_errors.md` (fill each `Your selection:`). 17 and 19 unblock slice 2.
 - **For Items 2–3, a route of your area.** Either make a `.gpx` (outside the repo) and tell the agent its path in chat, or just tell the agent in chat which town or neighbourhood to draw a route through. **Never put either in the repo.**
 - **Real-device sync gate — ready now.** It closes Phase 1. Install the companion on your iPhone (README → *Install the companion on an iPhone*), and start the PC game from `/Applications/Godot.app` with `game/project.godot`.
   1. **Pair and report:** real phone + PC on one Wi-Fi network. Pair by QR — this also proves a real phone can scan the PC's QR. Walk an errand, then *Report to PC*; the rows appear on the PC.
@@ -123,6 +127,7 @@
   5. **Second phone:** pair a second phone → the first phone's next report shows the unpaired message. Re-scanning on the first phone pairs it again.
 - **Any time:** the D3 device soak (closes Phase 0).
 - **To unblock Item 10:** a Black or White (USA) dump from your own cartridge (`TENTH_SPRING_ROM_BW`).
+- **To unblock Item 12 (the real map art):** a Pokémon Emerald (USA) dump from your own cartridge (`TENTH_SPRING_ROM_GBA`). Keep it outside the repo.
 
 Deferred (trigger-gated, **do not start**): see §9.
 
@@ -263,23 +268,18 @@ There is no way to capture the game's view. `FRAME_P95_MS` comes from a headless
 - **On the human's Mac — the real capture:** `python3 -I tools/demo_screenshot.py --out-dir ~/tenth_spring_private/screens --zoom 1 --zoom 3` writes two PNGs and prints `SCREENSHOT_SAVED` and a windowed `FRAME_P95_MS`.
   - Put the frame time in the commit body and in plan §7.3; the target is ≤ 16.6 ms. F47 → Resolved.
   - State plainly that CI does not run the capture.
-- **Show the human both screenshots,** and say it plainly: *this is slice 1 as built, now north-up, on your real streets — flat squares. Slice 2 is what changes the look; it starts once Decisions 17 and 19 are answered.*
-- **Then:** if Decision 17 = A and Decision 19 is answered, continue to Item 4. Otherwise **stop — the queue is empty** (Definition of Done).
+- **Show the human both screenshots,** and say it plainly: *this is slice 1 as built, now north-up, on your real streets — flat squares. Slice 2, which you approved (Decision 17 = A), is what changes the look.*
+- **Then** continue to Item 11, then Item 4.
 
 ### Blast radius (same commit)
 `main.gd` · `map_view.gd` · new `tools/demo_screenshot.py` and its test · new `screenshot_args_test.gd` + `EXPECTED` · `memguard_budgets.json` · plan §7.3 numbers · F47 → Resolved.
 
 ---
 
-## 7. Slice 2 — "Pokémon look" (Items 4–9) — ⛔ gated
+## 7. Slice 2 — "Pokémon look" (Items 4–9)
 
-**Gate check — do this before Item 4.** Open `docs/ongoing_general_errors.md`:
-- **Decision 17 ≠ A:**
-  - **B** → STOP. Write `implementation_plan_world_generation_slice2.md` anew for towns and routes, at the same depth, and pause for review.
-  - **C** → STOP. File a short note and end.
-  - **Blank** → STOP; the queue is empty.
-- **Decision 19 blank** → STOP and ask.
-- **Decision 19 = B or C with no tileset supplied yet** → do Items 4–6, then stop before Item 7.
+**Approved by the human on 2026-10-19 — Decision 17 = A.** Start Item 4 after Items 0–3 and 11 are on `main`.
+- **Art:** Decision 19 = Emerald. Slice 2 is built and proven with the code-drawn placeholder atlas, because agents and CI never have a ROM. The Emerald atlas slots in through `asset_db` when Item 12's importer exists.
 
 **What this means for the user:** their real streets, drawn the way a Pokémon guidebook draws a town — paths, roofed buildings with doors and name signs, tree-bordered parks full of tall grass, shorelines, graveyards — under the fog of where they haven't been.
 
@@ -315,8 +315,8 @@ There is no way to capture the game's view. `FRAME_P95_MS` comes from a headless
 - **Prove:** §8 (a) — the final golden, identical on the Linux and macOS jobs — and (b), (d), (i), (j).
 - **Blast radius:** `tile_synth2.gd`, its test.
 
-### 7.4 Item 7 — Placeholder atlas (plan §5) — or the human's tileset
-- **Build:** `tools/gen_placeholder_atlas.py` → `placeholder_v1.png` / `.json` and `tenth_spring.gpl`. If Decision 19 = B or C, map the supplied art onto §3's classes and §5.2's JSON instead, after checking §2 of `design_art_direction.md` (the rip trap) with the human.
+### 7.4 Item 7 — Placeholder atlas (plan §5) — the no-ROM look
+- **Build:** `tools/gen_placeholder_atlas.py` → `placeholder_v1.png` / `.json` and `tenth_spring.gpl`. Draw every pixel from code — never trace a Pokémon tileset or screenshot (`design_art_direction.md` §2).
 - **Prove:** regeneration is byte-identical; the JSON covers every `(class, variant)` the synthesizer can emit. Show the human the atlas PNG — it is original art, committed, and contains no location.
 - **Blast radius:** the new tool, its test, the assets, the runner.
 
@@ -326,6 +326,7 @@ There is no way to capture the game's view. `FRAME_P95_MS` comes from a headless
   - north-first placement; inward feathering; zoom steps `{1/16, 1/4, 1, 2}` and the overview sprites;
   - the 8 ms synthesis budget; LRUs of 1024 and 256; sign tooltips; `--preview-cleared`;
   - the screenshot harness's zoom list;
+  - **the atlas slot:** a minimal `game/rom/asset_db.gd` exposing `tile_atlas()`, which returns `null` until Item 12's importer exists, so the renderer uses the placeholder (plan §6). Add nothing else to `asset_db` in this item;
   - **delete `tile_synth.gd` and `tile_synth_test.gd`**, and remove `tile_synth_test` from `EXPECTED`.
 - **Prove:** §8's `map_view_test` assertions, plus a windowed `FRAME_P95_MS` while panning at zoom 1 and at 1/16 on the human's area — report both against the 16.6 ms target.
 - **Blast radius:** `map_view.gd`/`.tscn`, the shaders, the tests, `EXPECTED`, `design_art_direction.md` §3 and §5, `design_world_generation.md` §3, `design_memory_and_resources.md` §3.3.
@@ -333,7 +334,8 @@ There is no way to capture the game's view. `FRAME_P95_MS` comes from a headless
 ### 7.6 Item 9 — Proof (plan §7) → PAUSE
 - Capture the four screenshots from plan §7 with `tools/demo_screenshot.py` into `~/tenth_spring_private/screens/`, and show them to the human with `FRAME_P95_MS`.
 - Delete the region download afterwards.
-- **PAUSE.** The human judges the look. Their feedback — and Decision 18 — shape slice 3.
+- Tell the human that these use the placeholder art, and that the Emerald tiles replace it once their Emerald dump arrives (Item 12).
+- **PAUSE.** The human judges the look. Their feedback shapes slice 3.
 
 ---
 
@@ -393,11 +395,81 @@ There is no way to capture the game's view. `FRAME_P95_MS` comes from a headless
 
 ---
 
+## 8a. Item 11 — IP guard: block Game Boy Advance ROMs (Decision 19)
+
+**What this means for the user:** they're about to dump an Emerald cartridge. If that file ever got staged in this public repo — even renamed — the commit hook must refuse it, exactly as it refuses a DS ROM today.
+
+**Contract:** `design_rom_asset_pipeline.md` §8.3 (the GBA rule was added in pass 17).
+
+### The gap
+- `tools/check_no_nintendo_assets.py:20-22` knows only DS game codes at offset `0x0C`.
+- `get_blob_head(rev, path, 16)` (`:70`) reads just 16 bytes, so a GBA game code at `0xAC` is never seen.
+- `.gba` is blocked by extension, but a renamed file (`x.bin`) passes.
+
+### Implementation
+1. Read the first `0xB0` bytes instead of 16 (`:70`; `get_blob_head` already accepts `num_bytes`).
+2. Add `FORBIDDEN_GBA_GAME_CODE_PREFIXES = {b"AXV", b"AXP", b"BPR", b"BPG", b"BPE"}`. Check `header[0xAC:0xAF]` when `len(header) >= 0xB0`, with the message `GBA game code prefix '<prefix>' (<code>) detected at offset 0xAC`.
+3. Leave every existing rule unchanged.
+
+### Validation — add to `tools/test_check_no_nintendo_assets.py`
+- **Falsifying:** a staged 0xB0-byte `x.bin` with `BPEE` at `0xAC` → exit 1, naming the file. It fails against the current script (paste that in the commit body).
+- A staged blob with `AXVE` at `0xAC` → exit 1.
+- **Specificity:** a staged blob with `BPXE` at `0xAC` → exit 0. A staged 16-byte file → exit 0, with no crash on short blobs.
+- The guard's self-tests go from 13 to **17**. `test_runner.py` and the IP-guard workflow are green.
+
+### Blast radius (same commit)
+`tools/check_no_nintendo_assets.py` · `tools/test_check_no_nintendo_assets.py` · Decision 19 marked "guard built" in `ongoing_general_errors.md`.
+
+---
+
+## 8b. Item 12 — Emerald tile spike + tile-importer plan (Decision 19)
+
+**⛔ Waits on the human supplying a Pokémon Emerald (USA) dump from their own cartridge** (`TENTH_SPRING_ROM_GBA`), **and on Item 8** (the renderer's atlas slot). It produces findings, a mapping table, and a plan for review; **it does not build the production importer.**
+
+**What this means for the user:** the moment their map stops looking like placeholder art and starts looking like a real Pokémon game.
+
+### The gap
+- Every Emerald format rule in `design_rom_asset_pipeline.md` §4 is still **verify**.
+- No mapping exists from the slice-2 tile vocabulary (slice-2 plan §3) to Emerald metatiles.
+- The slice-2 building templates (plan §4.2) may not match the building shapes Emerald actually has.
+
+### Implementation
+1. **Preconditions.** `TENTH_SPRING_ROM_GBA` is set, the file exists, and its real path is **not** inside the repo. If any check fails, STOP and report. **Never download, search for, or link to a ROM.**
+2. **Write the spike in Python 3 stdlib** under `tools/rom_spike/emerald/`, run with `python3 -I` under `memguard run rom_spike_gba` (measure the budget on the first run). Output goes to `~/.tenth_spring_rom_spike/emerald/`, outside the repo. **The code embeds no bytes, images, or tables taken from the ROM** — only offsets, sizes, and metatile numbers.
+3. **Header.** Assert `BPEE` at `0xAC`. Compute the SHA-1, compare it with the No-Intro DAT entry, and record the hash and the DAT source in `design_rom_asset_pipeline.md` §2.
+4. **Find the tilesets.** Locate the primary tileset and the secondary tilesets through the ROM's own pointer tables. Record every offset, structure size, and how you found it, citing documentation (for example, the community decompilation project's source as a *reference*) — never a downloaded ROM or extracted asset.
+5. **Decode** the tile graphics (LZ77 type `0x10`), palettes, metatiles, and attributes. Replace each Emerald **verify** in `design_rom_asset_pipeline.md` §4 with the confirmed rule.
+6. **Contact sheets for the human:** the primary tileset's metatiles at 2×, plus the secondary tilesets for 4–6 differently themed towns, saved to the spike folder. Tell the human the paths. **Never commit them.**
+7. **Draft `game/config/emerald_tile_map.json`** — numbers only:
+   - for every `(class, variant, mask)` the synthesizer emits, the metatile to use;
+   - the multi-metatile building compositions for `house_s`, `house_m`, and `block_l`, plus each roof colour;
+   - a `gaps` list of anything Emerald lacks (for example snow, or inner corners the 16-mask scheme can't express).
+8. **Preview from synthetic data only.** A test helper dumps the four fixture cells' slice-2 buffers to `user://test/fixture_cells.bin`. The spike renders them with the Emerald tiles to `~/.tenth_spring_rom_spike/emerald/preview.png`. Show it to the human; never commit it.
+9. **If the templates don't fit** Emerald's buildings, write the smallest amendment to slice-2 plan §4.2 that does, and include it in the review. Don't change the synthesizer yet.
+10. **Write `docs/implementation_plan_rom_tiles.md`** at foundation depth. Cover:
+    - the GDScript modules (`gba_rom.gd`, `gen3_tiles.gd`, `tile_atlas_builder.gd`);
+    - `asset_db.tile_atlas()`;
+    - the resumable cache write;
+    - `design_rom_asset_pipeline.md` §7's tile checks;
+    - the test strategy — ROM tests run only when `TENTH_SPRING_ROM_GBA` is set, and are skipped with an explicit message otherwise.
+11. **PAUSE for human review.**
+
+### Validation
+- **Decode check:** every decoded tile uses ≤ 16 colours from its palette, and the grass, tall-grass, and water metatiles pass a pixel-variance threshold that a wrong decompression or palette fails.
+- **Coverage:** the mapping table covers every `(class, variant)` in the placeholder JSON, or lists it under `gaps`.
+- **Nothing leaked:** `git status` shows only `tools/rom_spike/emerald/*.py`, `game/config/emerald_tile_map.json`, and doc changes, and the guard (with Item 11's GBA rule) exits 0.
+
+### Blast radius (same commit)
+`tools/rom_spike/emerald/` · `game/config/emerald_tile_map.json` · `docs/design_rom_asset_pipeline.md` §2 and §4 · new `docs/implementation_plan_rom_tiles.md` · the slice-2 plan amendment (if any) · Decision 19 status.
+
+---
+
 ## 9. Deferred — trigger-gated, do NOT start
 - **Decision 15 re-ask (map delivery).** Selected B (pre-converted stores) but never implemented, and its size estimate was wrong (`ongoing_general_errors.md`, Decision 15 status). **Trigger:** Item 2's clip measurement is recorded — the next verification pass re-asks it. **Never build or publish stores before it is answered.**
 - **F45(d) — the in-game Download converts the whole state.** **Trigger:** Decision 15 re-answered.
 - **F49 — memguard `run` logs a 0.0 peak for short steps.** **Trigger:** the next change to `tools/memguard.py` — take the first sample after 0.2 s, then every `POLL_SECONDS`.
-- **Slice 3** — spawn zones, tall-grass encounters, ledges and terraces from USGS elevation, biomes, overgrowth by distance, and Decision 18's content. **Trigger:** the human approves slice 2 at Item 9's pause **and** Decision 18 is answered. Write `implementation_plan_world_generation_slice3.md` first, and pause.
+- **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, ledges and terraces from USGS elevation, and overgrowth by distance (`design_encounters_and_haunted_zones.md` §2a and §3a; `design_world_generation.md` §5). **Trigger:** the human approves slice 2 at Item 9's pause. Write `implementation_plan_world_generation_slice3.md` first, and pause.
+- **Warden trials, the Echo, and region-bound legendaries** (Decision 18; `design_story_and_world.md` §4–§5; encounters §7). **Trigger:** Phase 8 in the roadmap — after the battle engine exists (Phase 5). Not before.
 - **F7 — home-cell grid mismatch.** `companion/lib/capture/fuzz.dart:38-47` snaps home to a **300 m** grid; the game treats home as one 256 WM-m cell. **Trigger:** the first commit that wires safehouse designation (Phase 3 onboarding).
 - **mDNS auto-discovery (F27 d).** v1 finds the PC by remembered address plus QR re-scan. **Trigger:** the human reports that re-scanning is a real nuisance.
 - **Session-start relocation (§B5) on game launch.** `relocation_manager.gd` is still not called. **Trigger:** Phase 4.
@@ -453,6 +525,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ## 13. Intentional decisions — do NOT change
 - **No Nintendo content in the repo, ever.** Species, moves, and items are referenced by number; names, stats, and sprites come from the player's ROM cache through `asset_db` only. **The companion never contains Nintendo assets or names.**
 - **Roster and rules** (Decision 12): **649 species, Gen 1–5, Black/White only** (Decision 10 = B). **Gen IV formulas over Gen V data** — 17 types; Steel resists Ghost and Dark; crit ×2; Dusk Ball ×3.5. No hidden abilities in v1. Gen 6+ permanently out of scope.
+- **The story is `design_story_and_world.md`** (Decision 18): the finale is the Echo — a mirror of the player's party at +5 levels — after all nine Warden Anchors. **Giratina is an ordinary legendary.** Legendaries and mythicals never appear in Distortion Fields. The Pokédex is complete only when every legendary is caught or defeated.
+- **Two cartridges, separate jobs** (Decisions 10 and 19): Black/White for every Pokémon; Emerald for the map's tiles only. The code-drawn placeholder atlas is the permanent no-ROM look.
 - **Golden invariant 1 — real movement unlocks access, never cargo or creatures.** The sync ingest writes only `map_cell`, `place_node`, and `visit_log` (+ the body position). When bag, party, PC box, or Pokémon tables are added, extend the forbidden tokens in `sync_ingest_isolation_test.gd` and `test_runner.py` in the same commit.
 - **Golden invariant 2 — raw coordinates never persist or transit.** `companion/lib/capture/fuzz.dart` is the only place they exist, and the PC refuses any coordinate finer than 3 decimals.
 - **The world is the USA** (Decision 16): regions are filtered by URL prefix (`…/north-america/us/`). Beyond-the-map cells render as fog, are never downloaded, and never count — but the ingest still stores them.
@@ -477,10 +551,11 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 | Phase order + tuning constants | `docs/master_implementation_plan.md` |
 | Phases 0–1 build steps, v1 DDL, TLS sync protocol, Godot test-harness contract | `docs/implementation_plan_foundation.md` |
 | **Slice 1 of world generation** + its pass-17 amendments (§5.1a, §5.4a, §5.5, §7.1a, §7.4) | `docs/implementation_plan_world_generation.md` |
-| **Slice 2 — "Pokémon look" (draft, gated on Decisions 17 and 19)** | `docs/implementation_plan_world_generation_slice2.md` |
-| The Black/White ROM, formats, legal + repo guardrails | `docs/design_rom_asset_pipeline.md` |
+| **Slice 2 — "Pokémon look" (approved, Decision 17 = A)** | `docs/implementation_plan_world_generation_slice2.md` |
+| **The backstory and theme** — the Stillness, the Distortion, Wardens, the Echo, writing rules | `docs/design_story_and_world.md` |
+| The Black/White and Emerald ROMs, formats, legal + repo guardrails | `docs/design_rom_asset_pipeline.md` |
 | Stats, types, damage, catching, party, PC, blackout | `docs/design_creatures_and_battles.md` |
-| Spawn zones, ghost share, levels, haunted zones, legendaries | `docs/design_encounters_and_haunted_zones.md` |
+| Spawn zones, regions and biomes, Distortion Fields, ghost share, levels, haunted zones, legendaries, Warden trials, the Echo finale | `docs/design_encounters_and_haunted_zones.md` |
 | Exploring sites, familiarity, healing scarcity | `docs/design_expeditions_and_survival.md` |
 | Items by place, bag, home safehouse | `docs/design_resources_and_base.md` |
 | Visits → tiles, tall grass, landmarks, **USA scope (§5)** | `docs/design_world_generation.md` |
@@ -500,8 +575,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 1 STUDY     Read this item + the design_*.md / implementation_plan_*.md sections it names.
             Specs are decisions.
 2 PLAN      Building a phase or slice with no approved implementation_plan_*.md? Write one
-            FIRST and PAUSE for human review. (Items 0–3 are approved fixes. Slice 2 is
-            approved only by Decision 17 = A.)
+            FIRST and PAUSE for human review. (Items 0–3 and 11 are approved fixes; slice 2
+            is approved by Decision 17 = A.)
 3 IMPLEMENT Exactly as written, on a branch. Honor §13 and the standing constraints —
             above all: no Nintendo content; none of the human's places in the repo; no test
             touches the real save, identity, or demo profile; one grid; never force-push main.
@@ -523,15 +598,18 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [ ] **Item 1 (Decision 16, F44, F45 a/b/c/e)** — US-only regions; beyond-the-map chip; redirects, status checks, streaming, threaded install with progress and cancel; the chip wired in the running game.
 - [ ] **Item 2 (F46, F50)** — clip conversion with its equivalence falsifier; coverage rendering; profile-local map data; the human's demo save and clipped map built locally; clip timings recorded in plan §5.3; Item 1's manual check done.
 - [ ] **Item 3 (F47)** — the harness exists; the honest slice-1 screenshots of the human's area were **shown to them**; windowed `FRAME_P95_MS` recorded.
-- [ ] **HUMAN: Decisions 17, 18, and 19 answered.**
-- [ ] **If Decision 17 = A:** Items 4–9 delivered with their proofs; the four slice-2 screenshots shown; **paused for the human's verdict.**
+- [x] **HUMAN: Decisions 17, 18, and 19 answered** (2026-10-19): 17 = A, 18 = B with the Echo story, 19 = Emerald.
+- [ ] **Item 11** — the guard blocks GBA ROM headers; 17 guard self-tests.
+- [ ] **Items 4–9** — slice 2 delivered with its proofs; the four slice-2 screenshots shown; **paused for the human's verdict.**
 - [ ] **HUMAN: real-device sync gate passes** (§2). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run.** **Closes Phase 0.**
 - [ ] **When a Black/White dump is supplied:** Item 10 — verify markers resolved, `implementation_plan_rom_importer.md` written, preview shown, **paused for review**.
+- [ ] **When an Emerald dump is supplied (and Item 8 is done):** Item 12 — Emerald verify markers resolved, `emerald_tile_map.json` drafted, contact sheets and preview shown, `implementation_plan_rom_tiles.md` written, **paused for review**.
 - [ ] The full §1 battery and every CI workflow (Linux and macOS) are green.
 
-**When all of the above that apply are checked — or Item 3 is done and Decision 17 is still blank — this build's queue is empty. Do NOT invent work.** Legitimate triggers for more:
-- a filled `Your selection:` on Decision 17, 18, or 19 (or any new item in `ongoing_general_errors.md`);
+**When all of the above that apply are checked, this build's queue is empty. Do NOT invent work.** Legitimate triggers for more:
+- a new item in `ongoing_general_errors.md` with a filled `Your selection:`;
+- the human's verdict at Item 9's pause (it opens slice 3);
 - the §1 battery or any CI workflow regressing;
 - a §9 trigger firing;
 - the human assigning something.

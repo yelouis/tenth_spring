@@ -2,7 +2,7 @@
 
 Target look: **Pokémon Diamond/Pearl-era top-down pixel art** — warm, readable, charming — with a horror undertone: overgrowth, emptied towns, distortion bleeding in at the edges of the known world, and Ghost Pokémon in the dark.
 
-The pivot changes where art comes from. **Pokémon and item art come from the player's own ROM** at runtime. **Everything else is original art** and lives in the repo.
+The pivot changes where art comes from. **Pokémon and item art come from the player's Black/White ROM**, and — since Decision 19 (2026-10-19) — **the overworld map tiles come from the player's Emerald ROM**, all at runtime. **Everything else is original art** and lives in the repo, including the placeholder map tiles the game shows until an Emerald ROM is imported.
 
 ---
 
@@ -12,16 +12,19 @@ The pivot changes where art comes from. **Pokémon and item art come from the pl
 |---|---|---|
 | Pokémon battle sprites (front/back, shiny) — 96×96, animated, Black/White style, for all 649 (Decision 10 = B) | Player's Black/White ROM via the importer | **Never** |
 | Item icons | Player's ROM via the importer | **Never** |
-| Overworld tiles (generated from OSM) | Original | Yes |
+| Overworld map tiles (layout generated from OSM) | Player's **Emerald** ROM via the importer (Decision 19) | **Never** |
+| Placeholder map tiles — the no-ROM look | Original, code-drawn (`placeholder_v1`) | Yes |
 | Player overworld sprite, battle UI, menus, fonts | Original | Yes |
 | Battle backgrounds per zone | Original | Yes |
 | Fog, distortion, night, and lamp effects | Original shaders | Yes |
 
-Gen 4 overworlds are 3D models, not 2D tilesets, so there is nothing usable to extract for the overworld — and our world is generated from OpenStreetMap anyway. Overworld tiles stay original.
+**Why Emerald for the map.** The DS games (Gen 4–5) draw their overworlds as 3D models, not 2D tilesets, so there is nothing tile-shaped to extract from Black/White. The Game Boy Advance games are the last Pokémon games built from true 2D tiles, and Emerald has the widest range of landscapes among them (desert, beach, forest, mountains). The *layout* is still generated from OpenStreetMap (`implementation_plan_world_generation_slice2.md`); only the pixels come from the ROM, through a committed table of metatile numbers (`design_rom_asset_pipeline.md` §5). Gen 3 tiles are 16 px and render at 2× (32 px), the same integer-scale rule as everything else. The overworld is Gen 3 in look while battles use Black/White sprites; the two never share a screen.
 
 **Battle layout** is built for a 96×96 animated sprite box at integer scale, never stretched.
 
 ## 2. The rip trap — read before sourcing any tiles
+
+This applies to every piece of art that **isn't** read from the player's ROM at runtime. ROM tiles are never committed, so they never meet this problem; a downloaded tileset would.
 
 **Many "Diamond/Pearl tilesets" circulating online are rips of Nintendo's art.** Committing one puts Nintendo assets into a public repo — exactly what the BYOR model exists to prevent. Before licensing any tileset: confirm the author drew it, get commercial-use-or-better license terms in writing, and prefer artists with a portfolio of original work. When in doubt, commission.
 
@@ -43,8 +46,8 @@ Gen 4 overworlds are 3D models, not 2D tilesets, so there is nothing usable to e
 
 ## 5. Sourcing pipeline (original art only)
 
-1. **Programmer art** through Phase 9: flat-colour placeholder tiles; Pokémon render from the ROM cache as soon as the importer exists.
-2. **Base kit:** license a genuinely original top-down tileset in D/P style (§2's checks).
+1. **Programmer art** through Phase 9: the code-drawn placeholder tiles (`placeholder_v1`, slice-2 plan §5) — kept permanently as the no-ROM look. Pokémon render from the Black/White cache, and map tiles from the Emerald cache, as soon as each importer exists.
+2. **Map tiles:** the Emerald importer (Decision 19) replaces licensing a base kit for the overworld. Anything Emerald lacks — snow, for example — is drawn as original art in the same style, or filed as a decision.
 3. **Commissions:** player sprite, haunted interior tiles, distortion effects, battle backgrounds.
 4. **AI:** concepting and mood reference only; never final assets.
 

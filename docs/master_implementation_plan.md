@@ -15,6 +15,8 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 - **`grassEncounterRate = 0.10`** per step; haunted interiors **0.12**.
 - **Ghost share:** `clamp(zoneBase · nightMult + 0.10 · hauntStage, 0, 0.80)`; `nightMult` 3.0 night / 1.5 dusk.
 - **`hauntGrowthTickGameDays = 1`** (renamed from `colonyGrowthTickGameDays`); **`bagCacheDecayGameDays = 3`** (renamed from `deathCacheDecayGameDays`); **`legendaryRespawnGameDays = 30`**.
+- **Distortion Fields:** `distortionFieldIntervalGameDays = 3` (2 once 6+ Anchors are held), `distortionFieldDurationGameDays = 1`, `distortionFieldRadiusMiles = 10`, `distortionFieldSizeCells = 5`, `distortionFieldForeignShare = 0.40` (`design_encounters_and_haunted_zones.md` §3a).
+- **Warden trials:** team level `22 + 6 × anchorsHeld`. **Finale:** the Echo mirrors the party at +5 levels (cap 100).
 - **`partySize = 6`**; PC box 18 × 30; berry garden 8 plots; **shiny rate 1/8192**.
 - **Data locality:** location traces and map state live only on the player's phone + PC; sync is direct device-to-device (E2E). No account, no server.
 
@@ -27,9 +29,9 @@ Carrying the phone yields a fuzzed visit/corridor log within budget. **Exit:** l
 A day of scouting lands as `visit_log` rows + `known` cells on the PC after one LAN sync; persistence survives quit-and-relaunch. **Status:** All code delivered across Item 2 (real SQLite persistence, WAL, bound parameters) and Item 3a–c (pinned TLS listener, QR generator, pairing tokens, frame codec, scout reports, and cross-language loopback sync in CI). Verified in CI (`sync_e2e`, `game_tests`, `Public-Repo IP Guard`). **Exit:** real-device sync over pinned TLS (Decision 11), replay is a no-op, Wireshark shows only TLS records (pending human testing on physical phone + PC).
 
 **Phase 2 — ROM asset importer (BYOR)** *(new; gates every Pokémon-facing phase)*
-Import a player-supplied Pokémon Black or White ROM (all data and sprites for the 649 Gen 1–5 species; Decision 10 = B) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
+Import a player-supplied Pokémon Black or White ROM (all data and sprites for the 649 Gen 1–5 species; Decision 10 = B) — and, for the map's tiles, a Pokémon Emerald ROM (Decision 19) — into `user://rom_cache/`: verify, parse the NDS filesystem, extract and decode sprites, species, moves, learnsets, evolutions, items, icons, and text. Includes the repo guard script. Contract: `design_rom_asset_pipeline.md`. **Exit:** the §7 import validation passes on a real dump, and the guard fails CI if any Nintendo-format file is tracked.
 
-**Phase 3 — World generation** *(slice 1 "Neighborhood preview" **built** (Items 3–10, verified with corrections in pass 17 — F43–F46). The human rejected its flat-colour look; slice 2 "Pokémon look" is drafted in `implementation_plan_world_generation_slice2.md` and waits on Decisions 17 and 19. The world is the **USA only** (Decision 16).)*
+**Phase 3 — World generation** *(slice 1 "Neighborhood preview" **built** (Items 3–10, verified with corrections in pass 17 — F43–F46). The human rejected its flat-colour look; slice 2 "Pokémon look" is approved (Decision 17 = A) in `implementation_plan_world_generation_slice2.md`, with real map tiles from the player's Emerald ROM (Decision 19). The world is the **USA only** (Decision 16).)*
 Offline regional OSM extracts of US regions (Decisions 13, 16) → deterministic tile overworld assembled from walking-scale Pokémon pieces: spawn zones (incl. cemetery/ruins/hospital), **tall-grass placement**, landmark flagging with legendary assignment, two-fog rendering, and the intel ceremony. Contract: `design_world_generation.md`. **Exit:** identical tiles from `(cached OSM, cellSeed)` across runs; tall grass appears where the rules say.
 
 **Phase 4 — Travel, time & fast travel** *(partly pre-built — extend, don't rewrite)*
@@ -39,13 +41,13 @@ World clock, day/dusk/night bands, travel charged in game-time, bicycle, session
 Instances, stats, natures, IVs/EVs, the Gen IV type chart, damage, status, v1 move effects and abilities, AI, EXP, growth curves, evolution. Contract: `design_creatures_and_battles.md`. **Exit:** formula unit tests pass (damage, catch, growth totals, type-chart cells); a full wild battle runs headless end to end.
 
 **Phase 6 — Encounters & catching**
-Per-step encounter rolls, spawn pools, ghost-share formula, level bands, the catch formula and balls (incl. Dusk Ball), party and PC box, Pokédex. Contract: `design_encounters_and_haunted_zones.md` §1–4. **Exit:** at night in a cemetery ≥ 75% of 1,000 simulated encounters are haunted-pool draws; by day in a suburb ≤ 10%.
+Per-step encounter rolls, spawn pools with biome and region rules (Decision 18), Distortion Fields, ghost-share formula, level bands, the catch formula and balls (incl. Dusk Ball), party and PC box, Pokédex and its completion rule. Contract: `design_encounters_and_haunted_zones.md` §1–4 and §7.2. **Exit:** at night in a cemetery ≥ 75% of 1,000 simulated encounters are haunted-pool draws; by day in a suburb ≤ 10%; a region-only species never appears outside its region except inside a Distortion Field; no legendary or mythical ever comes from a field.
 
 **Phase 7 — Exploration & survival**
 Site interiors, searching for items by category, haunted interiors, familiarity effects, home-only healing, blacking out and bag recovery, berry garden. Contracts: `design_expeditions_and_survival.md`, `design_resources_and_base.md`. **Exit:** a site can be explored and left; blacking out drops a recoverable bag while Pokémon, map, and PC survive.
 
 **Phase 8 — Haunted zones & legendaries**
-Seeding, growth, intrusion and PC sealing, zone bosses and cleansing, real-world-gated events (Spiritomb, Rotom), landmark legendaries, the Giratina arc. Contract: `design_encounters_and_haunted_zones.md` §5–7. **Exit:** an ignored zone grows until it seals the PC; beating its boss cleanses it; a landmark legendary is unique per save.
+Seeding, growth, intrusion and PC sealing, zone bosses and cleansing, real-world-gated events (Spiritomb, Rotom), region-bound landmark legendaries, the nine Warden trials, and the Echo finale (Decision 18; story in `design_story_and_world.md`). Contract: `design_encounters_and_haunted_zones.md` §5–7. **Exit:** an ignored zone grows until it seals the PC; beating its boss cleanses it; a landmark legendary is unique per save.
 
 **Phase 9 — Art & UI pass**
 Replace programmer art with original tiles, UI, battle backgrounds, and shaders (distortion tint); ROM sprites render via `asset_db`. Contract: `design_art_direction.md`. **Exit:** no placeholder art in the main zones; every original asset passes the rip-trap check.

@@ -46,7 +46,7 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
   2. Buildings → rectangularized footprints (min 2×2 tiles) with a door tile facing the nearest road.
   3. Parks/forest → grass + tree-line autotiles; water bodies → water autotiles.
   4. Everything else → wilderness fill (grass with density noise; "overgrown" ruin props seeded by building-age heuristics).
-  - **Status (pass 17):** slice 1 built none of steps 1–4's Pokémon grammar — it fills 16 m squares with six flat colours — and the human rejected the look. The target is a map assembled from walking-scale Pokémon pieces (paths, roofed buildings with south-facing doors, tree borders, tall grass, shorelines, signs). How real geography becomes those pieces is **Decision 17**; the draft for its recommended option is `implementation_plan_world_generation_slice2.md`, which replaces this list once approved.
+  - **Status (pass 17):** slice 1 built none of steps 1–4's Pokémon grammar — it fills 16 m squares with six flat colours — and the human rejected the look. The target is a map assembled from walking-scale Pokémon pieces (paths, roofed buildings with south-facing doors, tree borders, tall grass, shorelines, signs). **Decision 17 = A** (2026-10-19) chose real streets rebuilt from those pieces; `implementation_plan_world_generation_slice2.md` replaces this list when it lands.
 - **Determinism**: synthesis is a pure function of `(OSM data, cell seed)`. The same neighborhood always generates the same tiles. Cell seed = hash of cell coordinates + a per-player world seed.
 - **Home**: the player designates the safehouse once during onboarding (defaults to most-dwelled location). Its stored coordinates are fuzzed per `design_privacy_and_location.md` before ever touching the map layer.
 
@@ -73,7 +73,7 @@ The map is the USA: the 50 states, DC, Puerto Rico, and the US Virgin Islands �
 - it is never offered for download and never counts toward anything (Pokédex, events, familiarity);
 - the sync ingest still stores it like any other cell (golden invariants unchanged), so the rule lives entirely in rendering and region choice.
 
-**Why the USA is enough.** A cross-country game is already far larger than any Pokémon region, and US federal map data — USGS elevation and land cover — is public domain, so later slices can add real terrain (ledges, cliffs, terraces) and biomes without licensing trouble. How availability is spread across the country so that travel matters is Decision 18.
+**Why the USA is enough.** A cross-country game is already far larger than any Pokémon region, and US federal map data — USGS elevation and land cover — is public domain, so later slices can add real terrain (ledges, cliffs, terraces) and biomes without licensing trouble. **Regions and biomes (Decision 18).** Every cell also belongs to one of the 9 US Census divisions (DC, Puerto Rico, and the US Virgin Islands count as South Atlantic) and gets a biome. Together they decide which Pokémon can live there, and where each region's Warden and legendaries are found (`design_encounters_and_haunted_zones.md` §2a and §7; `design_story_and_world.md`).
 
 ## 6. Files
 * `companion/lib/capture/visit_detector.dart` — dwell/corridor detection (phone).

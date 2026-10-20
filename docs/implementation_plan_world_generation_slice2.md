@@ -1,8 +1,9 @@
-# Implementation Plan — World Generation, Slice 2: "Pokémon Look" (DRAFT)
+# Implementation Plan — World Generation, Slice 2: "Pokémon Look"
 
-> **Status: DRAFT (pass 17, 2026-10-19).** This plan becomes the contract when **Decision 17 = A** *and* **Decision 19 = A** (`docs/ongoing_general_errors.md`).
-> - **Decision 19 = B or C** (licensed or commissioned art): everything holds except §5. The agent maps the supplied tileset onto §3's classes and §5.2's atlas JSON instead of generating art.
-> - **Decision 17 = B or C:** this plan is void. STOP, and write and pause on a new plan.
+> **Status: APPROVED (2026-10-19).** Decision 17 = A approved this plan as written.
+> - **Decision 19 = Emerald:** the map's real art comes from the player's Pokémon Emerald ROM (`design_rom_asset_pipeline.md` §2, §5). §5's code-drawn placeholder atlas is **still built** — it is the no-ROM look and the only atlas tests and agents ever see. The renderer (§6) loads `user://rom_cache/tiles/emerald_v1.png` + `.json` when the Emerald import is valid, and the placeholder otherwise.
+> - **Both atlases share §5.2's JSON layout**, so the switch is data, not code.
+> - The Emerald importer itself is a separate, ROM-gated item (agent guide Item 12). It may adjust §4.2's template sizes to fit Emerald's building compositions — through a plan amendment the human reviews.
 >
 > Built in agent guide Items 4–9, after Items 0–3 (slice-1 fixes, clip conversion, and the screenshot harness — `implementation_plan_world_generation.md` §5.1a, §5.4a, §5.5, §7.1a, §7.4).
 
@@ -347,7 +348,7 @@ Many US areas have no building footprints in OpenStreetMap. For each `residentia
 
 ## 6. Renderer v2 — `game/world/map_view.gd`
 
-- **TileSet:** one atlas source from `placeholder_v1.png`, tile size 32. Atlas coordinates are `(mask if masked else 0, row(class, variant))`.
+- **TileSet:** one atlas source, tile size 32 — `user://rom_cache/tiles/emerald_v1.png` when `asset_db` reports a valid Emerald import, else `res://assets/tiles/placeholder_v1.png`. Both come with a §5.2 JSON. Atlas coordinates are `(mask if masked else 0, row(class, variant))`. The map view reads the ROM atlas only through `asset_db` (`asset_db.tile_atlas()` returns the texture and JSON, or `null`).
 - **Layers, bottom to top:**
   - `BackgroundLayer` (`#0d1119`);
   - `WorldKnown` — a TileMapLayer with `res://world/shaders/known_tint.gdshader`;

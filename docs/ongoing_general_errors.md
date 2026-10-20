@@ -11,44 +11,7 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 >
 > **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.
 >
-> **2026-10-19 (pass 17) — three new decisions need you: 17, 18, and 19.** You saw the slice-1 map and said it "looks nothing like a pokemon game map", and you narrowed the world to the USA (now **Decision 16**, under Resolved). Decision 17 is the important one — it decides what the walkable map is built from. Fill in each `Your selection:` line. Until Decisions 17 and 19 are answered, agents only fix the slice-1 bugs and produce real screenshots of what the game draws today (agent guide Items 0–3).
-
-### Decision 17: What the walkable map looks like — **needs your input**
-**What this is about.** A Pokémon map is built from a small kit of pieces at the scale of someone walking: paths a few squares wide, houses with a roof and a door, trees walling off the edges, patches of tall grass, ponds with shorelines, fences, and signs. Slice 1 instead colours every ~13 m square of the real world one flat colour, so a house becomes a grey dot and a street a one-square line. No recolouring can make that look like Pokémon. Before more is built, you need to pick how real geography gets turned into Pokémon pieces.
-- **Option A — Real streets, Pokémon pieces** *(recommended)*. The map stays one continuous, real USA. Each square shrinks to 8 m (from 16 m), and instead of colouring squares, the game *builds* the map from Pokémon pieces in the real places:
-  - streets become 2–4-square paths and roads; rail lines become tracks;
-  - each real building becomes a roofed building with a door on its south side, and named places get a sign with their real name;
-  - parks get a tree border and tall-grass patches; lakes and the bay get shorelines; cemeteries get rows of graves behind a fence.
-
-  You'd recognise your own streets and landmarks, and your walks reveal exactly the streets you walked.
-  - *Cost:* towns are real size — crossing a 5 km town on foot takes about 3–4 minutes of play — and real places are messier than designed towns. It will look like "a Pokémon map drawn over your real town", not a hand-made town.
-  - **Choosing A approves the draft `docs/implementation_plan_world_generation_slice2.md` as written** (agent guide Items 4–9).
-- **Option B — Towns and routes.** The real USA becomes a Pokémon-style network. Each real town or neighbourhood is generated as a compact Pokémon town (about 40 × 40 squares) holding its real landmarks in roughly the right directions. The real roads between towns become Pokémon routes (tall grass, trees, ledges) whose length grows with the real distance.
-  - *Gains:* looks and plays most like a real Pokémon game.
-  - *Cost:* your actual streets disappear — visiting a town reveals "that town", not the blocks you walked — and the fog works per town and route. A bigger rewrite: the slice-2 draft is void, and a new plan is written and reviewed first.
-- **Option C — Keep slice 1's flat squares and polish the colours.** Cheapest, but it will still look like a data map, not Pokémon. Not recommended.
-- **Recommendation: A.** It keeps the founding promise — "your map is the places you have actually been" — down to the street, reuses everything slice 1 built, and the USA's public map data supports it everywhere.
-- **Your selection:**
-
-### Decision 18: How travel becomes the only way to truly complete the game — **needs your input**
-**What this is about.** In Pokémon, "completing" a game means filling the Pokédex (and beating the big battles). Today's design hands out most Pokémon by *kind of place* — parks, cemeteries, downtowns — and those exist in every town. So a player who never leaves home could still catch nearly everything; travel only raises levels and unlocks a few landmark legendaries. For the size of the USA to matter, which Pokémon you can find has to depend on *where in the USA* you are. This doesn't block the map work (slice 2); it shapes slice 3, where spawns are built.
-- **Option A — Travel for 100%** *(recommended)*. The story can be finished on home turf, but a full Pokédex needs real travel.
-  - Each map area gets a **biome** from its real land cover and climate: desert, forest, coast, mountains, wetland, plains, snow, or city.
-  - The USA is split into **9 regions** — the Census divisions: New England, Middle Atlantic, South Atlantic, East South Central, West South Central, East North Central, West North Central, Mountain, Pacific.
-  - Every species gets a home: about a third live everywhere, about 40% only in certain biomes, about 20% only in one region, and the legendaries sit at specific real landmarks (national parks, monuments).
-  - Finishing the Pokédex means visiting every biome and every region.
-- **Option B — Travel for everything.** As A, plus one **region trial** — a boss battle at that region's most famous landmark — in each of the 9 regions, and the finale (Giratina) requires all 9. Nobody finishes the story without crossing the country.
-- **Option C — Keep today's design.** Pokémon by kind of place everywhere; travel raises levels and unlocks landmark legendaries only.
-- **Recommendation: A.** It makes the whole USA worth exploring while keeping the game finishable for someone who rarely travels.
-- **Your selection:**
-
-### Decision 19: Where the map's tile art comes from, for now — **needs your input**
-**What this is about.** The art rules say the overworld uses **original** art — never ripped Pokémon tiles, because this public repo can't hold Nintendo art — and that flat "programmer art" is fine until the art pass (Phase 9). Your feedback says the look matters now. Agents can draw simple original tiles in code; they can't draw polished pixel art.
-- **Option A — Code-drawn placeholder tiles now** *(recommended)*. The agent generates a simple, original tile set — grass, tall grass, trees, water with shores, paths, roofs, walls, doors, fences, graves, signs — in a Pokémon-like layout. It will read as a Pokémon map, because the *structure* is right, but look like an early fan game. Swapping in better art later is a file swap, not a code change.
-- **Option B — You license a tileset now.** You buy an original top-down tileset in a Diamond/Pearl-like style (for example on itch.io) and give the agent the files; the agent maps it in. Looks much better sooner. You must confirm it's the artist's own work, with written commercial-or-better terms — many "D/P tilesets" online are rips (`design_art_direction.md` §2).
-- **Option C — Commission an artist** for a custom set. Best result; slowest and most expensive.
-- **Recommendation: A now**, then B or C before the art pass. The map's *structure* is what's wrong today, and A fixes that without waiting on art.
-- **Your selection:**
+> **2026-10-19 (pass 17) — Decisions 16–19 were asked and answered the same day.** 16 (USA only) came as your directive; you filled in 17, 18, and 19, and the follow-up questions on 18 and 19 were asked and answered in chat. All four are under Resolved. The new backstory you asked for is `docs/design_story_and_world.md`.
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
@@ -70,6 +33,52 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 ---
 
 ## ✅ Resolved Decisions
+
+### Decision 17 — The walkable map: real streets, Pokémon pieces (Resolved 2026-10-19)
+- **Your selection:** "Proceed with Option A."
+- **What it means:** the map stays one continuous, real USA, rebuilt from walking-scale Pokémon pieces in the real places — 8 WM-m squares instead of 16; streets as 2–4-square paths and roads; real buildings as roofed buildings with south doors and name signs; parks with tree borders and tall grass; shorelines, graveyards, and rail lines.
+- **The options were:** A — real streets, Pokémon pieces; B — towns and routes; C — polish slice 1's flat squares.
+- **Consequences:**
+  - `docs/implementation_plan_world_generation_slice2.md` is **approved as written** and built in agent guide Items 4–9, after Items 0–3.
+  - Its §9 doc changes (tile size 8, north-first buffers, map-view caches) land with those items.
+
+### Decision 18 — Completing the game: nine Warden trials, an Echo finale, and travel for the full Pokédex (Resolved 2026-10-19)
+- **Your selection in the doc:** "I like option A but what does it mean to keep the game finishable for someone who rarely travels? What does it mean for the game to be completable?"
+- **Answered in chat, then refined over two rounds of questions:**
+  1. **"Completing" has two finish lines** — the story's ending (the credits) and 100% (a full Pokédex). Under the original Option A, the ending needed no long trips and 100% needed travel.
+  2. **The ending — you chose Option B, with a new story:** "a boss trial in each of the 9 regions, all required before the finale. However, I don't want the finale to be fighting giratina. Can we come up with a custom and new story for our game?"
+     - You chose the finale from the *Echo* concept: "I like the idea where the finale is a stronger mirror of your own party."
+     - Combined with the Wardens: "Maybe lets combine it with the 9 regional wardens where you still need to visit the 9 regions in someway?"
+     - With the theme in it: "I would like the apocalypse/survival theme to be baked in the story/gameplay somehow… create the full backstory in doc so we have a theme to follow."
+  3. **The Pokédex — Option A, plus Distortion Fields:** "Lets go with Option A but lets also have something like paranormal/distortion fields that occur every once in a while which pokemon from other regions can appear (no legendaries)."
+     - **Field reach:** "Any non-legendary species can appear… However, to complete the pokedex, you need to catch or beat the legendaries so you can't finish the pokedex at home."
+  4. **Trial location:** any major landmark in the region (a national park or national monument) — the recommended option.
+- **What it means:**
+  - **The story:** a new, original backstory — the Stillness, the Distortion, Walkers, nine regional Wardens, and the Echo. It is the theme contract for every scene and system: `docs/design_story_and_world.md`.
+  - **Nine Warden trials**, one per US Census division, each at any national park or monument in its region, in any order. Team level `22 + 6 × anchorsHeld`; each trial has a survival rule. Each grants an Anchor; **all nine are required for the finale.**
+  - **The finale is the Echo:** an exact mirror of your current party at +5 levels, at the place you've visited most in real life. **Giratina is now an ordinary legendary.**
+  - **Pokédex:** species spread by biome and region (about ⅓ everywhere, 40% biome-bound, 20% region-only). Legendaries and mythicals are bound to one region's major landmarks.
+  - **Distortion Fields** bring any non-legendary species anywhere, rarely. Completion requires every legendary to be **caught or defeated**, so it can't be finished at home.
+- **Contracts updated:** `design_story_and_world.md` (new), `design_encounters_and_haunted_zones.md` §2a, §3a, and §7, `design_world_generation.md` §5, `master_implementation_plan.md` (Phases 6 and 8, constants), and `README.md`. Built from slice 3 (spawns) and Phase 8 (trials, finale) onward — not in this build.
+
+### Decision 19 — Map tile art: real tiles from the player's Pokémon Emerald ROM (Resolved 2026-10-19)
+- **Your selection in the doc:** "I want to use the real art. How does PokemonMMO or other emulator games use it legally?"
+- **Answered in chat:**
+  - **How PokeMMO does it:** it ships no Nintendo files and reads graphics, maps, and music from ROMs the player dumped from their own cartridges — the "bring your own ROM" model this project already uses for sprites.
+  - **Is it legal?** It is a grey area that has held up in practice, not a clear legal right.
+    - Emulators are legal in the US when they contain no Nintendo code (*Sony v. Connectix*, *Sony v. Bleem*, 2000).
+    - Sharing ROMs is infringement; dumping your own cartridge for your own use sits in between.
+    - Projects get shut down for shipping Nintendo material (Essentials, 2018), drawing attention (Uranium, Prism, AM2R, 2016), or breaking encryption (Yuzu, settled 2024).
+    - Real tiles don't change Tenth Spring's risk category, provided the repo holds only code and numbers.
+  - **The technical catch:** Black/White draws its towns as 3D models, so the real 2D tiles have to come from a Game Boy Advance game.
+  - **Your choice:** "Emerald (Recommended)."
+- **What it means:**
+  - **A second cartridge:** players also dump **Pokémon Emerald (USA)** (`BPEE`, `TENTH_SPRING_ROM_GBA`). The importer builds the map's tile atlas from it into `user://rom_cache/tiles/`, through a committed table of metatile numbers (`game/config/emerald_tile_map.json`) — never pixels.
+  - **This amends Decision 10's "one cartridge"** — Black/White still supplies every Pokémon.
+  - **The code-drawn placeholder atlas is still built** — it is the no-ROM look and the only atlas tests and agents ever see.
+  - **The IP guard gains a GBA rule:** Gen 3 game codes at header offset `0xAC` (agent guide Item 11).
+  - **The Emerald tile spike** (agent guide Item 12) waits on your dump.
+- **Contracts updated:** `design_rom_asset_pipeline.md` §1, §2, §3, §4, §5, §6, §7, §8, and §10; `design_art_direction.md` §1, §2, and §5; slice-2 plan status and §6; `README.md`; `master_implementation_plan.md` Phase 2; `e2e_testing_journeys.md` Journey 0.
 
 ### Decision 16 — World scope: the USA only (Resolved 2026-10-19 — your directive)
 - **In your words:** "lets reduce the scope slightly by not mapping out the entire world and only focus on the USA."
@@ -128,6 +137,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 
 ### Decision 10 — Sprite style: Black/White sprites for all 649; Platinum dropped (Resolved 2026-10-09)
 - **Selection: Option B — Black/White sprites for all 649.** Every battle uses one consistent, animated style (96×96). Players need **one** cartridge (Black or White), and the importer decodes one sprite format.
+- **Amended by Decision 19 (2026-10-19):** players now also dump **Pokémon Emerald** — for the overworld map tiles only. Black/White still supplies every Pokémon.
 - **Consequences:**
   - **Platinum is no longer used at all** — this supersedes Decision 9's Platinum choice. Black/White now supplies everything: data, text, icons, and sprites. `TENTH_SPRING_ROM_PT`, the Platinum archive table, the Gen 4 sprite decryption, and the comparison image are all dropped.
   - The overworld stays original Diamond/Pearl-*style* art (`design_art_direction.md`), which doesn't depend on any ROM.
@@ -584,4 +594,6 @@ Founding decisions made with the user during the design brainstorm, recorded her
     - **Why plain Web Mercator:** it is conformal (north is up and angles are true everywhere, including distant "islands"), it is the grid every slippy map uses, and it needs no per-world state — so the per-region map stores (Decision 13) are keyed identically for every world.
     - **Cost:** cells are smaller on the ground away from the equator (≈ 173 m in Seattle). Gameplay distances are ground metres, so play is unaffected.
 19. **The world is the USA (2026-10-19, pass 17, Decision 16).** The human narrowed the map from the whole planet to the USA. The archipelago idea survives inside it — Alaska, Hawaii, and Puerto Rico are literal islands — and outside the USA is "beyond the map." US federal elevation and land-cover data are public domain, which opens real terrain and biomes to later slices.
-20. **"Looks like Pokémon" is a requirement, not polish (2026-10-19, pass 17).** The human rejected slice 1's flat 16 m squares: a Pokémon map is assembled from walking-scale pieces (paths, roofed buildings with doors, tree borders, tall grass, shorelines, signs). How real geography becomes those pieces is **Decision 17**; the draft for the recommended option is `implementation_plan_world_generation_slice2.md`.
+20. **"Looks like Pokémon" is a requirement, not polish (2026-10-19, pass 17).** The human rejected slice 1's flat 16 m squares: a Pokémon map is assembled from walking-scale pieces (paths, roofed buildings with doors, tree borders, tall grass, shorelines, signs). **Decision 17 = A:** real streets rebuilt from Pokémon pieces (`implementation_plan_world_generation_slice2.md`).
+21. **A new story replaces the Giratina arc (2026-10-19, Decision 18).** The human asked for a custom story with the apocalypse/survival theme "baked in", nine regional Wardens, and a finale against a stronger mirror of the player's own party. The result is `design_story_and_world.md`. Its central idea — the Distortion copies whatever crosses it and is now learning the player — ties together the fog, Distortion Fields, legendaries that can't be copied, and the Echo.
+22. **Real map art from a second cartridge (2026-10-19, Decision 19).** The human chose real Pokémon tiles. Because the DS games' overworlds are 3D, the tiles come from the player's Emerald ROM (Game Boy Advance), under the same bring-your-own-ROM rules as the sprites, with an original placeholder set as the no-ROM look.

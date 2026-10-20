@@ -1,6 +1,6 @@
 # ROM Asset Pipeline — "Bring Your Own ROM"
 
-This document defines how Tenth Spring gets Pokémon sprites, species data, moves, items, and names **without the repository ever containing them**. It is modeled on PokeMMO, which ships no Nintendo files and reads game assets from ROMs the player supplies. Every Pokémon-facing system depends on this pipeline, which is why it is Phase 2 in the master plan.
+This document defines how Tenth Spring gets Pokémon sprites, species data, moves, items, names, and — since Decision 19 (2026-10-19) — its overworld map tiles **without the repository ever containing them**. It is modeled on PokeMMO, which ships no Nintendo files and reads game assets from ROMs the player supplies. Every Pokémon-facing system depends on this pipeline, which is why it is Phase 2 in the master plan.
 
 **Why this model.** The GitHub repo (`yelouis/tenth_spring`) is **public**. Nintendo has historically acted against fan projects that *distributed its assets*:
 - **Pokémon Essentials** — taken down August 2018; the kit bundled Nintendo graphics, music, and tilesets.
@@ -19,18 +19,22 @@ PokeMMO distributes no assets and requires players to supply their own ROMs; it 
 |---|---|
 | Importer and parser code | ROM files (`.nds`, `.gba`, …) |
 | Game mechanics: formulas, type chart, our own spawn tables (species referenced by **National Dex number**) | Sprites, palettes, item icons, audio, tilesets extracted from a ROM |
-| Original art: overworld tiles, UI, fonts | Nintendo text banks: species/move/item names, Pokédex entries |
+| Original art: UI, fonts, the placeholder map tiles (the no-ROM look) | Nintendo text banks: species/move/item names, Pokédex entries |
+| Tile **mapping tables** that reference ROM metatiles by number (`game/config/emerald_tile_map.json`) | Tile graphics, palettes, and metatile data extracted from a ROM |
 | Decoding rules for text (functional code, not text) | Extracted stat tables (base stats, learnsets, move data) |
 
 All extracted content lands in **`user://rom_cache/`** on the player's machine — outside the repo in every build, including editor runs.
 
 ## 2. Supported ROMs
 
-**One Nintendo DS game, dumped by the player from a cartridge they own** (Decision 10 = B, 2026-10-09 — Black/White sprites for all 649, so Platinum is not used):
+**Two cartridges, each dumped by the player from a cartridge they own.**
+- **Pokémon:** Decision 10 = B (2026-10-09) — Black/White sprites for all 649, so Platinum is not used.
+- **Map art:** Decision 19 = Emerald (2026-10-19) — the human chose real Pokémon art for the overworld. The DS games draw their towns as 3D models; the Game Boy Advance games are the last built from true 2D tiles. Of those, Emerald has the widest range of landscapes.
 
-| ROM | Game codes (header `0x0C`) | Provides | Required? |
+| ROM | Game code | Provides | Required? |
 |---|---|---|---|
-| **Pokémon Black or White (USA)** | `IRBO` (Black) / `IRAO` (White) — **verify** both against the No-Intro DAT | **All data for all 649 species**: base stats, types, abilities, learnsets, evolutions, moves (559), items, item icons, and all names/text. Battle sprites (animated, 96×96) for **all 649**. | **Always — the only ROM** |
+| **Pokémon Black or White (USA)** | `IRBO` (Black) / `IRAO` (White) at header `0x0C` — **verify** both against the No-Intro DAT | **All data for all 649 species**: base stats, types, abilities, learnsets, evolutions, moves (559), items, item icons, and all names/text. Battle sprites (animated, 96×96) for **all 649**. | **Always** — the only source of Pokémon content |
+| **Pokémon Emerald (USA)** | `BPEE` at header `0xAC` — **verify** against the No-Intro DAT | **Overworld map art:** tileset graphics, palettes, and metatile definitions and behaviours, turned into the map's tile atlas (§5) | **For the Pokémon-style map.** Without it, the map uses the original placeholder tiles (the no-ROM look) |
 
 **Black and White are interchangeable** for our purposes. Their version differences are wild-encounter tables and exclusive story content, neither of which we read. The importer accepts either and treats them identically.
 
@@ -48,7 +52,7 @@ Battle *rules* still follow Generation IV (`design_creatures_and_battles.md`); G
 
 ## 3. Import flow (first run, and on demand)
 
-Only the Black/White ROM is imported (§2).
+The Black/White ROM and the Emerald ROM are imported separately (§2), each with its own verify step and its own part of the cache; either can be present without the other.
 
 ```
 1 LOCATE   Player picks a ROM file in a native file dialog. Store only its path.
@@ -61,7 +65,7 @@ Only the Black/White ROM is imported (§2).
 7 VALIDATE Spot-checks (§7) before marking the cache valid.
 ```
 - **Resumable and idempotent:** write into `user://rom_cache.tmp/`, then rename to `user://rom_cache/` only after the manifest is written. A crash leaves the old cache intact.
-- **The game runs in a degraded "no ROM" mode before import.** Onboarding, the map, and sync work with placeholder silhouettes; Pokémon content unlocks once the Black/White import (§2) is valid.
+- **The game runs in a degraded "no ROM" mode before import.** Onboarding, the map, and sync work with placeholder silhouettes and the placeholder map tiles. Pokémon content unlocks once the Black/White import (§2) is valid; the Pokémon-style map art, once the Emerald import is valid.
 - **Pure GDScript:** the importer uses `FileAccess.get_buffer` and `PackedByteArray.decode_u16/u32`, and needs no native extension.
 - **Bounded memory:** archives are read by FAT offset (seek + `get_buffer`), never the whole ROM, with sprites decoded one at a time — peak ≤ 512 MiB, pausing when the computer runs low (`design_memory_and_resources.md` §3.2).
 
@@ -84,6 +88,11 @@ Only the Black/White ROM is imported (§2).
 - **Data records:** personal (base stats etc.), learnset, evolution, and move entries are fixed-layout records. **Verify** each record size and field offset against Project Pokémon's raw database and an open-source editor's source code before relying on them.
 - **Text banks:** UTF-16 code units, encrypted per string with a 16-bit key that is advanced after each character — **verify** the exact key schedule and record it here.
 
+**Emerald (Game Boy Advance)** — every rule here is **verify** until the Emerald tile spike (agent guide Item 12) confirms it:
+- **GBA header:** 12-byte title at `0xA0`, 4-byte game code at `0xAC`. The ROM is read directly — there is no file system. Data is located through pointer tables inside the ROM; record every offset the spike confirms, with its source.
+- **Tilesets:** a *primary* tileset (shared terrain: grass, trees, water, paths, ledges, fences, signs) plus per-area *secondary* tilesets (buildings and local scenery). Each has 8×8-pixel 4bpp tile graphics (often LZ77-compressed, type `0x10`), 16-colour BGR555 palettes, a **metatile** table (each 16×16 metatile = 8 tile references across a bottom and a top layer, with palette and flip bits), and per-metatile **attributes** (behaviour and layer type).
+- **Rendering:** a metatile is drawn bottom layer, then top layer. Slice 2 has no player, so both layers composite into one 16×16 image, shown at 2× as a 32×32 tile. The avatar slice must keep the top layer separate (tree tops and roof edges draw over the player).
+
 **Reference sources** (documentation only — never sources of ROMs):
 - Project Pokémon's raw database pages for Black (`projectpokemon.org/rawdb/black/`).
 
@@ -102,7 +111,15 @@ Only the Black/White ROM is imported (§2).
 | `/a/0/0/4` (14,285) | Battle sprites, cells, animations, palettes | `sprites/front/{dex}.png`, `back/`, `front_shiny/`, `back_shiny/` |
 | *item icons — archive to be located by the spike* | Item icons + palettes. **Do not guess the path**; record it here once found | `icons/items/{item_id}.png` |
 
-**Not extracted:** overworld maps and buildings. Our world is generated from OpenStreetMap, and overworld tiles are original art (`design_art_direction.md`).
+**Emerald** (Decision 19):
+
+| Data | Cache output |
+|---|---|
+| The primary tileset and the secondary tilesets the mapping table names — graphics, palettes, metatiles, attributes | `tiles/emerald_v1.png` — a 32 × 32 px atlas in the layout of `implementation_plan_world_generation_slice2.md` §5.2 — and `tiles/emerald_v1.json` |
+
+- **The bridge is a committed mapping table**, `game/config/emerald_tile_map.json`. It maps each `(class, variant, mask)` of the slice-2 tile vocabulary (slice-2 plan §3) to metatile numbers, plus multi-metatile building compositions for the building templates.
+- **Numbers only — never pixels.** The table is written by the Emerald tile spike, from the player's own ROM, and reviewed by the human.
+- **Not extracted:** Emerald's maps, events, text, sprites, music, or Pokémon data. The world is generated from OpenStreetMap; Pokémon content comes only from Black/White.
 
 ## 6. Cache layout and versioning
 
@@ -110,8 +127,9 @@ Only the Black/White ROM is imported (§2).
 user://rom_cache/
   manifest.json   { importerVersion,
                     rom: {gameCode, sha1, importedAt},
-                    speciesCount, moveCount }
-  sprites/  icons/  data/  text/en/
+                    speciesCount, moveCount,
+                    tiles: {gameCode, sha1, importedAt, atlas: "tiles/emerald_v1.png"} | null }
+  sprites/  icons/  data/  text/en/  tiles/
 ```
 - **Re-import automatically** if `importerVersion` changes, or if a ROM's `sha1` no longer matches the file the player pointed at.
 - **The cache is regenerable, never a source of truth.** Saves store National Dex numbers and instance data, never extracted content. Deleting the cache must never lose player progress.
@@ -134,6 +152,11 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
   | `#593` | Jellicent | Water / Ghost |
   | `#623` | Golurk | Ground / Ghost |
 - Names for #487, #609, and #1 decode to non-empty strings with no unmapped characters.
+- **Emerald tiles:**
+  - the atlas JSON has a row for every `(class, variant)` the synthesizer can emit;
+  - every atlas tile uses ≤ 16 colours per source palette;
+  - the grass, tall-grass, and water tiles each pass a pixel-variance threshold that a wrong decompression or palette cannot pass;
+  - the importer refuses a mapping table entry that points past the end of a tileset's metatile table.
 - **Chandelure's static front sprite** is a real image, not noise. Two checks: ≤ 16 distinct colours per palette, and a pixel-variance threshold that "static" from a wrong decryption or wrong cell assembly cannot pass.
 
 
@@ -159,6 +182,17 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
      | `IRD` | White 2 |
 
      The fourth letter is the region, so matching the prefix catches every regional dump.
+   - carries a **GBA game code at offset `0xAC`** whose first three letters belong to a Gen 3 Pokémon title (Decision 19 brings a GBA ROM into the developer's hands):
+
+     | Prefix | Title |
+     |---|---|
+     | `AXV` | Ruby |
+     | `AXP` | Sapphire |
+     | `BPR` | FireRed |
+     | `BPG` | LeafGreen |
+     | `BPE` | Emerald |
+
+     So the guard reads at least the first `0xB0` bytes of each blob.
 
    Because the pre-commit hook is the **only** defense before content becomes public, it must also:
    - check **every staged path except deletions**, renames and copies included (`--diff-filter=d`);
@@ -173,7 +207,7 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
    - **If the pre-push SHA is unknown** (e.g. after a force-push), the scan falls back to full history.
 
    The hook is local, so a clone without it has no pre-publication defense. The local battery therefore **fails if `core.hooksPath` is not `.githooks`**. It skips that check only when `CI=true`, where the range and tree scans apply instead.
-4. **ROM-dependent tests** run **only** when a developer supplies ROMs locally (`TENTH_SPRING_ROM_BW`). Otherwise they are skipped with an explicit message, never faked. CI never has a ROM.
+4. **ROM-dependent tests** run **only** when a developer supplies ROMs locally (`TENTH_SPRING_ROM_BW`, `TENTH_SPRING_ROM_GBA`). Otherwise they are skipped with an explicit message, never faked. CI never has a ROM.
 5. **No Nintendo trademarks in branding.** Do not use "Pokémon" or other Nintendo trademarks in the game's title, logo, store pages, or release names. The game is "Tenth Spring."
 6. **The phone companion contains no Nintendo assets or names**, ever (`design_companion_and_sync.md` §1). It is a location tracker and must stay store-listable.
 
@@ -193,4 +227,7 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
 * `game/rom/gen5_text.gd` — Black/White text decryption.
 * `game/rom/gen5_records.gd` — personal/learnset/evolution/move/item record parsers.
 * `game/rom/asset_db.gd` — runtime access API: `species(dex)`, `move(id)`, `sprite_front(dex, shiny)`, `item_icon(id)`, `name(kind, id)`. **The only seam the rest of the game may use.** No system reads the cache directly, so original creatures could be swapped in later without touching gameplay code.
+* `game/rom/gba_rom.gd` — GBA header and pointer reads (Emerald).
+* `game/rom/gen3_tiles.gd` — Gen 3 tileset, palette, metatile, and attribute decoding.
+* `game/rom/tile_atlas_builder.gd` — builds `tiles/emerald_v1.png` and `.json` from `game/config/emerald_tile_map.json`.
 * `tools/check_no_nintendo_assets.py` — the §8.3 guard.

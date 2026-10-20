@@ -37,6 +37,13 @@ Each map cell carries one **zone**, derived deterministically from OSM tags (`de
 
 The roster spans all 649 Gen 1–5 species (Decision 12). Gen 5's Ghost lines are placed where they fit the setting: Litwick/Lampent in hospitals and institutions, Yamask in cemeteries and ruins, Golett in ruins and industry, Frillish at the waterfront. Their final forms (Chandelure, Cofagrigus, Golurk, Jellicent) come from evolution, or appear as zone bosses (§5). The full weighted tables live in `game/config/spawn_tables.json` (dex numbers + weights only). These are **starting content**, tunable in Phase 11 balance.
 
+### 2a. Where in the USA (Decision 18 = A for the Pokédex, 2026-10-19)
+Zones say *what kind of place*; Decision 18 adds *where in the country*, so that the size of the USA matters (`design_story_and_world.md` §7):
+- **Biome per cell** — desert, forest, coast, mountains, wetland, plains, snow, or city — from real land cover and climate. The data source and rule are fixed in the slice that builds spawns (slice 3), using public-domain US federal data where possible.
+- **Region per cell** — one of the 9 US Census divisions (DC, Puerto Rico, and the US Virgin Islands count as South Atlantic).
+- **Every species gets a home:** about a third live **everywhere**, about 40% only in certain **biomes**, about 20% only in **one region**, and the **legendary and mythical** species (about 48) are bound to one region's great landmarks (§7).
+- Spawn tables gain `biomes` and `region` keys per entry (dex numbers only). A zone pool entry is eligible in a cell only if the cell's biome and region allow it.
+
 ## 3. Ghost prevalence — the horror undertone, as a formula
 
 ```
@@ -45,6 +52,20 @@ ghostShare = clamp(zoneBase · nightMult + 0.10 · hauntStage, 0, 0.80)
 roll < ghostShare → draw from the haunted pool; else → regular pool
 ```
 So a quiet suburb by day is 5% ghost; that same suburb at night inside a stage-3 haunting is 45%; a cemetery at night hits the 80% cap. The cap keeps every encounter table from collapsing into a single type.
+
+## 3a. Distortion Fields (2026-10-19 — the human's addition to Decision 18)
+
+Thin spots where the Distortion's copies bleed through (`design_story_and_world.md` §6). **Starting values — tunable in `tuning.json`:**
+- **When:** a field opens about once every `distortionFieldIntervalGameDays = 3` game days. That drops to 2 once the player holds 6 or more Anchors (the Echo escalating, story §5.1).
+- **How long:** `distortionFieldDurationGameDays = 1`.
+- **Where:** a revealed cell containing tall grass, within `distortionFieldRadiusMiles = 10` ground miles of the player's position when it opens. The field covers the `distortionFieldSizeCells = 5` × 5 cells centred there.
+- **Seeding:** deterministic from `(worldSeed, game-day index)`, never steered toward the player's needs.
+- **Encounters inside a field:** each tall-grass encounter draws from the **field pool** with probability `distortionFieldForeignShare = 0.40`; otherwise it draws from the normal zone pools.
+  - The field pool is **every non-legendary, non-mythical species**, ignoring biome and region, weighted equally.
+  - Levels use the local §4 band.
+  - The §3 ghost share still applies to the non-field draws.
+- **Never** legendary or mythical species — they can't be copied. So the Pokédex can never be finished at home (§7).
+- **Legibility:** fields are drawn with the distortion tint, and a chip reads `Distortion Field — <h> h left`.
 
 ## 4. Levels — real geography is the difficulty curve
 
@@ -82,16 +103,34 @@ These tie Ghost legends to the core twist — **things you must physically do in
 - **Spiritomb (442):** finding the Odd Keystone at a `ruins` site, then having **physically visited 32 distinct haunted real places** (cemeteries, ruins, hospitals), awakens Spiritomb at the home safehouse — an echo of Platinum's 32-encounter requirement.
 - **Rotom (479):** appears at night in abandoned electronics stores (`shop=electronics` inside `retail`).
 
-## 7. Landmark legendaries
+## 7. Landmarks: legendaries, Warden trials, and the finale
 
-- Landmark sites (national parks, monuments, stadiums, attractions — `design_world_generation.md` §3) host a legendary from a pool keyed to the landmark archetype, defined by dex number in `game/config/landmark_legendaries.json`. Example: large natural lakes inside parks → the lake guardians Uxie 480 / Mesprit 481 / Azelf 482 (level 50).
-- **Unique per save.** Once caught, a legendary never spawns again. If it faints without being caught, it returns after `legendaryRespawnGameDays = 30`.
+**Major landmarks** are national parks and national monuments. The exact OSM tag rule is fixed in the slice that builds them. Other landmark sites (stadiums, attractions — `design_world_generation.md` §3) stay ordinary landmark sites.
+
+### 7.1 Legendaries (Decision 18)
+- Every legendary and mythical species (about 48 in Generations 1–5) is **bound to one region** and appears only at that region's major landmarks. The table is `game/config/landmark_legendaries.json` (dex number, region, level); starting assignments are in `design_story_and_world.md` §7.
+- **Unique per save.** A **caught** legendary never spawns again. A **defeated** one counts toward Pokédex completion and returns after `legendaryRespawnGameDays = 30` for another catch attempt.
 - **Requires real reach** — the landmark must be revealed, meaning the player physically went there or near it.
-- **The final arc — Giratina (487, level 70).** After **5 haunted zones** are cleansed, the Distortion that fogs the unexplored world gathers at the player's most-visited landmark, and Giratina appears. *(This is the narrative frame in `README.md`: the fog is the Distortion, and reality only holds where people still walk.)*
+- **Giratina (487) is an ordinary legendary now**, bound to the Mountain region. It is no longer the finale.
+
+### 7.2 Pokédex completion
+The Pokédex is complete when every non-legendary species is **caught**, and every legendary and mythical species is **caught or defeated**. Distortion Fields (§3a) can supply any non-legendary species anywhere; legendaries always require travel.
+
+### 7.3 Warden trials (Decision 18 = B)
+- There are **nine Wardens**, one per region (`design_story_and_world.md` §4). A Warden can be challenged at **any major landmark in their region**, once it is revealed and reached in-game. Trials can be taken in any order.
+- **Team levels:** `22 + 6 × anchorsHeld` (22 → 70). Each trial applies its region's survival rule (story §4 table).
+- **Winning** grants that region's **Anchor** (a key item) and its perk.
+- The names, types, rules, and perks are starting content, tunable.
+
+### 7.4 The finale — the Echo (replaces the Giratina arc)
+- **Unlocked by holding all nine Anchors.**
+- **Where:** the revealed place with the highest real-world visit count.
+- **The battle:** an exact mirror of the player's current party — species, moves, abilities, natures, held items — at the player's levels + 5 (cap 100), IVs 31, the strongest AI tier, and no items on either side.
+- **Before it:** the escalating Echo encounters in `design_story_and_world.md` §5.1 — Hollow Trainers at 3+ Anchors, more frequent fields at 6+.
 
 ## 8. Legibility and fairness
 
-- A site's chip shows its zone, ghost activity (low/medium/high, from §3), level band, haunt stage, and — once revealed — "something stirs here" for an uncaught legendary, before the player commits to travel.
+- A site's chip shows its zone, ghost activity (low/medium/high, from §3), level band, haunt stage, and — once revealed — "something stirs here" for an uncaught legendary, before the player commits to travel. A major landmark's chip also names the region's Warden and whether their Anchor is held.
 - No encounters in the 3-minute home porch except §5.4 intrusions.
 
 ## 9. Files (PC game)
@@ -100,3 +139,6 @@ These tie Ghost legends to the core twist — **things you must physically do in
 * `game/config/spawn_tables.json`, `game/config/landmark_legendaries.json` — dex numbers + weights only.
 * `game/world/haunt_engine.gd` — seeding, growth ticks, intrusion, cleansing.
 * `game/world/events.gd` — real-world-gated events (Spiritomb, Rotom).
+* `game/world/distortion_fields.gd` — §3a scheduling, placement, and the field pool.
+* `game/story/wardens.gd`, `game/story/echo.gd` — §7.3 trials and §7.4 finale.
+* `game/config/regions.json` — state → region; `game/config/wardens.json` — Warden teams, rules, and perks (dex numbers only).

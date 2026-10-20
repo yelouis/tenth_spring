@@ -6,7 +6,7 @@ This document defines the key player journeys and step-by-step manual instructio
 
 ## 💾 Journey 0: ROM Import (Bring Your Own ROM)
 
-**Objective**: Verify the game runs without a ROM, imports valid dumps, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Black or White (USA) ROM **that the tester dumped from their own cartridge** — never a downloaded one.
+**Objective**: Verify the game runs without a ROM, imports valid dumps, rejects bad ones, and never lets Nintendo content near the repo. Requires a Pokémon Black or White (USA) ROM — and, for the map's tiles, a Pokémon Emerald (USA) ROM — **that the tester dumped from their own cartridges**, never downloaded ones. Each import works without the other: no Emerald means the placeholder map tiles; no Black/White means no Pokémon content.
 1. Fresh install, no ROM. Launch the PC game → verify it reaches the map in "no ROM" mode with placeholder silhouettes and a clear "import your ROM" prompt; onboarding, pairing, and sync all work.
 2. Offer a non-ROM file and a ROM with the wrong game code → both rejected with plain-language messages; no partial cache is left behind.
 3. Import the valid dump(s) → progress shown; `user://rom_cache/manifest.json` written last; the §7 validation passes (649 species, 559 moves; Giratina is Ghost/Dragon; Spiritomb is Ghost/Dark; Chandelure is Ghost/Fire; Chandelure's sprite decodes to a real image, not static).

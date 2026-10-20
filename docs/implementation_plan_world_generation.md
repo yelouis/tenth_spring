@@ -11,7 +11,7 @@ Contracts: `docs/design_world_generation.md`, `docs/design_memory_and_resources.
 > - §12 #5's speed numbers were a skim, superseded by §5.3's converter gate;
 > - the demo-profile test is `profile_paths_test.gd`, the CI demo import is a step in `sync_e2e.yml`, and per-item tests replaced §10.2's single `slice1_world_gen_test.gd`.
 >
-> **Pass 17 adds** §5.1a (USA scope, Decision 16), §5.4a (download mechanics, F44/F45), §5.5 (clip conversion and store coverage, F46), §7.1a (screen orientation, F43), and §7.4 (screenshot harness, F47) — agent guide Items 0–3, approved now. **The look itself is replaced by slice 2** (`implementation_plan_world_generation_slice2.md`, gated on Decisions 17 and 19).
+> **Pass 17 adds** §5.1a (USA scope, Decision 16), §5.4a (download mechanics, F44/F45), §5.5 (clip conversion and store coverage, F46), §7.1a (screen orientation, F43), and §7.4 (screenshot harness, F47) — agent guide Items 0–3, approved now. **The look itself is replaced by slice 2** (`implementation_plan_world_generation_slice2.md`, approved by Decision 17 = A).
 
 ---
 

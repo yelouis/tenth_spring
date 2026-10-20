@@ -2,9 +2,9 @@
 
 A Pokémon game in the Diamond/Pearl style where **your map is the places you have actually been.** A phone companion app passively records where you go in real life; that movement reveals a fog-covered overworld generated from your real geography, which you then explore on PC — catching Pokémon in main-series turn-based battles. Real life draws the map; everything on it is earned by playing.
 
-**The setting:** a generation after a collapse. The streets are overgrown, the cities stand empty, and the Ghost types have moved in. The fog over the unexplored world is the Distortion — reality only holds where people still walk. Cemeteries, ruins, and abandoned hospitals are thick with Ghost Pokémon; at night they are everywhere. Hauntings spread outward if left alone. At the end, Giratina waits.
+**The setting:** a generation after a collapse. The streets are overgrown, the cities stand empty, and the Ghost types have moved in. The fog over the unexplored world is the Distortion — reality only holds where people still walk. Cemeteries, ruins, and abandoned hospitals are thick with Ghost Pokémon; at night they are everywhere. Hauntings spread outward if left alone. Nine Wardens hold the line across the nine regions of the USA, and the Distortion has started learning *you*: at the end, you face the Echo — the fog wearing your face, leading a stronger copy of your own team. The full backstory is `docs/design_story_and_world.md`.
 
-**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import Pokémon ROMs **dumped from cartridges you own** — Pokémon Black or White — and reads sprites, species data, moves, and names from them on your own machine. All 649 Pokémon of Generations 1–5 are included. The project will never provide ROMs or help anyone find one. There is no Steam release, no sales, and no monetization. See `docs/design_rom_asset_pipeline.md`.
+**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import Pokémon ROMs **dumped from cartridges you own** — Pokémon Black or White for the Pokémon, and Pokémon Emerald for the map's tiles — and reads sprites, species data, moves, names, and tiles from them on your own machine. All 649 Pokémon of Generations 1–5 are included. The project will never provide ROMs or help anyone find one. There is no Steam release, no sales, and no monetization. See `docs/design_rom_asset_pipeline.md`.
 
 **Platform split:** the PC game holds all gameplay. The phone companion is deliberately thin — location capture, a read-only memoir map, and sync — and contains no Pokémon content at all.
 
@@ -26,6 +26,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 |---|---|
 | `docs/agent_execution_guide.md` | **Start here** — how an engineering agent picks up this project |
 | `docs/master_implementation_plan.md` | Phase order + tuning constants |
+| `docs/design_story_and_world.md` | **The backstory and theme** — the Stillness, the Distortion, the nine Wardens, the Echo; every scene and system follows it |
 | `docs/design_rom_asset_pipeline.md` | Bring-your-own-ROM importer, formats, cache, legal and repo guardrails |
 | `docs/design_creatures_and_battles.md` | Stats, types, damage, status, catching, EXP, party, PC box, blackout |
 | `docs/design_encounters_and_haunted_zones.md` | Spawn zones, ghost prevalence, levels, haunted zones, legendaries |
