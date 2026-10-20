@@ -6,7 +6,7 @@ extends Node
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 
-const GOLDEN_CANONICAL_HASH: String = "250ac3c91ebbcc72a352e2c99d8d7eaad5d4915dca32449def446ef8acd9571c"
+const GOLDEN_CANONICAL_HASH: String = "46224ee16201b743a310e5637d50ce42e25449d74e23f028c8d9cadddf1e05ca"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/region_import_pause_test.db"
 

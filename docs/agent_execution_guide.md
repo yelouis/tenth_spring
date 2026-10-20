@@ -108,7 +108,7 @@
 | 2 | **Clip conversion, coverage, F46, F50 — and the human's demo save** | Needs Item 1's region choice. Produces the data Item 3 photographs, and its timings feed the Decision 15 re-ask. |
 | 3 | **Screenshot harness + the honest baseline** (F47) → show the human | Needs Items 0–2. The human sees today's map before slice 2 replaces it — then continue. |
 | 11 | **IP guard: block Game Boy Advance ROMs** (Decision 19) — **DONE** | Tiny and independent. It must land before an Emerald dump exists on any machine that commits to this repo, so it goes ahead of slice 2. |
-| 4 | **Slice 2: scale + map store v2** (plan §1–2) | Everything in slice 2 reads store v2. |
+| 4 | **Slice 2: scale + map store v2** (plan §1–2) — **DONE** | Everything in slice 2 reads store v2. |
 | 5 | **Slice 2: synthesis part 1 — terrain, water, lines, vegetation** (plan §3, §4.0–4.1) | Needs store v2. |
 | 6 | **Slice 2: synthesis part 2 — buildings, fallback houses, signs** (plan §4.2–4.4) | Builds on part 1's grid; building placement checks the tiles part 1 painted. |
 | 7 | **Slice 2: placeholder atlas** (plan §5) — the no-ROM look | Only the renderer needs it. Built even though the real art comes from Emerald: it's the fallback and the only atlas tests see. |

@@ -94,16 +94,19 @@ class StringTable:
             payload.extend(make_bytes_field(1, b))
         return bytes(payload)
 
-def generate_synthetic_pbf_bytes() -> bytes:
+def generate_synthetic_pbf_bytes(reverse_coastline: bool = False) -> bytes:
     st = StringTable()
 
     # Pre-register common tags for deterministic string table layout
     known_strings = [
         "natural", "water", "lake", "leisure", "park",
-        "building", "yes", "residential", "retail",
+        "building", "yes", "residential", "retail", "commercial",
         "highway", "primary", "secondary", "path",
-        "amenity", "pharmacy", "cafe",
-        "type", "multipolygon", "outer", "inner", "name"
+        "amenity", "pharmacy", "cafe", "library", "parking",
+        "type", "multipolygon", "outer", "inner", "name",
+        "coastline", "railway", "rail", "landuse", "cemetery",
+        "forest", "waterway", "stream", "river", "bridge",
+        "tunnel", "construction"
     ]
     for s in known_strings:
         st.get(s)
@@ -296,6 +299,218 @@ def generate_synthetic_pbf_bytes() -> bytes:
     lat2, lon2 = cell_local_to_latlon(5, 4, 12.0, 12.0)
     nodes.append((poi2_id, lat2, lon2, {"amenity": "cafe", "name": "Parkside Cafe"}))
 
+    # 12. Coastline: oriented with land to west, sea to east
+    coast_pts = [
+        cell_local_to_latlon(5, 4, 15.0, 1.0),
+        cell_local_to_latlon(5, 4, 15.0, 15.0),
+        cell_local_to_latlon(5, 5, 15.0, 15.0),
+    ]
+    coast_node_ids = []
+    for lat, lon in coast_pts:
+        nid = next_node_id
+        next_node_id += 1
+        nodes.append((nid, lat, lon, {}))
+        coast_node_ids.append(nid)
+    if reverse_coastline:
+        coast_node_ids.reverse()
+    ways.append({
+        "id": 111,
+        "tags": {"natural": "coastline"},
+        "refs": coast_node_ids
+    })
+
+    # 13. Railway crossing a road (Grand Avenue in cell (4, 4) at v=8.0)
+    rail_pts = [
+        cell_local_to_latlon(4, 4, 7.0, 1.0),
+        cell_local_to_latlon(4, 4, 7.0, 8.0),
+        cell_local_to_latlon(4, 4, 7.0, 15.0),
+    ]
+    rail_node_ids = []
+    for lat, lon in rail_pts:
+        nid = next_node_id
+        next_node_id += 1
+        nodes.append((nid, lat, lon, {}))
+        rail_node_ids.append(nid)
+    ways.append({
+        "id": 112,
+        "tags": {"railway": "rail", "name": "District Line"},
+        "refs": rail_node_ids
+    })
+
+    # 14. Named Cemetery polygon in Cell (4, 5)
+    cemetery_pts = [(10.0, 10.0), (14.0, 10.0), (14.0, 14.0), (10.0, 14.0)]
+    cemetery_node_ids = []
+    for u, v in cemetery_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(4, 5, u, v)
+        nodes.append((nid, lat, lon, {}))
+        cemetery_node_ids.append(nid)
+    cemetery_node_ids.append(cemetery_node_ids[0])
+    ways.append({
+        "id": 113,
+        "tags": {"landuse": "cemetery", "name": "Old Pine Cemetery"},
+        "refs": cemetery_node_ids
+    })
+
+    # 15. Forest polygon in Cell (4, 5)
+    forest_pts = [(1.0, 10.0), (5.0, 10.0), (5.0, 14.0), (1.0, 14.0)]
+    forest_node_ids = []
+    for u, v in forest_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(4, 5, u, v)
+        nodes.append((nid, lat, lon, {}))
+        forest_node_ids.append(nid)
+    forest_node_ids.append(forest_node_ids[0])
+    ways.append({
+        "id": 114,
+        "tags": {"landuse": "forest", "name": "Deep Forest"},
+        "refs": forest_node_ids
+    })
+
+    # 16. Parking lot in Cell (4, 4)
+    parking_pts = [(10.0, 1.0), (14.0, 1.0), (14.0, 5.0), (10.0, 5.0)]
+    parking_node_ids = []
+    for u, v in parking_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(4, 4, u, v)
+        nodes.append((nid, lat, lon, {}))
+        parking_node_ids.append(nid)
+    parking_node_ids.append(parking_node_ids[0])
+    ways.append({
+        "id": 115,
+        "tags": {"amenity": "parking", "name": "Town Parking"},
+        "refs": parking_node_ids
+    })
+
+    # 17. Stream crossing Quiet Lane in Cell (4, 5) without bridge tag
+    stream_pts = [
+        cell_local_to_latlon(4, 5, 8.0, 1.0),
+        cell_local_to_latlon(4, 5, 8.0, 6.0),
+    ]
+    stream_node_ids = []
+    for lat, lon in stream_pts:
+        nid = next_node_id
+        next_node_id += 1
+        nodes.append((nid, lat, lon, {}))
+        stream_node_ids.append(nid)
+    ways.append({
+        "id": 116,
+        "tags": {"waterway": "stream", "name": "Clear Brook"},
+        "refs": stream_node_ids
+    })
+
+    # 18. River crossed by a bridge=yes road in Cell (5, 4)
+    river_pts = [
+        cell_local_to_latlon(5, 4, 4.0, 1.0),
+        cell_local_to_latlon(5, 4, 4.0, 15.0),
+    ]
+    river_node_ids = []
+    for lat, lon in river_pts:
+        nid = next_node_id
+        next_node_id += 1
+        nodes.append((nid, lat, lon, {}))
+        river_node_ids.append(nid)
+    ways.append({
+        "id": 117,
+        "tags": {"waterway": "river", "name": "Broad River"},
+        "refs": river_node_ids
+    })
+
+    bridge_pts = [
+        cell_local_to_latlon(5, 4, 1.0, 10.0),
+        cell_local_to_latlon(5, 4, 7.0, 10.0),
+    ]
+    bridge_node_ids = []
+    for lat, lon in bridge_pts:
+        nid = next_node_id
+        next_node_id += 1
+        nodes.append((nid, lat, lon, {}))
+        bridge_node_ids.append(nid)
+    ways.append({
+        "id": 118,
+        "tags": {"highway": "primary", "bridge": "yes", "name": "River Bridge"},
+        "refs": bridge_node_ids
+    })
+
+    # 19. Building straddling cell boundary x=1280 between Cell 4 and Cell 5
+    straddle_pts_wm = [
+        (1260.0, 1200.0),
+        (1300.0, 1200.0),
+        (1300.0, 1240.0),
+        (1260.0, 1240.0),
+    ]
+    straddle_node_ids = []
+    for x, y in straddle_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        straddle_node_ids.append(nid)
+    straddle_node_ids.append(straddle_node_ids[0])
+    ways.append({
+        "id": 119,
+        "tags": {"building": "commercial", "name": "Boundary Market"},
+        "refs": straddle_node_ids
+    })
+
+    # 20. Tunnel=yes road in Cell (4, 4) — excluded from store
+    tunnel_pts = [
+        cell_local_to_latlon(4, 4, 2.0, 14.0),
+        cell_local_to_latlon(4, 4, 6.0, 14.0),
+    ]
+    tunnel_node_ids = []
+    for lat, lon in tunnel_pts:
+        nid = next_node_id
+        next_node_id += 1
+        nodes.append((nid, lat, lon, {}))
+        tunnel_node_ids.append(nid)
+    ways.append({
+        "id": 120,
+        "tags": {"highway": "residential", "tunnel": "yes", "name": "Hidden Tunnel"},
+        "refs": tunnel_node_ids
+    })
+
+    # 21. Residential polygon with no buildings in Cell (4, 4)
+    res_pts = [(1.0, 9.0), (5.0, 9.0), (5.0, 12.0), (1.0, 12.0)]
+    res_node_ids = []
+    for u, v in res_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(4, 4, u, v)
+        nodes.append((nid, lat, lon, {}))
+        res_node_ids.append(nid)
+    res_node_ids.append(res_node_ids[0])
+    ways.append({
+        "id": 121,
+        "tags": {"landuse": "residential"},
+        "refs": res_node_ids
+    })
+
+    # 22. Named library POI inside Building 1 (City Hall) in Cell (4, 4)
+    poi3_id = next_node_id
+    next_node_id += 1
+    lat3, lon3 = cell_local_to_latlon(4, 4, 5.0, 5.0)
+    nodes.append((poi3_id, lat3, lon3, {"amenity": "library", "name": "City Library"}))
+
+    # 23. Construction polygon in Cell (5, 4) — excluded per Decision 20
+    const_pts = [(1.0, 12.0), (5.0, 12.0), (5.0, 15.0), (1.0, 15.0)]
+    const_node_ids = []
+    for u, v in const_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(5, 4, u, v)
+        nodes.append((nid, lat, lon, {}))
+        const_node_ids.append(nid)
+    const_node_ids.append(const_node_ids[0])
+    ways.append({
+        "id": 122,
+        "tags": {"landuse": "construction", "name": "Active Construction"},
+        "refs": const_node_ids
+    })
+
     nodes.sort(key=lambda n: n[0])
 
     header_block = (
@@ -401,9 +616,10 @@ def main():
 
     parser = argparse.ArgumentParser(description="Generate deterministic synthetic OSM PBF fixture.")
     parser.add_argument("--out", default=default_out, help="Output path for .osm.pbf file")
+    parser.add_argument("--reverse-coastline", action="store_true", help="Reverse coastline way orientation for falsification test")
     args = parser.parse_args()
 
-    data = generate_synthetic_pbf_bytes()
+    data = generate_synthetic_pbf_bytes(reverse_coastline=args.reverse_coastline)
     os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
     with open(args.out, "wb") as f:
         f.write(data)

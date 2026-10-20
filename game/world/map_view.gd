@@ -224,7 +224,12 @@ func _load_map_stores() -> void:
 				var p: String = target_dir + f
 				var store := MapStore.new(p)
 				if store.open_store(true):
-					_map_stores.append(store)
+					var schema_ver := store.get_state("schema_version", "")
+					if schema_ver != "2":
+						print("map: skipping %s — store schema %s, need 2" % [f, schema_ver])
+						store.close()
+					else:
+						_map_stores.append(store)
 
 func _get_db() -> Node:
 	return get_node_or_null("/root/DB")

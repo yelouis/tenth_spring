@@ -7,7 +7,7 @@ extends RefCounted
 const WM_R: float = 6378137.0
 const EARTH_MEAN_R: float = 6371008.8
 const CELL_WM: float = 256.0
-const TILE_WM: float = 16.0
+const TILE_WM: float = 8.0
 const MAX_LAT: float = 85.05112878
 
 static func latlon_to_wm(lat: float, lon: float) -> Vector2:

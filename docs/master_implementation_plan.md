@@ -7,7 +7,7 @@ All gameplay constants live in `game/config/tuning.json` so balance passes never
 
 - **`walkSpeedMph = 15`** — foot speed against *real* geography (`gameMinutesPerMile = 4`); **`bicycleSpeedMultiplier = 2.0`**.
 - **`wallSecondsPerGameMinute = 2.0`** — a full in-game day ≈ 48 wall minutes.
-- **`tileMeters = 16`** — 16 **Web-Mercator** metres; cells are 16×16 tiles = 256 WM-m (`design_game_state_and_models.md` §2). On the ground that is 16·cos(latitude) m per tile — ≈ 11 m in Seattle. Gameplay distances are always ground metres.
+- **`tileMeters = 8`** — 8 **Web-Mercator** metres; cells are 32×32 tiles = 256 WM-m (`design_game_state_and_models.md` §2, `implementation_plan_world_generation_slice2.md` §1). On the ground that is 8·cos(latitude) m per tile — ≈ 5.4 m in Seattle. Gameplay distances are always ground metres.
 - **`visitRadiusMeters = 75`**, **`visitDwellSeconds = 120`** — thresholds for a real-world visit.
 - **`captureDistanceFilterMeters = 25`**, **`captureIntervalMinutes = 2`**, accuracy **`medium`** — the **battery-budget levers**. Change only with a fresh device measurement.
 - **`corridorRevealMeters = 60`**; **`familiarityTiers = {1: known, 3: familiar, 10: mastered}`**.

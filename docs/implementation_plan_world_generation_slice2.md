@@ -85,7 +85,7 @@ CREATE TABLE cell_flags (
 | `parking` | — | `amenity=parking` (closed way or multipolygon) |
 | `residential` | — | `landuse=residential` |
 | `commercial` | — | `landuse=commercial\|retail` |
-| `industrial` | — | `landuse=industrial\|railway\|construction\|brownfield\|quarry` |
+| `industrial` | — | `landuse=industrial\|railway\|brownfield\|quarry` |
 | *(not stored)* | | anything else |
 
 `name` is the OSM `name` tag (empty if none).

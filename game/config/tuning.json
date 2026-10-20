@@ -2,7 +2,7 @@
   "walkSpeedMph": 15.0,
   "bicycleSpeedMultiplier": 2.0,
   "wallSecondsPerGameMinute": 2.0,
-  "tileMeters": 16.0,
+  "tileMeters": 8.0,
   "visitRadiusMeters": 75.0,
   "visitDwellSeconds": 120,
   "corridorRevealMeters": 60.0,

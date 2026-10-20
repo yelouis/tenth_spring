@@ -93,9 +93,13 @@ static func synthesize_cell(cell_x: int, cell_y: int, features: Dictionary, worl
 	# Rasterize highways and paths (Tile 2), drawing lines with Bresenham's algorithm at width >= 1 tile
 	for l in lines:
 		var geom = null
+		var kind: String = ""
 		if l is Dictionary:
+			kind = str(l.get("kind", ""))
 			geom = l.get("geom_pts", null)
 		if geom == null:
+			continue
+		if not kind.is_empty() and kind not in ["road", "path", "primary", "secondary", "residential", "highway"]:
 			continue
 
 		var pts := PackedVector2Array()

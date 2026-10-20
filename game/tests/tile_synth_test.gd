@@ -7,7 +7,7 @@ const TileSynth := preload("res://world/tile_synth/tile_synth.gd")
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 
-const GOLDEN_SYNTH_HASH: String = "ae8769c0bab5fd6f3f5eb6797875a65195b1016ae5c01686cb72cbbc4b323c8e"
+const GOLDEN_SYNTH_HASH: String = "83f76facff21c48be0c53b895bcfa1a60b2b3cbebaff6e85b83cbb7a8fa1d48c"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth_test.db"
 
@@ -79,10 +79,10 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# Cell (5, 4): Building 2 (16 tiles), Park (56 tiles), Road 2 (14 tiles), Terrain (170 tiles)
+	# Cell (5, 4): Building 2 + Boundary Market (16 + 4 = 20 tiles), Park (56 tiles), Road (14 + River Bridge tiles)
 	var counts_5_4 := _count_tiles(cell_buffers[Vector2i(5, 4)])
-	if counts_5_4.get(TileSynth.TILE_BUILDING, 0) != 16:
-		push_error("Cell (5, 4) expected 16 building tiles, got %d" % counts_5_4.get(TileSynth.TILE_BUILDING, 0))
+	if counts_5_4.get(TileSynth.TILE_BUILDING, 0) != 20:
+		push_error("Cell (5, 4) expected 20 building tiles, got %d" % counts_5_4.get(TileSynth.TILE_BUILDING, 0))
 		store.close()
 		_cleanup()
 		return false

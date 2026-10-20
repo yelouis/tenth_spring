@@ -1,7 +1,9 @@
 extends RefCounted
 
 # map_store.gd — Regional Map Store SQLite Database Manager
-# Contract: docs/implementation_plan_world_generation.md §5.2
+# Contract: docs/implementation_plan_world_generation.md §5.2 & slice-2 plan §2
+
+const GEOM_UNIT_WM: float = 16.0
 
 var db_path: String = ""
 var _db: Object = null
@@ -56,6 +58,8 @@ func _init_schema() -> void:
 		cell_x INTEGER NOT NULL,
 		cell_y INTEGER NOT NULL,
 		kind TEXT NOT NULL,
+		subkind TEXT NOT NULL DEFAULT '',
+		name TEXT NOT NULL DEFAULT '',
 		geom_rings BLOB NOT NULL
 	);
 	""")
@@ -67,6 +71,7 @@ func _init_schema() -> void:
 		cell_x INTEGER NOT NULL,
 		cell_y INTEGER NOT NULL,
 		kind TEXT NOT NULL,
+		subkind TEXT NOT NULL DEFAULT '',
 		geom_pts BLOB NOT NULL
 	);
 	""")
@@ -86,11 +91,21 @@ func _init_schema() -> void:
 	_q("CREATE INDEX IF NOT EXISTS idx_place_cell ON place_nodes(cell_x, cell_y);")
 
 	_q("""
+	CREATE TABLE IF NOT EXISTS cell_flags (
+		cell_x INTEGER NOT NULL,
+		cell_y INTEGER NOT NULL,
+		sea INTEGER NOT NULL,
+		PRIMARY KEY (cell_x, cell_y)
+	);
+	""")
+
+	_q("""
 	CREATE TABLE IF NOT EXISTS import_state (
 		key TEXT PRIMARY KEY,
 		val TEXT NOT NULL
 	);
 	""")
+	_q("INSERT OR IGNORE INTO import_state (key, val) VALUES ('schema_version', '2');")
 
 func _q(sql: String, params: Array = []) -> bool:
 	if _db == null:
@@ -193,17 +208,29 @@ static func unpack_rings(blob: PackedByteArray) -> Array[PackedVector2Array]:
 # Ingestion helpers
 # -------------------------------------------------------------
 
-func insert_poly(cell_x: int, cell_y: int, kind: String, geom_rings: PackedByteArray) -> bool:
+func insert_poly(cell_x: int, cell_y: int, kind: String, geom_rings: PackedByteArray, subkind: String = "", name: String = "") -> bool:
 	return _q(
-		"INSERT INTO features_poly (cell_x, cell_y, kind, geom_rings) VALUES (?, ?, ?, ?);",
-		[cell_x, cell_y, kind, geom_rings]
+		"INSERT INTO features_poly (cell_x, cell_y, kind, subkind, name, geom_rings) VALUES (?, ?, ?, ?, ?, ?);",
+		[cell_x, cell_y, kind, subkind, name, geom_rings]
 	)
 
-func insert_line(cell_x: int, cell_y: int, kind: String, geom_pts: PackedByteArray) -> bool:
+func insert_line(cell_x: int, cell_y: int, kind: String, geom_pts: PackedByteArray, subkind: String = "") -> bool:
 	return _q(
-		"INSERT INTO features_line (cell_x, cell_y, kind, geom_pts) VALUES (?, ?, ?, ?);",
-		[cell_x, cell_y, kind, geom_pts]
+		"INSERT INTO features_line (cell_x, cell_y, kind, subkind, geom_pts) VALUES (?, ?, ?, ?, ?);",
+		[cell_x, cell_y, kind, subkind, geom_pts]
 	)
+
+func insert_cell_flag(cell_x: int, cell_y: int, sea: int) -> bool:
+	return _q(
+		"INSERT OR REPLACE INTO cell_flags (cell_x, cell_y, sea) VALUES (?, ?, ?);",
+		[cell_x, cell_y, sea]
+	)
+
+func get_cell_sea(cell_x: int, cell_y: int, default_val: int = 0) -> int:
+	var rows := _rows("SELECT sea FROM cell_flags WHERE cell_x = ? AND cell_y = ? LIMIT 1;", [cell_x, cell_y])
+	if rows.is_empty():
+		return default_val
+	return int(rows[0].get("sea", default_val))
 
 func insert_place(osm_id: int, cell_x: int, cell_y: int, name: String, category: String, lat: float, lon: float) -> bool:
 	return _q(
@@ -229,13 +256,13 @@ func get_state(key: String, default_val: String = "") -> String:
 
 func get_features_poly(cell_x: int, cell_y: int) -> Array:
 	return _rows(
-		"SELECT id, kind, geom_rings FROM features_poly WHERE cell_x = ? AND cell_y = ? ORDER BY id;",
+		"SELECT id, kind, subkind, name, geom_rings FROM features_poly WHERE cell_x = ? AND cell_y = ? ORDER BY id;",
 		[cell_x, cell_y]
 	)
 
 func get_features_line(cell_x: int, cell_y: int) -> Array:
 	return _rows(
-		"SELECT id, kind, geom_pts FROM features_line WHERE cell_x = ? AND cell_y = ? ORDER BY id;",
+		"SELECT id, kind, subkind, geom_pts FROM features_line WHERE cell_x = ? AND cell_y = ? ORDER BY id;",
 		[cell_x, cell_y]
 	)
 
@@ -280,15 +307,18 @@ func covers_cell(cx: int, cy: int) -> bool:
 func canonical_dump() -> String:
 	var lines: Array[String] = []
 
-	var polys := _rows("SELECT cell_x, cell_y, kind, geom_rings FROM features_poly ORDER BY cell_x, cell_y, kind, id;")
+	var polys := _rows("SELECT cell_x, cell_y, kind, subkind, name, geom_rings FROM features_poly ORDER BY cell_x, cell_y, kind, subkind, name, id;")
 	for p in polys:
 		var b: PackedByteArray = p["geom_rings"]
-		lines.append("POLY|%d|%d|%s|%s" % [p["cell_x"], p["cell_y"], p["kind"], b.hex_encode()])
+		var sk: String = p.get("subkind", "")
+		var nm: String = p.get("name", "")
+		lines.append("POLY|%d|%d|%s|%s|%s|%s" % [p["cell_x"], p["cell_y"], p["kind"], sk, nm, b.hex_encode()])
 
-	var lines_rows := _rows("SELECT cell_x, cell_y, kind, geom_pts FROM features_line ORDER BY cell_x, cell_y, kind, id;")
+	var lines_rows := _rows("SELECT cell_x, cell_y, kind, subkind, geom_pts FROM features_line ORDER BY cell_x, cell_y, kind, subkind, id;")
 	for l in lines_rows:
 		var b: PackedByteArray = l["geom_pts"]
-		lines.append("LINE|%d|%d|%s|%s" % [l["cell_x"], l["cell_y"], l["kind"], b.hex_encode()])
+		var sk: String = l.get("subkind", "")
+		lines.append("LINE|%d|%d|%s|%s|%s" % [l["cell_x"], l["cell_y"], l["kind"], sk, b.hex_encode()])
 
 	var places := _rows("SELECT osm_id, cell_x, cell_y, name, category, lat, lon FROM place_nodes ORDER BY cell_x, cell_y, osm_id;")
 	for pl in places:
@@ -296,6 +326,10 @@ func canonical_dump() -> String:
 		lines.append("NODE|%d|%d|%d|%s|%s|%.7f|%.7f" % [
 			pl["osm_id"], pl["cell_x"], pl["cell_y"], n, pl["category"], pl["lat"], pl["lon"]
 		])
+
+	var flags := _rows("SELECT cell_x, cell_y, sea FROM cell_flags ORDER BY cell_x, cell_y;")
+	for f in flags:
+		lines.append("FLAG|%d|%d|%d" % [f["cell_x"], f["cell_y"], f["sea"]])
 
 	return "\n".join(lines) + "\n"
 

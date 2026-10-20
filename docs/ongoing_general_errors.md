@@ -34,6 +34,12 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 
 ## ✅ Resolved Decisions
 
+### Decision 20 — Map Store v2 handling of `landuse=construction` polygons (Resolved 2026-10-20)
+- **Your selection:** Option A — Exclude `landuse=construction` from the map store.
+- **What it means:**
+  - `landuse=construction` is excluded from the map store (falls through to `*(not stored)*`), aligning with the exclusion of other in-progress features (`highway=construction`, `railway=construction`) and matching §8's test assertion: *"the tunnel way and the landuse=construction polygon are absent"*.
+  - `docs/implementation_plan_world_generation_slice2.md` §2.1 updated to remove `construction` from the `industrial` row.
+
 ### Decision 17 — The walkable map: real streets, Pokémon pieces (Resolved 2026-10-19)
 - **Your selection:** "Proceed with Option A."
 - **What it means:** the map stays one continuous, real USA, rebuilt from walking-scale Pokémon pieces in the real places — 8 WM-m squares instead of 16; streets as 2–4-square paths and roads; real buildings as roofed buildings with south doors and name signs; parks with tree borders and tall grass; shorelines, graveyards, and rail lines.
@@ -575,6 +581,21 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Detected GBA game code prefixes at offset `0xAC` with descriptive error `GBA game code prefix '<prefix>' (<code>) detected at offset 0xAC`.
   - Added 4 test cases to `tools/test_check_no_nintendo_assets.py` (falsifying test with `BPEE` at `0xAC`, `AXVE` rejection, `BPXE` specificity allowance, 16-byte short file handling), bringing the IP guard test suite from 13 to 17 tests.
 - **Decision 19:** Marked "guard built".
+
+---
+
+**M37 — Scale and Map Store v2 (Item 4, 2026-10-20).**
+- **What was solved:**
+  - Scale change: `Grid.TILE_WM = 8.0` (32 × 32 tiles per 256 WM-m cell), `tuning.json` `"tileMeters": 8.0`, `config.gd` `tile_meters = 8.0`.
+  - Geometry unit: Added `MapStore.GEOM_UNIT_WM = 16.0` to preserve vector geometry resolution while decoupling from tile scale.
+  - Map store v2 schema: Added `subkind TEXT` and `name TEXT` columns to `features_poly`, `subkind TEXT` to `features_line`, new `cell_flags` table (`cell_x`, `cell_y`, `sea`), and `schema_version = '2'`. Updated `canonical_dump()` and `canonical_dump_sha256()`.
+  - Converter v2: Implemented polygon tag classification (§2.1) and line tag classification (§2.2). Excluded tunnels, covered ways, layer < 0, proposed/construction highways and railways, and `landuse=construction` (Decision 20).
+  - Unclipped building anchoring (§2.3): Straddling buildings are preserved unclipped, stored once in their bounding box centre cell. Polygon names assigned to centre piece.
+  - Sea flag calculation (§2.4): Coastline cells marked 2 (coast), and 64-ring search determines sea (1) vs land (0) based on segment orientation.
+  - Fixture v2: Added 12 v2 features to `tools/generate_synthetic_pbf.py` and `--reverse-coastline` option. Tested reproducible 1122-byte fixture.
+  - Test suite v2: Updated `region_import_test.gd` and `region_import_pause_test.gd` with v2 assertions and golden canonical dump hash `46224ee16201b743a310e5637d50ce42e25449d74e23f028c8d9cadddf1e05ca`.
+  - Converted demo area with clipping to Store v2 schema in 336.06 s (43,726 poly, 30,554 line, 451 place nodes).
+- **Validation:** All 20 game tests PASS, IP guard PASS (17 tests), synthetic fixture tests PASS (4 tests), demo screenshot tests PASS (3 tests), save isolation PASS (5 tests), static lint PASS.
 
 ---
 

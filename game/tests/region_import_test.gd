@@ -6,7 +6,7 @@ extends Node
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 
-const GOLDEN_CANONICAL_HASH: String = "250ac3c91ebbcc72a352e2c99d8d7eaad5d4915dca32449def446ef8acd9571c"
+const GOLDEN_CANONICAL_HASH: String = "46224ee16201b743a310e5637d50ce42e25449d74e23f028c8d9cadddf1e05ca"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/region_import_test.db"
 
@@ -30,36 +30,96 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# Verify counts
+	# Verify schema version 2
+	if store.get_state("schema_version") != "2":
+		push_error("Expected schema_version '2', got '%s'" % store.get_state("schema_version"))
+		store.close()
+		_cleanup()
+		return false
+
+	# Verify counts: 10 poly, 10 line, 3 place_nodes
 	var poly_count: int = int(store._rows("SELECT count(*) as c FROM features_poly;")[0]["c"])
 	var line_count: int = int(store._rows("SELECT count(*) as c FROM features_line;")[0]["c"])
 	var node_count: int = int(store._rows("SELECT count(*) as c FROM place_nodes;")[0]["c"])
 
-	if poly_count != 5:
-		push_error("Expected 5 features_poly, got %d" % poly_count)
+	if poly_count != 10:
+		push_error("Expected 10 features_poly, got %d" % poly_count)
 		store.close()
 		_cleanup()
 		return false
 
-	if line_count != 4:
-		push_error("Expected 4 features_line, got %d" % line_count)
+	if line_count != 10:
+		push_error("Expected 10 features_line, got %d" % line_count)
 		store.close()
 		_cleanup()
 		return false
 
-	if node_count != 2:
-		push_error("Expected 2 place_nodes, got %d" % node_count)
+	if node_count != 3:
+		push_error("Expected 3 place_nodes, got %d" % node_count)
 		store.close()
 		_cleanup()
 		return false
 
-	# Verify kinds
+	# Verify polygon kinds
 	var poly_kinds := store._rows("SELECT DISTINCT kind FROM features_poly ORDER BY kind;")
 	var kinds_list: Array[String] = []
 	for r in poly_kinds:
 		kinds_list.append(r["kind"])
-	if kinds_list != ["building", "park", "water"]:
+	if kinds_list != ["building", "cemetery", "forest", "park", "parking", "residential", "water"]:
 		push_error("Unexpected polygon kinds: %s" % str(kinds_list))
+		store.close()
+		_cleanup()
+		return false
+
+	# Verify line kinds
+	var line_kinds := store._rows("SELECT DISTINCT kind FROM features_line ORDER BY kind;")
+	var line_kinds_list: Array[String] = []
+	for r in line_kinds:
+		line_kinds_list.append(r["kind"])
+	if line_kinds_list != ["coastline", "path", "rail", "road", "waterway"]:
+		push_error("Unexpected line kinds: %s" % str(line_kinds_list))
+		store.close()
+		_cleanup()
+		return false
+
+	# Verify cell_flags table exists and has sea flags
+	var flags_rows := store._rows("SELECT count(*) as c FROM cell_flags;")
+	if flags_rows.is_empty() or int(flags_rows[0]["c"]) == 0:
+		push_error("cell_flags table missing or empty")
+		store.close()
+		_cleanup()
+		return false
+
+	# Verify absent features: tunnel way and construction polygon
+	var tunnel_rows := store._rows("SELECT count(*) as c FROM features_line WHERE cell_x = 4 AND cell_y = 4 AND subkind = 'residential';")
+	if int(tunnel_rows[0]["c"]) != 0:
+		push_error("Tunnel way should be absent from features_line, got %d" % int(tunnel_rows[0]["c"]))
+		store.close()
+		_cleanup()
+		return false
+
+	var const_rows := store._rows("SELECT count(*) as c FROM features_poly WHERE subkind = 'construction' OR kind = 'construction';")
+	if int(const_rows[0]["c"]) != 0:
+		push_error("Construction polygon should be absent from features_poly, got %d" % int(const_rows[0]["c"]))
+		store.close()
+		_cleanup()
+		return false
+
+	# Verify boundary-straddling building is stored once, unclipped, in anchor cell (5, 4)
+	var bm_rows := store._rows("SELECT cell_x, cell_y, kind, subkind, name, geom_rings FROM features_poly WHERE name = 'Boundary Market';")
+	if bm_rows.size() != 1:
+		push_error("Expected Boundary Market to appear once, got %d times" % bm_rows.size())
+		store.close()
+		_cleanup()
+		return false
+	if bm_rows[0]["cell_x"] != 5 or bm_rows[0]["cell_y"] != 4:
+		push_error("Boundary Market expected anchor cell (5, 4), got (%d, %d)" % [bm_rows[0]["cell_x"], bm_rows[0]["cell_y"]])
+		store.close()
+		_cleanup()
+		return false
+	var bm_rings := MapStore.unpack_rings(bm_rows[0]["geom_rings"])
+	if bm_rings.size() != 1 or bm_rings[0].size() != 5:
+		push_error("Boundary Market expected 1 ring with 5 vertices (closed 4 corners) unclipped, got %d rings / %d verts" % [bm_rings.size(), bm_rings[0].size() if bm_rings.size() > 0 else 0])
 		store.close()
 		_cleanup()
 		return false
@@ -133,7 +193,7 @@ func run_test() -> bool:
 	# 4. Equivalence Test (falsifying): Clip covering full fixture
 	# Canonical dump hash MUST be identical to unclipped run.
 	# ---------------------------------------------------------
-	var full_clip := Rect2(1000.0, 1000.0, 600.0, 600.0)
+	var full_clip := Rect2(1024.0, 1024.0, 512.0, 512.0)
 	var conv_eq := RegionConverter.new()
 	var res_eq := conv_eq.convert(FIXTURE_PBF, TEST_DB_PATH, full_clip)
 	if not res_eq.get("ok", false):
@@ -189,17 +249,25 @@ func run_test() -> bool:
 		return false
 
 	# East-only building (Maple House in cell (5, 4)) must be absent
-	var b2_rows := west_store._rows("SELECT count(*) as c FROM features_poly WHERE cell_x = 5 AND cell_y = 4 AND kind = 'building';")
+	var b2_rows := west_store._rows("SELECT count(*) as c FROM features_poly WHERE name = 'Maple House';")
 	if int(b2_rows[0]["c"]) != 0:
-		push_error("Partial clip failed: east-only building in cell (5, 4) should be absent")
+		push_error("Partial clip failed: east-only building 'Maple House' should be absent")
 		west_store.close()
 		_cleanup()
 		return false
 
 	# West building (City Hall in cell (4, 4)) must be present
-	var b1_rows := west_store._rows("SELECT count(*) as c FROM features_poly WHERE cell_x = 4 AND cell_y = 4 AND kind = 'building';")
+	var b1_rows := west_store._rows("SELECT count(*) as c FROM features_poly WHERE name = 'City Hall';")
 	if int(b1_rows[0]["c"]) != 1:
-		push_error("Partial clip failed: west building in cell (4, 4) should be present")
+		push_error("Partial clip failed: west building 'City Hall' in cell (4, 4) should be present")
+		west_store.close()
+		_cleanup()
+		return false
+
+	# Boundary-straddling building (Boundary Market in cell (5, 4)) must be present (its nodes are in [1260, 1300] <= 1350)
+	var bm_clipped := west_store._rows("SELECT count(*) as c FROM features_poly WHERE name = 'Boundary Market';")
+	if int(bm_clipped[0]["c"]) != 1:
+		push_error("Partial clip failed: Boundary Market should be present")
 		west_store.close()
 		_cleanup()
 		return false

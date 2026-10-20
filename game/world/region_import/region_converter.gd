@@ -552,12 +552,12 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 							var has_standalone_tags := false
 							for k_i in w_keys.size():
 								var k_str := string_table[w_keys[k_i]] if k_i < w_keys.size() and w_keys[k_i] < string_table.size() else ""
-								if k_str in ["highway", "waterway", "building", "leisure", "natural", "water"]:
+								if k_str in ["highway", "waterway", "building", "leisure", "natural", "water", "amenity", "railway"]:
 									has_standalone_tags = true
 									break
 								elif k_str == "landuse":
 									var v_str := string_table[w_vals[k_i]] if k_i < w_vals.size() and w_vals[k_i] < string_table.size() else ""
-									if v_str in ["grass", "meadow", "village_green", "recreation_ground", "residential", "industrial", "commercial", "retail", "cemetery"]:
+									if v_str in ["grass", "meadow", "village_green", "recreation_ground", "forest", "farmland", "orchard", "vineyard", "allotments", "farmyard", "greenhouse_horticulture", "cemetery", "residential", "industrial", "commercial", "retail", "railway", "brownfield", "quarry", "reservoir", "basin"]:
 										has_standalone_tags = true
 										break
 
@@ -970,51 +970,14 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 							resolved_ways[wid] = wm_pts
 
 						# Determine if way is a standalone polygon or line
-						var is_standalone_poly := false
-						var poly_kind := ""
-						if tags.has("building"):
-							is_standalone_poly = true
-							poly_kind = "building"
-						elif tags.get("leisure", "") in ["park", "garden", "playground", "pitch", "nature_reserve"]:
-							is_standalone_poly = true
-							poly_kind = "park"
-						elif tags.has("natural") and tags["natural"] == "water":
-							is_standalone_poly = true
-							poly_kind = "water"
-						elif tags.has("water"):
-							is_standalone_poly = true
-							poly_kind = "water"
-						elif tags.has("landuse"):
-							var lu: String = tags["landuse"]
-							if lu in ["grass", "meadow", "village_green", "recreation_ground"]:
-								is_standalone_poly = true
-								poly_kind = "park"
-							elif lu in ["residential", "industrial", "commercial", "retail", "cemetery"]:
-								is_standalone_poly = true
-								poly_kind = lu
+						var poly_info := classify_polygon(tags)
+						var line_info := classify_line(tags)
 
-						var is_line := false
-						var line_kind := ""
-						if tags.has("highway"):
-							is_line = true
-							var hw: String = tags["highway"]
-							if hw in ["motorway", "trunk", "primary"]:
-								line_kind = "primary"
-							elif hw in ["secondary", "tertiary"]:
-								line_kind = "secondary"
-							elif hw in ["path", "cycleway", "footway", "pedestrian", "track", "steps"]:
-								line_kind = "path"
-							else:
-								line_kind = "residential"
-						elif tags.has("waterway"):
-							is_line = true
-							line_kind = "waterway"
-
-						if is_standalone_poly and wm_pts.size() >= 3:
-							_write_poly_feature(store, poly_kind, [wm_pts])
+						if not poly_info.is_empty() and wm_pts.size() >= 3:
+							_write_poly_feature(store, poly_info["kind"], [wm_pts], poly_info["subkind"], poly_info["name"])
 							batch_count += 1
-						elif is_line and wm_pts.size() >= 2:
-							_write_line_feature(store, line_kind, wm_pts)
+						elif not line_info.is_empty() and wm_pts.size() >= 2:
+							_write_line_feature(store, line_info["kind"], wm_pts, line_info["subkind"])
 							batch_count += 1
 
 						if batch_count >= 10000:
@@ -1051,25 +1014,14 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 		if outer_rings.is_empty():
 			continue
 
-		var kind := "water"
-		if tags.get("leisure", "") == "park":
-			kind = "park"
-		elif tags.has("landuse"):
-			var lu: String = tags["landuse"]
-			if lu in ["grass", "meadow", "village_green", "recreation_ground"]:
-				kind = "park"
-			elif lu in ["residential", "industrial", "commercial", "retail", "cemetery"]:
-				kind = lu
-			else:
-				kind = ""
-
-		if kind == "":
+		var poly_info := classify_polygon(tags)
+		if poly_info.is_empty():
 			continue
 
 		var all_rings: Array[PackedVector2Array] = []
 		all_rings.append_array(outer_rings)
 		all_rings.append_array(inner_rings)
-		_write_poly_feature(store, kind, all_rings)
+		_write_poly_feature(store, poly_info["kind"], all_rings, poly_info["subkind"], poly_info["name"])
 		batch_count += 1
 
 	store.commit()
@@ -1078,21 +1030,25 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 	store.set_state("pass", "completed")
 
 	# Record coverage & clip state (§5.5 rule 5)
+	var cov_rect := Rect2i(0, 0, 1, 1)
 	if is_clipping:
 		store.set_state("clip", "1")
+		var c_min_cx := int(floor(clip_min_x / Grid.CELL_WM))
+		var c_min_cy := int(floor(clip_min_y / Grid.CELL_WM))
+		var c_max_cx := int(ceil(clip_max_x / Grid.CELL_WM)) - 1
+		var c_max_cy := int(ceil(clip_max_y / Grid.CELL_WM)) - 1
 		if coverage_box != null and coverage_box is Array and coverage_box.size() >= 4:
-			store.set_state("coverage", "%d,%d,%d,%d" % [coverage_box[0], coverage_box[1], coverage_box[2], coverage_box[3]])
+			c_min_cx = coverage_box[0]
+			c_min_cy = coverage_box[1]
+			c_max_cx = coverage_box[2]
+			c_max_cy = coverage_box[3]
 		elif coverage_box != null and coverage_box is Dictionary:
-			store.set_state("coverage", "%d,%d,%d,%d" % [
-				coverage_box.get("min_cx", 0), coverage_box.get("min_cy", 0),
-				coverage_box.get("max_cx", 0), coverage_box.get("max_cy", 0)
-			])
-		else:
-			var c_min_cx := int(floor(clip_min_x / Grid.CELL_WM))
-			var c_min_cy := int(floor(clip_min_y / Grid.CELL_WM))
-			var c_max_cx := int(ceil(clip_max_x / Grid.CELL_WM)) - 1
-			var c_max_cy := int(ceil(clip_max_y / Grid.CELL_WM)) - 1
-			store.set_state("coverage", "%d,%d,%d,%d" % [c_min_cx, c_min_cy, c_max_cx, c_max_cy])
+			c_min_cx = coverage_box.get("min_cx", c_min_cx)
+			c_min_cy = coverage_box.get("min_cy", c_min_cy)
+			c_max_cx = coverage_box.get("max_cx", c_max_cx)
+			c_max_cy = coverage_box.get("max_cy", c_max_cy)
+		store.set_state("coverage", "%d,%d,%d,%d" % [c_min_cx, c_min_cy, c_max_cx, c_max_cy])
+		cov_rect = Rect2i(c_min_cx, c_min_cy, c_max_cx - c_min_cx + 1, c_max_cy - c_min_cy + 1)
 	else:
 		# Unclipped: bounding box of all written features
 		var min_cx := INF
@@ -1112,9 +1068,14 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 				max_cy = maxf(max_cy, float(r[0]["max_cy"]))
 		if min_cx != INF:
 			store.set_state("coverage", "%d,%d,%d,%d" % [int(min_cx), int(min_cy), int(max_cx), int(max_cy)])
+			cov_rect = Rect2i(int(min_cx), int(min_cy), int(max_cx) - int(min_cx) + 1, int(max_cy) - int(min_cy) + 1)
 		else:
 			store.set_state("coverage", "0,0,0,0")
+			cov_rect = Rect2i(0, 0, 1, 1)
 		store.set_state("clip", "0")
+
+	store.set_state("schema_version", "2")
+	_compute_and_write_sea_flags(store, cov_rect)
 
 	# Clean up temporary index files
 	if FileAccess.file_exists(temp_nodes_path):
@@ -1149,7 +1110,278 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 # Spatial Assignment & Writing
 # -------------------------------------------------------------
 
-func _write_poly_feature(store: MapStore, kind: String, rings: Array[PackedVector2Array]) -> void:
+static func classify_polygon(tags: Dictionary) -> Dictionary:
+	var name: String = str(tags.get("name", ""))
+
+	# 1. building: building=* except building=no; building:part is ignored
+	if tags.has("building"):
+		if tags.has("building:part"):
+			return {}
+		var b_val: String = str(tags["building"])
+		if b_val != "no":
+			return {"kind": "building", "subkind": b_val, "name": name}
+
+	# 2. water: natural=water, water=*, waterway=riverbank, landuse=reservoir, landuse=basin
+	var is_water := false
+	if tags.get("natural", "") == "water":
+		is_water = true
+	elif tags.has("water"):
+		is_water = true
+	elif tags.get("waterway", "") == "riverbank":
+		is_water = true
+	elif tags.get("landuse", "") in ["reservoir", "basin"]:
+		is_water = true
+	if is_water:
+		return {"kind": "water", "subkind": "", "name": name}
+
+	# 3. wetland: natural=wetland
+	if tags.get("natural", "") == "wetland":
+		return {"kind": "wetland", "subkind": "", "name": name}
+
+	# 4. sand: natural=beach, natural=sand
+	if tags.get("natural", "") in ["beach", "sand"]:
+		return {"kind": "sand", "subkind": "", "name": name}
+
+	# 5. cemetery: landuse=cemetery, amenity=grave_yard
+	if tags.get("landuse", "") == "cemetery" or tags.get("amenity", "") == "grave_yard":
+		return {"kind": "cemetery", "subkind": "", "name": name}
+
+	# 6. park: leisure or landuse
+	var leisure_val: String = str(tags.get("leisure", ""))
+	if leisure_val in ["park", "garden", "recreation_ground", "playground", "pitch", "nature_reserve", "dog_park", "golf_course", "common"]:
+		return {"kind": "park", "subkind": leisure_val, "name": name}
+	var lu_val: String = str(tags.get("landuse", ""))
+	if lu_val in ["grass", "village_green", "recreation_ground", "meadow"]:
+		return {"kind": "park", "subkind": lu_val, "name": name}
+
+	# 7. forest: landuse=forest, natural=wood
+	if lu_val == "forest" or tags.get("natural", "") == "wood":
+		return {"kind": "forest", "subkind": "", "name": name}
+
+	# 8. scrub: natural=scrub|heath|grassland
+	if tags.get("natural", "") in ["scrub", "heath", "grassland"]:
+		return {"kind": "scrub", "subkind": "", "name": name}
+
+	# 9. farmland: landuse=farmland|orchard|vineyard|allotments|farmyard|greenhouse_horticulture
+	if lu_val in ["farmland", "orchard", "vineyard", "allotments", "farmyard", "greenhouse_horticulture"]:
+		return {"kind": "farmland", "subkind": "", "name": name}
+
+	# 10. parking: amenity=parking
+	if tags.get("amenity", "") == "parking":
+		return {"kind": "parking", "subkind": "", "name": name}
+
+	# 11. residential: landuse=residential
+	if lu_val == "residential":
+		return {"kind": "residential", "subkind": "", "name": name}
+
+	# 12. commercial: landuse=commercial|retail
+	if lu_val in ["commercial", "retail"]:
+		return {"kind": "commercial", "subkind": "", "name": name}
+
+	# 13. industrial: landuse=industrial|railway|brownfield|quarry (construction excluded per Decision 20)
+	if lu_val in ["industrial", "railway", "brownfield", "quarry"]:
+		return {"kind": "industrial", "subkind": "", "name": name}
+
+	return {}
+
+static func classify_line(tags: Dictionary) -> Dictionary:
+	var is_coastline: bool = (str(tags.get("natural", "")) == "coastline")
+	if is_coastline:
+		return {"kind": "coastline", "subkind": ""}
+
+	# Exclusions: tunnel!=no, covered=yes, layer < 0
+	if tags.has("tunnel") and str(tags["tunnel"]) != "no":
+		return {}
+	if str(tags.get("covered", "")) == "yes":
+		return {}
+	if tags.has("layer"):
+		var l_val := str(tags["layer"]).to_int()
+		if l_val < 0:
+			return {}
+
+	var is_bridge: bool = (tags.has("bridge") and str(tags["bridge"]) != "no")
+
+	# Highway
+	if tags.has("highway"):
+		if tags.get("area", "") == "yes":
+			return {}
+		var hw: String = str(tags["highway"])
+		if hw in ["proposed", "construction", "platform", "corridor", "elevator", "bus_stop", "raceway"]:
+			return {}
+
+		var subk := hw
+		if is_bridge:
+			subk += ":bridge"
+
+		if hw in ["motorway", "trunk", "primary", "secondary", "tertiary", "residential", "unclassified", "living_street", "road", "service"] or hw.ends_with("_link"):
+			return {"kind": "road", "subkind": subk}
+		elif hw in ["footway", "path", "cycleway", "pedestrian", "track", "steps", "bridleway"]:
+			return {"kind": "path", "subkind": subk}
+
+	# Railway
+	if tags.has("railway"):
+		var rw: String = str(tags["railway"])
+		if rw in ["abandoned", "disused", "subway", "proposed", "construction"]:
+			return {}
+		var subk := rw
+		if is_bridge:
+			subk += ":bridge"
+		if rw in ["rail", "light_rail", "narrow_gauge", "tram"]:
+			return {"kind": "rail", "subkind": subk}
+
+	# Waterway
+	if tags.has("waterway"):
+		var ww: String = str(tags["waterway"])
+		if ww in ["river", "canal", "stream", "ditch", "drain"]:
+			return {"kind": "waterway", "subkind": ww}
+
+	return {}
+
+static func _polygon_area(pts: PackedVector2Array) -> float:
+	var n := pts.size()
+	if n < 3:
+		return 0.0
+	var a := 0.0
+	for i in n:
+		var j := (i + 1) % n
+		a += pts[i].x * pts[j].y - pts[j].x * pts[i].y
+	return absf(a) * 0.5
+
+static func _quantize_wm(v: Vector2) -> Vector2i:
+	return Vector2i(int(round(v.x * 100.0)), int(round(v.y * 100.0)))
+
+func _compute_and_write_sea_flags(store: MapStore, cov_box: Rect2i) -> void:
+	var coast_rows = store._rows("SELECT cell_x, cell_y, geom_pts FROM features_line WHERE kind = 'coastline';")
+	var coast_by_cell: Dictionary = {}
+	var all_segments: Array = []
+	var incoming: Dictionary = {}
+	var outgoing: Dictionary = {}
+
+	for row in coast_rows:
+		var cx: int = int(row["cell_x"])
+		var cy: int = int(row["cell_y"])
+		var origin := Vector2(float(cx) * Grid.CELL_WM, float(cy) * Grid.CELL_WM)
+		var pts := MapStore.unpack_pts(row["geom_pts"])
+		if pts.size() < 2:
+			continue
+		for i in range(pts.size() - 1):
+			var a := origin + pts[i] * MapStore.GEOM_UNIT_WM
+			var b := origin + pts[i + 1] * MapStore.GEOM_UNIT_WM
+			if (b - a).length_squared() < 1e-6:
+				continue
+			var seg = [a, b]
+			all_segments.append(seg)
+			var cell_key := Vector2i(cx, cy)
+			if not coast_by_cell.has(cell_key):
+				coast_by_cell[cell_key] = []
+			coast_by_cell[cell_key].append(seg)
+			incoming[_quantize_wm(b)] = a
+			outgoing[_quantize_wm(a)] = b
+
+	store.begin_transaction()
+	for cy in range(cov_box.position.y, cov_box.position.y + cov_box.size.y):
+		for cx in range(cov_box.position.x, cov_box.position.x + cov_box.size.x):
+			# 2. Cell with coastline segment in itself or 8 neighbours -> sea = 2 (coast)
+			var is_coast := false
+			for ndy in [-1, 0, 1]:
+				for ndx in [-1, 0, 1]:
+					if coast_by_cell.has(Vector2i(cx + ndx, cy + ndy)):
+						is_coast = true
+						break
+				if is_coast:
+					break
+			if is_coast:
+				store.insert_cell_flag(cx, cy, 2)
+				continue
+
+			if all_segments.is_empty():
+				store.insert_cell_flag(cx, cy, 0)
+				continue
+
+			# 3. Search rings r = 1 ... 64
+			var cell_center := Vector2((float(cx) + 0.5) * Grid.CELL_WM, (float(cy) + 0.5) * Grid.CELL_WM)
+			var found_ring := -1
+			var candidate_segments: Array = []
+
+			for r in range(1, 65):
+				var ring_has := false
+				for d in range(-r, r + 1):
+					for cand in [
+						Vector2i(cx + d, cy - r),
+						Vector2i(cx + d, cy + r),
+						Vector2i(cx - r, cy + d),
+						Vector2i(cx + r, cy + d)
+					]:
+						if coast_by_cell.has(cand):
+							ring_has = true
+							for s in coast_by_cell[cand]:
+								candidate_segments.append(s)
+				if ring_has:
+					found_ring = r
+					break
+
+			if found_ring == -1 or candidate_segments.is_empty():
+				store.insert_cell_flag(cx, cy, 0)
+				continue
+
+			# Include candidate segments from ring r+1
+			var r_next := found_ring + 1
+			if r_next <= 64:
+				for d in range(-r_next, r_next + 1):
+					for cand in [
+						Vector2i(cx + d, cy - r_next),
+						Vector2i(cx + d, cy + r_next),
+						Vector2i(cx - r_next, cy + d),
+						Vector2i(cx + r_next, cy + d)
+					]:
+						if coast_by_cell.has(cand):
+							for s in coast_by_cell[cand]:
+								candidate_segments.append(s)
+
+			var min_dist_sq := INF
+			var nearest_seg = null
+			var nearest_t := 0.0
+
+			for seg in candidate_segments:
+				var sa: Vector2 = seg[0]
+				var sb: Vector2 = seg[1]
+				var ab := sb - sa
+				var len_sq := ab.length_squared()
+				var t := 0.0
+				if len_sq > 1e-6:
+					t = clampf((cell_center - sa).dot(ab) / len_sq, 0.0, 1.0)
+				var proj := sa + ab * t
+				var dist_sq := (cell_center - proj).length_squared()
+				if dist_sq < min_dist_sq:
+					min_dist_sq = dist_sq
+					nearest_seg = seg
+					nearest_t = t
+
+			if nearest_seg == null:
+				store.insert_cell_flag(cx, cy, 0)
+				continue
+
+			var na: Vector2 = nearest_seg[0]
+			var nb: Vector2 = nearest_seg[1]
+			var is_sea := false
+
+			if nearest_t > 1e-4 and nearest_t < 1.0 - 1e-4:
+				is_sea = (nb - na).cross(cell_center - na) < 0.0
+			else:
+				var v := na if nearest_t <= 1e-4 else nb
+				var vk := _quantize_wm(v)
+				if incoming.has(vk) and outgoing.has(vk):
+					var u: Vector2 = incoming[vk]
+					var w: Vector2 = outgoing[vk]
+					is_sea = (w - u).cross(cell_center - v) < 0.0
+				else:
+					is_sea = (nb - na).cross(cell_center - na) < 0.0
+
+			var sea_val := 1 if is_sea else 0
+			store.insert_cell_flag(cx, cy, sea_val)
+	store.commit()
+
+func _write_poly_feature(store: MapStore, kind: String, rings: Array[PackedVector2Array], subkind: String = "", name: String = "") -> void:
 	if rings.is_empty():
 		return
 	var outer := rings[0]
@@ -1165,12 +1397,31 @@ func _write_poly_feature(store: MapStore, kind: String, rings: Array[PackedVecto
 		max_wm.x = maxf(max_wm.x, p.x)
 		max_wm.y = maxf(max_wm.y, p.y)
 
+	var center_wm := (min_wm + max_wm) * 0.5
+
+	# Buildings: unclipped, stored in anchor cell (§2.3)
+	if kind == "building":
+		var anchor_cx := int(floor(center_wm.x / Grid.CELL_WM))
+		var anchor_cy := int(floor(center_wm.y / Grid.CELL_WM))
+		var cell_origin := Vector2(float(anchor_cx) * Grid.CELL_WM, float(anchor_cy) * Grid.CELL_WM)
+		var local_rings: Array[PackedVector2Array] = []
+		for ring in rings:
+			var l_ring := PackedVector2Array()
+			l_ring.resize(ring.size())
+			for i in ring.size():
+				l_ring[i] = (ring[i] - cell_origin) / MapStore.GEOM_UNIT_WM
+			local_rings.append(l_ring)
+		var blob := MapStore.pack_rings(local_rings)
+		store.insert_poly(anchor_cx, anchor_cy, kind, blob, subkind, name)
+		return
+
+	# Other polygons: clipped per cell (§2.3)
 	var c_min_x := int(floor(min_wm.x / Grid.CELL_WM))
 	var c_max_x := int(floor(max_wm.x / Grid.CELL_WM))
 	var c_min_y := int(floor(min_wm.y / Grid.CELL_WM))
 	var c_max_y := int(floor(max_wm.y / Grid.CELL_WM))
 
-	# Fast-path: Polygon is completely contained in a single 256m cell
+	# Fast-path: Polygon completely in single cell
 	if c_min_x == c_max_x and c_min_y == c_max_y:
 		var cx := c_min_x
 		var cy := c_min_y
@@ -1180,13 +1431,20 @@ func _write_poly_feature(store: MapStore, kind: String, rings: Array[PackedVecto
 			var l_ring := PackedVector2Array()
 			l_ring.resize(ring.size())
 			for i in ring.size():
-				l_ring[i] = (ring[i] - cell_origin) / Grid.TILE_WM
+				l_ring[i] = (ring[i] - cell_origin) / MapStore.GEOM_UNIT_WM
 			local_rings.append(l_ring)
 		var blob := MapStore.pack_rings(local_rings)
-		store.insert_poly(cx, cy, kind, blob)
+		store.insert_poly(cx, cy, kind, blob, subkind, name)
 		return
 
 	# Spanning polygon: clip per cell
+	var target_cx := int(floor(center_wm.x / Grid.CELL_WM))
+	var target_cy := int(floor(center_wm.y / Grid.CELL_WM))
+
+	var pieces := []
+	var max_area := -1.0
+	var max_piece_idx := -1
+
 	for cy in range(c_min_y, c_max_y + 1):
 		for cx in range(c_min_x, c_max_x + 1):
 			var box_min := Vector2(float(cx) * Grid.CELL_WM, float(cy) * Grid.CELL_WM)
@@ -1199,14 +1457,46 @@ func _write_poly_feature(store: MapStore, kind: String, rings: Array[PackedVecto
 					var l_ring := PackedVector2Array()
 					l_ring.resize(clipped.size())
 					for i in clipped.size():
-						l_ring[i] = (clipped[i] - box_min) / Grid.TILE_WM
+						l_ring[i] = (clipped[i] - box_min) / MapStore.GEOM_UNIT_WM
 					cell_local_rings.append(l_ring)
 
 			if not cell_local_rings.is_empty() and cell_local_rings[0].size() >= 3:
 				var blob := MapStore.pack_rings(cell_local_rings)
-				store.insert_poly(cx, cy, kind, blob)
+				var area := _polygon_area(cell_local_rings[0])
+				var idx := pieces.size()
+				pieces.append({
+					"cx": cx,
+					"cy": cy,
+					"blob": blob,
+					"area": area
+				})
+				if area > max_area:
+					max_area = area
+					max_piece_idx = idx
+				elif absf(area - max_area) < 1e-6 and max_piece_idx >= 0:
+					# Ties go to lowest (cell_y, cell_x)
+					var prev = pieces[max_piece_idx]
+					if cy < prev["cy"] or (cy == prev["cy"] and cx < prev["cx"]):
+						max_piece_idx = idx
 
-func _write_line_feature(store: MapStore, kind: String, wm_pts: PackedVector2Array) -> void:
+	if pieces.is_empty():
+		return
+
+	var named_piece_idx := -1
+	if name != "":
+		for i in pieces.size():
+			if pieces[i]["cx"] == target_cx and pieces[i]["cy"] == target_cy:
+				named_piece_idx = i
+				break
+		if named_piece_idx == -1:
+			named_piece_idx = max_piece_idx
+
+	for i in pieces.size():
+		var p = pieces[i]
+		var piece_name := name if i == named_piece_idx else ""
+		store.insert_poly(p["cx"], p["cy"], kind, p["blob"], subkind, piece_name)
+
+func _write_line_feature(store: MapStore, kind: String, wm_pts: PackedVector2Array, subkind: String = "") -> void:
 	if wm_pts.size() < 2:
 		return
 
@@ -1231,9 +1521,9 @@ func _write_line_feature(store: MapStore, kind: String, wm_pts: PackedVector2Arr
 		var local_pts := PackedVector2Array()
 		local_pts.resize(wm_pts.size())
 		for i in wm_pts.size():
-			local_pts[i] = (wm_pts[i] - cell_origin) / Grid.TILE_WM
+			local_pts[i] = (wm_pts[i] - cell_origin) / MapStore.GEOM_UNIT_WM
 		var blob := MapStore.pack_pts(local_pts)
-		store.insert_line(cx, cy, kind, blob)
+		store.insert_line(cx, cy, kind, blob, subkind)
 		return
 
 	# Spanning line: clip segments per cell
@@ -1246,8 +1536,8 @@ func _write_line_feature(store: MapStore, kind: String, wm_pts: PackedVector2Arr
 			for i in range(wm_pts.size() - 1):
 				var seg := clip_segment_to_box(wm_pts[i], wm_pts[i + 1], box_min, box_max)
 				if seg.size() == 2:
-					var p0 := (seg[0] - box_min) / Grid.TILE_WM
-					var p1 := (seg[1] - box_min) / Grid.TILE_WM
+					var p0 := (seg[0] - box_min) / MapStore.GEOM_UNIT_WM
+					var p1 := (seg[1] - box_min) / MapStore.GEOM_UNIT_WM
 					if cell_pts.is_empty():
 						cell_pts.append(p0)
 						cell_pts.append(p1)
@@ -1258,7 +1548,7 @@ func _write_line_feature(store: MapStore, kind: String, wm_pts: PackedVector2Arr
 
 			if cell_pts.size() >= 2:
 				var blob := MapStore.pack_pts(cell_pts)
-				store.insert_line(cx, cy, kind, blob)
+				store.insert_line(cx, cy, kind, blob, subkind)
 
 static func _dedup_sorted(arr: PackedInt64Array) -> PackedInt64Array:
 	var n := arr.size()

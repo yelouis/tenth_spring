@@ -3,7 +3,7 @@ extends Node
 var walk_speed_mph: float = 15.0
 var bicycle_speed_multiplier: float = 2.0
 var wall_seconds_per_game_minute: float = 2.0
-var tile_meters: float = 16.0
+var tile_meters: float = 8.0
 var visit_radius_meters: float = 75.0
 var visit_dwell_seconds: int = 120
 var corridor_reveal_meters: float = 60.0
