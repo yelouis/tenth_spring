@@ -76,7 +76,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - **A second cartridge:** players also dump **Pokémon Emerald (USA)** (`BPEE`, `TENTH_SPRING_ROM_GBA`). The importer builds the map's tile atlas from it into `user://rom_cache/tiles/`, through a committed table of metatile numbers (`game/config/emerald_tile_map.json`) — never pixels.
   - **This amends Decision 10's "one cartridge"** — Black/White still supplies every Pokémon.
   - **The code-drawn placeholder atlas is still built** — it is the no-ROM look and the only atlas tests and agents ever see.
-  - **The IP guard gains a GBA rule:** Gen 3 game codes at header offset `0xAC` (agent guide Item 11).
+  - **The IP guard gains a GBA rule:** Gen 3 game codes at header offset `0xAC` (agent guide Item 11; guard built — M36).
   - **The Emerald tile spike** (agent guide Item 12) waits on your dump.
 - **Contracts updated:** `design_rom_asset_pipeline.md` §1, §2, §3, §4, §5, §6, §7, §8, and §10; `design_art_direction.md` §1, §2, and §5; slice-2 plan status and §6; `README.md`; `master_implementation_plan.md` Phase 2; `e2e_testing_journeys.md` Journey 0.
 
@@ -568,9 +568,19 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M36 — IP guard: block Game Boy Advance ROMs (Item 11, Decision 19, 2026-10-20).**
+- **What was solved:**
+  - Expanded `tools/check_no_nintendo_assets.py` to inspect up to `0xB0` bytes (`get_blob_head(rev, path, 0xB0)`) on staged and committed git blobs.
+  - Added `FORBIDDEN_GBA_GAME_CODE_PREFIXES = {b"AXV", b"AXP", b"BPR", b"BPG", b"BPE"}` covering Gen 3 titles (Ruby, Sapphire, FireRed, LeafGreen, Emerald).
+  - Detected GBA game code prefixes at offset `0xAC` with descriptive error `GBA game code prefix '<prefix>' (<code>) detected at offset 0xAC`.
+  - Added 4 test cases to `tools/test_check_no_nintendo_assets.py` (falsifying test with `BPEE` at `0xAC`, `AXVE` rejection, `BPXE` specificity allowance, 16-byte short file handling), bringing the IP guard test suite from 13 to 17 tests.
+- **Decision 19:** Marked "guard built".
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3).*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*
 - **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting Decision 15 re-ask.
 - **F47 (resolved in M35).**
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).

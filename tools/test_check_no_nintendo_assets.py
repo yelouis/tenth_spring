@@ -270,5 +270,55 @@ class TestCheckNoNintendoAssets(unittest.TestCase):
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)
 
+    def test_staged_gba_bpee_game_code(self):
+        """14. Staged 0xB0-byte x.bin with BPEE at 0xAC must fail (exit 1), naming the file."""
+        file_path = os.path.join(self.test_dir, "x.bin")
+        payload = bytearray(0xB0)
+        payload[0xAC:0xB0] = b"BPEE"
+        with open(file_path, "wb") as f:
+            f.write(payload)
+        self._run_git(["add", "x.bin"])
+
+        res = self._run_guard(["--staged"])
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("x.bin", res.stdout)
+        self.assertIn("GBA game code prefix 'BPE' (BPEE) detected at offset 0xAC", res.stdout)
+
+    def test_staged_gba_axve_game_code(self):
+        """15. Staged blob with AXVE at 0xAC must fail (exit 1)."""
+        file_path = os.path.join(self.test_dir, "ruby.bin")
+        payload = bytearray(0xB0)
+        payload[0xAC:0xB0] = b"AXVE"
+        with open(file_path, "wb") as f:
+            f.write(payload)
+        self._run_git(["add", "ruby.bin"])
+
+        res = self._run_guard(["--staged"])
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("ruby.bin", res.stdout)
+        self.assertIn("GBA game code prefix 'AXV' (AXVE) detected at offset 0xAC", res.stdout)
+
+    def test_staged_gba_bpxe_game_code_allowed(self):
+        """16. Specificity: staged blob with BPXE at 0xAC must pass (exit 0)."""
+        file_path = os.path.join(self.test_dir, "safe.bin")
+        payload = bytearray(0xB0)
+        payload[0xAC:0xB0] = b"BPXE"
+        with open(file_path, "wb") as f:
+            f.write(payload)
+        self._run_git(["add", "safe.bin"])
+
+        res = self._run_guard(["--staged"])
+        self.assertEqual(res.returncode, 0)
+
+    def test_staged_short_file_no_crash(self):
+        """17. Specificity: staged 16-byte file must pass (exit 0) without crash on short blobs."""
+        file_path = os.path.join(self.test_dir, "short.bin")
+        with open(file_path, "wb") as f:
+            f.write(b"x" * 16)
+        self._run_git(["add", "short.bin"])
+
+        res = self._run_guard(["--staged"])
+        self.assertEqual(res.returncode, 0)
+
 if __name__ == "__main__":
     unittest.main()

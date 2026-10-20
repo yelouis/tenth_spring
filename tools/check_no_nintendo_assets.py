@@ -21,7 +21,11 @@ FORBIDDEN_GAME_CODE_PREFIXES = {
     b"ADA", b"APA", b"CPU", b"IPK", b"IPG", b"IRB", b"IRA", b"IRE", b"IRD"
 }
 
-def get_blob_head(rev, path, num_bytes=16):
+FORBIDDEN_GBA_GAME_CODE_PREFIXES = {
+    b"AXV", b"AXP", b"BPR", b"BPG", b"BPE"
+}
+
+def get_blob_head(rev, path, num_bytes=0xB0):
     """
     Reads up to num_bytes of the object at {rev}:{path} using git show.
     Never touches working-tree files on disk.
@@ -67,7 +71,7 @@ def check_file(path, rev="HEAD"):
     if "rom_cache" in normalized or any(p in ("roms", "rom_cache", "rom_cache.tmp") for p in parts):
         return "forbidden path pattern containing rom_cache or roms"
 
-    header = get_blob_head(rev, path, 16)
+    header = get_blob_head(rev, path, 0xB0)
     if not header:
         return None
 
@@ -82,6 +86,14 @@ def check_file(path, rev="HEAD"):
         prefix = header[0x0C:0x0F].decode("ascii", errors="replace")
         code = header[0x0C:0x10].decode("ascii", errors="replace")
         return f"NDS game code prefix '{prefix}' ({code}) detected at offset 0x0C"
+
+    # (e) >= 0xB0 bytes and bytes 0xAC-0xAF match one of the forbidden GBA prefixes
+    # Match 3-letter prefix for Gen 3 titles: AXV (Ruby), AXP (Sapphire), BPR (FireRed),
+    # BPG (LeafGreen), BPE (Emerald)
+    if len(header) >= 0xB0 and header[0xAC:0xAF] in FORBIDDEN_GBA_GAME_CODE_PREFIXES:
+        prefix = header[0xAC:0xAF].decode("ascii", errors="replace")
+        code = header[0xAC:0xB0].decode("ascii", errors="replace")
+        return f"GBA game code prefix '{prefix}' ({code}) detected at offset 0xAC"
 
     return None
 
