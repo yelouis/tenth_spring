@@ -208,6 +208,7 @@ def main():
 		"frame_codec_test",
 		"grid_test",
 		"idempotent_sync_test",
+		"map_view_test",
 		"pairing_codes_test",
 		"pc_identity_test",
 		"profile_paths_test",

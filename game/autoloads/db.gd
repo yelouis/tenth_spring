@@ -85,6 +85,14 @@ func _rows(sql: String, params: Array = []) -> Array:
 	var res = _db.query_result
 	return res.duplicate(true) if typeof(res) == TYPE_ARRAY else []
 
+func is_open() -> bool:
+	return _db != null
+
+func query_rows(sql: String, params: Array = []) -> Array:
+	if _db == null:
+		return []
+	return _rows(sql, params)
+
 func execute_query(sql: String) -> bool:
 	return _q(sql)
 

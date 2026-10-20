@@ -25,8 +25,6 @@ func open_store(read_only: bool = false) -> bool:
 	_db.path = db_path
 	_db.foreign_keys = true
 	_db.verbosity_level = 0
-	if read_only:
-		_db.read_only = true
 
 	if not _db.open_db():
 		last_error = _db.error_message
@@ -39,6 +37,7 @@ func open_store(read_only: bool = false) -> bool:
 		_q("PRAGMA synchronous = NORMAL;")
 		_init_schema()
 	else:
+		_q("PRAGMA query_only = ON;")
 		_q("PRAGMA cache_size = -32768;") # 32 MiB read cache (plan §9.2)
 
 	return true
