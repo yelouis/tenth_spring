@@ -678,6 +678,21 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M42 — Slice 2 Proof Screenshots & Camera Limits (Item 9, 2026-10-20).**
+- **What was solved:**
+  - Fixed screenshot zoom parsing in `game/scenes/main.gd`: passed `float(s_cfg.get("zoom", 1.0))` instead of casting to `int`, preventing sub-1.0 zoom values (like `0.0625`) from truncating to 0.
+  - Fixed camera position clamping in `game/world/map_view.gd` and `map_view.tscn`: expanded `_camera.limit_left/top/right/bottom` and `BackgroundLayer` offset bounds from `±30,000,000` to `±200,000,000` to fully cover the Web Mercator global projection extent (4 px/m × 20,037,508 m ≈ ±80M px; real-world locations near `cx ≈ -53150` are at `x ≈ -54,427,000 px`).
+  - Captured the four slice-2 proof screenshots using `tools/demo_screenshot.py` on the demo profile into `~/tenth_spring_private/screens/`:
+    - `shot_z2.png`: zoom 2 at default focus, known look (`FRAME_P95_MS: 11.92 ms`).
+    - `shot_z2_cleared.png`: zoom 2, `--preview-cleared` (`FRAME_P95_MS: 12.28 ms`).
+    - `shot_z1_cleared.png`: zoom 1, `--preview-cleared` (`FRAME_P95_MS: 12.96 ms`).
+    - `shot_z0.0625.png`: overview mode at zoom 1/16, known look (`FRAME_P95_MS: 86.92 ms`).
+  - Verified windowed `FRAME_P95_MS` is well within target (≤ 16.6 ms for local zooms; 11.9–12.9 ms).
+  - Cleaned up downloaded `.osm.pbf` extract from `~/tenth_spring_private/downloads/` per guide §7.6.
+- **Validation:** All 20 game tests PASS, Flutter analyze & tests PASS (37 tests), sync E2E PASS, IP guard PASS, all four screenshots saved and verified outside the repo. Paused for human verdict on the look.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*

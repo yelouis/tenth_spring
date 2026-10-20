@@ -26,7 +26,7 @@ func _ready() -> void:
 		if map_view != null and map_view.has_method("setup_screenshot"):
 			map_view.setup_screenshot(
 				str(s_cfg.get("screenshot_path", "")),
-				int(s_cfg.get("zoom", 1)),
+				float(s_cfg.get("zoom", 1.0)),
 				int(s_cfg.get("frames", 10))
 			)
 		return

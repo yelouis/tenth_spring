@@ -146,10 +146,10 @@ var _total_rendered_frames: int = 0
 func _ready() -> void:
 	_camera = get_node_or_null("MapCamera") as Camera2D
 	if _camera != null:
-		_camera.limit_left = -30000000
-		_camera.limit_top = -30000000
-		_camera.limit_right = 30000000
-		_camera.limit_bottom = 30000000
+		_camera.limit_left = -200000000
+		_camera.limit_top = -200000000
+		_camera.limit_right = 200000000
+		_camera.limit_bottom = 200000000
 
 	_background_layer = get_node_or_null("BackgroundLayer") as ColorRect
 	_world_known = get_node_or_null("WorldKnown") as TileMapLayer

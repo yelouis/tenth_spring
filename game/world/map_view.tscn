@@ -14,10 +14,10 @@ shader = ExtResource("3_fog_shader")
 script = ExtResource("1_map_view")
 
 [node name="BackgroundLayer" type="ColorRect" parent="."]
-offset_left = -1000000.0
-offset_top = -1000000.0
-offset_right = 1000000.0
-offset_bottom = 1000000.0
+offset_left = -200000000.0
+offset_top = -200000000.0
+offset_right = 200000000.0
+offset_bottom = 200000000.0
 mouse_filter = 2
 color = Color(0.0509804, 0.0666667, 0.0980392, 1)
 
