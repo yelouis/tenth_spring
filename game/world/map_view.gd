@@ -222,7 +222,7 @@ func _focus_initial_cell() -> void:
 
 func focus_on_cell(cx: int, cy: int) -> void:
 	if _camera != null:
-		_camera.position = Vector2(float(cx) * CELL_SIZE_PX + CELL_SIZE_PX * 0.5, float(cy) * CELL_SIZE_PX + CELL_SIZE_PX * 0.5)
+		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
 
 func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
@@ -289,8 +289,12 @@ func _update_frustum_culling() -> void:
 
 	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX))
 	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX))
-	var min_cy := int(floor(vis_rect.position.y / CELL_SIZE_PX))
-	var max_cy := int(floor((vis_rect.position.y + vis_rect.size.y) / CELL_SIZE_PX))
+	var top := vis_rect.position.y
+	var bottom := vis_rect.position.y + vis_rect.size.y
+	var r0 := int(floor(top / CELL_SIZE_PX))
+	var r1 := int(floor(bottom / CELL_SIZE_PX))
+	var min_cy := -r1 - 1
+	var max_cy := -r0 - 1
 
 	var visible_cell_set: Dictionary = {}
 	var has_unmapped_revealed_cell := false
@@ -317,6 +321,9 @@ func _update_frustum_culling() -> void:
 
 	if _unmapped_chip != null:
 		_unmapped_chip.visible = has_unmapped_revealed_cell
+
+func _screen_tile(cx: int, cy: int, tx: int, ty: int) -> Vector2i:
+	return Vector2i(cx * 16 + tx, (-cy - 1) * 16 + (15 - ty))
 
 func _render_cell(cx: int, cy: int) -> bool:
 	var cell := Vector2i(cx, cy)
@@ -361,12 +368,10 @@ func _render_cell(cx: int, cy: int) -> bool:
 		lru_cache.put(cell, {"buf": tile_buf, "has_data": has_map_data})
 
 	# 3. Blit to WorldTileMap
-	var base_tx := cx * 16
-	var base_ty := cy * 16
 	for ty in 16:
 		for tx in 16:
 			var tid: int = tile_buf[ty * 16 + tx]
-			_world_tile_map.set_cell(Vector2i(base_tx + tx, base_ty + ty), 0, Vector2i(tid, 0))
+			_world_tile_map.set_cell(_screen_tile(cx, cy, tx, ty), 0, Vector2i(tid, 0))
 
 	# 4. Blit to FogOverlayLayer
 	# Fog state: 0 (unknown), 1 (known), 2 (cleared)
@@ -380,16 +385,14 @@ func _render_cell(cx: int, cy: int) -> bool:
 
 	for ty in 16:
 		for tx in 16:
-			_fog_overlay.set_cell(Vector2i(base_tx + tx, base_ty + ty), 0, Vector2i(fog_tile, 0))
+			_fog_overlay.set_cell(_screen_tile(cx, cy, tx, ty), 0, Vector2i(fog_tile, 0))
 
 	return (reveal_state > 0 and not has_map_data)
 
 func _unrender_cell(cx: int, cy: int) -> void:
-	var base_tx := cx * 16
-	var base_ty := cy * 16
 	for ty in 16:
 		for tx in 16:
-			var coord := Vector2i(base_tx + tx, base_ty + ty)
+			var coord := _screen_tile(cx, cy, tx, ty)
 			_world_tile_map.erase_cell(coord)
 			_fog_overlay.erase_cell(coord)
 

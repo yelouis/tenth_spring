@@ -33,6 +33,7 @@ The fog atom. A cell is **256 × 256 Web-Mercator metres** (16 × 16 tiles of 16
   * **On the ground**, a cell is 256·cos(latitude) metres on a side — ≈ 173 m in Seattle, ≈ 199 m in Washington DC, 256 m at the equator. Web Mercator is conformal, so north is always up and street angles are true everywhere.
   * **Gameplay distances are ground metres**, never grid units: corridor reveal, visit radius, `baseAccessMeters`, and travel miles use `Grid.ground_distance_m` (haversine, R = 6,371,008.8 m) or `radius / cos(latitude)` conversions.
   * **Never re-implement the projection.** The earlier `lon·111000·cos(lat)` formula sheared the grid by 40–58° across the US and is retired.
+  * On screen, y = −northing: cell (cx, cy) is drawn at screen cell row −cy − 1 (`implementation_plan_world_generation.md` §7.1a).
 * `revealState` (PlaceRevealState): `unknown | known | cleared` — cells use `known` when corridor/visit-revealed; `cleared` is place-level, mirrored here for region queries.
 * `tileBlob` (Uint8List): synthesized tile indices (deterministic; regenerable — cache, not source of truth).
 * `zone` (SpawnZone): residential / downtown / industrial / retail / parkland / waterfront / institutional / wilds / **cemetery / ruins / hospital**. Selects the spawn pools and base ghost share (`design_encounters_and_haunted_zones.md` §2). Deterministic from OSM.

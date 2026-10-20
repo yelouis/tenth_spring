@@ -84,7 +84,7 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	var expected_pos := Vector2(4.0 * 256.0 + 128.0, 5.0 * 256.0 + 128.0)
+	var expected_pos := Vector2((4.0 + 0.5) * 256.0, (-5.0 - 0.5) * 256.0)
 	if (cam.position - expected_pos).length() > 0.01:
 		push_error("Camera position mismatch: expected %s, got %s" % [expected_pos, cam.position])
 		map_view.queue_free()
@@ -147,7 +147,7 @@ func run_test() -> bool:
 	map_view._load_map_stores()
 	map_view._focus_initial_cell()
 
-	var expected_focus := Vector2(4.0 * 256.0 + 128.0, 4.0 * 256.0 + 128.0)
+	var expected_focus := Vector2((4.0 + 0.5) * 256.0, (-4.0 - 0.5) * 256.0)
 	if (cam.position - expected_focus).length() > 0.01:
 		push_error("Initial focus cell mismatch: expected %s, got %s" % [expected_focus, cam.position])
 		DB.close()
@@ -178,6 +178,90 @@ func run_test() -> bool:
 	for store in map_view._map_stores:
 		store.close()
 	map_view._map_stores.clear()
+
+	# 6. F43 Validation: North-up orientation (a, b, c)
+	var test_f43_store_path := "user://test/map_data/f43_test.db"
+	for suffix in ["", "-wal", "-shm", ".tmp"]:
+		if FileAccess.file_exists(test_f43_store_path + suffix):
+			DirAccess.remove_absolute(test_f43_store_path + suffix)
+
+	var MapStoreClass := load("res://world/region_import/map_store.gd")
+	var f43_store = MapStoreClass.new(test_f43_store_path)
+	if not f43_store.open_store(false):
+		push_error("Failed to open f43_test.db")
+		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	var ring := PackedVector2Array([Vector2(0, 8), Vector2(16, 8), Vector2(16, 16), Vector2(0, 16)])
+	f43_store.insert_poly(0, 0, "water", MapStoreClass.pack_rings([ring]))
+	f43_store.close()
+
+	map_view._load_map_stores()
+
+	DB.init_db()
+	DB.upsert_map_cell(0, 0, 1, 0)
+	DB.upsert_map_cell(0, 1, 1, 0)
+
+	map_view.get_lru_cache().clear()
+	map_view._rendered_cells.clear()
+	map_view._world_tile_map.clear()
+	map_view._fog_overlay.clear()
+
+	map_view._render_cell(0, 0)
+
+	var failed_f43 := false
+	# (a) Falsifying: WorldTileMap.get_cell_atlas_coords at screen tile (3, -16 + 2) is (5, 0) (water),
+	# and at (3, -16 + 13) it is (1, 0) (terrain).
+	var top_half_atlas: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(3, -16 + 2))
+	var bottom_half_atlas: Vector2i = map_view._world_tile_map.get_cell_atlas_coords(Vector2i(3, -16 + 13))
+	if top_half_atlas != Vector2i(5, 0) or bottom_half_atlas != Vector2i(1, 0):
+		push_error("F43 (a) falsified: expected top_half=(5, 0) water, bottom_half=(1, 0) terrain; got top_half=%s, bottom_half=%s" % [top_half_atlas, bottom_half_atlas])
+		failed_f43 = true
+
+	# (b) Falsifying: with cells (0, 0) and (0, 1) both revealed, every screen row of (0, 1) is smaller (higher on screen) than every row of (0, 0).
+	var rows_0: Array[int] = []
+	for c in map_view._world_tile_map.get_used_cells():
+		if not rows_0.has(c.y):
+			rows_0.append(c.y)
+
+	map_view._render_cell(0, 1)
+	var rows_1: Array[int] = []
+	for c in map_view._world_tile_map.get_used_cells():
+		if not rows_0.has(c.y) and not rows_1.has(c.y):
+			rows_1.append(c.y)
+
+	var b_failed := false
+	for r1 in rows_1:
+		for r0 in rows_0:
+			if r1 >= r0:
+				push_error("F43 (b) falsified: row %d of cell (0, 1) is not smaller than row %d of cell (0, 0)" % [r1, r0])
+				b_failed = true
+				failed_f43 = true
+				break
+		if b_failed:
+			break
+
+	# (c) focus_on_cell(0, 1).y < focus_on_cell(0, 0).y
+	map_view.focus_on_cell(0, 0)
+	var cam_pos_0: Vector2 = cam.position
+	map_view.focus_on_cell(0, 1)
+	var cam_pos_1: Vector2 = cam.position
+	if not (cam_pos_1.y < cam_pos_0.y):
+		push_error("F43 (c) falsified: focus_on_cell(0, 1).y (%.2f) >= focus_on_cell(0, 0).y (%.2f)" % [cam_pos_1.y, cam_pos_0.y])
+		failed_f43 = true
+
+	if failed_f43:
+		_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	_cleanup_f43(map_view, test_db_path, test_store_path, test_f43_store_path)
+	print("PASS: map_view_test (Attribution, DemoBadge, LRU 256 cap, UnmappedChip, Camera, FRAME_P95_MS=%.2fms, F43 North-Up verified)" % p95)
+	return true
+
+func _cleanup_f43(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:
+	for store in map_view._map_stores:
+		store.close()
+	map_view._map_stores.clear()
 	DB.close()
 	DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 	for suffix in ["", "-wal", "-shm", ".tmp"]:
@@ -185,7 +269,6 @@ func run_test() -> bool:
 			DirAccess.remove_absolute(test_db_path + suffix)
 		if FileAccess.file_exists(test_store_path + suffix):
 			DirAccess.remove_absolute(test_store_path + suffix)
-
+		if FileAccess.file_exists(test_f43_store_path + suffix):
+			DirAccess.remove_absolute(test_f43_store_path + suffix)
 	map_view.queue_free()
-	print("PASS: map_view_test (Attribution, DemoBadge, LRU 256 cap, UnmappedChip, Camera, FRAME_P95_MS=%.2fms verified)" % p95)
-	return true

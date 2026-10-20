@@ -515,16 +515,20 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - *What the guide left vague:* "give the human the exact steps" never required the agent to run those steps on real data and show the game's own output.
 - **The deeper problem — slice 1 can't look like Pokémon.** Even with every finding fixed, 16 m flat-colour squares turn houses into dots and streets into one-square lines. That is a design question, not a bug: filed as **Decision 17**, with a draft plan for the recommended option (`implementation_plan_world_generation_slice2.md`).
 
+**M32 — Screen orientation: North is up (F43, Item 0, 2026-10-19).**
+- **What was solved:**
+  - Implemented `_screen_tile(cx, cy, tx, ty)` in `game/world/map_view.gd` returning `Vector2i(cx * 16 + tx, (-cy - 1) * 16 + (15 - ty))` and applied it to `_render_cell` and `_unrender_cell`.
+  - Updated `focus_on_cell` camera position to `Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)`.
+  - Updated frustum culling row iteration to `cy ∈ [-r1 - 1, -r0 - 1]`.
+  - Added orientation rule to `docs/design_game_state_and_models.md` §2.
+  - Added falsifying validation test in `game/tests/map_view_test.gd` verifying top/bottom half atlas coords on a water-polygon cell, screen row ordering between cell (0, 1) and (0, 0), and camera focus direction. Falsification reproduced against pre-fix code (atlas coords mismatch `(-1, -1)`, row 16 >= row 0, and `focus_on_cell(0, 1).y (384.00) >= focus_on_cell(0, 0).y (128.00)`).
+- **F43 (fixed):** Verified in `map_view_test.gd`; 19/19 game tests PASS on Mac, `[REAL SAVE CHECK OK]`, static lint PASS, loopback sync E2E PASS.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there.*
-- **F43 (found 2026-10-19, pass 17) — the map is drawn upside-down: north is at the bottom.** Web-Mercator `y` grows northward; Godot's screen `y` grows downward.
-  - `map_view.gd` places cell `(cx, cy)` at screen row `cy·16` (`game/world/map_view.gd:365`, `:389`) and a buffer row `ty` — which counts from the cell's *south* edge — at `+ty` (`:369`, `:383`). `focus_on_cell` (`:225`) and the culling rows (`:292-293`) use the same unflipped `y`.
-  - Result: the whole map is mirrored top-to-bottom. A bay north of a town would be drawn south of it.
-  - `grid_test`'s "north stays north" checks the grid, not the screen, so nothing caught it.
-  - **Agent guide Item 0.**
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0).*
 - **F44 — the "Unmapped" chip can never start a download in the real game.** `configure_unmapped_region()` is called only by `region_select_test.gd:142`. Nothing in the running game calls it, so `_pending_region` stays empty, the chip shows its fallback text, and clicking it does nothing (`map_view.gd:443-444`). The slice-1 pause step "click the chip, then **Download**" cannot happen. **Item 1.**
 - **F45 — the real download path can't work, and would exhaust memory and freeze the game** (`game/world/region_import/map_fetcher.gd`).
   - **(a) No redirects.** Geofabrik answers every `-latest` URL with **307** to a dated file (checked 2026-10-19). `_real_http_request` (`:388`) doesn't follow it, so `HEAD` reports size 0 (the chip falls back) and `GET` returns no body ("Failed to download PBF"). It never checks the status code either (`:428`).
