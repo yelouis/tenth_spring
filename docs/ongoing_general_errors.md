@@ -622,6 +622,24 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 
 ---
 
+**M39 — Synthesis Part 2 (Item 6, 2026-10-20).**
+- **What was solved:**
+  - Extended `game/world/tile_synth/tile_synth2.gd`:
+    - Step 5a: Real buildings anchored in centre cell with area-based templates (`house_s` 3×3, `house_m` 5×4, `block_l` 7×6) clamped to `[5, 35 - dim]`, roof colors by residential/commercial/civic/religious, door placement at bottom wall centre, wall windows on odd template columns, door paths walking south up to 6 tiles. 1-tile ring skip rule checking for forbidden infrastructure (water, coastline, rail, highway, etc.).
+    - Step 5b: Fallback houses for `residential` and `commercial` polygon pieces with no real footprints in cell. Candidate lattice corners at `gx % 7 == 0 and gy % 6 == 0`, random skip `u(gx, gy, 8) < 0.70`, 1-tile ring skip check, door paths walking south.
+    - Step 8: Flowers scatter within 2 tiles (Chebyshev) of doors where `u(gx, gy, 2) < 0.25` on GRASS.
+    - Step 9: Named POIs in centre cell produce signs (immediately west of first door if inside template, or own/ring tiles if not) and named polygon pieces (scanning north from bottom-centre up to 4 tiles for GRASS), sorted by category priority and OSM ID / position tie-breaking, $\le 3$ Chebyshev spacing check, capped at 16 signs.
+    - Step 10: Preserved variant bytes for `TILE_ROOF`, `TILE_WALL`, `TILE_DOOR`, `TILE_SIGN`. Autotile mask matching for `ROOF` (same color) and `WALL` (same color % 8, connecting to WALL and DOOR).
+  - Extended `game/tests/tile_synth2_test.gd`:
+    - §8 (b) Falsifier — geometry matters: moving vertex 1 of Boundary Market by 32 WM-m changes tile buffer hash.
+    - §8 (d) Falsifier — one building, once: straddling building yields exactly 1 door group across cells (4,4) and (5,4).
+    - §8 (i) Fallback houses: residential polygon with no footprints in cell (4,4) yields $\ge 1$ fallback building tiles.
+    - §8 (j) Named POI produces exactly one sign tile with its name ("Parkside Cafe" produced 1 sign tile).
+    - §8 (a) Final golden hash: `336cf4e3980a02e949b1fce016cf0591df5e83adcea258cee91c19c7554d2459` over combined buffers and sign lists of cells (4,4), (4,5), (5,4), (5,5).
+- **Validation:** All 21 game tests PASS, Flutter tests PASS (37 tests), sync E2E PASS, IP guard PASS (17 tests), static lint PASS.
+
+---
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*

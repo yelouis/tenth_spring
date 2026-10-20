@@ -10,8 +10,8 @@ const MapStore := preload("res://world/region_import/map_store.gd")
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
-# Stage 1 Golden hash — changes in Item 6 when buildings, doors and signs land
-const STAGE1_GOLDEN_HASH: String = "d2d954efe5934433f74867ac43a3fb2eb5fbe160126d3d58a165647fca44d406"
+# Final Golden hash (§8 a) — proven identical on Linux and macOS CI
+const GOLDEN_HASH: String = "336cf4e3980a02e949b1fce016cf0591df5e83adcea258cee91c19c7554d2459"
 
 func run_test() -> bool:
 	_cleanup()
@@ -276,11 +276,105 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
-	# Stage 1 Golden Hash Verification over cells (4,4), (4,5), (5,4), (5,5)
+	# (b) Falsifier — geometry matters (§8 b)
+	# Moving one building vertex by 32 WM-m changes the hash
+	# -------------------------------------------------------------
+	var mod_area_5_4 := _build_area(store, 5, 4)
+	var found_b := false
+	for p in mod_area_5_4[Vector2i.ZERO]["polys"]:
+		if p.get("kind") == "building" and p.get("name") == "Boundary Market":
+			var rings := MapStore.unpack_rings(p["geom_rings"])
+			# Move vertex 1 by 32 WM-m = 2.0 store units
+			rings[0][1].x += 2.0
+			p["geom_rings"] = MapStore.pack_rings(rings)
+			found_b = true
+			break
+	if not found_b:
+		push_error("(b) Could not find building in cell (5, 4) to test geometry falsifier")
+		store.close()
+		_cleanup()
+		return false
+
+	var mod_synth_5_4 := TileSynth2.synthesize_cell(5, 4, mod_area_5_4, 0)
+	if mod_synth_5_4["tiles"] == tiles_5_4:
+		push_error("(b) Falsifier failed: moving building vertex by 32 WM-m did not change tile buffer")
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (d) Falsifier — one building, once (§8 d)
+	# Straddling building yields exactly one door group across the two cells
 	# -------------------------------------------------------------
 	var area_5_5 := _build_area(store, 5, 5)
 	var synth_5_5 := TileSynth2.synthesize_cell(5, 5, area_5_5, 0)
 
+	# In cell (5, 4), Building 4 (straddling) is anchored at col0=5, row0=9 in working grid (size 5x4),
+	# yielding its door at col 7, row 12 in working grid (local 32x32: col 3, row 8).
+	var straddle_doors_5_4 := 0
+	if tiles_5_4[(8 * 32 + 3) * 3] == TileSynth2.TILE_DOOR:
+		straddle_doors_5_4 += 1
+
+	# In cell (4, 4), at corresponding west edge (col 31, row 8), it must NOT be a door
+	var straddle_doors_4_4 := 0
+	if tiles_4_4[(8 * 32 + 31) * 3] == TileSynth2.TILE_DOOR:
+		straddle_doors_4_4 += 1
+
+	var total_straddle_doors := straddle_doors_5_4 + straddle_doors_4_4
+	if total_straddle_doors != 1:
+		push_error("(d) Straddling building yielded %d door groups across cells (expected 1)" % total_straddle_doors)
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (i) Fallback houses (§8 i)
+	# The residential polygon with no footprints in Cell (4, 4) gets >= 1 fallback house
+	# -------------------------------------------------------------
+	# Way 121 in cell (4, 4) is at u in [1, 5], v in [9, 12] -> cols 2..10, rows 8..14
+	var fallback_building_tiles := 0
+	for r in range(8, 15):
+		for c in range(2, 11):
+			var cls: int = tiles_4_4[(r * 32 + c) * 3]
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_WALL:
+				fallback_building_tiles += 1
+	if fallback_building_tiles == 0:
+		push_error("(i) Residential polygon with no footprints produced 0 fallback building tiles in cell (4, 4)")
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (j) Named POI produces exactly one sign with its name (§8 j)
+	# -------------------------------------------------------------
+	var found_cafe_sign := false
+	var cafe_sign_idx := -1
+	for s_i in synth_5_4["signs"].size():
+		if synth_5_4["signs"][s_i] == "Parkside Cafe":
+			found_cafe_sign = true
+			cafe_sign_idx = s_i
+			break
+	if not found_cafe_sign:
+		push_error("(j) 'Parkside Cafe' not found in synth_5_4 signs list: %s" % str(synth_5_4["signs"]))
+		store.close()
+		_cleanup()
+		return false
+
+	var cafe_sign_tile_count := 0
+	for r in 32:
+		for c in 32:
+			var idx := (r * 32 + c) * 3
+			if tiles_5_4[idx] == TileSynth2.TILE_SIGN and tiles_5_4[idx + 1] == cafe_sign_idx:
+				cafe_sign_tile_count += 1
+	if cafe_sign_tile_count != 1:
+		push_error("(j) 'Parkside Cafe' produced %d sign tiles (expected 1)" % cafe_sign_tile_count)
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (a) Final Golden Hash Verification over cells (4,4), (4,5), (5,4), (5,5)
+	# -------------------------------------------------------------
 	var all_cells = [
 		Vector2i(4, 4), Vector2i(4, 5), Vector2i(5, 4), Vector2i(5, 5)
 	]
@@ -304,11 +398,10 @@ func run_test() -> bool:
 	ctx.update(combined)
 	var current_hash := ctx.finish().hex_encode()
 
-	if STAGE1_GOLDEN_HASH.is_empty():
-		# Print current hash so we can inspect and record it
-		print("STAGE 1 SYNTH GOLDEN HASH: %s" % current_hash)
-	elif current_hash != STAGE1_GOLDEN_HASH:
-		push_error("Stage 1 golden hash mismatch: expected %s, got %s" % [STAGE1_GOLDEN_HASH, current_hash])
+	if GOLDEN_HASH.is_empty():
+		print("FINAL SYNTH GOLDEN HASH: %s" % current_hash)
+	elif current_hash != GOLDEN_HASH:
+		push_error("Golden hash mismatch: expected %s, got %s" % [GOLDEN_HASH, current_hash])
 		store.close()
 		_cleanup()
 		return false
