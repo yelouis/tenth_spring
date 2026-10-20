@@ -537,13 +537,13 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ## Definition of Done (this build)
 - [x] **Item 0 (F42)** — one Web-Mercator grid; `grid_test` falsifiers proven on a scratch branch; the lint rule forbids private projections; 12/12 in CI.
 - [x] **Item 1 (F40)** — SQLite loads on macOS; the macOS CI job is green (and red with the plists reverted); the local Mac battery **executes** the game tests.
-- [ ] **Item 2 (F41)** — the waiting line prints; `measure` is guarded and raise-only; the doctor check is one-directional; 10 memguard cases; Mac budgets measured.
+- [x] **Item 2 (F41)** — the waiting line prints; `measure` is guarded and raise-only; the doctor check is one-directional; 10 memguard cases; Mac budgets measured.
 - [x] **HUMAN: Decision 14 answered — A** (2026-10-10): build the full map preview.
 - [ ] **HUMAN: real-device sync gate passes** (§2, after Items 0–1). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run.** **Closes Phase 0.**
-- [ ] **Slice 1:** Items 3–10 are delivered with their proofs; the converter gate passed (or a decision was filed and the slice STOPPED); the human was told how to try it; **paused for feedback**.
+- [x] **Slice 1:** Items 3–10 are delivered with their proofs; the converter gate passed (Decision 15 = Option B answered 2026-10-15); the human was told how to try it; **paused for feedback**.
 - [ ] **When a Black/White dump is supplied:** Item 11 — verify markers resolved, `implementation_plan_rom_importer.md` written, preview shown, **paused for review**.
-- [ ] The full §1 battery and every CI workflow (Linux and macOS) are green.
+- [x] The full §1 battery and every CI workflow (Linux and macOS) are green.
 
 **When all of the above that apply are checked: this build's queue is empty. Do NOT invent work.** Legitimate triggers for more:
 - a new item in `ongoing_general_errors.md` with a filled `Your selection:`;

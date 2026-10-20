@@ -5,6 +5,7 @@ extends Node2D
 
 const TileSynth := preload("res://world/tile_synth/tile_synth.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
+const MapFetcher := preload("res://world/region_import/map_fetcher.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
 
 const CELL_SIZE_PX := 256.0
@@ -56,6 +57,13 @@ var _fog_overlay: TileMapLayer = null
 var _demo_badge: Label = null
 var _attribution_label: Label = null
 var _unmapped_chip: PanelContainer = null
+var _chip_label: Label = null
+var _update_map_button: Button = null
+var _download_dialog: ConfirmationDialog = null
+
+var _map_fetcher = MapFetcher.new()
+var _pending_region: Dictionary = {}
+var _pending_size_mb: int = 0
 
 var _is_dragging: bool = false
 var _drag_start_pos: Vector2 = Vector2.ZERO
@@ -72,6 +80,16 @@ func _ready() -> void:
 	_demo_badge = get_node_or_null("AttributionUI/DemoBadge") as Label
 	_attribution_label = get_node_or_null("AttributionUI/AttributionLabel") as Label
 	_unmapped_chip = get_node_or_null("AttributionUI/UnmappedChip") as PanelContainer
+	if _unmapped_chip != null:
+		_chip_label = _unmapped_chip.get_node_or_null("ChipLabel") as Label
+		_unmapped_chip.gui_input.connect(_on_unmapped_chip_gui_input)
+	_update_map_button = get_node_or_null("AttributionUI/UpdateMapButton") as Button
+	if _update_map_button != null:
+		_update_map_button.pressed.connect(trigger_update_map_data)
+	_download_dialog = get_node_or_null("AttributionUI/DownloadDialog") as ConfirmationDialog
+	if _download_dialog != null:
+		_download_dialog.confirmed.connect(confirm_download_dialog)
+		_download_dialog.canceled.connect(cancel_download_dialog)
 
 	_check_demo_mode()
 	_init_tile_sets()
@@ -390,6 +408,71 @@ func print_p95_frame_time() -> float:
 	var p95 := get_frame_p95_ms()
 	print("FRAME_P95_MS: %.2f" % p95)
 	return p95
+
+func set_map_fetcher(fetcher) -> void:
+	_map_fetcher = fetcher
+
+func configure_unmapped_region(cells: Array) -> Dictionary:
+	if _map_fetcher == null:
+		return {}
+	_pending_region = _map_fetcher.select_region_for_cells(cells)
+	if _pending_region.is_empty():
+		_pending_size_mb = 0
+		if _chip_label != null:
+			_chip_label.text = MapFetcher.UNMAPPED_FALLBACK_TEXT
+		return {}
+
+	var r_name: String = str(_pending_region.get("name", ""))
+	_pending_size_mb = _map_fetcher.fetch_region_size_mb(_pending_region)
+	if _chip_label != null:
+		_chip_label.text = MapFetcher.format_unmapped_chip_text(r_name, _pending_size_mb)
+	if _download_dialog != null:
+		_download_dialog.dialog_text = MapFetcher.format_download_dialog_text(r_name, _pending_size_mb)
+		_download_dialog.ok_button_text = MapFetcher.CONFIRM_BUTTON_TEXT
+		_download_dialog.cancel_button_text = MapFetcher.CANCEL_BUTTON_TEXT
+	if _unmapped_chip != null:
+		_unmapped_chip.visible = true
+	return _pending_region
+
+func _on_unmapped_chip_gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.button_index == MOUSE_BUTTON_LEFT and mb.pressed:
+			open_download_dialog()
+
+func open_download_dialog() -> void:
+	if _download_dialog != null and not _pending_region.is_empty():
+		_download_dialog.popup_centered()
+
+func cancel_download_dialog() -> void:
+	if _download_dialog != null:
+		_download_dialog.hide()
+
+func confirm_download_dialog() -> Dictionary:
+	if _download_dialog != null:
+		_download_dialog.hide()
+	if _map_fetcher == null or _pending_region.is_empty():
+		return {"ok": false, "error": "No pending region"}
+	var res: Dictionary = _map_fetcher.download_and_install_region(_pending_region)
+	if res.get("ok", false):
+		_load_map_stores()
+		lru_cache.clear()
+		_rendered_cells.clear()
+		_update_frustum_culling()
+		if _update_map_button != null:
+			_update_map_button.visible = true
+	return res
+
+func trigger_update_map_data() -> Dictionary:
+	if _map_fetcher == null or _pending_region.is_empty():
+		return {"ok": false, "error": "No region configured for update"}
+	var res: Dictionary = _map_fetcher.update_region(_pending_region)
+	if res.get("ok", false):
+		_load_map_stores()
+		lru_cache.clear()
+		_rendered_cells.clear()
+		_update_frustum_culling()
+	return res
 
 func _exit_tree() -> void:
 	for store in _map_stores:

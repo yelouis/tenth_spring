@@ -216,6 +216,7 @@ def main():
 		"real_save_untouched",
 		"region_import_pause_test",
 		"region_import_test",
+		"region_select_test",
 		"sync_ingest_isolation_test",
 		"sync_session_test",
 		"tile_synth_test"
@@ -375,6 +376,21 @@ def main():
 		for token in forbidden_proj:
 			if token in content:
 				print(f"\n[LINT FAIL] {rel_path}: private projection constant — use res://world/grid.gd (F42)")
+				total_errors += 1
+				break
+
+	# Item 10 (Decision 13 = C) Static Rule: Forbid HTTPRequest / HTTPClient outside world/region_import/map_fetcher.gd
+	map_fetcher_rel = os.path.join("world", "region_import", "map_fetcher.gd")
+	forbidden_http = ["HTTPRequest", "HTTPClient"]
+	for gdf in gd_files:
+		rel_path = os.path.relpath(gdf, game_dir)
+		if rel_path == map_fetcher_rel:
+			continue
+		with open(gdf, 'r', encoding='utf-8') as f:
+			content = f.read()
+		for token in forbidden_http:
+			if token in content:
+				print(f"\n[LINT FAIL] {rel_path}: HTTP class '{token}' forbidden outside {map_fetcher_rel} (Item 10)")
 				total_errors += 1
 				break
 

@@ -76,3 +76,20 @@ theme_override_font_sizes/font_size = 12
 text = "Unmapped — no map data installed for this area"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="UpdateMapButton" type="Button" parent="AttributionUI"]
+visible = false
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 150.0
+offset_bottom = 38.0
+theme_override_font_sizes/font_size = 12
+text = "Update map data"
+
+[node name="DownloadDialog" type="ConfirmationDialog" parent="AttributionUI"]
+title = "Offline Map Download"
+size = Vector2i(420, 130)
+ok_button_text = "Download"
+dialog_text = "Download offline map for Washington (348 MB)?"
+cancel_button_text = "Not now"

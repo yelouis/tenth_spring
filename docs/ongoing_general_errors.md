@@ -425,6 +425,12 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Filed Decision 15: User selected **Option B (Pre-converted Regional Map Stores via CDN / Releases)**. Converter pipeline is maintained for offline pre-generation and test fixture validation.
 - **F39 (partially fixed):** Converter half resolved. ROM import half remains for Item 11.
 
+**M30 — Tile synthesis, Map View, and Region Selection/Download — Slice 1 Complete (Items 8, 9, 10, 2026-10-19).**
+- **What was solved:**
+  - **Item 8 (Tile Synthesis, `3a06a28`):** Built `game/world/tile_synth/tile_synth.gd` (`synthesize_cell`) rasterizing 256 WM-m cells into 16×16 16m tiles (0 Void `#0d1119`, 1 Terrain `#475e46`, 2 Road `#5a5d64`, 3 Building `#2e3238` with min 2×2 footprint, 4 Park `#3e7d44`, 5 Water `#1f385c`) using scanline polygon fill and Bresenham line drawing. Verified in `game/tests/tile_synth_test.gd` (golden 4-cell SHA-256 `ae8769c0bab5fd6f3f5eb6797875a65195b1016ae5c01686cb72cbbc4b323c8e` identical on Linux and macOS; 32 WM-m vertex shift falsifies hash).
+  - **Item 9 (The Map View, `a93cd79`):** Built `game/world/map_view.tscn` and `game/world/map_view.gd` with `WorldTileMap`, `FogOverlayLayer` (`unknown` solid `#0d1119` and `known` `#141923` at 0.55 opacity), `MapCamera` (WASD/arrow pan, mouse drag, 1×–3× integer wheel zoom, initial focus on most visited place/revealed cell), `AttributionUI` (`© OpenStreetMap contributors`, `DEMO MODE` badge, `UnmappedChip`), frustum culling, and 256-cell LRU cache. Updated `game/scenes/main.gd` to open `map_view.tscn` when ≥ 1 cell is revealed. Verified in `game/tests/map_view_test.gd` (measured `FRAME_P95_MS: 0.06` ms on Mac, well below 16.6 ms budget).
+  - **Item 10 (Region Choice & Download):** Built `game/world/region_import/map_fetcher.gd` (the sole file permitted to use `HTTPRequest`/`HTTPClient`, enforced by static lint gate in `test_runner.py` and `region_select_test.gd`) implementing `index-v1.json` caching, smallest-enclosing GeoJSON Polygon/MultiPolygon selection via `Grid`, `HEAD` size lookup, `Unmapped Region — <Name> (<N> MB)` chip text, `Download offline map for <Name> (<N> MB)?` confirmation modal (`Download` / `Not now`), `.part` → MD5 verification → rename → convert → cleanup flow, and `Update map data` atomic store replacement. Verified in `game/tests/region_select_test.gd` (19/19 game tests passing).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
