@@ -65,18 +65,34 @@ func run_test() -> bool:
 		push_error("Non-.png extension test failed: %s" % str(r_txt))
 		return false
 
-	# 4. Valid Arguments & Defaults
-	var r_valid: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--zoom=2", "--frames=15"], false, repo_root)
+	# 4. Refusal 4: Unsupported focus (§10.6 rule 1)
+	var r_focus_bad: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=invalid"], false, repo_root)
+	if r_focus_bad.get("ok", true) != false or r_focus_bad.get("exit_code", 0) != 2 or r_focus_bad.get("error", "") != "[FAIL] unsupported focus invalid":
+		push_error("Unsupported focus test failed: %s" % str(r_focus_bad))
+		return false
+
+	var r_focus_random: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=center"], false, repo_root)
+	if r_focus_random.get("ok", true) != false or r_focus_random.get("exit_code", 0) != 2 or r_focus_random.get("error", "") != "[FAIL] unsupported focus center":
+		push_error("Unsupported focus test failed: %s" % str(r_focus_random))
+		return false
+
+	# 5. Valid Arguments & Defaults
+	var r_valid: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--zoom=2", "--frames=15", "--focus=most_buildings"], false, repo_root)
 	if not r_valid.get("ok", false) or not r_valid.get("is_screenshot", false):
 		push_error("Valid config test failed: %s" % str(r_valid))
 		return false
-	if r_valid.get("screenshot_path", "") != "/tmp/out_test.png" or r_valid.get("zoom", 0) != 2 or r_valid.get("frames", 0) != 15:
+	if r_valid.get("screenshot_path", "") != "/tmp/out_test.png" or r_valid.get("zoom", 0) != 2 or r_valid.get("frames", 0) != 15 or r_valid.get("focus", "") != "most_buildings":
 		push_error("Valid config values mismatch: %s" % str(r_valid))
 		return false
 
-	# Default zoom=1, frames=10
+	var r_mv: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=most_visited"], false, repo_root)
+	if not r_mv.get("ok", false) or r_mv.get("focus", "") != "most_visited":
+		push_error("most_visited config test failed: %s" % str(r_mv))
+		return false
+
+	# Default zoom=1, frames=10, focus=most_visited
 	var r_default: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png"], false, repo_root)
-	if not r_default.get("ok", false) or r_default.get("zoom", 0) != 1 or r_default.get("frames", 0) != 10:
+	if not r_default.get("ok", false) or r_default.get("zoom", 0) != 1 or r_default.get("frames", 0) != 10 or r_default.get("focus", "") != "most_visited":
 		push_error("Default config values mismatch: %s" % str(r_default))
 		return false
 

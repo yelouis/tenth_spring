@@ -6,15 +6,19 @@ extends RefCounted
 
 const ERR_IN_REPO: String = "[FAIL] screenshot path must be outside the repository"
 const ERR_UNSUPPORTED_ZOOM: String = "[FAIL] unsupported zoom %s"
+const ERR_UNSUPPORTED_FOCUS: String = "[FAIL] unsupported focus %s"
 const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 1, 2, 3]
+const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""
 	var zoom_str := ""
 	var zoom_val: float = 1.0
 	var frames_val := 10
+	var focus_str := ""
+	var focus_val := "most_visited"
 	var has_screenshot := false
 
 	var repo_root := repo_root_override
@@ -47,6 +51,11 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			if f_str.is_valid_int() and f_str.to_int() > 0:
 				frames_val = f_str.to_int()
 			i += 1
+		elif arg.begins_with("--focus="):
+			focus_str = arg.trim_prefix("--focus=").strip_edges()
+		elif arg == "--focus" and i + 1 < user_args.size():
+			focus_str = str(user_args[i + 1]).strip_edges()
+			i += 1
 		i += 1
 
 	if not has_screenshot:
@@ -69,7 +78,14 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		if not valid_zoom:
 			return {"ok": false, "error": ERR_UNSUPPORTED_ZOOM % zoom_str, "exit_code": 2}
 
-	# Refusal 3: In-repo path (§7.4 rule 2)
+	# Refusal 3: Unsupported focus (§10.6 rule 1)
+	if not focus_str.is_empty():
+		if focus_str in SUPPORTED_FOCUSES:
+			focus_val = focus_str
+		else:
+			return {"ok": false, "error": ERR_UNSUPPORTED_FOCUS % focus_str, "exit_code": 2}
+
+	# Refusal 4: In-repo path (§7.4 rule 2)
 	if screenshot_path.is_empty() or not screenshot_path.ends_with(".png"):
 		return {"ok": false, "error": ERR_IN_REPO, "exit_code": 2}
 
@@ -91,5 +107,6 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"is_screenshot": true,
 		"screenshot_path": abs_path,
 		"zoom": zoom_val,
-		"frames": frames_val
+		"frames": frames_val,
+		"focus": focus_val
 	}

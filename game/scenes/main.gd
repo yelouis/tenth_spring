@@ -27,7 +27,8 @@ func _ready() -> void:
 			map_view.setup_screenshot(
 				str(s_cfg.get("screenshot_path", "")),
 				float(s_cfg.get("zoom", 1.0)),
-				int(s_cfg.get("frames", 10))
+				int(s_cfg.get("frames", 10)),
+				str(s_cfg.get("focus", "most_visited"))
 			)
 		return
 

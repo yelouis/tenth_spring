@@ -43,6 +43,18 @@ def parse_args():
         default=10,
         help="Number of frames to wait after settling before capturing screenshot (default: 10)."
     )
+    parser.add_argument(
+        "--focus",
+        choices=["most_visited", "most_buildings"],
+        default=None,
+        help="Focus cell selection mode (most_visited or most_buildings, default: most_visited)."
+    )
+    parser.add_argument(
+        "--filename",
+        type=str,
+        default=None,
+        help="Optional explicit output PNG filename (e.g. shot_z2_mb_cleared.png)."
+    )
     return parser.parse_args()
 
 def main():
@@ -93,8 +105,16 @@ def main():
     zooms = args.zooms if args.zooms else ["1"]
 
     for z in zooms:
-        suffix = "_cleared" if args.preview_cleared else ""
-        out_png = os.path.join(real_out, f"shot_z{z}{suffix}.png")
+        if args.filename:
+            out_png = os.path.join(real_out, args.filename)
+        else:
+            suffix = "_cleared" if args.preview_cleared else ""
+            focus_tag = ""
+            if args.focus == "most_buildings":
+                focus_tag = "_mb"
+            elif args.focus == "most_visited" and (args.preview_cleared or z in ["1", "2"]):
+                focus_tag = "_mv"
+            out_png = os.path.join(real_out, f"shot_z{z}{focus_tag}{suffix}.png")
         godot_cmd = [
             godot_bin,
             "--path",
@@ -111,6 +131,8 @@ def main():
             godot_cmd.append(f"--demo-dir={args.demo_dir}")
         if args.preview_cleared:
             godot_cmd.append("--preview-cleared")
+        if args.focus:
+            godot_cmd.append(f"--focus={args.focus}")
         print(f"Running screenshot capture at zoom {z}: {' '.join(godot_cmd)}")
         res = subprocess.run(godot_cmd, cwd=repo_root)
         if res.returncode != 0:

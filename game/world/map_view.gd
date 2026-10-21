@@ -155,6 +155,8 @@ var _screenshot_zoom: float = 1.0
 var _screenshot_target_frames: int = 10
 var _screenshot_frames_waited: int = 0
 var _screenshot_saved: bool = false
+var _screenshot_focus: String = "most_visited"
+var _focus_mode: String = "most_visited"
 var _total_rendered_frames: int = 0
 
 func _ready() -> void:
@@ -198,7 +200,10 @@ func _ready() -> void:
 	_load_start_time_usec = Time.get_ticks_usec()
 	_load_map_stores()
 	_set_zoom_step(1.0)
-	_focus_initial_cell()
+	if _focus_mode == "most_buildings":
+		_focus_most_buildings()
+	else:
+		_focus_initial_cell()
 
 func _check_demo_mode() -> void:
 	var profile = ProfilePaths.resolve_from_cmdline()
@@ -210,11 +215,15 @@ func _check_demo_mode() -> void:
 			_is_demo = true
 		elif arg == "--preview-cleared":
 			preview_cleared_arg = true
+		elif arg.begins_with("--focus="):
+			_focus_mode = arg.trim_prefix("--focus=").strip_edges()
 	for arg in OS.get_cmdline_args():
 		if arg == "--demo":
 			_is_demo = true
 		elif arg == "--preview-cleared":
 			preview_cleared_arg = true
+		elif arg.begins_with("--focus="):
+			_focus_mode = arg.trim_prefix("--focus=").strip_edges()
 
 	if preview_cleared_arg:
 		if _is_demo:
@@ -435,6 +444,71 @@ func _focus_initial_cell() -> void:
 func focus_on_cell(cx: int, cy: int) -> void:
 	if _camera != null:
 		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
+
+func _focus_most_buildings() -> void:
+	if _camera == null:
+		return
+	var db = _get_db()
+	if db == null or not db.is_open():
+		_focus_initial_cell()
+		return
+
+	var cell_rows = db.query_rows("SELECT cell_x, cell_y, reveal_state FROM map_cell WHERE reveal_state > 0;")
+	if cell_rows.is_empty():
+		_focus_initial_cell()
+		return
+
+	var best_cell: Variant = null
+	var max_doors: int = -1
+
+	for row in cell_rows:
+		var cx := int(row["cell_x"])
+		var cy := int(row["cell_y"])
+		var cell := Vector2i(cx, cy)
+		var reveal_state := int(row["reveal_state"])
+
+		var buf: PackedByteArray
+		if _synth_cache.has(cell):
+			buf = _synth_cache.get_item(cell).get("buf", PackedByteArray())
+		elif _synth_worker != null and _synth_worker.is_running():
+			var res: Dictionary = _synth_worker.request_cell_sync(cell, false, reveal_state, _preview_cleared)
+			var item := {
+				"buf": res["tiles"],
+				"signs": res["signs"],
+				"has_data": res["has_data"],
+				"image": res.get("image", null),
+				"thread_id": res.get("thread_id", 0),
+				"reveal_state": reveal_state
+			}
+			_synth_cache.put(cell, item)
+			buf = res.get("tiles", PackedByteArray())
+		else:
+			var area: Dictionary = {}
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					area[Vector2i(dx, dy)] = _get_cell_features(cx + dx, cy + dy)
+			var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area, 0)
+			buf = synth_res.get("tiles", PackedByteArray())
+
+		var door_count := 0
+		for ty in 32:
+			for tx in 32:
+				var idx := (ty * 32 + tx) * 3
+				if idx < buf.size() and buf[idx] == TileSynth2.TILE_DOOR:
+					door_count += 1
+
+		if door_count > max_doors:
+			max_doors = door_count
+			best_cell = cell
+		elif door_count == max_doors:
+			# Ties go to the lower (cy, cx)
+			if best_cell == null or cy < best_cell.y or (cy == best_cell.y and cx < best_cell.x):
+				best_cell = cell
+
+	if best_cell != null:
+		focus_on_cell(best_cell.x, best_cell.y)
+	else:
+		_focus_initial_cell()
 
 func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
@@ -1055,12 +1129,54 @@ func pending_cell_count() -> int:
 				pending += 1
 	return pending
 
-func setup_screenshot(path: String, zoom_step: float, frames: int) -> void:
+func count_visible_doors() -> int:
+	if _camera == null:
+		return 0
+	var vp_size: Vector2 = get_viewport_rect().size / _camera.zoom.x
+	var cam_pos: Vector2 = _camera.position
+	var view_rect := Rect2(cam_pos - vp_size * 0.5, vp_size)
+
+	var min_cx := int(floor(view_rect.position.x / CELL_SIZE_PX))
+	var max_cx := int(floor((view_rect.position.x + view_rect.size.x) / CELL_SIZE_PX))
+	var r0 := int(floor(view_rect.position.y / CELL_SIZE_PX))
+	var r1 := int(floor((view_rect.position.y + view_rect.size.y) / CELL_SIZE_PX))
+	var min_cy := -r1 - 1
+	var max_cy := -r0 - 1
+
+	var visible_doors := 0
+	for cy in range(min_cy, max_cy + 1):
+		for cx in range(min_cx, max_cx + 1):
+			var cell := Vector2i(cx, cy)
+			if not _synth_cache.has(cell):
+				continue
+			var item: Dictionary = _synth_cache.get_item(cell)
+			var buf: PackedByteArray = item.get("buf", PackedByteArray())
+			if buf.is_empty():
+				continue
+			for ty in 32:
+				for tx in 32:
+					var idx := (ty * 32 + tx) * 3
+					if idx < buf.size() and buf[idx] == TileSynth2.TILE_DOOR:
+						var st := _screen_tile(cx, cy, tx, ty)
+						var tile_rect := Rect2(float(st.x) * 32.0, float(st.y) * 32.0, 32.0, 32.0)
+						if view_rect.intersects(tile_rect):
+							visible_doors += 1
+	return visible_doors
+
+func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String = "most_visited") -> void:
 	_screenshot_mode = true
 	_screenshot_path = path
 	_screenshot_zoom = zoom_step
 	_screenshot_target_frames = frames
+	_screenshot_focus = focus
+	_focus_mode = focus
 	_set_zoom_step(zoom_step)
+	if _focus_mode == "most_buildings":
+		_focus_most_buildings()
+	else:
+		_focus_initial_cell()
+	_pending_blit_cells.clear()
+	_requested_cells.clear()
 	_load_start_time_usec = Time.get_ticks_usec()
 	_load_max_frame_ms = 0.0
 	_load_done = false
@@ -1087,6 +1203,8 @@ func _on_frame_post_draw() -> void:
 					get_tree().quit(1)
 					return
 				print("SCREENSHOT_SAVED %s" % _screenshot_path.get_file())
+				var visible_doors := count_visible_doors()
+				print("VISIBLE_DOORS %d" % visible_doors)
 				_screenshot_saved = true
 			else:
 				printerr("[FAIL] Viewport texture returned empty image")
