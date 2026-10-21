@@ -227,11 +227,74 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
+	# 5b. Worker synthesis verification (F52 / Item 15)
+	var worker = map_view.get_synth_worker()
+	if worker == null or not worker.is_running():
+		push_error("SynthWorker is not running")
+		_cleanup(map_view, test_db_path, test_store_path, "")
+		return false
+
+	# Wait a brief moment for worker to complete pending background tasks
+	for i in range(10):
+		map_view._process(0.0)
+		OS.delay_msec(5)
+
+	# Verify each synthesized result records thread that made it, and it isn't main thread
+	var found_worker_result := false
+	var lru = map_view.get_lru_cache()
+	for cell_k in lru._map.keys():
+		var c_data = lru._map[cell_k]
+		if c_data is Dictionary and c_data.has("thread_id"):
+			var tid: int = c_data["thread_id"]
+			if tid == OS.get_main_thread_id():
+				push_error("Synthesized cell %s thread_id matches main thread!" % str(cell_k))
+				_cleanup(map_view, test_db_path, test_store_path, "")
+				return false
+			elif tid != 0:
+				found_worker_result = true
+	if not found_worker_result:
+		push_error("No worker-synthesized cells found in cache with worker thread_id")
+		_cleanup(map_view, test_db_path, test_store_path, "")
+		return false
+
+	# Verify blit throttle: no frame blits more than 2 cells
+	var max_blits: int = int(map_view.get_max_blits_per_frame())
+	if max_blits > 2:
+		push_error("Blit throttle failed: max blits per frame was %d, expected <= 2" % max_blits)
+		_cleanup(map_view, test_db_path, test_store_path, "")
+		return false
+
+	# Verify request queue limits and camera jump pruning:
+	# Populate visible cells at (200..209, 200..209)
+	for y in range(200, 210):
+		for x in range(200, 210):
+			DB.upsert_map_cell(x, y, 1, 0)
+	map_view.focus_on_cell(204, 204)
+	map_view._clear_rendered_layers()
+	map_view._process(0.0)
+
+	# Jump camera far away: (1000, 1000)
+	map_view.focus_on_cell(1000, 1000)
+	map_view._process(0.0)
+
+	var q_size: int = int(worker.get_request_queue_size())
+	if q_size > 64:
+		push_error("Request queue exceeded 64 after camera jump: got %d" % q_size)
+		_cleanup(map_view, test_db_path, test_store_path, "")
+		return false
+
+	var queued_cells: Array = worker.get_request_queue_cells()
+	for c in queued_cells:
+		if c.x < 500 or c.y < 500:
+			push_error("Stale request for cell %s was not dropped after camera jump to (1000, 1000)" % str(c))
+			_cleanup(map_view, test_db_path, test_store_path, "")
+			return false
+
 	# 6. Which layer a cell goes to (§6, §8):
 	# reveal_state 0 -> FogLayer solid
 	# 1 (known) -> WorldKnown
 	# >= 2 (cleared) -> WorldCleared
-	DB.init_db()
+	DB.query_rows("DELETE FROM map_cell;")
 	DB.upsert_map_cell(1, 1, 0, 0) # unknown
 	DB.upsert_map_cell(2, 2, 1, 0) # known
 	DB.upsert_map_cell(3, 3, 2, 0) # cleared
@@ -400,6 +463,8 @@ func run_test() -> bool:
 	return true
 
 func _cleanup(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:
+	if map_view.get_synth_worker() != null:
+		map_view.get_synth_worker().stop()
 	for store in map_view._map_stores:
 		store.close()
 	map_view._map_stores.clear()

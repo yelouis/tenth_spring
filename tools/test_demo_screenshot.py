@@ -50,6 +50,7 @@ class TestDemoScreenshotWrapper(unittest.TestCase):
         )
         self.assertEqual(res.returncode, 0)
         self.assertIn("--out-dir", res.stdout)
+        self.assertIn("--demo-dir", res.stdout)
 
 if __name__ == "__main__":
     unittest.main()

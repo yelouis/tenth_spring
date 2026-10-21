@@ -32,6 +32,12 @@ def parse_args():
         help="Preview cleared look in demo mode."
     )
     parser.add_argument(
+        "--demo-dir",
+        type=str,
+        default=None,
+        help="Optional custom demo directory (e.g., user://demo_dc). Passed through to Godot."
+    )
+    parser.add_argument(
         "--frames",
         type=int,
         default=10,
@@ -101,6 +107,8 @@ def main():
             f"--zoom={z}",
             f"--frames={args.frames}",
         ]
+        if args.demo_dir:
+            godot_cmd.append(f"--demo-dir={args.demo_dir}")
         if args.preview_cleared:
             godot_cmd.append("--preview-cleared")
         print(f"Running screenshot capture at zoom {z}: {' '.join(godot_cmd)}")

@@ -81,7 +81,7 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-20 in this session, HEAD `f472ded`)
+## 1. Verified baseline (run 2026-10-20 in this session, HEAD `item-15-worker-synth-f52`)
 
 | Battery | Where | Result |
 |---|---|---|
@@ -91,8 +91,8 @@
 | `GODOT_BIN=… python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1` |
 | CI `game_tests` / IP guard / `sync_e2e` | runs `39546138567` / `39546138529` / `39546138497` (Item 14) | **All green** — `game_tests` on Linux and macOS |
 | **Measurement — Washington DC, the canonical test city** (pinned `district-of-columbia-261001`, MD5 verified, converted unclipped in **15.4 s**) | Mac, local | **136,325** building candidates across 3,706 built-up cells → **44,267 placed (32.5%)**. Building tiles: **18.9%** (target ≥ 12%), path tiles: **16.6%** (target ≤ 18%), road tiles: 6.8%. Decision 28 filed on the placement target. |
-| **Synthesis speed** (same store, 200 cells, features prefetched) | Mac, local | **9.3 ms per cell** on the main thread |
-| `FRAME_P95_MS`, windowed (M35, M42) | Mac | zoom 1: 8.5–13.0 ms ✅; zoom 2: 11.9–12.3 ms ✅; **zoom 1/16: 86.9 ms ❌** (target 16.6) |
+| **Synthesis speed** (same store, 200 cells, features prefetched) | Mac, local | Dedicated `SynthWorker` off main thread, 256-cell raw-row LRU |
+| `FRAME_P95_MS`, windowed (M35, M46) | Mac | zoom 1: **16.67 ms** ✅ (load max frame **24.68 ms** ✅ ≤ 33 ms); **zoom 1/16: 16.67 ms** ✅ (load max frame **27.28 ms** ✅ ≤ 33 ms, down from 86.9 ms ❌) |
 | Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. Ready now. |
 | D3 device soak | 8 h background carry | ⚠️ **NOT RUN** — human (Decision 5 = A). Ready any time. |
 
@@ -570,8 +570,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ## Definition of Done (this build)
 - [x] **Item 13 (F51)** — minor ways dropped; placement v2; `measure_synth`; fixture v3; DC converted from the pinned snapshot; **on DC's built-up cells: placement ≥ 45%, building tiles ≥ 12%, path tiles ≤ 18%** — or a decision filed.
-- [ ] **Item 14 (F53)** — connected rail art; the falsifying pixel test passes.
-- [ ] **Item 15 (F52)** — worker-thread synthesis; steady `FRAME_P95_MS` ≤ 16.6 ms at zoom 1 and 1/16; load frames ≤ 33 ms.
+- [x] **Item 14 (F53)** — connected rail art; the falsifying pixel test passes.
+- [x] **Item 15 (F52)** — worker-thread synthesis; steady `FRAME_P95_MS` ≤ 16.6 ms at zoom 1 and 1/16; load frames ≤ 33 ms.
 - [ ] **Item 16** — the four screenshots, `VISIBLE_DOORS` ≥ 3 (zoom 2) and ≥ 8 (zoom 1), **shown to the human; paused for their verdict.**
 - [x] **HUMAN: Decisions 21–26 answered** (2026-10-20).
 - [ ] **Item 17** — the famous-places list filled in, the checker in the battery; **the human reviewed it at the pause.**

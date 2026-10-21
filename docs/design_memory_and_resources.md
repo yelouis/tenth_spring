@@ -86,7 +86,14 @@ Converting a regional `.osm.pbf` (hundreds of MB to over 1 GB) into the map stor
 - **Bounded peak:** the import peaks at ≤ **512 MiB** RSS and follows the same pause rule as §3.1.
 
 ### 3.3 While playing
-- **Map rendering:** keep only the cells in view plus a 1-cell margin; map-view caches are 1024 synthesized cells (`_synth_cache`, 32×32 tiles + overview texture) and 256 raw-row cells (`_store_cache`).
+- **Map rendering & Worker Synthesis (F52):**
+  - Keep only the cells in view plus a 1-cell margin; map-view caches are 1024 synthesized cells (`_synth_cache`, 32×32 tiles + overview texture) and 256 raw-row cells (`_store_cache`).
+  - **Dedicated worker thread (`SynthWorker`):** Offloads synthesis (`TileSynth2.synthesize_cell`) and overview `Image` generation from the main thread.
+  - **Thread-confined SQLite:** Worker thread owns its own independent read-only `MapStore` instances, opened inside the worker thread. SQLite database handles are strictly never shared across thread boundaries.
+  - **Worker LRU:** Worker maintains its own 256-cell raw-row feature LRU cache.
+  - **Request queue:** Main thread enqueues visible unsynthesized cells, ordered nearest to the camera center first. Bounded at ≤ 64 queued requests; requests for cells that left the view frustum are dropped as stale.
+  - **Main thread blit budget:** Main thread drains completed results through a mutex-guarded queue and blits at most 2 cells per frame into the TileMapLayers, or creates at most 8 overview `ImageTexture`s per frame at zoom < 1. Cells awaiting synthesis display solid fog. Reveal-state queries remain on the main thread (`DB` autoload).
+  - **Performance targets:** Steady-state `FRAME_P95_MS` ≤ 16.6 ms at zoom 1 and zoom 1/16 (measured over 120 frames after `pending_cell_count() == 0`); while loading, no single frame exceeds 33 ms (`LOAD_MAX_FRAME_MS` ≤ 33 ms).
 - **Sprites and icons:** through `asset_db`, an LRU of at most **128** battle sprites.
 - **SQLite:**
   - the save runs with `PRAGMA cache_size = -65536` (64 MiB); map stores are opened read-only with `-32768` (32 MiB);
