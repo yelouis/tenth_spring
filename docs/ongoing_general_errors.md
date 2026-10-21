@@ -12,6 +12,48 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 > **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.
 >
 > **2026-10-19 (pass 17) — Decisions 16–19 were asked and answered the same day.** 16 (USA only) came as your directive; you filled in 17, 18, and 19, and the follow-up questions on 18 and 19 were asked and answered in chat. All four are under Resolved. The new backstory you asked for is `docs/design_story_and_world.md`.
+>
+> **2026-10-20 (pass 18) — four new decisions need you: 21, 22, 23, and 24.** You asked for a change: visiting a neighbourhood should reveal that whole neighbourhood, and visiting a couple of neighbourhoods in a city should reveal the whole city. Decisions 21 and 22 pin down how that works. Decision 23 is the promised re-ask of Decision 15 (how map data reaches a player's PC), now that the "convert only your area" timing exists. Decision 24 is about a coordinate that leaked into the repo's history. None of the four blocks the building fix (agent guide Items 13–16).
+
+### Decision 21: What counts as "going to" a neighbourhood — **needs your input**
+**What this is about.** Today the map reveals only what your phone actually passed: a strip about 60 m either side of the streets you travelled, plus the spots where you stopped. You asked for something bigger and more Pokémon-like — going to a neighbourhood reveals the whole neighbourhood. The open question is what "going to" means. Your phone records two kinds of movement:
+- **visits** — you stopped somewhere for 2+ minutes;
+- **passing through** — you walked, biked, or drove by without stopping.
+
+**Where neighbourhoods come from (engineering default, not a choice):** the real neighbourhood names and boundaries in OpenStreetMap where they exist. Where a town has none mapped, the game cuts it into generated districts of roughly 1 km × 1 km. "City" means an incorporated US city, town, or village (its official boundary). Land outside any city only has neighbourhoods/districts.
+- **Option A — Stopping reveals the neighbourhood; passing through reveals just the street** *(recommended)*. A 2-minute stop anywhere in a neighbourhood reveals all of it. Driving or walking through without stopping still reveals the strip along your route, as today.
+  - *Why:* a commute down the freeway shouldn't hand you every neighbourhood along it. Stopping means you were really *there*.
+- **Option B — Any movement reveals the neighbourhood.** Even driving through without stopping reveals each neighbourhood you crossed. Your map fills in fastest; long drives reveal whole corridors of neighbourhoods.
+- **Option C — Stopping reveals the neighbourhood; passing through reveals nothing.** The cleanest look (only whole neighbourhoods, never strips), but drives and walks between places leave no trace.
+- **Recommendation: A.**
+- **Your selection:**
+
+### Decision 22: How many neighbourhoods reveal a whole city — **needs your input**
+**What this is about.** You said "once you go to a couple of neighborhoods in the city, you unlock the entire city." Cities vary hugely: a small town might have 3 neighbourhoods; Los Angeles has well over 100. The rule decides how quickly big cities open up.
+- **Option A — Scales with the city** *(recommended)*. 10% of the city's neighbourhoods, rounded up, but never fewer than 2 or more than 5. A town of ≤ 20 neighbourhoods needs 2; a big city needs up to 5. A town with only one neighbourhood opens with it.
+- **Option B — Always 2.** Simple and generous: any 2 neighbourhoods reveal any city, even Los Angeles.
+- **Option C — Always 3.**
+- **Recommendation: A.** It matches "a couple" for almost every city, while keeping the biggest cities a real achievement.
+- **Your selection:**
+
+### Decision 23: How map data reaches your PC — re-ask of Decision 15 — **needs your input**
+**What this is about.** The game needs OpenStreetMap data for the places you've been, read from a file on your own PC — never by asking a server about a location (Decision 13). On 2026-10-15 you chose **Option B: download ready-made map files that the project builds and hosts.** That was never built. The estimate behind it was also wrong: one state's file turned out to be about 1 GB, not 20–100 MB. Since then, agents built *clip conversion*, which converts only the area around where you've been. Measured on your Mac for your demo area (38 × 33 map cells): **5.4 minutes, 0.71 GB of memory, an 8 MB result.**
+- **Option A — Convert on your PC, only around where you've been** *(recommended)*. The game downloads your state's file once (hundreds of MB, kept on disk) and converts just your area in the background — about 5 minutes. When you unlock a new area outside what's converted, it converts again in the background.
+  - *Gains:* fully private and offline, no project servers or hosting, and always fresh data.
+  - *Cost:* a few minutes of background work after a new area unlocks, and the state file takes disk space.
+- **Option B — Keep Decision 15: ready-made files hosted by the project.** The project builds files for all 55 US regions and publishes them as GitHub release downloads; players download their state's file.
+  - *Gains:* instant once downloaded.
+  - *Cost:* large downloads (around 1 GB per state, more for big states); a build pipeline; and the project publicly hosting map databases, which must carry the OpenStreetMap licence. It also raises the project's profile.
+- **Option C — A now, B later** if PCs prove too slow.
+- **Recommendation: A.** The measurement shows it works, and it needs nothing hosted.
+- **Your selection:**
+
+### Decision 24: Scrub a leaked coordinate from git history? — **needs your input**
+**What this is about.** One verification note (M42, commit `7f2ca51`) included a map-cell number from your area. On its own it gives only your rough **longitude** — an east–west position, accurate to a few hundred metres, that runs the full height of the country — with no latitude. Pass 18 removed it from the current docs, but it is still in the repo's public history, where anyone browsing old commits can find it.
+- **Option A — Leave the history alone** *(recommended)*. The value on its own points at a line across the whole USA, not a place. Rewriting history has its own costs (below), and copies may already exist.
+- **Option B — Rewrite history to remove it.** An agent rewrites the commits since `7f2ca51` to drop the value and **force-pushes `main`** — normally forbidden here, so only you can approve it. Old commit IDs in the docs and CI links would break, and anyone who already cloned or cached the repo keeps the old copy.
+- **Recommendation: A.**
+- **Your selection:**
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
@@ -115,6 +157,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
     1. The option text estimated "20–100 MB compressed" stores, but the Washington store measured **1.0 GB**. Hosting would mean multi-GB public release assets — which, as derived OpenStreetMap databases, must also carry the ODbL licence — plus a build pipeline for 55 regions.
     2. Agent guide Item 2 adds **clip conversion** — converting only the area around the places you've been — which may bring on-PC conversion down to minutes.
   - **The next verification pass re-asks this decision** with Item 2's measurements. Until then, no agent builds or publishes stores.
+  - **Re-asked 2026-10-20 (pass 18) as Decision 23**, with the measurement: clipping the human's area took 5.4 min and 0.71 GiB (M34).
 
 ### Decision 14 — Build the neighborhood map preview: yes, the full plan (Resolved 2026-10-10)
 - **Selection: Option A — approve the amended plan as written**, including the in-game region choice and download.
@@ -681,7 +724,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 **M42 — Slice 2 Proof Screenshots & Camera Limits (Item 9, 2026-10-20).**
 - **What was solved:**
   - Fixed screenshot zoom parsing in `game/scenes/main.gd`: passed `float(s_cfg.get("zoom", 1.0))` instead of casting to `int`, preventing sub-1.0 zoom values (like `0.0625`) from truncating to 0.
-  - Fixed camera position clamping in `game/world/map_view.gd` and `map_view.tscn`: expanded `_camera.limit_left/top/right/bottom` and `BackgroundLayer` offset bounds from `±30,000,000` to `±200,000,000` to fully cover the Web Mercator global projection extent (4 px/m × 20,037,508 m ≈ ±80M px; real-world locations near `cx ≈ -53150` are at `x ≈ -54,427,000 px`).
+  - Fixed camera position clamping in `game/world/map_view.gd` and `map_view.tscn`: expanded `_camera.limit_left/top/right/bottom` and `BackgroundLayer` offset bounds from `±30,000,000` to `±200,000,000` to fully cover the Web Mercator global projection extent (4 px/m × 20,037,508 m ≈ ±80M px; US locations sit tens of millions of pixels from the origin).
   - Captured the four slice-2 proof screenshots using `tools/demo_screenshot.py` on the demo profile into `~/tenth_spring_private/screens/`:
     - `shot_z2.png`: zoom 2 at default focus, known look (`FRAME_P95_MS: 11.92 ms`).
     - `shot_z2_cleared.png`: zoom 2, `--preview-cleared` (`FRAME_P95_MS: 12.28 ms`).
@@ -691,17 +734,51 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Cleaned up downloaded `.osm.pbf` extract from `~/tenth_spring_private/downloads/` per guide §7.6.
 - **Validation:** All 20 game tests PASS, Flutter analyze & tests PASS (37 tests), sync E2E PASS, IP guard PASS, all four screenshots saved and verified outside the repo. Paused for human verdict on the look.
 
+**M43 — Pass-17 queue (Items 0–9, 11) verified, with corrections (2026-10-20, pass 18, HEAD `7f2ca51`).**
+- **Executed this pass:**
+  - companion: `flutter analyze` clean; `flutter test` (under memguard) **37 passed, 2 skipped**;
+  - game battery on the human's Mac with `GODOT_BIN`: **20/20 `PASS`**, `[REAL SAVE CHECK OK]`, IP guard (17 self-tests), isolation audit, memguard (10), synthetic PBF, screenshot and atlas tests, vendored SHA-256, static lint;
+  - `tools/sync_e2e.py` on the Mac: `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1`;
+  - CI on `7f2ca51`: `game_tests` 39476386459, IP guard 39476386451, `sync_e2e` 39476386443 — all green.
+- **Confirmed in source:**
+  - **Item 0 (F43):** north-up screen mapping.
+  - **Item 1:** the US URL-prefix filter, redirect loop (≤ 5, Geofabrik only), 1 MiB streaming, threaded install, and wired chip.
+  - **Item 2:** clip pre-pass, coverage keys, and profile-local map data.
+  - **Item 3:** harness refusals and windowed frame times.
+  - **Item 11:** GBA codes at `0xAC`.
+  - **Item 4:** store v2.
+  - **Items 5–8:** `tile_synth2.gd`, the placeholder atlas, and renderer v2 follow the plan's structure. (Item 6's commit message lists template sizes `3×3` and `7×6`, but the code uses the plan's `4×3`, `5×4`, and footprint-sized `block_l`.)
+- **Decision 20** (exclude `landuse=construction`) was filed and marked resolved inside pass 17's build. It fixed a contradiction in the slice-2 plan — §2.1 listed `construction` as industrial while §8 expected it absent. The outcome matches §8 and is kept.
+- **The human's verdict at the Item 9 pause:** the screenshots "don't look like pokemon sprites. It should contain buildings."
+  - **Confirmed:** the zoom-1 and zoom-2 close-ups contain **no buildings** — tan path tiles, grass, parking, scattered rail pieces, and signs.
+  - **Measured on the human's area** (read-only, all 1,116 inner covered cells): of **29,319** building footprints large enough to draw, only **3,877 doors** appear — roughly **13% of buildings placed**. Building tiles cover 5.2% of the map and path tiles **26.5%**. → **F51**.
+- **Also found:** F52 (the overview zoom runs at 87 ms per frame — the plan's 16.6 ms target was missed, and M42 recorded it as within target) and F53 (diagonal rail lines draw as disconnected boxes).
+- **Privacy slip — fixed in this pass:** M42 (commit `7f2ca51`, pushed) quoted a map-cell coordinate of the human's area, which pins their longitude to within a few hundred metres. Pass 18 removed it from the doc, and the guide's standing constraint 5 now names cell coordinates explicitly. The value stays in public git history — removing it from there is **Decision 24**.
+- **About "Pokémon sprites":** the placeholder tiles are original programmer art by design (Decision 19). The real Pokémon look comes from the human's Emerald dump (agent guide Item 12). F51 is what keeps even the placeholder map from looking like a town.
+- **What the guide left vague (feeding the next spec):**
+  - It never said which OpenStreetMap ways are too minor to draw. Sidewalks, parking aisles, and driveways — invisible at Pokémon scale — became 8 m paths everywhere.
+  - It gave no placement-rate target, so a synthesizer that drops 87% of buildings passed every test.
+  - The proof step accepted any screenshot from the default focus, which happened to be a parking-heavy downtown block.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36.*
-- **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting Decision 15 re-ask.
-- **F47 (resolved in M35).**
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43).*
+- **F51 (found 2026-10-20, pass 18) — the slice-2 map has almost no buildings.** Measured on the human's area: about **13%** of drawable building footprints are placed, building tiles cover 5.2% of the map, and path tiles cover 26.5%. Two causes:
+  - **(a) Minor ways flood the map.** The demo store holds 13,724 `highway=service` pieces (parking aisles, driveways, alleys) and 7,242 `highway=footway` pieces (mostly sidewalks and crossings), against 4,162 residential streets. Each is drawn as an 8 m path (`region_converter.gd:1216-1219` stores them; `tile_synth2.gd:452` draws them before buildings).
+  - **(b) The placement rule rejects nearly everything near a path.** A building is skipped if any tile of its 1-tile ring is a path (`tile_synth2.gd:686-710`, `FORBIDDEN_BUILDING_TILES` at `:51-54`). There's no nudge, and buildings can't sit side by side.
+  - Removing only the service roads and footways lifts placement to about 20% — so both causes need fixing.
+  - **Agent guide Item 13.**
+- **F52 — the overview zoom is far too slow.** `FRAME_P95_MS` at zoom 1/16 measured **86.92 ms** against the 16.6 ms target (M42).
+  - **Cause:** synthesis costs about **9.3 ms per cell** on real data (measured this pass) and runs on the main thread. The 8 ms budget (`map_view.gd:19`, `:597`) is checked only *between* cells, so every frame still pays for at least one whole cell. The overview needs ~300 cells.
+  - **Agent guide Item 15.**
+- **F53 — diagonal rail lines look like a row of separate boxes.** The atlas draws `RAIL` straight only — vertical if N or S is set, else horizontal (`tools/gen_placeholder_atlas.py:398-446`) — and frames each tile. So a stair-stepped diagonal reads as disconnected pieces. **Agent guide Item 14.**
+- **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting **Decision 23** (the Decision 15 re-ask).
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
-  - **ROM import half:** Open, scheduled for ROM spike (Item 11).
+  - **ROM import half:** Open, scheduled for the ROM spike (agent guide Item 10).
 - **F7 (latent, found July 22, 2nd pass) — home-cell size mismatch.**
   - Companion `fuzzHome` snaps to a 300 m grid; the game treats home as one grid cell (now 256 WM-m, F42).
   - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent guide §9 (Deferred).**
@@ -758,3 +835,4 @@ Founding decisions made with the user during the design brainstorm, recorded her
 20. **"Looks like Pokémon" is a requirement, not polish (2026-10-19, pass 17).** The human rejected slice 1's flat 16 m squares: a Pokémon map is assembled from walking-scale pieces (paths, roofed buildings with doors, tree borders, tall grass, shorelines, signs). **Decision 17 = A:** real streets rebuilt from Pokémon pieces (`implementation_plan_world_generation_slice2.md`).
 21. **A new story replaces the Giratina arc (2026-10-19, Decision 18).** The human asked for a custom story with the apocalypse/survival theme "baked in", nine regional Wardens, and a finale against a stronger mirror of the player's own party. The result is `design_story_and_world.md`. Its central idea — the Distortion copies whatever crosses it and is now learning the player — ties together the fog, Distortion Fields, legendaries that can't be copied, and the Echo.
 22. **Real map art from a second cartridge (2026-10-19, Decision 19).** The human chose real Pokémon tiles. Because the DS games' overworlds are 3D, the tiles come from the player's Emerald ROM (Game Boy Advance), under the same bring-your-own-ROM rules as the sprites, with an original placeholder set as the no-ROM look.
+23. **Neighbourhoods and cities, not streets (2026-10-20, pass 18).** The human asked that going to a neighbourhood reveal the whole neighbourhood, and that visiting "a couple of neighborhoods in the city" reveal the whole city — instead of revealing only the streets walked. The details are Decisions 21 and 22. The draft for the recommended options is `docs/implementation_plan_area_unlock.md`.

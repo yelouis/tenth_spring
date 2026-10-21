@@ -18,6 +18,8 @@ enum PlaceRevealState { unknown, known, cleared }
 
 ## 2. Visit Detection
 
+> **Pending change (pass 18, Decisions 21–22):** the human asked that a visit reveal its whole **neighbourhood**, and that visits to a couple of a city's neighbourhoods reveal the whole **city**. The draft is `implementation_plan_area_unlock.md`. Until it lands, the rules below stand.
+
 A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point for ≥ `visitDwellSeconds` (120 s). Driving past does *not* count as visiting a POI — it reveals the road corridor only.
 
 - **Corridor reveal**: any traversed route reveals map cells within `corridorRevealMeters` (60 m) of the trace as `known` terrain (streets, visible building outlines — silhouettes only).

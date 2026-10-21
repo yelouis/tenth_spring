@@ -67,7 +67,7 @@ python3 -I tools/memguard.py run <step> -- <command...>
 ```
 
 ### Run the PC game
-Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. With no revealed places the game shows the pairing screen; once a sync (or a demo import) has revealed places, it opens the map view. The map is still the slice-1 preview — flat colour squares — until slice 2 (`docs/implementation_plan_world_generation_slice2.md`) lands.
+Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. With no revealed places the game shows the pairing screen; once a sync (or a demo import) has revealed places, it opens the map view. The map is built from Pokémon-style pieces over your real streets (slice 2), drawn with original placeholder tiles; the real Pokémon tiles arrive once you import your own Emerald ROM.
 
 ### Install the companion on an iPhone (development build)
 Needs a Mac with Xcode and Flutter.

@@ -6,6 +6,8 @@
 > - The Emerald importer itself is a separate, ROM-gated item (agent guide Item 12). It may adjust §4.2's template sizes to fit Emerald's building compositions — through a plan amendment the human reviews.
 >
 > Built in agent guide Items 4–9, after Items 0–3 (slice-1 fixes, clip conversion, and the screenshot harness — `implementation_plan_world_generation.md` §5.1a, §5.4a, §5.5, §7.1a, §7.4).
+>
+> **Pass 18 (2026-10-20): built, then corrected.** Items 4–9 delivered the plan, but the human's verdict at the Item 9 pause was that the map "should contain buildings" — and on their area only ~13% of buildings were placed (`ongoing_general_errors.md` F51–F53). **§10 amends this plan** (agent guide Items 13–16). Where §10 and an earlier section disagree, §10 wins.
 
 **Goal.** The human's own neighbourhood, from their own route, drawn by the running game as a Pokémon-style map: paths and roads, roofed buildings with south-facing doors and signs bearing real names, tree-bordered parks full of tall grass, shorelines, graveyards behind fences, and rail lines — under the two-state fog. Proven with screenshots the game saves itself.
 
@@ -453,3 +455,104 @@ Show all four to the human with `FRAME_P95_MS`, then **PAUSE** for their verdict
 - **`master_implementation_plan.md`, Core Configurations:** `tileMeters = 8`.
 - **`design_art_direction.md`:** §3 — placeholder autotiles use the 16-mask scheme until final art (47-blob); §5 step 1 names `placeholder_v1`.
 - **`design_memory_and_resources.md` §3.3:** map-view caches are 1024 synthesized cells and 256 raw-row cells.
+
+---
+
+## 10. Pass-18 amendments (2026-10-20) — agent guide Items 13–16
+
+**What the human saw:** close-ups of their area with no buildings at all — tan path tiles, parking, grass, and broken rail pieces. **What was measured:** of 29,319 drawable building footprints in the area, about 13% were placed; path tiles covered 26.5% of the map (F51). §10.1–10.3 fix that; §10.4–10.6 fix the rail art, the speed, and the proof.
+
+### 10.1 Minor ways are not drawn (F51 a) — amends §2.2
+Pokémon maps show streets and footpaths, never sidewalks, parking aisles, or driveways. The converter stores **no** line for a way that matches any of these:
+- `highway=service`, whatever its `service=*` value;
+- any `highway=*` carrying `footway=sidewalk|crossing|traffic_island|access_aisle|link`;
+- `highway=cycleway` carrying `cycleway=crossing|sidewalk`;
+- `highway=footway|path|pedestrian` with `area=yes` (already excluded) or with `indoor=yes`.
+
+The converter must therefore keep the `footway`, `cycleway`, `service`, and `indoor` tags when it reads highway ways (extend the tag list at `region_converter.gd:555` as needed).
+
+- **Bump the store to `schema_version = '3'`.** The map view skips older stores with `map: skipping <file name> — store schema <v>, need 3`. Stores are regenerable; the human's demo store is re-converted in Item 13.
+- **Keep:** footways, paths, cycleways, tracks, steps, and pedestrian streets that match none of the rules above — park trails and real footpaths.
+
+### 10.2 Building placement v2 (F51 b) — amends §4.1 step 4 and §4.2
+1. **Split the line layer.**
+   - Step **4a** draws waterways, rail, and **roads** (the `road` kind) before buildings.
+   - Step **4b** draws the `path` kind **after** buildings (§4.2–4.3). A path tile never overwrites `ROOF`, `WALL`, or `DOOR`; it simply skips those tiles.
+   - Door paths come after 4b, as before.
+2. **What may lie under a template:** `GRASS`, `TALL_GRASS`, `TREE`, `CROP`, `SAND`, `MARSH`, `FLOWERS`, and **`PLAZA`** (parking beside a shop becomes building).
+   - A template is rejected if any of its tiles is `WATER`, `ROAD`, `PATH` (at this stage only road-drawn paths exist), `RAIL`, `BRIDGE`, `VOID`, `GRAVE`, `FENCE`, `ROOF`, `WALL`, `DOOR`, or a **reserved** tile.
+3. **Drop the all-round ring.** Only the template's **south ring row** — the row just below the template, its door's way out — is checked. It must not be `WATER`, `RAIL`, `BRIDGE`, `VOID`, `ROOF`, `WALL`, or `DOOR`.
+   - When a building is placed, its south ring row is marked **reserved**, so no later template can cover it.
+   - **The effect:** buildings may stand side by side east–west, with no gap. North–south they always keep a one-tile walkway, because each building's door row stays clear.
+4. **Nudge before giving up.** If the snapped position is rejected, try these `(column, row)` offsets in order and take the first that passes, still clamped to `[5, 35 − w]` × `[5, 35 − h]`: `(0,0) (1,0) (−1,0) (0,1) (0,−1) (1,1) (−1,1) (1,−1) (−1,−1) (2,0) (−2,0) (0,2) (0,−2)`.
+5. **The same rules apply to fallback houses** (§4.3), which are still placed after all real buildings.
+6. **Statistics.** `synthesize_cell` also returns `"stats": {"building_candidates": n, "buildings_placed": m}`. Candidates are centre-anchored footprints with A ≥ 60; fallback houses are counted separately as `"fallback_placed"`.
+7. **Template sizes are unchanged** (`house_s` 4 × 3, `house_m` 5 × 4, footprint-sized `block_l`).
+
+### 10.3 Targets — measured on the human's area
+New tool: `tools/measure_synth.py --store <user:// path to a map store>`.
+- It runs Godot headless with `res://scenes/measure_synth.tscn` under memguard step `measure_synth` (measure the budget on its first run).
+- It synthesizes every covered cell whose 3 × 3 neighbourhood is covered.
+- It prints one line, with counts and percentages only — no coordinates and no names:
+  `MEASURE cells=<n> candidates=<n> placed=<n> placement_pct=<x> building_tile_pct=<x> path_tile_pct=<x> road_tile_pct=<x>`
+- **Baseline on 2026-10-20** (pass-17 code, same store, 1,116 cells): placement ≈ **13%**, building tiles **5.2%**, path tiles **26.5%**.
+
+**Targets after Item 13:**
+
+| Measure | Target | Baseline |
+|---|---|---|
+| Placement (`placed / candidates`) | **≥ 45%** | ≈ 13% |
+| Building tiles (`ROOF + WALL + DOOR`) | **≥ 10%** of covered tiles | 5.2% |
+| Path tiles | **≤ 18%** of covered tiles | 26.5% |
+
+If the rules above, implemented exactly, miss a target, **do not tune them silently.** Report the measured numbers, then STOP and file a decision with options — for example, a 3 × 3 small house, or allowing buildings over minor paths.
+
+### 10.4 Connected rail art (F53) — amends §5.4
+Rail becomes a connector tile, like a pipe:
+- a full-tile gravel bed (`#a09080`), with **no frame**;
+- for each mask bit that is set, track runs from the tile centre to that edge: two rails 6 px apart, with sleepers every 6 px across them;
+- with exactly one bit set, the track also runs to the opposite edge (a straight end piece); with no bits set, it runs east–west;
+- two adjacent bits (for example N + E) meet at the centre as an L.
+
+A stair-stepped diagonal now reads as one continuous zig-zag line. Regenerate `placeholder_v1.png` and its JSON, keeping the byte-for-byte regeneration test.
+
+### 10.5 Synthesis off the main thread (F52) — amends §6 "Budget"
+1. **One worker thread.** A single `Thread` (the synthesis worker) owns its **own** read-only `MapStore` connections, opened inside the worker. SQLite handles are never shared across threads. It also keeps its own raw-row LRU (256 cells).
+2. **Requests.** The main thread posts requests for visible cells that aren't synthesized yet, nearest to the camera centre first. At most 64 are queued; requests for cells that left the view are dropped.
+3. **Work on the worker.** The worker runs `TileSynth2.synthesize_cell` and, at zoom < 1, also builds the overview `Image` (texel colours as §6). It returns `{cell, tiles, signs, image}` through a mutex-guarded queue.
+4. **Main thread per frame:** take finished results; blit **at most 2 cells** into the TileMapLayers, or create at most 8 overview `ImageTexture`s at zoom < 1. Cells still waiting show solid fog, as now. Reveal-state queries stay on the main thread (the save's `DB` autoload).
+5. **Targets:**
+   - steady-state `FRAME_P95_MS` **≤ 16.6 ms** at zoom 1 **and** at zoom 1/16, measured over 120 frames after `pending_cell_count() == 0`;
+   - while loading, no single frame over **33 ms**.
+
+   The screenshot harness prints `LOAD_TIME_MS`, `LOAD_MAX_FRAME_MS`, and the steady-state `FRAME_P95_MS`.
+
+### 10.6 Proof v2 — amends §7
+1. **New harness flag:** `--focus=most_visited|most_buildings` (default `most_visited`). `most_buildings` focuses on the revealed cell with the most `DOOR` tiles; ties go to the lower `(cy, cx)`.
+2. **The harness also prints `VISIBLE_DOORS <n>`** — door tiles inside the captured view.
+3. **Screenshots** (saved outside the repo):
+
+   | File | Zoom | Focus | Look |
+   |---|---|---|---|
+   | `shot_z2_mv_cleared.png` | 2 | `most_visited` | `--preview-cleared` |
+   | `shot_z2_mb_cleared.png` | 2 | `most_buildings` | `--preview-cleared` |
+   | `shot_z1_mb_cleared.png` | 1 | `most_buildings` | `--preview-cleared` |
+   | `shot_z0.0625.png` | 1/16 | — | known look |
+
+4. **Acceptance:** `shot_z2_mb_cleared` shows **≥ 3** doors and `shot_z1_mb_cleared` shows **≥ 8**, by `VISIBLE_DOORS`. Every steady-state `FRAME_P95_MS` is ≤ 16.6 ms.
+5. **Show all four to the human,** saying plainly that the art is still the placeholder until the Emerald import (agent guide Item 12). **PAUSE** for their verdict.
+
+### 10.7 Fixture and test additions
+**Fixture v3** (`tools/generate_synthetic_pbf.py`; made-up names and coordinates only) adds:
+- **a residential street with three houses** (footprints 12 × 14 WM-m, centres 18 WM-m apart) along its north side;
+- **`footway=sidewalk` ways** along both sides of that street, and a `highway=service` + `service=driveway` way to each house;
+- **a shop building** whose footprint overlaps an `amenity=parking` polygon.
+
+**New `tile_synth2_test` assertions:**
+- **(k) Falsifying:** the sidewalks and driveways are absent from the store. At least 2 of the 3 houses are placed — the pass-17 rules place at most 1.
+- **(l)** The shop is placed over the parking.
+- **(m)** Every placed building's south ring row is clear of buildings.
+- **(n)** `stats` matches a hand count for the fixture cells.
+
+Commit the new golden hashes, and say in the commit why they changed.
+
