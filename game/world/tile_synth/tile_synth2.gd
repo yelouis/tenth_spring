@@ -47,14 +47,31 @@ const SALT_TREE_VARIANT := 6
 const SALT_NOISE_LATTICE := 7
 const SALT_FALLBACK_SKIP := 8
 
-# Forbidden building placement tile classes (§4.2)
+# Forbidden building placement tile classes (§4.2, §10.2)
 const FORBIDDEN_BUILDING_TILES: Array[int] = [
 	TILE_WATER, TILE_ROAD, TILE_PATH, TILE_RAIL, TILE_BRIDGE,
-	TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
+	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
 ]
 const FORBIDDEN_SOUTH_RING_TILES: Array[int] = [
 	TILE_WATER, TILE_RAIL, TILE_BRIDGE,
-	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
+	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_VOID
+]
+
+# Nudge offsets in evaluation order (§10.2 step 4)
+const NUDGE_OFFSETS: Array[Vector2i] = [
+	Vector2i(0, 0),
+	Vector2i(1, 0),
+	Vector2i(-1, 0),
+	Vector2i(0, 1),
+	Vector2i(0, -1),
+	Vector2i(1, 1),
+	Vector2i(-1, 1),
+	Vector2i(1, -1),
+	Vector2i(-1, -1),
+	Vector2i(2, 0),
+	Vector2i(-2, 0),
+	Vector2i(0, 2),
+	Vector2i(0, -2)
 ]
 
 ## Portable FNV-1a 32-bit hash (§3)
@@ -205,6 +222,27 @@ static func get_waterway_width(subkind: String) -> int:
 			return 1
 		_:
 			return 1
+
+## Check whether building template fits at (col0, row0) (§10.2 steps 2-3)
+static func _can_place_template(col0: int, row0: int, w: int, h: int, grid_class: PackedByteArray, reserved_grid: PackedByteArray) -> bool:
+	if col0 < 5 or col0 + w > 35 or row0 < 5 or row0 + h > 35:
+		return false
+	for tr in h:
+		var r: int = row0 + tr
+		for tc in w:
+			var c: int = col0 + tc
+			var idx: int = r * WORK_SIZE + c
+			if grid_class[idx] in FORBIDDEN_BUILDING_TILES or reserved_grid[idx] != 0:
+				return false
+	var south_r: int = row0 + h
+	if south_r >= WORK_SIZE:
+		return false
+	for tc in w:
+		var c: int = col0 + tc
+		var idx: int = south_r * WORK_SIZE + c
+		if grid_class[idx] in FORBIDDEN_SOUTH_RING_TILES:
+			return false
+	return true
 
 ## Synthesize a cell's 32x32 tiles from a 3x3 neighbourhood (§4)
 static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int = 0) -> Dictionary:
@@ -484,9 +522,10 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					"pts": mapped_pts
 				})
 
-	# Paint lines in order: waterway, rail, road, path
-	var line_order := ["waterway", "rail", "road", "path"]
-	for kind in line_order:
+	# 4a. Lines & Crossings (§4.1 step 4, §10.2 step 1)
+	# Paint waterways, rail, and roads before buildings
+	var line_order_pre := ["waterway", "rail", "road"]
+	for kind in line_order_pre:
 		var list: Array = line_groups[kind]
 		for item in list:
 			var subkind: String = item["subkind"]
@@ -505,9 +544,6 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				"road":
 					width = get_road_width(subkind)
 					target_class = TILE_ROAD if width >= 3 else TILE_PATH
-				"path":
-					width = 1
-					target_class = TILE_PATH
 
 			var lo: int = (width - 1) / 2
 			var hi: int = width - 1 - lo
@@ -540,7 +576,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 										grid_class[idx] = TILE_BRIDGE
 								else:
 									grid_class[idx] = TILE_RAIL
-							elif kind in ["road", "path"]:
+							elif kind == "road":
 								if current_class == TILE_WATER or current_class == TILE_BRIDGE:
 									if is_bridge:
 										grid_class[idx] = TILE_BRIDGE
@@ -552,10 +588,15 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 									grid_class[idx] = target_class
 
 	# -------------------------------------------------------------
-	# 5. Buildings & Fallback Houses (§4.1 step 5, §4.2, §4.3)
+	# 5. Buildings & Fallback Houses (§4.1 step 5, §4.2, §4.3, §10.2)
 	# -------------------------------------------------------------
 	var placed_buildings: Array[Dictionary] = []
 	var all_doors: Array[Vector2i] = []
+	var reserved_grid := PackedByteArray()
+	reserved_grid.resize(WORK_SIZE * WORK_SIZE)
+	reserved_grid.fill(0)
+	var buildings_placed_count := 0
+	var fallback_placed_count := 0
 
 	# 5a. Real Buildings anchored in the centre cell
 	var center_polys: Array = area.get(Vector2i.ZERO, {}).get("polys", [])
@@ -681,44 +722,34 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 	)
 
 	for b in building_candidates:
-		var col0: int = b["col0"]
-		var row0: int = b["row0"]
+		var base_col0: int = b["col0"]
+		var base_row0: int = b["row0"]
 		var w: int = b["w"]
 		var h: int = b["h"]
 
-		var skip := false
-		for r in range(row0 - 1, row0 + h + 1):
-			for c in range(col0 - 1, col0 + w + 1):
-				if r < 0 or r >= WORK_SIZE or c < 0 or c >= WORK_SIZE:
-					skip = true
-					break
-				var idx: int = r * WORK_SIZE + c
-				var cur_cls: int = grid_class[idx]
-				var in_template: bool = (r >= row0 and r < row0 + h and c >= col0 and c < col0 + w)
-				if in_template:
-					if cur_cls in FORBIDDEN_BUILDING_TILES:
-						skip = true
-						break
-				else:
-					if r == row0 + h:
-						if cur_cls in FORBIDDEN_SOUTH_RING_TILES:
-							skip = true
-							break
-					else:
-						if cur_cls in FORBIDDEN_BUILDING_TILES:
-							skip = true
-							break
-			if skip:
+		var placed := false
+		var chosen_col0 := base_col0
+		var chosen_row0 := base_row0
+
+		for nudge in NUDGE_OFFSETS:
+			var test_col: int = clampi(base_col0 + nudge.x, 5, 35 - w)
+			var test_row: int = clampi(base_row0 + nudge.y, 5, 35 - h)
+			if _can_place_template(test_col, test_row, w, h, grid_class, reserved_grid):
+				chosen_col0 = test_col
+				chosen_row0 = test_row
+				placed = true
 				break
 
-		if skip:
+		if not placed:
 			continue
+
+		buildings_placed_count += 1
 
 		# Paint building
 		for tr in h:
-			var r: int = row0 + tr
+			var r: int = chosen_row0 + tr
 			for tc in w:
-				var c: int = col0 + tc
+				var c: int = chosen_col0 + tc
 				var idx: int = r * WORK_SIZE + c
 				if tr < b["roof_rows"]:
 					grid_class[idx] = TILE_ROOF
@@ -733,34 +764,20 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						var has_window: bool = (tc % 2 != 0)
 						grid_variant[idx] = b["roof_color"] + (8 if has_window else 0)
 
-		# Door paths
-		for d_col in b["door_cols"]:
-			var door_r: int = row0 + h - 1
-			var door_c: int = col0 + d_col
-			var walk_path: Array[Vector2i] = []
-			var reached_connector := false
-			for step in range(1, 7):
-				var wr: int = door_r + step
-				var wc: int = door_c
-				if wr > 35:
-					break
-				var idx: int = wr * WORK_SIZE + wc
-				var cur_cls: int = grid_class[idx]
-				if cur_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA]:
-					reached_connector = true
-					break
-				if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
-					break
-				walk_path.append(Vector2i(wc, wr))
-			if reached_connector:
-				for pt in walk_path:
-					var p_idx: int = pt.y * WORK_SIZE + pt.x
-					grid_class[p_idx] = TILE_PATH
-					grid_variant[p_idx] = 0
+		# Mark south ring row reserved (§10.2 step 3)
+		for tc in w:
+			var s_idx: int = (chosen_row0 + h) * WORK_SIZE + (chosen_col0 + tc)
+			reserved_grid[s_idx] = 1
 
-		placed_buildings.append(b)
+		placed_buildings.append({
+			"col0": chosen_col0,
+			"row0": chosen_row0,
+			"w": w,
+			"h": h,
+			"door_cols": b["door_cols"]
+		})
 
-	# 5b. Fallback Houses (§4.3)
+	# 5b. Fallback Houses (§4.3, §10.2 step 5)
 	for poly in center_polys:
 		var p_kind: String = poly.get("kind", "")
 		if p_kind != "residential" and p_kind != "commercial":
@@ -791,52 +808,42 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				var gx: int = cx * 32 + (c - 4)
 				var gy: int = cy * 32 + (35 - r)
 				if posmod(gx, 7) == 0 and posmod(gy, 6) == 0:
-					var col0: int = clampi(c, 5, 31)
-					var row0: int = clampi(r, 5, 32)
+					var base_col0: int = clampi(c, 5, 31)
+					var base_row0: int = clampi(r, 5, 32)
 					# Template centre tile in store units (house_s is 4x3 -> col0 + 2, row0 + 1)
-					var tc_su := Vector2((float(col0 + 2) + 0.5 - 4.0) * 0.5, (36.0 - (float(row0 + 1) + 0.5)) * 0.5)
+					var tc_su := Vector2((float(base_col0 + 2) + 0.5 - 4.0) * 0.5, (36.0 - (float(base_row0 + 1) + 0.5)) * 0.5)
 					if not _point_in_rings(tc_su, f_rings):
 						continue
 					if u_rand(gx, gy, world_seed, SALT_FALLBACK_SKIP) >= 0.70:
 						continue
 
-					# Skip check
-					var skip := false
-					for br in range(row0 - 1, row0 + 4):
-						for bc in range(col0 - 1, col0 + 5):
-							if br < 0 or br >= WORK_SIZE or bc < 0 or bc >= WORK_SIZE:
-								skip = true
-								break
-							var idx: int = br * WORK_SIZE + bc
-							var cur_cls: int = grid_class[idx]
-							var in_temp: bool = (br >= row0 and br < row0 + 3 and bc >= col0 and bc < col0 + 4)
-							if in_temp:
-								if cur_cls in FORBIDDEN_BUILDING_TILES:
-									skip = true
-									break
-							else:
-								if br == row0 + 3:
-									if cur_cls in FORBIDDEN_SOUTH_RING_TILES:
-										skip = true
-										break
-								else:
-									if cur_cls in FORBIDDEN_BUILDING_TILES:
-										skip = true
-										break
-						if skip:
+					var f_placed := false
+					var chosen_col0 := base_col0
+					var chosen_row0 := base_row0
+
+					for nudge in NUDGE_OFFSETS:
+						var test_col: int = clampi(base_col0 + nudge.x, 5, 31)
+						var test_row: int = clampi(base_row0 + nudge.y, 5, 32)
+						if _can_place_template(test_col, test_row, 4, 3, grid_class, reserved_grid):
+							chosen_col0 = test_col
+							chosen_row0 = test_row
+							f_placed = true
 							break
-					if skip:
+
+					if not f_placed:
 						continue
 
-					var gx0: int = cx * 32 + (col0 - 4)
-					var gy0: int = cy * 32 + (35 - row0)
+					fallback_placed_count += 1
+
+					var gx0: int = cx * 32 + (chosen_col0 - 4)
+					var gy0: int = cy * 32 + (35 - chosen_row0)
 					var roof_color: int = 4 if p_kind == "commercial" else floori(u_rand(gx0, gy0, world_seed, SALT_DOOR_ROOF) * 4.0)
 					var door_col: int = 1 if u_rand(gx0, gy0, world_seed, SALT_DOOR_ROOF) < 0.5 else 2
 
 					for tr in 3:
-						var cur_r: int = row0 + tr
+						var cur_r: int = chosen_row0 + tr
 						for tc in 4:
-							var cur_c: int = col0 + tc
+							var cur_c: int = chosen_col0 + tc
 							var idx: int = cur_r * WORK_SIZE + cur_c
 							if tr < 2:
 								grid_class[idx] = TILE_ROOF
@@ -851,37 +858,89 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 									var has_window: bool = (tc % 2 != 0)
 									grid_variant[idx] = roof_color + (8 if has_window else 0)
 
-					# Door path
-					var door_r: int = row0 + 2
-					var door_c: int = col0 + door_col
-					var walk_path: Array[Vector2i] = []
-					var reached_connector := false
-					for step in range(1, 7):
-						var wr: int = door_r + step
-						var wc: int = door_c
-						if wr > 35:
-							break
-						var idx: int = wr * WORK_SIZE + wc
-						var cur_cls: int = grid_class[idx]
-						if cur_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA]:
-							reached_connector = true
-							break
-						if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
-							break
-						walk_path.append(Vector2i(wc, wr))
-					if reached_connector:
-						for pt in walk_path:
-							var p_idx: int = pt.y * WORK_SIZE + pt.x
-							grid_class[p_idx] = TILE_PATH
-							grid_variant[p_idx] = 0
+					for tc in 4:
+						var s_idx: int = (chosen_row0 + 3) * WORK_SIZE + (chosen_col0 + tc)
+						reserved_grid[s_idx] = 1
 
 					placed_buildings.append({
-						"col0": col0,
-						"row0": row0,
+						"col0": chosen_col0,
+						"row0": chosen_row0,
 						"w": 4,
 						"h": 3,
 						"door_cols": [door_col]
 					})
+
+	# -------------------------------------------------------------
+	# 4b. Paths after buildings (§10.2 step 1)
+	# -------------------------------------------------------------
+	var path_list: Array = line_groups["path"]
+	for item in path_list:
+		var subkind: String = item["subkind"]
+		var pts: PackedVector2Array = item["pts"]
+		var is_bridge: bool = subkind.ends_with(":bridge")
+		var width := 1
+		var target_class := TILE_PATH
+
+		var lo: int = (width - 1) / 2
+		var hi: int = width - 1 - lo
+
+		for i in range(pts.size() - 1):
+			var p0: Vector2 = pts[i]
+			var p1: Vector2 = pts[i + 1]
+			var c0: int = floori(p0.x)
+			var r0: int = floori(p0.y)
+			var c1: int = floori(p1.x)
+			var r1: int = floori(p1.y)
+
+			var supercover := supercover_line(c0, r0, c1, r1)
+			for center in supercover:
+				for br in range(center.y - lo, center.y + hi + 1):
+					if br < 0 or br >= WORK_SIZE:
+						continue
+					for bc in range(center.x - lo, center.x + hi + 1):
+						if bc < 0 or bc >= WORK_SIZE:
+							continue
+						var idx := br * WORK_SIZE + bc
+						var current_class: int = grid_class[idx]
+
+						# A path tile never overwrites ROOF, WALL, or DOOR; it simply skips those tiles.
+						if current_class in [TILE_ROOF, TILE_WALL, TILE_DOOR]:
+							continue
+
+						if current_class == TILE_WATER or current_class == TILE_BRIDGE:
+							if is_bridge:
+								grid_class[idx] = TILE_BRIDGE
+							elif water_from_waterway[idx] == 1 and water_from_poly_or_sea[idx] == 0:
+								# Culvert: overwrites waterway line
+								grid_class[idx] = target_class
+						else:
+							grid_class[idx] = target_class
+
+	# Door paths (come after 4b, as before)
+	for b in placed_buildings:
+		for d_col in b["door_cols"]:
+			var door_r: int = b["row0"] + b["h"] - 1
+			var door_c: int = b["col0"] + d_col
+			var walk_path: Array[Vector2i] = []
+			var reached_connector := false
+			for step in range(1, 7):
+				var wr: int = door_r + step
+				var wc: int = door_c
+				if wr > 35:
+					break
+				var idx: int = wr * WORK_SIZE + wc
+				var cur_cls: int = grid_class[idx]
+				if cur_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA]:
+					reached_connector = true
+					break
+				if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
+					break
+				walk_path.append(Vector2i(wc, wr))
+			if reached_connector:
+				for pt in walk_path:
+					var p_idx: int = pt.y * WORK_SIZE + pt.x
+					grid_class[p_idx] = TILE_PATH
+					grid_variant[p_idx] = 0
 
 	# -------------------------------------------------------------
 	# 6. Parks & Forests (§4.1 step 6)
@@ -1277,7 +1336,12 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 
 	return {
 		"tiles": output,
-		"signs": PackedStringArray(signs_list)
+		"signs": PackedStringArray(signs_list),
+		"stats": {
+			"building_candidates": building_candidates.size(),
+			"buildings_placed": buildings_placed_count,
+			"fallback_placed": fallback_placed_count
+		}
 	}
 
 ## Mask family for 4-neighbour connectivity (§3 table)

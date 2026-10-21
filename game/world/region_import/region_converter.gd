@@ -552,7 +552,7 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 							var has_standalone_tags := false
 							for k_i in w_keys.size():
 								var k_str := string_table[w_keys[k_i]] if k_i < w_keys.size() and w_keys[k_i] < string_table.size() else ""
-								if k_str in ["highway", "waterway", "building", "leisure", "natural", "water", "amenity", "railway"]:
+								if k_str in ["highway", "waterway", "building", "leisure", "natural", "water", "amenity", "railway", "footway", "cycleway", "service", "indoor"]:
 									has_standalone_tags = true
 									break
 								elif k_str == "landuse":
@@ -1074,7 +1074,7 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			cov_rect = Rect2i(0, 0, 1, 1)
 		store.set_state("clip", "0")
 
-	store.set_state("schema_version", "2")
+	store.set_state("schema_version", "3")
 	_compute_and_write_sea_flags(store, cov_rect)
 
 	# Clean up temporary index files
@@ -1209,11 +1209,25 @@ static func classify_line(tags: Dictionary) -> Dictionary:
 		if hw in ["proposed", "construction", "platform", "corridor", "elevator", "bus_stop", "raceway"]:
 			return {}
 
+		# Section 10.1 exclusions
+		if hw == "service":
+			return {}
+		var fw: String = str(tags.get("footway", ""))
+		if fw in ["sidewalk", "crossing", "traffic_island", "access_aisle", "link"]:
+			return {}
+		if hw == "cycleway":
+			var cw: String = str(tags.get("cycleway", ""))
+			if cw in ["crossing", "sidewalk"]:
+				return {}
+		if hw in ["footway", "path", "pedestrian"]:
+			if str(tags.get("indoor", "")) == "yes":
+				return {}
+
 		var subk := hw
 		if is_bridge:
 			subk += ":bridge"
 
-		if hw in ["motorway", "trunk", "primary", "secondary", "tertiary", "residential", "unclassified", "living_street", "road", "service"] or hw.ends_with("_link"):
+		if hw in ["motorway", "trunk", "primary", "secondary", "tertiary", "residential", "unclassified", "living_street", "road"] or hw.ends_with("_link"):
 			return {"kind": "road", "subkind": subk}
 		elif hw in ["footway", "path", "cycleway", "pedestrian", "track", "steps", "bridleway"]:
 			return {"kind": "path", "subkind": subk}

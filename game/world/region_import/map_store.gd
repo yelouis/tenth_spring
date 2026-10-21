@@ -105,7 +105,7 @@ func _init_schema() -> void:
 		val TEXT NOT NULL
 	);
 	""")
-	_q("INSERT OR IGNORE INTO import_state (key, val) VALUES ('schema_version', '2');")
+	_q("INSERT OR IGNORE INTO import_state (key, val) VALUES ('schema_version', '3');")
 
 func _q(sql: String, params: Array = []) -> bool:
 	if _db == null:

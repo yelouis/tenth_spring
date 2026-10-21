@@ -341,7 +341,7 @@ func run_test() -> bool:
 	# Polygon in store y in [8, 16] (north half in store units 0..16)
 	var ring := PackedVector2Array([Vector2(0, 8), Vector2(16, 8), Vector2(16, 16), Vector2(0, 16)])
 	f43_store.insert_poly(0, 0, "water", MapStoreClass.pack_rings([ring]))
-	f43_store.set_state("schema_version", "2")
+	f43_store.set_state("schema_version", "3")
 	f43_store.set_state("coverage", "0,0,2,2")
 	f43_store.close()
 

@@ -83,5 +83,12 @@
     "date": "2026-10-19",
     "machine": "darwin arm64",
     "status": "measured"
+  },
+  "measure_synth": {
+    "budget_gib": 0.5,
+    "peak_gib": 0.195,
+    "date": "2026-10-20",
+    "machine": "darwin arm64",
+    "status": "measured"
   }
 }

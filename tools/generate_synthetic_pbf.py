@@ -511,6 +511,110 @@ def generate_synthetic_pbf_bytes(reverse_coastline: bool = False) -> bytes:
         "refs": const_node_ids
     })
 
+    # === Fixture v3 additions (Item 13, §10.7) ===
+    # 24. Residential street with three houses along north side in Cell (4, 5)
+    street_pts_wm = [(1160.0, 1380.0), (1240.0, 1380.0)]
+    street_node_ids = []
+    for x, y in street_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        street_node_ids.append(nid)
+    ways.append({
+        "id": 123,
+        "tags": {"highway": "residential", "name": "North Elm Street"},
+        "refs": street_node_ids
+    })
+
+    # 25. footway=sidewalk ways along both sides of that street
+    n_sidewalk_pts_wm = [(1160.0, 1384.0), (1240.0, 1384.0)]
+    n_sidewalk_node_ids = []
+    for x, y in n_sidewalk_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        n_sidewalk_node_ids.append(nid)
+    ways.append({
+        "id": 124,
+        "tags": {"highway": "footway", "footway": "sidewalk"},
+        "refs": n_sidewalk_node_ids
+    })
+
+    s_sidewalk_pts_wm = [(1160.0, 1376.0), (1240.0, 1376.0)]
+    s_sidewalk_node_ids = []
+    for x, y in s_sidewalk_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        s_sidewalk_node_ids.append(nid)
+    ways.append({
+        "id": 125,
+        "tags": {"highway": "footway", "footway": "sidewalk"},
+        "refs": s_sidewalk_node_ids
+    })
+
+    # 26. Three houses (footprints 12 x 14 WM-m, centres 18 WM-m apart: 1182, 1200, 1218)
+    house_specs = [
+        (126, "House 1", 1176.0, 1188.0),
+        (127, "House 2", 1194.0, 1206.0),
+        (128, "House 3", 1212.0, 1224.0),
+    ]
+    for w_id, h_name, x0, x1 in house_specs:
+        h_pts_wm = [(x0, 1390.0), (x1, 1390.0), (x1, 1404.0), (x0, 1404.0)]
+        h_node_ids = []
+        for x, y in h_pts_wm:
+            nid = next_node_id
+            next_node_id += 1
+            lat, lon = wm_to_latlon(x, y)
+            nodes.append((nid, lat, lon, {}))
+            h_node_ids.append(nid)
+        h_node_ids.append(h_node_ids[0])
+        ways.append({
+            "id": w_id,
+            "tags": {"building": "house", "name": h_name},
+            "refs": h_node_ids
+        })
+
+    # 27. highway=service + service=driveway way to each house
+    driveway_specs = [
+        (129, 1182.0),
+        (130, 1200.0),
+        (131, 1218.0),
+    ]
+    for w_id, dw_x in driveway_specs:
+        dw_pts_wm = [(dw_x, 1380.0), (dw_x, 1390.0)]
+        dw_node_ids = []
+        for x, y in dw_pts_wm:
+            nid = next_node_id
+            next_node_id += 1
+            lat, lon = wm_to_latlon(x, y)
+            nodes.append((nid, lat, lon, {}))
+            dw_node_ids.append(nid)
+        ways.append({
+            "id": w_id,
+            "tags": {"highway": "service", "service": "driveway"},
+            "refs": dw_node_ids
+        })
+
+    # 28. Shop building whose footprint overlaps amenity=parking polygon in Cell (4, 4)
+    shop_pts_wm = [(1190.0, 1050.0), (1210.0, 1050.0), (1210.0, 1070.0), (1190.0, 1070.0)]
+    shop_node_ids = []
+    for x, y in shop_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        shop_node_ids.append(nid)
+    shop_node_ids.append(shop_node_ids[0])
+    ways.append({
+        "id": 132,
+        "tags": {"building": "retail", "name": "Parking Plaza Shop"},
+        "refs": shop_node_ids
+    })
+
     nodes.sort(key=lambda n: n[0])
 
     header_block = (

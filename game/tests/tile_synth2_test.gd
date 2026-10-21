@@ -10,8 +10,8 @@ const MapStore := preload("res://world/region_import/map_store.gd")
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
-# Final Golden hash (§8 a) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "336cf4e3980a02e949b1fce016cf0591df5e83adcea258cee91c19c7554d2459"
+# Final Golden hash (§8 a, §10.7) — proven identical on Linux and macOS CI
+const GOLDEN_HASH: String = "4168443e14dcbb8bab602a4fc85070a605c8aa9272e4675e77a82ca0a0e02d04"
 
 func run_test() -> bool:
 	_cleanup()
@@ -368,6 +368,102 @@ func run_test() -> bool:
 				cafe_sign_tile_count += 1
 	if cafe_sign_tile_count != 1:
 		push_error("(j) 'Parkside Cafe' produced %d sign tiles (expected 1)" % cafe_sign_tile_count)
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (k) Falsifying — minor ways dropped & houses placed (§10.7 k)
+	# -------------------------------------------------------------
+	var minor_ways := store._rows("SELECT 1 FROM features_line WHERE subkind LIKE '%sidewalk%' OR subkind LIKE '%driveway%' LIMIT 1;")
+	if not minor_ways.is_empty():
+		push_error("(k) Falsifying: sidewalks or driveways are stored in features_line (expected absent)")
+		store.close()
+		_cleanup()
+		return false
+
+	var three_houses_doors := 0
+	tiles_4_5 = synth_4_5["tiles"]
+	for r in range(14, 22):
+		for c in range(17, 27):
+			var idx: int = (r * 32 + c) * 3
+			if tiles_4_5[idx] == TileSynth2.TILE_DOOR:
+				three_houses_doors += 1
+	if three_houses_doors < 2:
+		push_error("(k) Falsifying: expected at least 2 of 3 houses placed, got %d" % three_houses_doors)
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (l) Shop is placed over parking (§10.7 l)
+	# -------------------------------------------------------------
+	var shop_roof_tiles := 0
+	var parking_plaza_tiles := 0
+	for r in range(22, 31):
+		for c in range(19, 29):
+			var idx: int = (r * 32 + c) * 3
+			var cls: int = tiles_4_4[idx]
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR:
+				shop_roof_tiles += 1
+			elif cls == TileSynth2.TILE_PLAZA:
+				parking_plaza_tiles += 1
+	if shop_roof_tiles == 0:
+		push_error("(l) Shop building not placed over parking in cell (4, 4)")
+		store.close()
+		_cleanup()
+		return false
+	if parking_plaza_tiles == 0:
+		push_error("(l) Expected parking plaza tiles around shop in cell (4, 4)")
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (m) Every placed building's south ring row is clear (§10.7 m)
+	# -------------------------------------------------------------
+	for res_c in [synth_4_4, synth_4_5, synth_5_4, synth_5_5]:
+		var c_tiles: PackedByteArray = res_c["tiles"]
+		for r in 32:
+			for c in 32:
+				var idx: int = (r * 32 + c) * 3
+				if c_tiles[idx] == TileSynth2.TILE_DOOR:
+					if r + 1 < 32:
+						var south_idx: int = ((r + 1) * 32 + c) * 3
+						var s_cls: int = c_tiles[south_idx]
+						if s_cls in [TileSynth2.TILE_ROOF, TileSynth2.TILE_WALL, TileSynth2.TILE_DOOR]:
+							push_error("(m) Placed building at r=%d c=%d has building tile in south ring row" % [r, c])
+							store.close()
+							_cleanup()
+							return false
+
+	# -------------------------------------------------------------
+	# (n) Stats matches hand count for fixture cells (§10.7 n)
+	# -------------------------------------------------------------
+	var s_4_4: Dictionary = synth_4_4.get("stats", {})
+	if s_4_4.get("building_candidates") != 2 or s_4_4.get("buildings_placed") != 2 or s_4_4.get("fallback_placed") != 1:
+		push_error("(n) Stats mismatch in cell (4, 4): %s" % str(s_4_4))
+		store.close()
+		_cleanup()
+		return false
+
+	var s_4_5: Dictionary = synth_4_5.get("stats", {})
+	if s_4_5.get("building_candidates") != 4 or s_4_5.get("buildings_placed") != 3 or s_4_5.get("fallback_placed") != 0:
+		push_error("(n) Stats mismatch in cell (4, 5): %s" % str(s_4_5))
+		store.close()
+		_cleanup()
+		return false
+
+	var s_5_4: Dictionary = synth_5_4.get("stats", {})
+	if s_5_4.get("building_candidates") != 2 or s_5_4.get("buildings_placed") != 2 or s_5_4.get("fallback_placed") != 0:
+		push_error("(n) Stats mismatch in cell (5, 4): %s" % str(s_5_4))
+		store.close()
+		_cleanup()
+		return false
+
+	var s_5_5: Dictionary = synth_5_5.get("stats", {})
+	if s_5_5.get("building_candidates") != 0 or s_5_5.get("buildings_placed") != 0 or s_5_5.get("fallback_placed") != 0:
+		push_error("(n) Stats mismatch in cell (5, 5): %s" % str(s_5_5))
 		store.close()
 		_cleanup()
 		return false

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://measure_synth_scene_01"]
+
+[ext_resource type="Script" path="res://scenes/measure_synth.gd" id="1_measure_synth"]
+
+[node name="MeasureSynth" type="Node"]
+script = ExtResource("1_measure_synth")

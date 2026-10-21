@@ -17,6 +17,26 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 >
 > **2026-10-20 (pass 18) — Decisions 21–26 were asked and answered the same day.** You filled in 21, 22, and 24; 23 came with a question (is the map the same for two friends?), answered in chat. You also narrowed the map to famous places, and the follow-ups were answered in chat as Decisions 25 and 26. All six are under Resolved. The new contract is `docs/design_famous_places.md`.
 
+### Decision 28 — Building placement target (32.5% vs ≥ 45% target on Washington DC)
+Under Item 13 (F51), the minor-ways filter (§10.1) and building placement v2 (§10.2) were implemented exactly as specified:
+- Minor ways dropped from store (schema bumped to `'3'`, `map_view.gd` skips with `need 3`);
+- Layer split: roads drawn before buildings (4a), paths drawn after buildings skipping building tiles (4b);
+- Plaza allowed under templates; 1-tile south ring row checked and reserved on placement;
+- 13-offset nudge: `(0,0), (1,0), (-1,0), (0,1), (0,-1), (1,1), (-1,1), (1,-1), (-1,-1), (2,0), (-2,0), (0,2), (0,-2)` clamped to `[5, 35 - w] × [5, 35 - h]`;
+- Statistics returned from `synthesize_cell`.
+
+Measurements on Washington DC (`district-of-columbia-261001.osm.pbf`, 3,706 built-up cells, 136,325 candidates):
+- **Building tiles:** **18.9%** of built-up tiles (target ≥ 12%, baseline 3.6%) — **PASS**
+- **Path tiles:** **16.6%** of built-up tiles (target ≤ 18%, baseline 30.6%) — **PASS**
+- **Placement:** **32.5%** (44,267 placed / 136,325 candidates; target ≥ 45%, baseline ≈ 9.5%) — **TARGET MISSED** (improved 3.4x from baseline, but misses 45%).
+
+Per §10.3 and agent guide Item 13: *"If the rules above, implemented exactly, miss a target, do not tune them silently. Report the measured numbers, then STOP and file a decision with options — for example, a 3 × 3 small house, or allowing buildings over minor paths."*
+
+- **Option A — Accept 32.5% placement as the approved Item 13 baseline and proceed to Item 14.** (Recommended). 44,267 buildings are placed in DC; building tiles cover 18.9% of built-up cells (beating the 12% target); the four DC proof screenshots at Item 16 allow you to judge the visual appearance directly before tuning template geometry.
+- **Option B — Introduce a 3 × 3 tile (24 × 24 m) `house_xs` template for small row houses (A < 150 m²).** Allows tighter packing in dense urban row-house blocks where 4 × 3 templates overlap.
+- **Option C — Allow building templates to overlap minor paths (treating paths like plaza/grass during template collision check).** Allows templates to cover walking paths while still respecting roads.
+- **Your selection:** _____
+
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
 - **Option A**: `flutter_background_geolocation` (Transistorsoft) — battle-tested SLC + visit + motion + geofencing + persistence + battery management out of the box. Cost: paid license for Android *release* builds; large dependency.
@@ -798,16 +818,23 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - It gave no placement-rate target, so a synthesizer that drops 87% of buildings passed every test.
   - The proof step accepted any screenshot from the default focus, which happened to be a parking-heavy downtown block.
 
+**M44 — Minor Ways Dropped and Building Placement v2 (F51, 2026-10-20, pass 18; Item 13).**
+- **What was solved:**
+  - **Minor ways filter (§10.1):** Extended way tags with `footway`, `cycleway`, `service`, `indoor` in `region_converter.gd`. Dropped `highway=service`, sidewalks, crossings, traffic islands, cycleway crossings/sidewalks, and indoor paths from the map store. Bumped map store `schema_version = '3'`. `map_view.gd` skips older stores with `map: skipping <file> — store schema <v>, need 3`.
+  - **Layer split & placement v2 (§10.2):** Split line layers in `tile_synth2.gd`: roads rendered before buildings (4a), paths rendered after buildings without overwriting ROOF/WALL/DOOR (4b). Allowed `PLAZA` under templates. Checked only the south ring row for non-walkable classes, reserving it on placement so buildings can touch east-west while preserving a south walkway. Added 13-offset nudge: `(0,0), (1,0), (-1,0), (0,1), (0,-1), (1,1), (-1,1), (1,-1), (-1,-1), (2,0), (-2,0), (0,2), (0,-2)` clamped to `[5, 35 - w] × [5, 35 - h]`. Added candidate and placement counters to `synthesize_cell["stats"]`.
+  - **Tooling:** Implemented `tools/measure_synth.py` and `game/scenes/measure_synth.tscn`/`.gd` to measure synthesis metrics on built-up cells. Measured memguard budget for `measure_synth` (budget 0.5 GiB, peak 0.195 GiB in `tools/memguard_budgets.json`).
+  - **Fixture v3 & Tests (§10.7):** Added residential street with 3 houses, sidewalks, driveways, and shop over parking in `tools/generate_synthetic_pbf.py`. Regenerated `synthetic_neighborhood.osm.pbf`. Added tests (k)–(n) in `game/tests/tile_synth2_test.gd`. Updated golden hashes in `region_import_test.gd`, `region_import_pause_test.gd` (`08c313dac4aabf3fcd1ad40273453f79417da845aba6914090abbbf0debd6481`), and `tile_synth2_test.gd` (`4168443e14dcbb8bab602a4fc85070a605c8aa9272e4675e77a82ca0a0e02d04`).
+- **Measurements on Washington DC (`district-of-columbia-261001.osm.pbf`):**
+  - Built-up cells: 3,706; building candidates: 136,325; placed buildings: 44,267.
+  - Building tiles: **18.9%** (target ≥ 12%, baseline 3.6%) — **PASS**
+  - Path tiles: **16.6%** (target ≤ 18%, baseline 30.6%) — **PASS**
+  - Placement rate: **32.5%** (target ≥ 45%, baseline ≈ 9.5%) — **TARGET MISSED** (improved 3.4x, filed Decision 28).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43).*
-- **F51 (found 2026-10-20, pass 18) — the slice-2 map has almost no buildings.** Measured on the human's area: about **13%** of drawable building footprints are placed, building tiles cover 5.2% of the map, and path tiles cover 26.5%. Two causes:
-  - **(a) Minor ways flood the map.** The demo store holds 13,724 `highway=service` pieces (parking aisles, driveways, alleys) and 7,242 `highway=footway` pieces (mostly sidewalks and crossings), against 4,162 residential streets. Each is drawn as an 8 m path (`region_converter.gd:1216-1219` stores them; `tile_synth2.gd:452` draws them before buildings).
-  - **(b) The placement rule rejects nearly everything near a path.** A building is skipped if any tile of its 1-tile ring is a path (`tile_synth2.gd:686-710`, `FORBIDDEN_BUILDING_TILES` at `:51-54`). There's no nudge, and buildings can't sit side by side.
-  - Removing only the service roads and footways lifts placement to about 20% — so both causes need fixing.
-  - **Agent guide Item 13.**
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44.*
 - **F52 — the overview zoom is far too slow.** `FRAME_P95_MS` at zoom 1/16 measured **86.92 ms** against the 16.6 ms target (M42).
   - **Cause:** synthesis costs about **9.3 ms per cell** on real data (measured this pass) and runs on the main thread. The 8 ms budget (`map_view.gd:19`, `:597`) is checked only *between* cells, so every frame still pays for at least one whole cell. The overview needs ~300 cells.
   - **Agent guide Item 15.**

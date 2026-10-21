@@ -508,11 +508,11 @@ The converter must therefore keep the `footway`, `cycleway`, `service`, and `ind
 
 **Targets after Item 13:**
 
-| Measure | Target | Baseline |
-|---|---|---|
-| Placement (`placed / candidates`) | **≥ 45%** | ≈ 9.5% |
-| Building tiles (`ROOF + WALL + DOOR`) | **≥ 12%** of built-up tiles | 3.6% |
-| Path tiles | **≤ 18%** of built-up tiles | 30.6% |
+| Measure | Target | Baseline | After Item 13 |
+|---|---|---|---|
+| Placement (`placed / candidates`) | **≥ 45%** | ≈ 9.5% | **32.5%** (44,267 / 136,325) |
+| Building tiles (`ROOF + WALL + DOOR`) | **≥ 12%** of built-up tiles | 3.6% | **18.9%** |
+| Path tiles | **≤ 18%** of built-up tiles | 30.6% | **16.6%** |
 
 If the rules above, implemented exactly, miss a target, **do not tune them silently.** Report the measured numbers, then STOP and file a decision with options — for example, a 3 × 3 small house, or allowing buildings over minor paths.
 

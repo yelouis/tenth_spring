@@ -6,7 +6,7 @@ extends Node
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 
-const GOLDEN_CANONICAL_HASH: String = "46224ee16201b743a310e5637d50ce42e25449d74e23f028c8d9cadddf1e05ca"
+const GOLDEN_CANONICAL_HASH: String = "08c313dac4aabf3fcd1ad40273453f79417da845aba6914090abbbf0debd6481"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/region_import_test.db"
 
@@ -30,26 +30,26 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# Verify schema version 2
-	if store.get_state("schema_version") != "2":
-		push_error("Expected schema_version '2', got '%s'" % store.get_state("schema_version"))
+	# Verify schema version 3
+	if store.get_state("schema_version") != "3":
+		push_error("Expected schema_version '3', got '%s'" % store.get_state("schema_version"))
 		store.close()
 		_cleanup()
 		return false
 
-	# Verify counts: 10 poly, 10 line, 3 place_nodes
+	# Verify counts: 14 poly, 11 line, 3 place_nodes
 	var poly_count: int = int(store._rows("SELECT count(*) as c FROM features_poly;")[0]["c"])
 	var line_count: int = int(store._rows("SELECT count(*) as c FROM features_line;")[0]["c"])
 	var node_count: int = int(store._rows("SELECT count(*) as c FROM place_nodes;")[0]["c"])
 
-	if poly_count != 10:
-		push_error("Expected 10 features_poly, got %d" % poly_count)
+	if poly_count != 14:
+		push_error("Expected 14 features_poly, got %d" % poly_count)
 		store.close()
 		_cleanup()
 		return false
 
-	if line_count != 10:
-		push_error("Expected 10 features_line, got %d" % line_count)
+	if line_count != 11:
+		push_error("Expected 11 features_line, got %d" % line_count)
 		store.close()
 		_cleanup()
 		return false
