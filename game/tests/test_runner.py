@@ -219,6 +219,23 @@ def main():
 		sys.exit(1)
 	print("[PLACEHOLDER ATLAS TESTS OK] Placeholder atlas reproducibility and coverage verified.\n")
 
+	# Famous Places Configuration Check & Unit Test Suite (Item 17)
+	famous_places_check_path = os.path.join(repo_root, "tools", "check_famous_places.py")
+	famous_places_test_path = os.path.join(repo_root, "tools", "test_check_famous_places.py")
+	if not os.path.exists(famous_places_check_path) or not os.path.exists(famous_places_test_path):
+		print("\n[FAMOUS PLACES ERROR] Famous places validator or test suite missing")
+		sys.exit(1)
+	print("=== Famous Places Configuration Check & Unit Tests ===")
+	fp_check_res = subprocess.run([sys.executable, "-I", famous_places_check_path], cwd=repo_root)
+	if fp_check_res.returncode != 0:
+		print("\n[FAMOUS PLACES FAIL] famous_places.json validation failed.")
+		sys.exit(1)
+	fp_test_res = subprocess.run([sys.executable, "-I", famous_places_test_path], cwd=repo_root)
+	if fp_test_res.returncode != 0:
+		print("\n[FAMOUS PLACES TEST FAIL] Famous places unit tests failed.")
+		sys.exit(1)
+	print("[FAMOUS PLACES TESTS OK] Famous places configuration and unit tests passed.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)

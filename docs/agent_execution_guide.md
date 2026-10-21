@@ -81,15 +81,16 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-20 in this session, HEAD `item-16-dc-proof-v2`)
+## 1. Verified baseline (run 2026-10-20 in this session, HEAD `item-17-famous-places-list`)
 
 | Battery | Where | Result |
 |---|---|---|
 | `cd companion && flutter analyze` | Mac, local | **No issues found** |
 | `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** (`sync_e2e_test`, `demo_import_test` — run only through their tools) |
-| `GODOT_BIN=… python3 game/tests/test_runner.py` | Mac, local | **Executed.** IP guard + 17 self-tests, isolation audit, memguard (10), synthetic PBF, demo-screenshot and placeholder-atlas tests, vendored SHA-256, harness self-test → **20/20 `PASS`**, `[REAL SAVE CHECK OK]`, static lint OK |
+| `GODOT_BIN=… python3 game/tests/test_runner.py` | Mac, local | **Executed.** IP guard + 17 self-tests, isolation audit, memguard (10), synthetic PBF, demo-screenshot and placeholder-atlas tests, famous-places check & unit tests (3), vendored SHA-256, harness self-test → **20/20 `PASS`**, `[REAL SAVE CHECK OK]`, static lint OK |
 | `GODOT_BIN=… python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1` |
 | CI `game_tests` / IP guard / `sync_e2e` | runs `39549576482` / `39549576511` / `39549576467` (Item 16) | **All green** — `game_tests` on Linux and macOS |
+| **Famous-places list (M48, Item 17)** | Mac, local | **75 places** (27 cities, 36 sites, 12 spots), 48 legendaries, 9 wardens validated. Falsification tests passed. |
 | **Measurement — Washington DC, the canonical test city** (pinned `district-of-columbia-261001`, MD5 verified, converted unclipped in **15.4 s**) | Mac, local | **136,325** building candidates across 3,706 built-up cells → **44,267 placed (32.5%)**. Building tiles: **18.9%** (target ≥ 12%), path tiles: **16.6%** (target ≤ 18%), road tiles: 6.8%. Decision 28 filed on the placement target. |
 | **Proof v2 (M47, Item 16)** | Mac, local | `shot_z2_mb_cleared`: **VISIBLE_DOORS 7** (target ≥ 3 ✅); `shot_z1_mb_cleared`: **VISIBLE_DOORS 20** (target ≥ 8 ✅); all `FRAME_P95_MS` **16.67 ms** ✅ |
 | **Synthesis speed** (same store, 200 cells, features prefetched) | Mac, local | Dedicated `SynthWorker` off main thread, 256-cell raw-row LRU |

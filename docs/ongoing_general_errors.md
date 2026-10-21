@@ -868,6 +868,23 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - `shot_z2_mv_cleared.png`: `VISIBLE_DOORS` = **0**; `FRAME_P95_MS` = **16.67 ms** (target: ≤ 16.6 ms) — **PASS** (load max frame: 17.35 ms).
   - `shot_z0.0625.png`: `VISIBLE_DOORS` = **47**; `FRAME_P95_MS` = **16.67 ms** (target: ≤ 16.6 ms) — **PASS** (load max frame: 20.74 ms).
 
+**M48 — The Famous-Places List (Item 17, 2026-10-20, pass 18).**
+- **What was solved:**
+  - Implemented canonical `game/config/famous_places.json` containing 75 places across 9 regions:
+    - 27 cities (3 per region), each with OSM boundary relation id, Waypost coordinate, and ≥ 2 interiors (each interior having ≥ 2 purposes including key purpose T, W, L, or Q).
+    - 36 sites (4 per region), each with OSM boundary relation id, Waypost coordinate, and visitor center interior.
+    - 12 spots (solitary landmarks), each with OSM node/way id and Waypost coordinate.
+    - 48 distinct Gen 1-4 legendaries assigned to distinct sites/spots (none shared, none in cities).
+    - 9 regional Wardens assigned to one city per region with interior purpose 'W'.
+    - Fixed public interior entrances for all famous places (T, W, L, Q).
+  - Implemented `tools/check_famous_places.py` validator and integrated into `game/tests/test_runner.py` battery.
+  - Implemented `tools/test_check_famous_places.py` verifying canonical file validity and falsifying invalid mutations (duplicate legendary dex failure, interior with only 'H' purpose failure).
+- **Validation:**
+  - `tools/check_famous_places.py`: 75 places validated (27 cities, 36 sites, 12 spots, 48 legendaries, 9 wardens).
+  - `tools/test_check_famous_places.py`: 3/3 passed.
+  - Falsification tests: caught duplicate legendary dex (`Duplicate legendary dex 379 on spot spot:statue-of-liberty`) and missing key interior purpose (`Interior boston:faneuil-hall has < 2 purposes: H`).
+  - Headless test suite: 20/20 runtime tests passed, static lint and IP guard intact.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
