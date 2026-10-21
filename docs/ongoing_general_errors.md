@@ -13,47 +13,7 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 >
 > **2026-10-19 (pass 17) — Decisions 16–19 were asked and answered the same day.** 16 (USA only) came as your directive; you filled in 17, 18, and 19, and the follow-up questions on 18 and 19 were asked and answered in chat. All four are under Resolved. The new backstory you asked for is `docs/design_story_and_world.md`.
 >
-> **2026-10-20 (pass 18) — four new decisions need you: 21, 22, 23, and 24.** You asked for a change: visiting a neighbourhood should reveal that whole neighbourhood, and visiting a couple of neighbourhoods in a city should reveal the whole city. Decisions 21 and 22 pin down how that works. Decision 23 is the promised re-ask of Decision 15 (how map data reaches a player's PC), now that the "convert only your area" timing exists. Decision 24 is about a coordinate that leaked into the repo's history. None of the four blocks the building fix (agent guide Items 13–16).
-
-### Decision 21: What counts as "going to" a neighbourhood — **needs your input**
-**What this is about.** Today the map reveals only what your phone actually passed: a strip about 60 m either side of the streets you travelled, plus the spots where you stopped. You asked for something bigger and more Pokémon-like — going to a neighbourhood reveals the whole neighbourhood. The open question is what "going to" means. Your phone records two kinds of movement:
-- **visits** — you stopped somewhere for 2+ minutes;
-- **passing through** — you walked, biked, or drove by without stopping.
-
-**Where neighbourhoods come from (engineering default, not a choice):** the real neighbourhood names and boundaries in OpenStreetMap where they exist. Where a town has none mapped, the game cuts it into generated districts of roughly 1 km × 1 km. "City" means an incorporated US city, town, or village (its official boundary). Land outside any city only has neighbourhoods/districts.
-- **Option A — Stopping reveals the neighbourhood; passing through reveals just the street** *(recommended)*. A 2-minute stop anywhere in a neighbourhood reveals all of it. Driving or walking through without stopping still reveals the strip along your route, as today.
-  - *Why:* a commute down the freeway shouldn't hand you every neighbourhood along it. Stopping means you were really *there*.
-- **Option B — Any movement reveals the neighbourhood.** Even driving through without stopping reveals each neighbourhood you crossed. Your map fills in fastest; long drives reveal whole corridors of neighbourhoods.
-- **Option C — Stopping reveals the neighbourhood; passing through reveals nothing.** The cleanest look (only whole neighbourhoods, never strips), but drives and walks between places leave no trace.
-- **Recommendation: A.**
-- **Your selection:**
-
-### Decision 22: How many neighbourhoods reveal a whole city — **needs your input**
-**What this is about.** You said "once you go to a couple of neighborhoods in the city, you unlock the entire city." Cities vary hugely: a small town might have 3 neighbourhoods; Los Angeles has well over 100. The rule decides how quickly big cities open up.
-- **Option A — Scales with the city** *(recommended)*. 10% of the city's neighbourhoods, rounded up, but never fewer than 2 or more than 5. A town of ≤ 20 neighbourhoods needs 2; a big city needs up to 5. A town with only one neighbourhood opens with it.
-- **Option B — Always 2.** Simple and generous: any 2 neighbourhoods reveal any city, even Los Angeles.
-- **Option C — Always 3.**
-- **Recommendation: A.** It matches "a couple" for almost every city, while keeping the biggest cities a real achievement.
-- **Your selection:**
-
-### Decision 23: How map data reaches your PC — re-ask of Decision 15 — **needs your input**
-**What this is about.** The game needs OpenStreetMap data for the places you've been, read from a file on your own PC — never by asking a server about a location (Decision 13). On 2026-10-15 you chose **Option B: download ready-made map files that the project builds and hosts.** That was never built. The estimate behind it was also wrong: one state's file turned out to be about 1 GB, not 20–100 MB. Since then, agents built *clip conversion*, which converts only the area around where you've been. Measured on your Mac for your demo area (38 × 33 map cells): **5.4 minutes, 0.71 GB of memory, an 8 MB result.**
-- **Option A — Convert on your PC, only around where you've been** *(recommended)*. The game downloads your state's file once (hundreds of MB, kept on disk) and converts just your area in the background — about 5 minutes. When you unlock a new area outside what's converted, it converts again in the background.
-  - *Gains:* fully private and offline, no project servers or hosting, and always fresh data.
-  - *Cost:* a few minutes of background work after a new area unlocks, and the state file takes disk space.
-- **Option B — Keep Decision 15: ready-made files hosted by the project.** The project builds files for all 55 US regions and publishes them as GitHub release downloads; players download their state's file.
-  - *Gains:* instant once downloaded.
-  - *Cost:* large downloads (around 1 GB per state, more for big states); a build pipeline; and the project publicly hosting map databases, which must carry the OpenStreetMap licence. It also raises the project's profile.
-- **Option C — A now, B later** if PCs prove too slow.
-- **Recommendation: A.** The measurement shows it works, and it needs nothing hosted.
-- **Your selection:**
-
-### Decision 24: Scrub a leaked coordinate from git history? — **needs your input**
-**What this is about.** One verification note (M42, commit `7f2ca51`) included a map-cell number from your area. On its own it gives only your rough **longitude** — an east–west position, accurate to a few hundred metres, that runs the full height of the country — with no latitude. Pass 18 removed it from the current docs, but it is still in the repo's public history, where anyone browsing old commits can find it.
-- **Option A — Leave the history alone** *(recommended)*. The value on its own points at a line across the whole USA, not a place. Rewriting history has its own costs (below), and copies may already exist.
-- **Option B — Rewrite history to remove it.** An agent rewrites the commits since `7f2ca51` to drop the value and **force-pushes `main`** — normally forbidden here, so only you can approve it. Old commit IDs in the docs and CI links would break, and anyone who already cloned or cached the repo keeps the old copy.
-- **Recommendation: A.**
-- **Your selection:**
+> **2026-10-20 (pass 18) — Decisions 21–26 were asked and answered the same day.** You filled in 21, 22, and 24; 23 came with a question (is the map the same for two friends?), answered in chat. You also narrowed the map to famous places, and the follow-ups were answered in chat as Decisions 25 and 26. All six are under Resolved. The new contract is `docs/design_famous_places.md`.
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
@@ -75,6 +35,67 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 ---
 
 ## ✅ Resolved Decisions
+
+### Decision 21 — "Going to" a neighbourhood: any movement counts (Resolved 2026-10-20)
+- **Your selection:** "Proceed with Option B."
+- **What it means:** inside a famous city, **any** real movement the phone records in a neighbourhood — a stop *or* passing through — reveals that whole neighbourhood. (Option A would have counted only stops; Option C, stops only with no strips.)
+- **Contracts:** `design_famous_places.md` §3.2, `design_world_generation.md` §1–2, `implementation_plan_famous_places.md` §4.
+
+### Decision 22 — How many neighbourhoods reveal a city: it scales (Resolved 2026-10-20)
+- **Your selection:** "Proceed with Option A."
+- **What it means:** a city is fully revealed once `T` of its neighbourhoods are — `T = 1` if it has one neighbourhood, else `clamp(ceil(0.10 × n), 2, 5)`. Most cities need 2; the largest need up to 5.
+- **Contracts:** `design_famous_places.md` §3.2, `implementation_plan_famous_places.md` §4.
+
+### Decision 23 — Map data: converted on your PC from one pinned snapshot, so everyone sees the same map (Resolved 2026-10-20; supersedes Decision 15)
+- **Your selection in the doc:** "For Option A, does converting it on the PC lead have any randomness? If I go to the same city as my friend and we are both playing the game, does the city look different (once unlocked) between our games? We need the map to be deterministic given the same location."
+- **Answered in chat:**
+  - **Conversion itself has no randomness** — the same file always produces a byte-identical result.
+  - **Drawing used a seed** that the design meant to make per-player. Your rule makes it one global constant.
+  - **Two real differences remained:** each player converting a different area around where they'd been (which could change a bay cell's sea-or-land answer), and OpenStreetMap changing day to day.
+  - **Geofabrik keeps dated monthly snapshots for years** (2024-01-01 was still served on 2026-10-20).
+  - **Your choice:** "Pinned monthly snapshot (Recommended)."
+- **What it means:**
+  - **Option A — on-PC conversion — with four determinism rules** (`design_famous_places.md` §7):
+    1. one pinned snapshot per game release (`MAP_SNAPSHOT = 2026-10-01`, Geofabrik's `-261001` files);
+    2. each famous place converted as a fixed unit (its boundary + 2 cells);
+    3. the whole coastline always kept;
+    4. one global map seed (`MAP_SEED = 0`); per-player seeds drive only gameplay.
+  - **Two players on the same release see the identical map** for the same place.
+  - **Decision 15's hosted stores are dropped.** F45(d) (whole-state conversion) is fixed by converting only famous places (agent guide Item 18).
+  - Measured 2026-10-20: the pinned DC file (21 MB) converts in 16.7 s.
+
+### Decision 24 — Leave the leaked coordinate in git history (Resolved 2026-10-20)
+- **Your selection:** "Proceed with Option A."
+- **What it means:** history isn't rewritten, and no force-push. The value (one map-cell number, giving a rough longitude only) was removed from the current docs in pass 18, and the guide's privacy rule now names cell coordinates explicitly.
+
+### Decision 25 — The map is famous places only; home is a hub; you Distort between them (Resolved 2026-10-20)
+- **Asked in chat,** after you said: "Lets not do all neighborhoods and all cities. Lets pick just famous cities and their neighborhoods for now."
+- **Your answers:**
+  - **Which cities:** "The 27 listed (Recommended)" — 3 per region.
+  - **Outside the famous cities:** "Only famous cities exist but you can teleport/distort from your home to the nearest famous city for free. Once you visit a new city, you can teleport to that city too from home."
+  - **Getting home:** "Only from a Waypost (Recommended)."
+  - **The starter city before you've walked it:** "The Waypost neighbourhood (Recommended)."
+- **What it means** (`design_famous_places.md` §1–§4):
+  - **The map** is 27 famous cities plus 36 famous parks, monuments, and wonders (Decision 26). Everything else in the USA is off the map for now — still recorded, never drawn.
+  - **Home is a hub** off the map: healing, the PC box, the garden, and the Distort door.
+  - **Distort:** from home you can Distort, free, to the famous city nearest your fuzzed home, and to any famous place you've physically visited. You arrive at its Waypost — city hall, or the main visitor centre — and can Distort home only from there, or by blacking out.
+  - **Session start:** a session starts where your phone is if that's inside a famous place; otherwise at home.
+  - **Pillars 4–5 change:** "your real body is the only teleport" becomes "your real body opens the doors". The stranded rule now means walking back to the Waypost.
+- **Contracts updated:** `design_famous_places.md` (new), `design_travel_and_time.md` §4–5, `design_world_generation.md` §1–2 and §5, `design_story_and_world.md` §2.6 and §3, `README.md` pillars 4–5, `master_implementation_plan.md` Phases 3–4. Built in agent guide Items 17–21.
+
+### Decision 26 — Famous parks, Warden gating, region stories, and one chance at each legendary (Resolved 2026-10-20)
+- **Asked in chat.** Your answers:
+  - **Where Wardens and legendaries go:** "In addition to famous cities, famous national parks should also be maps. Once you visit anywhere in the national park, you unlock that national park. For wardens, you must unlock all 3 cities in the region (by visiting enough neighborhoods) before you can meet them (each region should have its story as well: What caused the region to go dark/apocalypse, what remaining NPCs you can meet and challenge in that region). For legendaries, even though you unlock the national park, there should be a maze/challenge for you to find the legendary pokemon (you can only catch/challenge the legendary pokemon once)."
+  - **Which parks:** "The top X national parks/monuments/wonders to cover all legendaries so that each legendary has a national park to itself. They to spread it out across region. Also the national parks/monuments/wonders should be in theme to the legendary pokemon. I forgot to mention that cities with national wonders can also be a location for legendary pokemon. Likewise, there needs to be a challenge to reach the legendary. No 2 legendary can be found in the same spot."
+  - **What uses up the one chance:** "Only a finished battle (Recommended)."
+  - **Where to meet a Warden:** "One fixed landmark each."
+- **What it means:**
+  - **48 legendary places,** one per legendary and themed to it: 36 parks, monuments, and wonders as their own islands, and 12 landmarks inside the famous cities. They're spread 5–6 per region (`design_famous_places.md` §1.2). Visiting anywhere in a park unlocks all of it.
+  - **Each legendary waits behind a challenge** generated identically for every player. Catching or defeating it ends it forever, and both count for the Pokédex; blacking out or fleeing lets you retry. `legendaryRespawnGameDays` is retired.
+  - **Lore requirements:** Regigigas needs the three Regis in your party; Keldeo needs the three Swords met; Arceus needs all nine Anchors.
+  - **Wardens** appear only after all three of their region's cities are fully unlocked, each at one fixed landmark (`design_famous_places.md` §5). The finale therefore needs all 27 cities physically visited.
+  - **Each region has its own story** — how it went dark — and three named survivors you can battle (`design_story_and_world.md` §4a).
+- **Contracts updated:** `design_famous_places.md` §1.2, §5, §6; `design_story_and_world.md` §4, §4a, §5, §7; `design_encounters_and_haunted_zones.md` §7; `master_implementation_plan.md` Phase 8 and constants.
 
 ### Decision 20 — Map Store v2 handling of `landuse=construction` polygons (Resolved 2026-10-20)
 - **Your selection:** Option A — Exclude `landuse=construction` from the map store.
@@ -157,7 +178,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
     1. The option text estimated "20–100 MB compressed" stores, but the Washington store measured **1.0 GB**. Hosting would mean multi-GB public release assets — which, as derived OpenStreetMap databases, must also carry the ODbL licence — plus a build pipeline for 55 regions.
     2. Agent guide Item 2 adds **clip conversion** — converting only the area around the places you've been — which may bring on-PC conversion down to minutes.
   - **The next verification pass re-asks this decision** with Item 2's measurements. Until then, no agent builds or publishes stores.
-  - **Re-asked 2026-10-20 (pass 18) as Decision 23**, with the measurement: clipping the human's area took 5.4 min and 0.71 GiB (M34).
+  - **Re-asked 2026-10-20 (pass 18) as Decision 23**, with the measurement: clipping the human's area took 5.4 min and 0.71 GiB (M34). **Superseded by Decision 23 = A** — on-PC conversion from a pinned snapshot; no hosted stores.
 
 ### Decision 14 — Build the neighborhood map preview: yes, the full plan (Resolved 2026-10-10)
 - **Selection: Option A — approve the amended plan as written**, including the in-game region choice and download.
@@ -774,7 +795,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Cause:** synthesis costs about **9.3 ms per cell** on real data (measured this pass) and runs on the main thread. The 8 ms budget (`map_view.gd:19`, `:597`) is checked only *between* cells, so every frame still pays for at least one whole cell. The overview needs ~300 cells.
   - **Agent guide Item 15.**
 - **F53 — diagonal rail lines look like a row of separate boxes.** The atlas draws `RAIL` straight only — vertical if N or S is set, else horizontal (`tools/gen_placeholder_atlas.py:398-446`) — and frames each tile. So a stair-stepped diagonal reads as disconnected pieces. **Agent guide Item 14.**
-- **F45(d) — whole-state conversion on PC.** In-game download currently converts the whole-region extract on player machines. Open, awaiting **Decision 23** (the Decision 15 re-ask).
+- **F45(d) — whole-state conversion on PC.** The in-game download still converts the whole region extract. **Decision 23 = A:** only famous places are converted, each as a fixed unit from the pinned snapshot — agent guide Item 18.
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
@@ -835,4 +856,7 @@ Founding decisions made with the user during the design brainstorm, recorded her
 20. **"Looks like Pokémon" is a requirement, not polish (2026-10-19, pass 17).** The human rejected slice 1's flat 16 m squares: a Pokémon map is assembled from walking-scale pieces (paths, roofed buildings with doors, tree borders, tall grass, shorelines, signs). **Decision 17 = A:** real streets rebuilt from Pokémon pieces (`implementation_plan_world_generation_slice2.md`).
 21. **A new story replaces the Giratina arc (2026-10-19, Decision 18).** The human asked for a custom story with the apocalypse/survival theme "baked in", nine regional Wardens, and a finale against a stronger mirror of the player's own party. The result is `design_story_and_world.md`. Its central idea — the Distortion copies whatever crosses it and is now learning the player — ties together the fog, Distortion Fields, legendaries that can't be copied, and the Echo.
 22. **Real map art from a second cartridge (2026-10-19, Decision 19).** The human chose real Pokémon tiles. Because the DS games' overworlds are 3D, the tiles come from the player's Emerald ROM (Game Boy Advance), under the same bring-your-own-ROM rules as the sprites, with an original placeholder set as the no-ROM look.
-23. **Neighbourhoods and cities, not streets (2026-10-20, pass 18).** The human asked that going to a neighbourhood reveal the whole neighbourhood, and that visiting "a couple of neighborhoods in the city" reveal the whole city — instead of revealing only the streets walked. The details are Decisions 21 and 22. The draft for the recommended options is `docs/implementation_plan_area_unlock.md`.
+23. **Neighbourhoods and cities, not streets (2026-10-20, pass 18).** The human asked that going to a neighbourhood reveal the whole neighbourhood, and that visiting "a couple of neighborhoods in the city" reveal the whole city — instead of revealing only the streets walked. The details became Decisions 21 and 22; the plan is now `docs/implementation_plan_famous_places.md` (renamed when the scope narrowed to famous places — item 24).
+24. **Famous places only, and Distort (2026-10-20, Decisions 25–26).** The human narrowed the map from "the whole USA" to 27 famous cities and 36 famous parks and wonders, made home a hub, and added Distort travel — free to the nearest city, then to any place physically visited, and home only from a Waypost. That reverses the "only teleport is your body" pillar. Real-world travel still opens every door: Wardens need all three of a region's cities, and each of the 48 legendaries has its own place and one decisive battle.
+25. **The same map for everyone (2026-10-20, Decision 23).** The human required that two players at the same place see the same map. The rules: one pinned OpenStreetMap snapshot per release, fixed conversion units, the whole coastline kept, and one global map seed. Per-player randomness is confined to gameplay.
+

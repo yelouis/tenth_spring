@@ -87,6 +87,10 @@ A survivor's note pinned to your door explains what the Wardens have long feared
 ### 2.6 What "Walker" means in play
 The phone companion is your **Ledger**. In the story it is the field journal every Walker keeps of where they have been. Your real walks are your character's scouting trips, and they reveal the world as **known** — grey silhouettes seen from the road. Going there *in the game* is what clears a place and lets you search it. The world remembers your footsteps, never your luggage: walking in real life reveals, it never gives (pillar 2).
 
+**Distorting.** Since the Stillness, most of the country is fog. What still holds are the great cities and the great wild places, the ground walked by millions for generations (`design_famous_places.md`). A Walker can do one thing no one else can: **step through the Distortion** to firm ground they have walked themselves.
+- **From home,** your safehouse, you can Distort to any famous place you've physically visited — and, from the first morning, to the great city nearest home, whose pull you've always felt.
+- **The way back** opens only at a place's **Waypost**: the lamplit camp the survivors keep at its heart. So the old rule still holds — be back at the Waypost before dark.
+
 ---
 
 ## 3. The Distortion — rules of the world
@@ -104,7 +108,7 @@ The phone companion is your **Ledger**. In the story it is the field journal eve
 | Unwalked places sink under the fog | `unknown` cells are impassable fog — the Distortion's shimmer (`design_art_direction.md` §3) |
 | Ground you walk often is firmer | Familiarity: repeat real visits mean fewer encounters and pre-mapped interiors (`design_expeditions_and_survival.md` §3) |
 | The healing network is dark | Full healing only at the home safehouse |
-| The storage network is down | The PC box only within `baseAccessMeters` of home |
+| The storage network is down | The PC box only at home |
 | The shops are empty | Items come only from searching places, by category (`design_resources_and_base.md` §1) |
 | The fog takes what you carry | Blacking out drops the bag where you fell, recoverable for 3 game days |
 | Your home is your anchor | After a blackout you wake at home, the party healed |
@@ -112,7 +116,8 @@ The phone companion is your **Ledger**. In the story it is the field journal eve
 | Grief gathers and spreads | Haunted zones seed at cemeteries, ruins, and hospitals, and grow; at stage 4 next to home the Distortion jams the PC |
 | Thin spots open and close | **Distortion Fields** (§6) |
 | You move at walking pace | The 15 mph travel clock; the bicycle doubles it |
-| Your body is the only door | Each session starts wherever your phone is; there is no other teleport |
+| Your body opens the doors | You can Distort only to famous places you've physically visited (plus the starter city); a session starts where your phone is if that's inside a famous place, else at home |
+| The way home is at the Wayposts | You Distort home only from a place's Waypost, or by blacking out |
 | The Echo is learning you | Escalating Echo encounters, then the finale (§5) |
 
 ---
@@ -121,9 +126,9 @@ The phone companion is your **Ledger**. In the story it is the field journal eve
 
 The country divides into the nine **US Census divisions** (Decision 18). Every state belongs to exactly one. **DC, Puerto Rico, and the US Virgin Islands count as South Atlantic** for the game.
 
-**Trials (Decision 18 = B, trial location = any major landmark):**
-- A Warden can be challenged at **any national park or national monument in their region** — they keep a Waypost camp at every one.
-- The landmark must first be revealed by a real visit nearby, then reached in-game, as usual.
+**Trials (Decision 18 = B; refined 2026-10-20, Decision 26):**
+- **A Warden appears only once all three of their region's famous cities are fully unlocked** — you've physically visited enough neighbourhoods in each (`design_famous_places.md` §3.2). They have been watching to see whether you can hold a whole region.
+- **Each Warden waits at one fixed landmark** in one of the region's cities (`design_famous_places.md` §5).
 - Trials can be taken **in any order.**
 - **Team levels scale with the Anchors you already hold:** level `22 + 6 × anchorsHeld`. So 22 for your first Warden and 70 for your ninth.
 - **Each trial has a survival rule**, drawn from that region's hardship.
@@ -135,7 +140,7 @@ The country divides into the nine **US Census divisions** (Decision 18). Every s
 |---|---|---|---|---|---|
 | **New England** (ME, NH, VT, MA, RI, CT) | the Lantern Coast | rocky shore, lighthouses, deep winters | **Maren Ashby** — Ice. A lighthouse keeper who never let her lamp go out. | **The Long Night** — fought after dark; no items may be used. | **Lamp:** night light radius +2 tiles |
 | **Middle Atlantic** (NY, NJ, PA) | the Dead Grid | silent cities, bridges, rust | **Dex Ocampo** — Steel. A transit engineer who keeps one line of lights running. | **Brownout** — you may bring only 3 Pokémon. | **Salvage:** one extra item roll per site searched |
-| **South Atlantic** (DE, MD, DC, VA, WV, NC, SC, GA, FL, PR, USVI) | the Green Tide | swamps, barrier islands, overgrown suburbs | **Lucía Reyes** — Grass. A botanist growing food in a reclaimed theme park. | **Rationing** — at most 2 healing items during the trial. | **Garden:** +2 berry plots |
+| **South Atlantic** (DE, MD, DC, VA, WV, NC, SC, GA, FL, PR, USVI) | the Green Tide | swamps, barrier islands, overgrown suburbs | **Lucía Reyes** — Grass. A botanist growing food in Atlanta's botanical garden. | **Rationing** — at most 2 healing items during the trial. | **Garden:** +2 berry plots |
 | **East South Central** (KY, TN, MS, AL) | the Hollow Hills | caves, ridges, river towns | **Amos Whitlock** — Fighting. A retired miner who walks the ridges every day. | **The Climb** — two teams of 3, back to back, with no healing between. | **Pack:** a dropped bag lasts 5 game days instead of 3 |
 | **West South Central** (AR, LA, OK, TX) | the Burnlands | heat, plains, bayou, dry riverbeds | **Rosa Tamez** — Fire. A wildfire crew chief who outran the fog twice. | **Drought** — harsh sunlight all battle. | **Hearth:** camping passes time with no ambush risk |
 | **East North Central** (OH, IN, IL, MI, WI) | the Inland Seas | the Great Lakes, dunes, harbour towns | **Ingrid Halvorsen** — Water. Ferry captain of the last boat that still crosses. | **Storm Season** — rain all battle. | **Ford:** cross streams and small rivers on foot |
@@ -144,6 +149,83 @@ The country divides into the nine **US Census divisions** (Decision 18). Every s
 | **Pacific** (WA, OR, CA, AK, HI) | the Edge | redwoods, volcanoes, the long coast, islands | **June Okafor** — Psychic. The first Warden to understand that the Distortion copies. | **The Mirror** — her team includes copies of two of your Pokémon. A warning of what's coming. | **Sight:** landmarks within 50 miles hint "something stirs" if a legendary waits there |
 
 **Why Wardens, not gyms:** the League is gone. The Wardens aren't testing whether you deserve a badge. They're testing whether you can survive what is coming. Each one gives you an Anchor because they believe you can carry it further than they can.
+
+
+### 4a. The regions' own stories
+
+Each region went dark its own way. These are the survivors you meet there, and can battle, at the region's three cities. Their teams scale like the Wardens' (`22 + 6 × anchorsHeld`, minus 4). *The names and types are starting content, built in Phase 8.*
+
+**New England — the Lantern Coast.**
+- **How it went dark:** the fog came in off the Atlantic on the first night of a winter storm and never lifted. One by one the harbour lights went out, the ships stopped coming, and the coastal towns emptied inland. Ice Pokémon came down from the mountains into the empty streets.
+- **Its Warden:** Maren Ashby kept Boston's harbour light burning by hand.
+- **Survivors:**
+  - **Boston** — Theo Marsh, a college rower who still runs the river every dawn (Water).
+  - **Providence** — Iris Calloway, a glassblower who never lets her furnace go cold (Fire).
+  - **Portland** — Ned Pruitt, an old lobsterman who never left the docks (Ice).
+
+**Middle Atlantic — the Dead Grid.**
+- **How it went dark:** it began underground. The subways and tunnels emptied first; the fog pooled there and rose through the grates. When the power grid failed in a cascade one January night, every city went dark at once. Steel and Electric Pokémon nest in the silent towers.
+- **Its Warden:** Dex Ocampo keeps one line of lights running under Grand Central.
+- **Survivors:**
+  - **New York** — Priya Nandakumar, a subway musician whose songs keep the platform ghosts calm (Ghost).
+  - **Philadelphia** — Benny Ruiz, a muralist who repaints the walls the fog fades (Normal).
+  - **Pittsburgh** — Dorota Zielinski, a bridge inspector who still walks every bridge in the city (Steel).
+
+**South Atlantic — the Green Tide.**
+- **How it went dark:** here the fog came with the heat — a summer that never broke. Vines grew over everything people stopped tending, from highways to malls to whole suburbs, until the green was thicker than the fog. The coast flooded and was left to the sea.
+- **Its Warden:** Lucía Reyes grows the food that feeds three cities.
+- **Survivors:**
+  - **Washington DC** — Marcus Bell, a museum guard who still makes his rounds through the empty galleries (Psychic).
+  - **Atlanta** — Keisha Odom, a high-school coach who trains the neighbourhood kids (Fighting).
+  - **Miami** — Rafael Duarte, a boat captain who navigates the flooded streets (Water).
+
+**East South Central — the Hollow Hills.**
+- **How it went dark:** the fog settled into the hollows and caves first, and the old mines breathed it out. River towns emptied as the water rose and nobody worked the locks. Rock and Fighting Pokémon roam the ridges.
+- **Its Warden:** Amos Whitlock walks the riverbank at Memphis every day.
+- **Survivors:**
+  - **Nashville** — Lorraine Pike, a session fiddler who plays the empty stages every night (Normal).
+  - **Memphis** — Darnell Hayes, a riverboat pilot (Water).
+  - **Louisville** — Hank Abernathy, a stable hand who still exercises the racehorses' Pokémon (Fire).
+
+**West South Central — the Burnlands.**
+- **How it went dark:** drought came first, then wildfires, and the fog followed the smoke. Oil fields went quiet, and bayou towns sank back into the marsh. Fire and Ground Pokémon thrive in the heat.
+- **Its Warden:** Rosa Tamez's crew still cuts firebreaks around Austin.
+- **Survivors:**
+  - **New Orleans** — Celestine Arceneaux, a trumpeter who leads a parade for the ghosts every Friday night (Ghost).
+  - **Houston** — Dr. Amir Haddad, a former flight engineer who still tracks the stars (Psychic).
+  - **Austin** — Jess Tran, a food-truck cook who feeds anyone who passes (Fire).
+
+**East North Central — the Inland Seas.**
+- **How it went dark:** the lakes froze one winter and never fully thawed, and the fog came across the ice. Factories fell silent, the ferries stopped, and the lakeshore towns emptied. Water and Steel Pokémon haunt the harbours.
+- **Its Warden:** Ingrid Halvorsen captains the last ferry on Lake Erie.
+- **Survivors:**
+  - **Chicago** — Mae Kowal, a train conductor who still walks the empty elevated tracks (Electric).
+  - **Detroit** — Andre Moss, a mechanic who keeps old engines running (Steel).
+  - **Cleveland** — Rosie Dombrowski, a radio DJ broadcasting to anyone left (Normal).
+
+**West North Central — the Open Sky.**
+- **How it went dark:** storms — year after year of storms so wild that people stayed in their cellars, and the prairie towns emptied one by one. The fog rolls across the plains like weather. Flying Pokémon ride the winds.
+- **Its Warden:** Calla Brandt reads the fog from the roof of Kansas City's Union Station.
+- **Survivors:**
+  - **Minneapolis** — Siri Lindqvist, a snowplough driver who clears the same road every morning (Ice).
+  - **St. Louis** — Calvin Brooks, a barge hand on the Mississippi (Water).
+  - **Kansas City** — Rita Delgado, a pitmaster who keeps the smokehouse fires going (Fire).
+
+**Mountain — the Ghost Frontier.**
+- **How it went dark:** the old mining and boom towns had emptied long before the Stillness, so the fog found them first and spread along the highways. The desert cities lost their water and their lights. Ghost Pokémon are everywhere, and calm — here they've had the longest to settle.
+- **Its Warden:** Silas Vance keeps the Neon Boneyard in Las Vegas.
+- **Survivors:**
+  - **Las Vegas** — Lucky Morales, a retired stage magician (Psychic).
+  - **Denver** — Hana Mori, a mountain-rescue volunteer (Rock).
+  - **Phoenix** — Elena Ruiz, a hydrologist guarding the last canal water (Water).
+
+**Pacific — the Edge.**
+- **How it went dark:** the fog here was always natural — until it wasn't. One summer it rolled in off the ocean and kept coming, thicker each morning, until the coastal cities were islands in grey.
+- **Its Warden:** June Okafor watched from Griffith Observatory and was the first to see that the fog copies what it touches.
+- **Survivors:**
+  - **San Francisco** — Kenji Watanabe, a cable-car gripman (Electric).
+  - **Los Angeles** — Valentina Cruz, a stunt performer (Fighting).
+  - **Seattle** — Nora Kittredge, a ferry deckhand (Water).
 
 ---
 
@@ -159,10 +241,10 @@ The country divides into the nine **US Census divisions** (Decision 18). Every s
 | 0–2 | Flavour only: a figure at the edge of your lamplight on night travel; footprints matching yours along the fog margin. |
 | 3–5 | **Hollow Trainers:** on rare night encounters, a faceless trainer blocks your way with a copy of one of your Pokémon (level = your highest − 2). Beating one gives nothing — the fog gives nothing. |
 | 6–8 | The Echo speaks in your words, quoting your own journal. Distortion Fields open more often (§6). |
-| 9 | **The call.** The Echo takes your shape at the place you have visited most in real life — the revealed place with the highest real-world visit count. |
+| 9 | **The call.** The Echo takes your shape at the **famous place you have visited most in real life** (the one with the most recorded visits inside its boundary). |
 
 ### 5.2 The finale — "The Last Walk"
-- **Where:** your most-visited real place. If you start your session far from it, the trek there in-game is part of the finale. Your real body is still the only shortcut.
+- **Where:** the famous place you have visited most in real life. You Distort there and walk from its Waypost to wherever the Echo stands; the walk is part of the finale.
 - **The battle:** the Echo leads an **exact mirror of your current party** — the same species, moves, abilities, natures, and held items — at **your levels + 5** (cap 100), with perfect IVs (31). It uses the strongest AI tier, and **no items** are allowed on either side.
 - **Why a mirror:** you can't out-gear your own team, only out-think it. The finale rewards the team you built across the whole country, and every player's finale is different.
 - **Blacking out** follows the normal rules — you wake at home and your bag lies where you fell. The Echo waits; you can return.
@@ -177,7 +259,7 @@ The credits roll over the Wardens' epilogues and your own map: every street you 
 - haunted zones still grow;
 - legendaries still wait at their landmarks.
 
-*Proposed:* each new real-world spring, an "Eleventh Spring" rematch with a fresh Echo at your newest most-visited place.
+*Proposed:* each new real-world spring, an "Eleventh Spring" rematch with a fresh Echo at your newest most-visited famous place.
 
 ---
 
@@ -199,22 +281,10 @@ The credits roll over the Wardens' epilogues and your own map: every street you 
   - about a third live everywhere;
   - about 40% live only in certain **biomes** (desert, forest, coast, mountains, wetland, plains, snow, city);
   - about 20% live only in **one of the nine regions**;
-  - the **legendary and mythical species** (about 48 in Generations 1–5) are each bound to the great landmarks of **one** region.
+  - the **48 legendary and mythical species** each wait at **their own famous place**, themed to them and spread across all 9 regions. The full table is `design_famous_places.md` §1.2.
 - **Distortion Fields** can bring any non-legendary species anywhere, slowly. **Legendaries require travel**, so the Pokédex can never be completed at home.
-- **Legendaries are unique per save.** If one is defeated rather than caught, it still counts toward completion and returns after `legendaryRespawnGameDays = 30` for another catch attempt.
-- **Starting assignments** — illustrative; the full table is `game/config/landmark_legendaries.json` (dex numbers and regions only), written in the slice that builds legendaries:
-
-| Region | Examples |
-|---|---|
-| Lantern Coast (New England) | Articuno 144, Regice 378 |
-| Dead Grid (Middle Atlantic) | Registeel 379, Genesect 649 |
-| Green Tide (South Atlantic) | Lugia 249, Manaphy 490 |
-| Hollow Hills (East South Central) | Regirock 377, Terrakion 639 |
-| Burnlands (West South Central) | Moltres 146, Heatran 485 |
-| Inland Seas (East North Central) | Uxie 480, Mesprit 481, Azelf 482 |
-| Open Sky (West North Central) | Zapdos 145, Tornadus 641, Thundurus 642 |
-| Ghost Frontier (Mountain) | Groudon 383, Giratina 487 |
-| The Edge (Pacific) | Kyogre 382, Ho-Oh 250 |
+- **One decisive battle per legendary** (Decision 26). Each waits behind a challenge — a maze or puzzle — and can be **caught or defeated once**; either ends it forever and counts for the Pokédex. Blacking out or running away doesn't use up the chance. Some have lore requirements: Regigigas needs the three Regis in your party, Keldeo needs the three Swords of Justice met, and Arceus needs all nine Anchors (`design_famous_places.md` §6).
+- **Why one chance:** legendaries are anchors of reality, like the Wardens' stones. The Distortion can't copy them, and once one has been met, it has been *met*.
 
 ---
 

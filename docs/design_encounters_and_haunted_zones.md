@@ -58,7 +58,7 @@ So a quiet suburb by day is 5% ghost; that same suburb at night inside a stage-3
 Thin spots where the Distortion's copies bleed through (`design_story_and_world.md` §6). **Starting values — tunable in `tuning.json`:**
 - **When:** a field opens about once every `distortionFieldIntervalGameDays = 3` game days. That drops to 2 once the player holds 6 or more Anchors (the Echo escalating, story §5.1).
 - **How long:** `distortionFieldDurationGameDays = 1`.
-- **Where:** a revealed cell containing tall grass, within `distortionFieldRadiusMiles = 10` ground miles of the player's position when it opens. The field covers the `distortionFieldSizeCells = 5` × 5 cells centred there.
+- **Where:** a revealed cell containing tall grass inside the famous place the player is in, within `distortionFieldRadiusMiles = 10` ground miles of the player's position when it opens. No field opens while the player is at home. The field covers the `distortionFieldSizeCells = 5` × 5 cells centred there.
 - **Seeding:** deterministic from `(worldSeed, game-day index)`, never steered toward the player's needs.
 - **Encounters inside a field:** each tall-grass encounter draws from the **field pool** with probability `distortionFieldForeignShare = 0.40`; otherwise it draws from the normal zone pools.
   - The field pool is **every non-legendary, non-mythical species**, ignoring biome and region, weighted equally.
@@ -103,28 +103,31 @@ These tie Ghost legends to the core twist — **things you must physically do in
 - **Spiritomb (442):** finding the Odd Keystone at a `ruins` site, then having **physically visited 32 distinct haunted real places** (cemeteries, ruins, hospitals), awakens Spiritomb at the home safehouse — an echo of Platinum's 32-encounter requirement.
 - **Rotom (479):** appears at night in abandoned electronics stores (`shop=electronics` inside `retail`).
 
-## 7. Landmarks: legendaries, Warden trials, and the finale
+## 7. Famous places: legendaries, Warden trials, and the finale
 
-**Major landmarks** are national parks and national monuments. The exact OSM tag rule is fixed in the slice that builds them. Other landmark sites (stadiums, attractions — `design_world_generation.md` §3) stay ordinary landmark sites.
+Since 2026-10-20 the map contains only **famous places**: 27 cities and 36 parks, monuments, and wonders (`design_famous_places.md`, Decisions 25–26). Legendaries and Wardens live there.
 
-### 7.1 Legendaries (Decision 18)
-- Every legendary and mythical species (about 48 in Generations 1–5) is **bound to one region** and appears only at that region's major landmarks. The table is `game/config/landmark_legendaries.json` (dex number, region, level); starting assignments are in `design_story_and_world.md` §7.
-- **Unique per save.** A **caught** legendary never spawns again. A **defeated** one counts toward Pokédex completion and returns after `legendaryRespawnGameDays = 30` for another catch attempt.
-- **Requires real reach** — the landmark must be revealed, meaning the player physically went there or near it.
-- **Giratina (487) is an ordinary legendary now**, bound to the Mountain region. It is no longer the finale.
+### 7.1 Legendaries (Decisions 18 and 26)
+- **Where:** each of the 48 legendary and mythical species waits at **its own famous place**, never two in one spot. The table — dex number, place, region, theme — is `design_famous_places.md` §1.2, and the config is `game/config/famous_places.json`.
+- **Requires real reach:** the place must be unlocked by a real visit (for a spot inside a city, its neighbourhood), then reached in-game from the Waypost.
+- **A challenge stands in the way:** a maze or puzzle in front of its lair, generated from `(dex number, MAP_SEED)` so it's the same for every player. The themes and lore requirements are in `design_famous_places.md` §6.
+- **One decisive battle:** catching it **or** defeating it ends it forever, and both count for the Pokédex. Blacking out or fleeing doesn't use up the chance — redo the challenge and try again. *(This replaces `legendaryRespawnGameDays`, which is retired.)*
+- **Giratina (487)** is an ordinary legendary, at Carlsbad Caverns.
 
 ### 7.2 Pokédex completion
 The Pokédex is complete when every non-legendary species is **caught**, and every legendary and mythical species is **caught or defeated**. Distortion Fields (§3a) can supply any non-legendary species anywhere; legendaries always require travel.
 
-### 7.3 Warden trials (Decision 18 = B)
-- There are **nine Wardens**, one per region (`design_story_and_world.md` §4). A Warden can be challenged at **any major landmark in their region**, once it is revealed and reached in-game. Trials can be taken in any order.
+### 7.3 Warden trials (Decisions 18 and 26)
+- **Nine Wardens,** one per region (`design_story_and_world.md` §4), each at **one fixed landmark** (`design_famous_places.md` §5).
+- **A Warden appears only after all three of the region's cities are fully unlocked** (`design_famous_places.md` §3.2).
 - **Team levels:** `22 + 6 × anchorsHeld` (22 → 70). Each trial applies its region's survival rule (story §4 table).
 - **Winning** grants that region's **Anchor** (a key item) and its perk.
+- **Each region's survivors** — three named trainers, one per city (story §4a) — can be battled at levels `18 + 6 × anchorsHeld`.
 - The names, types, rules, and perks are starting content, tunable.
 
 ### 7.4 The finale — the Echo (replaces the Giratina arc)
 - **Unlocked by holding all nine Anchors.**
-- **Where:** the revealed place with the highest real-world visit count.
+- **Where:** the famous place with the most real-world visits inside its boundary. The player Distorts there and walks from the Waypost.
 - **The battle:** an exact mirror of the player's current party — species, moves, abilities, natures, held items — at the player's levels + 5 (cap 100), IVs 31, the strongest AI tier, and no items on either side.
 - **Before it:** the escalating Echo encounters in `design_story_and_world.md` §5.1 — Hollow Trainers at 3+ Anchors, more frequent fields at 6+.
 

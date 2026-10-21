@@ -13,8 +13,8 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 1. **Two-fog model** — a real visit turns a place Unknown → Known (grey silhouette). You must then travel there *in-game* to explore it.
 2. **Real movement unlocks access, never cargo** — walking around never grants items or Pokémon. It reveals places, landmarks, and events, which must still be explored and won in play.
 3. **Intel, never inventory** — places you visit often in real life are easier to explore in-game (pre-mapped interiors, fewer encounters), never richer.
-4. **Fast travel = your real body** — each PC session starts wherever your *phone* is at sync time. No other teleport exists.
-5. **Stranded** — your **PC box** is at home. Away from home you fight with the six you brought, and only home can fully heal them.
+4. **Your real body opens the doors** — the map is made of famous places, and you can **Distort** from home only to places you've physically been (plus the famous city nearest home). A session starts wherever your phone is, if that's in a famous place.
+5. **Stranded** — your **PC box** and healing are at home. In a famous place you fight with the six you brought, and the only way home is that place's Waypost (or blacking out).
 6. **Blackout drops the bag** — if your whole party faints you wake at home and your items stay where you fell, recoverable for a few days. Pokémon, the map, and the Pokédex are never lost.
 7. **The world pushes back** — Ghost types own the night; hauntings spread from cemeteries and ruins and, ignored, will seal your PC.
 8. **Privacy is a pillar** — location processing stays on your own devices, home coordinates are fuzzed, and phone→PC sync is direct and end-to-end encrypted. "Your map is yours."
@@ -26,6 +26,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 |---|---|
 | `docs/agent_execution_guide.md` | **Start here** — how an engineering agent picks up this project |
 | `docs/master_implementation_plan.md` | Phase order + tuning constants |
+| `docs/design_famous_places.md` | **What the map contains** — the 27 cities, 36 parks and wonders, 48 legendary places, Warden landmarks; unlocking, Distort travel, the same map for everyone |
 | `docs/design_story_and_world.md` | **The backstory and theme** — the Stillness, the Distortion, the nine Wardens, the Echo; every scene and system follows it |
 | `docs/design_rom_asset_pipeline.md` | Bring-your-own-ROM importer, formats, cache, legal and repo guardrails |
 | `docs/design_creatures_and_battles.md` | Stats, types, damage, status, catching, EXP, party, PC box, blackout |
@@ -48,7 +49,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 - **PC game: Godot 4.3.** SQLite for saves via the vendored `godot-sqlite` extension (Decisions 6–7). ROM import in pure GDScript.
 - **Companion: Flutter** — location capture, read-only memoir map, sync. No gameplay, no Nintendo content.
 - **Sync:** direct device-to-device over LAN — QR pairing, TLS with the PC's certificate pinned by the QR code (Decision 11), end-to-end encrypted.
-- **Map data:** OpenStreetMap, **fully offline** — the PC downloads a regional file (your US state — the map covers the USA only, Decision 16) once and reads it locally, so no map request ever names a place you've been (Decision 13). Never Google Maps — its terms forbid derivative map products.
+- **Map data:** OpenStreetMap, **fully offline** — the PC downloads one pinned snapshot of the state files containing the famous places you've unlocked — the map is 27 famous US cities and 36 famous parks and wonders (`docs/design_famous_places.md`) — once and reads it locally, so no map request ever names a place you've been (Decision 13). Never Google Maps — its terms forbid derivative map products.
 - **Distribution:** the asset-free client via GitHub Releases; the companion via the app stores.
 
 ## Setup notes

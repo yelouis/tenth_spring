@@ -22,21 +22,28 @@ This document defines the world clock, the 15 mph travel economy, day/night, phy
 - Roads are fast terrain (×1.0 speed), wilderness ×0.7, tall grass ×0.8 (and rolls encounters per step), haunted territory ×0.7.
 - **Nightfall on the road**: being outside the porch at night doesn't teleport-punish; it just makes the trek home genuinely dangerous. Camping items can pass time in place at an ambush risk.
 
-## 4. Fast Travel = Your Real Body (Anchored by the Phone)
+## 4. Distort — Travel Between Famous Places (Decision 25, 2026-10-20)
 
-- Gameplay is on PC, so the player's body is anchored to the **phone**: on every PC session start, the game syncs with the companion and receives a `bodyFix` (the phone's current fuzzed position — `design_companion_and_sync.md` §3). The player spawns there, snapped to the nearest revealed traversable tile; if the area is `unknown`, a minimal `known` circle of `corridorRevealMeters` is granted so there's ground to stand on.
-- Playing at home (phone in your pocket at your desk) → you spawn at the safehouse. Playing on a laptop in a hotel 200 miles away → you spawn in that city, stranded.
-- If the phone is unreachable at launch, the session starts at the **last synced body position** with a "scout out of contact" banner — never blocked, never teleported home.
-- This is the *only* teleport in the game. There is no in-game fast travel between islands, ever.
-- Relocation is not punished — but it triggers the **stranded rule**.
+The map contains only famous places (`design_famous_places.md`), so there's nothing to walk across between them. Your real body still decides where you can go; the Distortion carries you there.
+
+- **From home,** Distort for free to any famous place you've physically visited (any recorded movement inside it), plus your **starter city** — the famous city nearest your fuzzed home. You arrive at the place's **Waypost**: city hall for cities, the main visitor centre for parks and wonders.
+- **Back home: only from that place's Waypost** — or by blacking out.
+- **Between places:** go through home.
+- **Distort costs no game time** and is never blocked by night. The world clock pauses at home, as when the game is closed.
+- **Session start:** the game syncs with the companion for a `bodyFix` (`design_companion_and_sync.md` §3).
+  - If the fix lies inside a famous place, you start there, snapped to the nearest revealed traversable tile, and that place unlocks.
+  - Otherwise you start at home.
+  - If the phone is unreachable, you start where the last session ended, with a "scout out of contact" banner.
+- **This replaces "your real body is the only teleport."** Distort is the one teleport. It goes only where your body has been, and only from home.
 
 ## 5. The Stranded Rule
 
-- The **PC box** can be withdrawn from or swapped with only within `baseAccessMeters` (500 m, tunable) of the safehouse. Everywhere else, the player fights with the party of six they brought (newly caught Pokémon still deposit remotely). Full healing is also home-only. This radius is a game constant, separate from the `homeFuzzMeters` privacy fuzz.
-- Starting a session far from home = arriving with only your party and bag: explore locally, heal with what you find, and either trek home in-game (honest 15 mph — 30 by bicycle — across the full real distance) or physically return home and start a session there (fast travel).
-- Session-start banner states it plainly: *"You are 212 miles from home. You have what you carry."*
+- **The PC box and full healing are at home only.** In any famous place you fight with the party and bag you brought (newly caught Pokémon still deposit remotely).
+- **Getting home** means walking back to the place's Waypost — honest 15 mph, 30 by bicycle — before your party or the daylight runs out, or blacking out and losing your bag where you fell.
+- **The session-start banner states it plainly:** *"You are in <place>. The Waypost is 38 min on foot. You have what you carry."*
 
 ## 6. Files (PC game)
 * `game/systems/world_clock` — tick, bands, daylight budget helpers.
 * `game/systems/travel` — route timing, terrain factors, encounter pressure.
 * `game/systems/relocation` — session-start `bodyFix` spawn + stranded banner.
+* `game/systems/distort` — the Distort list, Waypost arrival and departure, the home hub.

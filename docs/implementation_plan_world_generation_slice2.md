@@ -489,21 +489,30 @@ The converter must therefore keep the `footway`, `cycleway`, `service`, and `ind
 6. **Statistics.** `synthesize_cell` also returns `"stats": {"building_candidates": n, "buildings_placed": m}`. Candidates are centre-anchored footprints with A ≥ 60; fallback houses are counted separately as `"fallback_placed"`.
 7. **Template sizes are unchanged** (`house_s` 4 × 3, `house_m` 5 × 4, footprint-sized `block_l`).
 
-### 10.3 Targets — measured on the human's area
-New tool: `tools/measure_synth.py --store <user:// path to a map store>`.
+### 10.3 Targets — measured on Washington DC
+*Changed 2026-10-20:* the human's own area is no longer a famous place (Decision 25). The canonical measurement city is **Washington DC** — a famous city, a 21 MB file, public, and nothing private to keep out of the repo.
+
+**The store:** `python3 -I tools/map_convert.py --pbf <district-of-columbia-261001.osm.pbf> --out-dir user://measure_dc`. That's the pinned snapshot (`design_famous_places.md` §7) — download it and its `.md5` from `https://download.geofabrik.de/north-america/us/district-of-columbia-261001.osm.pbf`.
+
+**New tool:** `tools/measure_synth.py --store <user:// path to a map store>`.
 - It runs Godot headless with `res://scenes/measure_synth.tscn` under memguard step `measure_synth` (measure the budget on its first run).
-- It synthesizes every covered cell whose 3 × 3 neighbourhood is covered.
-- It prints one line, with counts and percentages only — no coordinates and no names:
+- It synthesizes every **built-up cell** — a covered cell whose own store rows include at least one building, and whose 3 × 3 neighbourhood is covered.
+- It prints one line, with counts and percentages only:
   `MEASURE cells=<n> candidates=<n> placed=<n> placement_pct=<x> building_tile_pct=<x> path_tile_pct=<x> road_tile_pct=<x>`
-- **Baseline on 2026-10-20** (pass-17 code, same store, 1,116 cells): placement ≈ **13%**, building tiles **5.2%**, path tiles **26.5%**.
+
+**Baseline on 2026-10-20** — pass-17 code, the pinned DC snapshot, converted unclipped in 16.7 s:
+- **136,325** building candidates;
+- placement ≈ **9.5%** (by door count; exact `stats` don't exist yet);
+- over the 3,706 built-up cells: building tiles **3.6%**, path tiles **30.6%**, road tiles 4.1%;
+- the DC store holds 71,814 footway and 25,817 service pieces, against 11,766 residential streets.
 
 **Targets after Item 13:**
 
 | Measure | Target | Baseline |
 |---|---|---|
-| Placement (`placed / candidates`) | **≥ 45%** | ≈ 13% |
-| Building tiles (`ROOF + WALL + DOOR`) | **≥ 10%** of covered tiles | 5.2% |
-| Path tiles | **≤ 18%** of covered tiles | 26.5% |
+| Placement (`placed / candidates`) | **≥ 45%** | ≈ 9.5% |
+| Building tiles (`ROOF + WALL + DOOR`) | **≥ 12%** of built-up tiles | 3.6% |
+| Path tiles | **≤ 18%** of built-up tiles | 30.6% |
 
 If the rules above, implemented exactly, miss a target, **do not tune them silently.** Report the measured numbers, then STOP and file a decision with options — for example, a 3 × 3 small house, or allowing buildings over minor paths.
 
@@ -528,6 +537,7 @@ A stair-stepped diagonal now reads as one continuous zig-zag line. Regenerate `p
    The screenshot harness prints `LOAD_TIME_MS`, `LOAD_MAX_FRAME_MS`, and the steady-state `FRAME_P95_MS`.
 
 ### 10.6 Proof v2 — amends §7
+0. **Where:** a DC demo profile (`--demo-dir user://demo_dc`) holding a route the agent draws through public DC landmarks (National Mall, Union Station, Dupont Circle, Capitol Hill), saved outside the repo, with DC's store converted from the pinned snapshot into `user://demo_dc/map_data/`. Public places only, so DC may be named in commits.
 1. **New harness flag:** `--focus=most_visited|most_buildings` (default `most_visited`). `most_buildings` focuses on the revealed cell with the most `DOOR` tiles; ties go to the lower `(cy, cx)`.
 2. **The harness also prints `VISIBLE_DOORS <n>`** — door tiles inside the captured view.
 3. **Screenshots** (saved outside the repo):

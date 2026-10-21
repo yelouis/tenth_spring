@@ -13,12 +13,12 @@ enum PlaceRevealState { unknown, known, cleared }
 | State | Entered by | Rendered as |
 |---|---|---|
 | `unknown` | — (default) | Black fog. Not on the map at all. |
-| `known` | A detected real-world **visit** (or corridor pass for streets) | Grey silhouette tiles + "?" chip; name + category shown; no interior. |
+| `known` | Real-world movement unlocking the area: inside a famous city, any movement in a **neighbourhood** reveals it, and enough neighbourhoods reveal the **whole city**; any movement in a famous park or wonder reveals the **whole place** (`design_famous_places.md` §3) | Grey silhouette tiles + "?" chip; name + category shown; no interior. |
 | `cleared` | The player **traveling there in-game** and exploring it | Full-color tiles; interior mapped; item state tracked. |
 
 ## 2. Visit Detection
 
-> **Pending change (pass 18, Decisions 21–22):** the human asked that a visit reveal its whole **neighbourhood**, and that visits to a couple of a city's neighbourhoods reveal the whole **city**. The draft is `implementation_plan_area_unlock.md`. Until it lands, the rules below stand.
+> **Changed 2026-10-20 (Decisions 21–22, 25):** reveals now happen per **area**, not per street. Any real movement — visit or passing through — inside a famous city's neighbourhood reveals the neighbourhood; enough neighbourhoods reveal the city; any movement inside a famous park or wonder reveals all of it (`design_famous_places.md` §3). Built in `implementation_plan_famous_places.md`. Until that lands, the corridor and visit rules below still drive reveals. Afterwards, the phone still records visits and corridors exactly as below, and the PC turns them into area unlocks.
 
 A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point for ≥ `visitDwellSeconds` (120 s). Driving past does *not* count as visiting a POI — it reveals the road corridor only.
 
@@ -50,7 +50,7 @@ A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point f
   4. Building footprints placed with roofs, walls, south-facing doors, and setbacks.
   5. Edge autotiling (16-mask scheme for shorelines, tree borders, paths, roads, roofs, walls).
   6. Props, signs (from POIs and named polygons), and tall grass placement.
-- **Determinism**: synthesis is a pure function of `(OSM data, cell seed)`. The same neighborhood always generates the same tiles. Cell seed = hash of cell coordinates + a per-player world seed.
+- **Determinism**: synthesis is a pure function of `(OSM data, cell coordinates, MAP_SEED)`. The same place always generates the same tiles, **for every player** — `MAP_SEED` is one global constant, and OSM data is one pinned snapshot per release (`design_famous_places.md` §7). Per-player seeds drive gameplay only (encounters, hauntings).
 - **Home**: the player designates the safehouse once during onboarding (defaults to most-dwelled location). Its stored coordinates are fuzzed per `design_privacy_and_location.md` before ever touching the map layer.
 
 ## 4. Familiarity (Intel, Never Inventory)
@@ -67,16 +67,14 @@ enum IntelLevel { known, familiar, mastered }  // 1+, 3+, 10+ visits
 | `familiar` | Room layout and item spots pre-revealed; −25% encounter rate. |
 | `mastered` | Full interior pre-mapped incl. item spots; −50% encounter rate; exit route marked. |
 
-## 5. Scope — the USA (Decision 16, 2026-10-19)
+## 5. Scope — famous places in the USA (Decisions 16 and 25)
 
-The map is the USA: the 50 states, DC, Puerto Rico, and the US Virgin Islands — exactly the regions in §3's filter. Within it the map has no inner boundary: travel anywhere in the USA adds a distant island of `known` cells, stitched into one world map at true geographic offsets. In-game travel between islands is possible but priced honestly by `design_travel_and_time.md` — a 500-mile island is a multi-game-day trek, even by bicycle, or a real-life return trip. Alaska, Hawaii, and Puerto Rico are literal islands.
-
-**Beyond the map.** A revealed cell whose centre lies in no US region is *beyond the map*:
-- it renders as fog with the chip `Beyond the map — Tenth Spring covers the USA`;
-- it is never offered for download and never counts toward anything (Pokédex, events, familiarity);
-- the sync ingest still stores it like any other cell (golden invariants unchanged), so the rule lives entirely in rendering and region choice.
-
-**Why the USA is enough.** A cross-country game is already far larger than any Pokémon region, and US federal map data — USGS elevation and land cover — is public domain, so later slices can add real terrain (ledges, cliffs, terraces) and biomes without licensing trouble. **Regions and biomes (Decision 18).** Every cell also belongs to one of the 9 US Census divisions (DC, Puerto Rico, and the US Virgin Islands count as South Atlantic) and gets a biome. Together they decide which Pokémon can live there, and where each region's Warden and legendaries are found (`design_encounters_and_haunted_zones.md` §2a and §7; `design_story_and_world.md`).
+**The map is made only of famous places** (2026-10-20, narrowing Decision 16's "the whole USA"): **27 famous cities** (3 per Census region) and **36 famous parks, monuments, and wonders**, each hosting one legendary. The lists, the unlocking rules, Distort travel, and the same-map-for-everyone rules are in `design_famous_places.md`.
+- **Everything else in the USA is off the map for now.** It's never drawn and never downloaded. The phone still records it and the save still stores it (golden invariants unchanged), so widening the scope later loses nothing.
+- **Outside the USA** stays *beyond the map* (Decision 16).
+- **Each place is an island,** and you reach it by Distorting from home (`design_travel_and_time.md` §4). In-game walking happens inside places.
+- **Regions and biomes (Decision 18).** Every cell belongs to one of the 9 US Census divisions (DC, Puerto Rico, and the US Virgin Islands count as South Atlantic) and gets a biome. Together they decide which Pokémon can live there (`design_encounters_and_haunted_zones.md` §2a).
+- **The same map for everyone.** Map data comes from one pinned OpenStreetMap snapshot per game release, places are converted as fixed units, and drawing uses one global seed (`design_famous_places.md` §7). The per-player world seed in §3's "Determinism" applies to gameplay, never to tiles.
 
 ## 6. Files
 * `companion/lib/capture/visit_detector.dart` — dwell/corridor detection (phone).

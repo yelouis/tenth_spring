@@ -1,10 +1,10 @@
-# Agent Execution Guide — Active Build: Buildings, Rail Art, and Speed for the Pokémon-Look Map (F51–F53), then Neighbourhood & City Unlocking once Decisions 21–22 Are Answered (verified 2026-10-20, pass 18)
+# Agent Execution Guide — Active Build: Buildings, Rail Art, and Speed for the Pokémon-Look Map (F51–F53), then Famous Places — Same Map for Everyone, Unlocking, and Distort (verified 2026-10-20, pass 18; Decisions 21–26 answered the same day)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
 - a thin phone companion (**Flutter**, `companion/`) that only captures location and syncs.
 
-**The game:** a **Pokémon game** — Diamond/Pearl style, Ghost-heavy, set after a collapse — whose overworld is the places the player has physically been, **in the USA** (Decision 16).
+**The game:** a **Pokémon game** — Diamond/Pearl style, Ghost-heavy, set after a collapse — whose overworld is the places the player has physically been. **The map is made of famous US places only:** 27 cities and 36 parks, monuments, and wonders (Decisions 16, 25, 26 — `docs/design_famous_places.md`). Home is a hub you **Distort** from.
 - **Pokémon content** comes from ROMs **the player supplies**, read on their own machine (the PokeMMO model). **Black/White** supplies all data and sprites for the **649 Pokémon of Generations 1–5** (Decision 10 = B). **Emerald** supplies the overworld map tiles (Decision 19).
 - **Story:** an original one — the Stillness, the Distortion, nine regional Wardens, and the Echo. `docs/design_story_and_world.md` is the theme contract for everything player-facing.
 - **No commerce:** no Steam, no sales.
@@ -17,13 +17,18 @@
   - **F52 — the overview zoom is slow:** 87 ms per frame against a 16.6 ms target. Synthesis takes ~9 ms a cell and runs on the main thread.
   - **F53 — rail lines look broken:** diagonal track draws as separate boxes.
   - The *art* is the original placeholder by design. **The real Pokémon look arrives with the human's Emerald dump** (Item 12). F51 is what keeps even the placeholder map from looking like a town.
-- **The human also changed the design:** going to a neighbourhood should reveal the whole neighbourhood, and going to a couple of neighbourhoods in a city should reveal the whole city — instead of revealing only the streets walked. The open details are **Decisions 21 and 22**; the draft plan for the recommended answers is `docs/implementation_plan_area_unlock.md`. **Decision 23** re-asks how map data reaches the PC (Decision 15).
+- **The human also redesigned the map — all answered on 2026-10-20** (`ongoing_general_errors.md`, Decisions 21–26):
+  - **Unlocking by area:** inside a famous city, any real movement in a neighbourhood reveals it (21 = B), and enough neighbourhoods reveal the city (22 = A, `clamp(ceil(10%), 2, 5)`). Any visit to a famous park reveals all of it.
+  - **Famous places only (25):** 27 cities, 3 per region. Home is a hub. You Distort, free, to the famous city nearest home (its Waypost neighbourhood pre-revealed) and to any place you've physically visited. You return home only from a Waypost.
+  - **Legendaries and Wardens (26):** 48 legendaries, each at its own themed place behind a challenge, with one decisive battle. Each region's Warden waits at a fixed landmark, once all three of the region's cities are unlocked. Each region gets its own story and survivors (`design_story_and_world.md` §4a).
+  - **The same map for everyone (23 = A):** one pinned OpenStreetMap snapshot (2026-10-01), fixed conversion units per place, the whole coastline kept, and one global map seed. Decision 15's hosted stores are dropped.
+  - **Your area is no longer a famous place,** so the canonical test city is **Washington DC** — public, a 21 MB file, nothing private.
 
-**What is approved for build right now: Items 13–16** (§2) — the building fix, the rail art, background synthesis, and a stricter proof that pauses for the human's verdict.
+**What is approved for build right now:**
+- **Items 13–16** (§2) — the building fix, the rail art, background synthesis, and a stricter proof that pauses for the human's verdict.
+- **Items 17–21** (famous places) — approved by the human's decisions. **Item 17 pauses** for the human to review the filled-in place list.
 
-**Gated:**
-- Items 17–19 (neighbourhood and city unlocking) start only when Decisions 21 and 22 are answered (§7 has the gate check).
-- Item 10 waits on a Black/White dump, Item 12 on an Emerald dump.
+**Waiting on the human:** Item 10 waits on a Black/White dump, Item 12 on an Emerald dump.
 
 **What NOT to touch:**
 - §11 — already delivered;
@@ -45,7 +50,7 @@
    - the identity folder `user://sync_identity/`;
    - the human's demo profile `user://demo/`, including `user://demo/map_data/`.
 
-   Tests use `user://test/…`. *Measuring* the demo store read-only with `tools/measure_synth.py` is not a test and is allowed.
+   Tests use `user://test/…`. The DC profiles the agent makes (`user://measure_dc`, `user://demo_dc`) aren't the human's, and may be created and deleted freely.
 5. **The human's location never enters the repo — and that includes place names.**
    - Never commit `.gpx` routes, demo saves, map stores, or screenshots of their area.
    - **Never write the name of their town, neighbourhood, or streets, or any coordinates of where they live or walk** — not in docs, code, tests, commit messages, or CI logs.
@@ -56,7 +61,11 @@
    - If a step exits **75** (no room) or **76** (stopped for memory), report it — don't retry in a loop.
    - The Mac is shared with other projects that use tens of GB. **Never** deliberately starve it.
 7. **Godot on the human's Mac** is at `/Applications/Godot.app/Contents/MacOS/Godot` (4.3-stable), **not** on `PATH`. Set `GODOT_BIN` to it.
-8. **Download nothing** except what an item names. Items 13 and 17 download the human's region file — the URL that `python3 -I tools/map_convert.py --print-region user://demo/tenth_spring.db` prints — and its `.md5`, into `~/tenth_spring_private/downloads/`. Never commit a download.
+8. **Download nothing** except what an item names:
+   - **Items 13, 15, 16, 18, and 21:** the pinned Washington DC snapshot — `https://download.geofabrik.de/north-america/us/district-of-columbia-261001.osm.pbf` and its `.md5` — into a scratch folder outside the repo.
+   - **Item 17:** public place-name lookups on `https://nominatim.openstreetmap.org/search`, ≥ 1.1 s apart, with the plan's `User-Agent`. Public names only — never anything about the human.
+
+   Never commit a download. Never fetch `-latest` for game data; use the pinned `-261001` files.
 9. **Every change leaves the §1 battery and all CI workflows green** — that is the regression bar.
 10. **Anything touching capture, battery, or cross-device sync requires a real-device check** before Phase 1 is declared closed (§2, HUMAN actions).
 11. **The golden invariants (§13) stay green, always.**
@@ -78,7 +87,8 @@
 | `GODOT_BIN=… python3 game/tests/test_runner.py` | Mac, local | **Executed.** IP guard + 17 self-tests, isolation audit, memguard (10), synthetic PBF, demo-screenshot and placeholder-atlas tests, vendored SHA-256, harness self-test → **20/20 `PASS`**, `[REAL SAVE CHECK OK]`, static lint OK |
 | `GODOT_BIN=… python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1` |
 | CI `game_tests` / IP guard / `sync_e2e` | runs `39476386459` / `39476386451` / `39476386443` | **All green** — `game_tests` on Linux and macOS |
-| **Measurement — the human's area** (read-only, all 1,116 inner covered cells of `user://demo/map_data/region.db`) | Mac, local | **29,319** drawable building footprints → **~3,877 doors (≈ 13% placed)**. Tile share: GRASS 51.6%, **PATH 26.5%**, WATER 5.5%, **ROOF + WALL + DOOR 5.2%**, TREE 3.3%, ROAD 2.8%. With service roads and footways removed (an experiment, not code): ≈ 20% placed, PATH 16.0%. |
+| **Measurement — the human's area** (read-only, all 1,116 inner covered cells of `user://demo/map_data/region.db`) | Mac, local | **29,319** drawable building footprints → **~3,877 doors (≈ 13% placed)**. Tile share: GRASS 51.6%, **PATH 26.5%**, WATER 5.5%, **ROOF + WALL + DOOR 5.2%**, TREE 3.3%, ROAD 2.8%. With service roads and footways removed (an experiment, not code): ≈ 20% placed, PATH 16.0%. *(Kept for history — the area is no longer a famous place.)* |
+| **Measurement — Washington DC, the canonical test city** (pinned `district-of-columbia-261001`, MD5 verified, converted unclipped in **16.7 s**) | Mac, local | **136,325** building candidates → ≈ **9.5% placed** (12,962 doors). Over the 3,706 built-up cells: **PATH 30.6%**, **ROOF + WALL + DOOR 3.6%**, ROAD 4.1%. Store: 71,814 footway and 25,817 service pieces vs 11,766 residential streets. **These are Item 13's baselines.** |
 | **Synthesis speed** (same store, 200 cells, features prefetched) | Mac, local | **9.3 ms per cell** on the main thread |
 | `FRAME_P95_MS`, windowed (M35, M42) | Mac | zoom 1: 8.5–13.0 ms ✅; zoom 2: 11.9–12.3 ms ✅; **zoom 1/16: 86.9 ms ❌** (target 16.6) |
 | Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. Ready now. |
@@ -93,15 +103,17 @@
 | 13 | **Buildings: drop minor ways, placement v2, measurement — F51** (slice-2 plan §10.1–10.3, §10.7) | The human's verdict. Everything else in this build is judged on a map that has buildings. |
 | 14 | **Connected rail art — F53** (§10.4) | Small, independent art fix. Before the proof, so the screenshots don't show broken rails. |
 | 15 | **Synthesis off the main thread — F52** (§10.5) | Touches the same renderer the proof measures. Must land before Item 16's frame-time acceptance. |
-| 16 | **Proof v2 → show the human → PAUSE for their verdict** (§10.6) | Needs 13–15. If Decisions 21 and 22 are answered, continue to Item 17 while the human reviews. The look doesn't affect unlocking. |
-| 17 | ⛔ **Areas in the map store (schema v4), stage A** (area plan §2, §3) | Gated on Decisions 21–22. The reveal engine reads these tables. |
-| 18 | ⛔ **The reveal engine + save migration 2** (area plan §4, §5) | Gated. Needs Item 17's tables. |
-| 19 | ⛔ **Toasts, overview city names, real-data proof → PAUSE** (area plan §6, §7) | Gated. Needs Item 18. |
+| 16 | **Proof v2 in DC → show the human → PAUSE for their verdict** (§10.6) | Needs 13–15. Continue to Item 17 while the human reviews; the look doesn't affect the place list. |
+| 17 | **The famous-places list** (`implementation_plan_famous_places.md` §1) → **PAUSE** for the human's review | Everything after builds on the place ids, boundaries, and Wayposts. The human must see the list first. |
+| 18 | **The same map for everyone + place stores (schema v4)** (plan §2, §3) | The reveal engine reads place stores and `area_cells`. |
+| 19 | **Unlocking: save migration 2 + the reveal engine + the starter city** (plan §4) | Needs Item 18's stores. |
+| 20 | **Distort, the Town Map, and the home hub — viewer level** (plan §5) | Needs the Distort list from Item 19. |
+| 21 | **Real-data proof in Washington DC → PAUSE** (plan §6) | Needs 18–20. |
 | 10 | **Phase 2 — ROM spike + importer plan** (Black/White) | ⛔ Waits on the human supplying a Black/White dump. |
 | 12 | **Emerald tile spike + tile-importer plan** (Decision 19) | ⛔ Waits on the human supplying an Emerald dump. **This is what makes the map look like real Pokémon.** |
 
 **▶ HUMAN actions:**
-- **Answer Decisions 21, 22, 23, and 24** in `docs/ongoing_general_errors.md` (fill each `Your selection:`). 21 and 22 unblock Items 17–19; 23 decides what the in-game Download does (F45(d)); 24 decides whether a leaked coordinate is scrubbed from git history (only you can approve a force-push).
+- **At Item 17's pause:** review the filled-in famous-places list (names → OSM boundaries → Wayposts), and confirm or swap rows — including which legendary goes where (`design_famous_places.md` §1.2).
 - **For the real Pokémon look:** a Pokémon Emerald (USA) dump from your own cartridge (`TENTH_SPRING_ROM_GBA`), kept outside the repo. It unblocks Item 12.
 - **For Pokémon themselves:** a Black or White (USA) dump from your own cartridge (`TENTH_SPRING_ROM_BW`). It unblocks Item 10.
 - **Real-device sync gate — ready now.** It closes Phase 1. Install the companion on your iPhone (README → *Install the companion on an iPhone*), and start the PC game from `/Applications/Godot.app` with `game/project.godot`.
@@ -118,7 +130,7 @@ Deferred (trigger-gated, **do not start**): see §9.
 
 ## 3. Item 13 — Buildings: drop minor ways, placement v2, and a measurement tool (F51)
 
-**What this means for the user:** their streets fill with houses, shops, and schools — at least nearly half of the real buildings drawn as Pokémon-style buildings — instead of a field of tan paths.
+**What this means for the user:** famous cities fill with houses, shops, and schools — nearly half of the real buildings drawn as Pokémon-style buildings — instead of a field of tan paths.
 
 **Contract:** `implementation_plan_world_generation_slice2.md` §10.1, §10.2, §10.3, §10.7.
 
@@ -132,17 +144,12 @@ Deferred (trigger-gated, **do not start**): see §9.
 2. **Synthesis:** §10.2, steps 1–7 exactly — split the line layer (roads before buildings, paths after), the v2 rejection rule, reserved door rows, the 13-offset nudge, the same rules for fallback houses, and `stats`.
 3. **`tools/measure_synth.py` and `game/scenes/measure_synth.tscn`/`.gd`**, per §10.3, under memguard step `measure_synth` (measure its budget on the first run). It prints only the `MEASURE …` line.
 4. **Fixture v3 and tests (k)–(n)**, per §10.7. Commit the new golden hashes with the reason.
-5. **Re-convert the human's area** (local only):
-   1. `python3 -I tools/map_convert.py --print-region user://demo/tenth_spring.db`;
-   2. `curl -L` the `.osm.pbf` and its `.md5` into `~/tenth_spring_private/downloads/`, and check the MD5;
-   3. `python3 -I tools/memguard.py measure map_convert_clip -- python3 -I tools/map_convert.py --pbf <file> --out-dir user://demo/map_data --clip-to-save user://demo/tenth_spring.db`
-
-   Keep the region file until Item 17 is done (or delete it after Item 16 if Decisions 21–22 are still blank).
-6. **Measure:** `python3 -I tools/measure_synth.py --store user://demo/map_data/region.db`. Put the line in the commit body, and add an "after Item 13" column to §10.3's table.
+5. **Convert Washington DC** from the pinned snapshot (standing constraint 8; check the MD5): `python3 -I tools/map_convert.py --pbf <district-of-columbia-261001.osm.pbf> --out-dir user://measure_dc`. Keep the file outside the repo until Item 21 is done.
+6. **Measure:** `python3 -I tools/measure_synth.py --store user://measure_dc/<file>.db`. Put the line in the commit body, and add an "after Item 13" column to §10.3's table.
 
 ### Validation
 - **Falsifying:** test (k) fails against the current code — sidewalks and driveways are stored, and at most 1 of the 3 houses is placed. Paste the failure in the commit body.
-- **Targets on the human's area (§10.3):** placement **≥ 45%**, building tiles **≥ 10%**, path tiles **≤ 18%**. State each measured value beside its target. **If any target is missed with the rules implemented exactly, STOP** and file a decision with options — don't tune.
+- **Targets on Washington DC's built-up cells (§10.3):** placement **≥ 45%** (baseline ≈ 9.5%), building tiles **≥ 12%** (3.6%), path tiles **≤ 18%** (30.6%). State each measured value beside its target. **If any target is missed with the rules implemented exactly, STOP** and file a decision with options — don't tune.
 - Tests (l), (m), and (n) pass; `region_import_test` passes on fixture v3; the battery and all workflows are green.
 
 ### Blast radius (same commit)
@@ -186,14 +193,18 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
    - post requests, and each frame blit **≤ 2** finished cells, or create **≤ 8** overview textures at zoom < 1;
    - cells still waiting show solid fog;
    - reveal-state queries stay on the main thread.
-3. **Harness:** print `LOAD_TIME_MS`, `LOAD_MAX_FRAME_MS`, and the steady-state `FRAME_P95_MS` (120 frames after `pending_cell_count() == 0`).
+3. **Harness:** print `LOAD_TIME_MS`, `LOAD_MAX_FRAME_MS`, and the steady-state `FRAME_P95_MS` (120 frames after `pending_cell_count() == 0`). `tools/demo_screenshot.py` gains `--demo-dir <dir>`, passed through to Godot.
+4. **The DC demo profile** — needed for this item's real-data check, and reused by Item 16 (slice-2 plan §10.6 step 0):
+   - draw a GPX through public DC landmarks (National Mall, Union Station, Dupont Circle, Capitol Hill), saved outside the repo;
+   - `python3 -I tools/demo_import.py --gpx <file> --demo-dir user://demo_dc`;
+   - convert DC from the pinned snapshot into `user://demo_dc/map_data/`.
 
 ### Validation
 - **`map_view_test`:**
   - each synthesized result records the thread that made it, and it isn't the main thread;
   - no frame blits more than 2 cells;
   - after a camera jump, the request queue never exceeds 64, and requests for cells no longer visible are dropped.
-- **Falsifying — on the human's Mac:** `tools/demo_screenshot.py` at zoom 1 and zoom 1/16. Steady-state `FRAME_P95_MS` **≤ 16.6 ms** at both, and `LOAD_MAX_FRAME_MS` **≤ 33 ms**. The old code measured 86.9 ms at 1/16. Report all four numbers beside their targets.
+- **Falsifying — on the human's Mac, in the DC demo profile:** `tools/demo_screenshot.py --demo-dir user://demo_dc` at zoom 1 and zoom 1/16. Steady-state `FRAME_P95_MS` **≤ 16.6 ms** at both, and `LOAD_MAX_FRAME_MS` **≤ 33 ms**. The old code measured 86.9 ms at 1/16. Report all four numbers beside their targets.
 - The battery and all workflows are green.
 
 ### Blast radius (same commit)
@@ -201,73 +212,93 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 
 ---
 
-## 6. Item 16 — Proof v2 → show the human → PAUSE
+## 6. Item 16 — Proof v2 in Washington DC → show the human → PAUSE
 
-**What this means for the user:** they see their own streets with buildings, rails, and parks, made by the game, at Pokémon zoom — and decide whether the look is right.
+**What this means for the user:** they see a famous city — DC — with buildings, rails, and parks, made by the game at Pokémon zoom, and decide whether the look is right.
 
 **Contract:** slice-2 plan §10.6.
 
 ### Implementation
-1. **Harness:** `--focus=most_visited|most_buildings` and the `VISIBLE_DOORS` line.
-2. **Capture the four screenshots** in §10.6's table with `tools/demo_screenshot.py`, into `~/tenth_spring_private/screens/`.
+1. **Use the DC demo profile** made in Item 15 (`user://demo_dc`).
+2. **Harness:** `--focus=most_visited|most_buildings` and the `VISIBLE_DOORS` line.
+3. **Capture the four screenshots** in §10.6's table with `tools/demo_screenshot.py --demo-dir user://demo_dc`, into a folder outside the repo.
 
 ### Validation
 - **Automated:** `screenshot_args_test` accepts both `--focus` values and refuses anything else with exit 2.
 - **Acceptance on the human's Mac:** `VISIBLE_DOORS` **≥ 3** in `shot_z2_mb_cleared.png` and **≥ 8** in `shot_z1_mb_cleared.png`, and every steady-state `FRAME_P95_MS` ≤ 16.6 ms. **Report each number beside its target.**
 - **Show the human all four images.** Say plainly that the art is the original placeholder, and that the real Pokémon tiles arrive with their Emerald dump (Item 12).
-- **PAUSE** for their verdict on the look. If Decisions 21 and 22 are answered, continue to Item 17 meanwhile. Otherwise **stop: the queue is empty** until a trigger in the Definition of Done fires.
+- **PAUSE** for their verdict on the look, and continue to Item 17 meanwhile.
 
 ### Blast radius (same commit)
 `game/scripts/screenshot_config.gd` · `map_view.gd` · `tools/demo_screenshot.py` · `screenshot_args_test.gd` · M-entry in `ongoing_general_errors.md` with the numbers.
 
 ---
 
-## 7. Neighbourhood & city unlocking (Items 17–19) — ⛔ gated
+## 7. Famous places (Items 17–21) — approved by Decisions 21–26
 
-**Gate check — do this before Item 17.** Open `docs/ongoing_general_errors.md`:
-- **Decision 21:**
-  - **A** → follow `docs/implementation_plan_area_unlock.md` as written.
-  - **B** → follow it with the variant in its status block.
-  - **C** → STOP: write the plan amendment its status block describes, and pause for review.
-  - **Blank** → STOP; the queue is empty.
-- **Decision 22:** any answer → use that threshold (status block). **Blank** → STOP.
-- **Once both are answered,** mark the area plan's status APPROVED in the same commit as Item 17.
+**What this means for the user:** the game's world becomes 27 famous cities and 36 famous parks and wonders.
+- Home is a hub. From day one they can Distort to the famous city nearest home, its Waypost neighbourhood already revealed.
+- Passing through a neighbourhood for real reveals it; enough neighbourhoods reveal the city; a visit to a park reveals all of it.
+- Two friends in the same place see the identical map.
 
-**What this means for the user:** a stop anywhere in a neighbourhood reveals all of it, and stopping in a couple of a city's neighbourhoods reveals the whole city — the way a Pokémon town map fills in, instead of street by street.
+**The contracts:** `docs/design_famous_places.md` (the design and the lists) and `docs/implementation_plan_famous_places.md` (the build). Implement their sections exactly; this guide adds only order, proof, and blast radius.
 
-**The contract is `docs/implementation_plan_area_unlock.md`.** Implement its sections exactly; this guide adds only order, proof, and blast radius.
+**Rules for every famous-places item:**
+- Never name the human's home, town, or starter city anywhere in the repo. The proof uses Washington DC.
+- Every reveal only ever adds.
+- Golden invariant 1 holds: ingest writes only `map_cell`, `place_node`, and `visit_log`.
 
-### 7.1 Item 17 — Areas in the map store (area plan §2, §3)
+### 7.1 Item 17 — The famous-places list → PAUSE (plan §1)
 - **Build:**
-  - cities (§2.1), named neighbourhoods (§2.2), and 4 × 4 districts (§2.3);
-  - the `areas` and `area_cells` tables, and `schema_version = '4'` (§2.4);
-  - stage A and the grown clip rectangle (§2.5);
-  - fixture v4 (§3).
-- **Prove:** fixture v4's expectations in `region_import_test` (every covered cell has one `area_cells` row; `Mill District` beats the nearest node; rural cells form `grid:none:*` districts) and the new canonical hash.
-- **Real data:** re-convert the human's area with stage A, and record time, peak RSS, and store size against **≤ 15 min and ≤ 1 GiB**.
-- **Blast radius:** `region_converter.gd`, `map_store.gd`, `map_convert.gd` / `tools/map_convert.py`, the generator + its test + the fixture, `region_import_test.gd`, `map_view.gd` (skip message `need 4`), slice-1 plan §5.3 (the new clip row), area plan status.
+  - `game/config/famous_places.json` — 75 entries, per `design_famous_places.md` §1–§5 and §9;
+  - the Nominatim lookups for boundary relations, Wayposts, and Warden landmarks — public names only, ≥ 1.1 s apart;
+  - `tools/check_famous_places.py` in the battery.
+- **Prove:** the checker passes — 27 cities (3 per region), 48 distinct legendaries with no shared place, a boundary and Waypost for every city and site, one Warden per region in one of its cities. **Falsifying:** a copy with two legendaries on one place fails.
+- **PAUSE:** show the human the list (name → relation id → Waypost), and record their confirmations or swaps in `ongoing_general_errors.md`. Continue to Item 18 only after they answer.
+- **Blast radius:** the config, the checker, `test_runner.py`.
 
-### 7.2 Item 18 — The reveal engine and save migration 2 (area plan §4, §5)
+### 7.2 Item 18 — The same map for everyone, and place stores (plan §2, §3)
 - **Build:**
-  - migration 2 (`area_reveal`) as the first entry in `MIGRATIONS`;
-  - `game/world/reveal_engine.gd` with rules 1–7;
-  - the four call sites in rule 6 — after a sync batch, after a store install, at boot, and after a demo import.
-- **Prove:** new `reveal_engine_test.gd` (add it to `EXPECTED`), cases (a)–(g) of area plan §7.
-  - **(a) is the falsifier:** today a visit reveals only its own cell.
+  - `map_constants.gd` (`MAP_SNAPSHOT`, `MAP_SEED`); the pinned dated URLs in the fetcher;
+  - `tools/map_convert.py --place <id>` with the fixed unit (boundary bounding box + 2 cells);
+  - the whole coastline kept; one store per place, schema v4, with `areas` and `area_cells` (neighbourhoods for cities, one area for sites);
+  - fixture v4.
+- **The in-game install now converts only famous places** — this closes F45(d).
+- **Prove:**
+  - **Falsifying — the determinism test** (plan §2.5): two different clips give identical place buffers;
+  - fixture v4's expected `areas`/`area_cells`;
+  - DC converted with `--place city:washington-dc`, with time, peak RSS, and store size recorded in slice-1 plan §5.3.
+- **Blast radius:** `tile_synth2.gd` (seed from `MAP_SEED`), `map_fetcher.gd`, `region_converter.gd`, `map_store.gd`, `map_convert.*`, the generator + its test + the fixtures, `region_import_test.gd`, `map_view.gd` (skip message `need 4`), F45 → Resolved.
+
+### 7.3 Item 19 — Unlocking: migration 2, the reveal engine, the starter city (plan §4)
+- **Build:**
+  - migration 2 (`area_reveal`, `distort_list`, `meta('home_cell')`);
+  - `game/world/reveal_engine.gd` — any movement unlocks a neighbourhood or site (21 = B), the city threshold (22 = A), the Distort list, home designation, and the starter city;
+  - the four call sites.
+- **Prove:**
+  - `reveal_engine_test.gd` (add it to `EXPECTED`), cases (a)–(g). **(a) — a corridor row reveals a whole neighbourhood — is the falsifier.**
   - `db_migration_test` covers v1 → v2. `sync_ingest_isolation_test` stays green, unchanged.
-- **Blast radius:** `db.gd`, `sync_server.gd` (the post-commit call), `main.gd` (boot), `demo_import_server.gd`, the new engine and test, `EXPECTED`, `db_migration_test.gd`, `design_game_state_and_models.md` (the table).
+- **Blast radius:** `db.gd`, `sync_server.gd`, `main.gd`, `demo_import_server.gd`, the engine and its test, `EXPECTED`, `design_game_state_and_models.md`, `design_world_generation.md` §1–2.
 
-### 7.3 Item 19 — What the player sees, and real-data proof → PAUSE (area plan §6, §7)
-- **Build:** the toasts (exact strings) and the overview city labels.
-- **Prove:** a scene test where unlocking two neighbourhoods and a city shows the three toasts in order, with the exact text.
-- **Real data:**
-  1. re-import the human's route (`tools/demo_import.py`) into a fresh demo profile;
-  2. capture zoom 1/16 and zoom 1 with the harness;
-  3. report how many neighbourhoods and cities unlocked — counts only;
-  4. show the human both images.
+### 7.4 Item 20 — Distort, the Town Map, and the home hub — viewer level (plan §5)
+- **Build:**
+  - `home_hub.tscn` and `town_map.tscn` (original art);
+  - lit, grey, and ringed markers; loading a place centred on its Waypost;
+  - `Return home` only within 1 cell of the Waypost;
+  - boot routing: phone inside a famous place → that place; otherwise → the hub.
+- **Prove:** the plan §5 scene tests. **Falsifying:** a locked marker can't be opened.
+- **Blast radius:** the new scenes and tests, `main.gd`, `map_view.gd`/`.tscn`, `EXPECTED`, `design_travel_and_time.md` §4 (mark it built at viewer level).
+
+### 7.5 Item 21 — Real-data proof in Washington DC → PAUSE (plan §6)
+- **Steps:**
+  1. Convert DC with `--place`.
+  2. Make a DC demo profile with the agent-drawn public route, and home at a public point outside DC.
+  3. Capture the Town Map, DC at zoom 1/16, and DC at zoom 1 at the Waypost.
+  4. Report the neighbourhoods unlocked, whether the city threshold was reached, and the Distort list.
+  5. Show the human.
 - **PAUSE.**
-- **Doc changes (area plan §8):** `design_world_generation.md` §1–2, `design_privacy_and_location.md`, `master_implementation_plan.md` Phase 3.
-- **Blast radius:** `map_view.gd`/`.tscn`, the toast test, those docs, the area items → Resolved.
+- **Doc changes** (plan §7): `design_privacy_and_location.md`, `master_implementation_plan.md` Phase 3.
+- **Blast radius:** those docs; Items 17–21 → Resolved.
 
 ---
 
@@ -374,13 +405,14 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 ---
 
 ## 9. Deferred — trigger-gated, do NOT start
-- **F45(d) — the in-game Download converts the whole state.** **Trigger:** Decision 23 answered. Under A, the in-game install switches to clip conversion around unlocked areas — write that as a plan amendment first. Under B, build and host pre-converted stores — a new plan, reviewed first. **Never build or publish stores before Decision 23 is answered.**
+- **Distort gameplay with a walking avatar** — the real Waypost rule (you must *walk* to the Waypost to go home), the home hub's Rest, PC Box, and Garden, and the session-start banner (`design_famous_places.md` §2–§4; `design_travel_and_time.md` §4–5). **Trigger:** Phase 4. Item 20 builds only the viewer-level structure.
+- **Legendary challenges, Warden trials, region survivors, and the Echo** (`design_famous_places.md` §5–§6; `design_story_and_world.md` §4–§5, §4a; encounters §7). **Trigger:** Phase 8 — after the battle engine exists (Phase 5). Not before.
+- **Widening the map beyond famous places.** **Trigger:** a human request. The phone and save already keep everything, so nothing is lost meanwhile.
+- **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, ledges and terraces from USGS elevation, and overgrowth by distance (`design_encounters_and_haunted_zones.md` §2a and §3a). **Trigger:** the human approves the look at Item 16's pause. Write `implementation_plan_world_generation_slice3.md` first, and pause.
+- **Moving `MAP_SNAPSHOT` forward.** **Trigger:** a release the human approves. It changes every player's map at once, deliberately.
 - **F49 — memguard `run` logs a 0.0 peak for short steps.** **Trigger:** the next change to `tools/memguard.py` — take the first sample after 0.2 s, then every `POLL_SECONDS`.
-- **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, ledges and terraces from USGS elevation, and overgrowth by distance (`design_encounters_and_haunted_zones.md` §2a and §3a; `design_world_generation.md` §5). **Trigger:** the human approves the look at Item 16's pause. Write `implementation_plan_world_generation_slice3.md` first, and pause.
-- **Warden trials, the Echo, and region-bound legendaries** (Decision 18; `design_story_and_world.md` §4–§5; encounters §7). **Trigger:** Phase 8 in the roadmap — after the battle engine exists (Phase 5). Not before.
-- **F7 — home-cell grid mismatch.** `companion/lib/capture/fuzz.dart:38-47` snaps home to a **300 m** grid; the game treats home as one 256 WM-m cell. **Trigger:** the first commit that wires safehouse designation (Phase 3 onboarding).
+- **F7 — home-cell grid mismatch.** `companion/lib/capture/fuzz.dart:38-47` snaps home to a **300 m** grid; the game stores home as one cell (`meta('home_cell')`, Item 19). **Trigger:** the onboarding UI for designating home (Phase 10).
 - **mDNS auto-discovery (F27 d).** v1 finds the PC by remembered address plus QR re-scan. **Trigger:** the human reports that re-scanning is a real nuisance.
-- **Session-start relocation (§B5) on game launch.** `relocation_manager.gd` is still not called. **Trigger:** Phase 4.
 - **A Windows CI job.** The Windows `.dll`s are vendored but have never been loaded. **Trigger:** Phase 10 release prep, or the human playing on Windows.
 - **Black 2/White 2 and non-USA ROMs.** **Trigger:** a human request.
 
@@ -390,7 +422,7 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 
 Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`**. Order:
 
-0 Capture · 1 Sync & models · **2 ROM importer** · 3 World generation (slices 1–2 built and being corrected; area unlocking drafted; slice 3 later) · 4 Travel & time · 5 Creatures & battles · 6 Encounters & catching · 7 Exploration & survival · 8 Haunted zones & legendaries · 9 Art & UI · 10 Privacy, balance & release.
+0 Capture · 1 Sync & models · **2 ROM importer** · 3 World generation (slices 1–2 built and being corrected; famous places next; slice 3 later) · 4 Travel & time (incl. Distort) · 5 Creatures & battles · 6 Encounters & catching · 7 Exploration & survival · 8 Haunted zones, legendaries, Wardens · 9 Art & UI · 10 Privacy, balance & release.
 
 **Rule:** before coding any phase from 2 onward — or any new slice of one — write its `implementation_plan_*.md` at foundation depth and pause for human review (THE LOOP, step 2). Phase 2 must land before Phases 5–9.
 
@@ -463,7 +495,11 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Minor ways are never drawn** (F51, after Item 13): sidewalks, crossings, parking aisles, driveways, and every `highway=service`. Pokémon maps show streets and footpaths.
 - **Buildings come before footpaths; roads come before buildings** (slice-2 plan §10.2). Every building keeps its door row walkable.
 - **Synthesis never runs on the main thread** (F52, after Item 15). SQLite connections are never shared across threads.
-- **Unlocking only ever adds** (after Items 17–19): an unlocked neighbourhood or city stays unlocked, and reveal states never decrease.
+- **The map is famous places only** (Decisions 25–26): 27 cities and 36 parks and wonders, listed in `design_famous_places.md`. Everything else is never drawn — but still recorded and stored.
+- **Unlocking only ever adds** (Items 17–21): an unlocked neighbourhood, city, or site stays unlocked; reveal states never decrease. Any real movement counts (21 = B); the city threshold is `clamp(ceil(0.10 × n), 2, 5)` (22 = A).
+- **Distort:** from home, only to the starter city and to places physically visited; home only from a Waypost or by blackout (Decision 25).
+- **The same map for everyone** (Decision 23): `MAP_SNAPSHOT` pinned per release, fixed conversion units, the whole coastline kept, and `MAP_SEED` global. **Never** let a per-player seed or a `-latest` download touch the map.
+- **Legendaries get one decisive battle,** each at its own place behind a challenge; Wardens appear only once their region's three cities are unlocked (Decision 26).
 
 ## 14. Where the contracts live
 | Need | Doc |
@@ -473,7 +509,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 | Phases 0–1 build steps, v1 DDL, TLS sync protocol, Godot test-harness contract | `docs/implementation_plan_foundation.md` |
 | **Slice 1 of world generation** + its pass-17 amendments (§5.1a, §5.4a, §5.5, §7.1a, §7.4) | `docs/implementation_plan_world_generation.md` |
 | **Slice 2 — "Pokémon look"** (approved, Decision 17 = A) **+ the pass-18 corrections (§10)** | `docs/implementation_plan_world_generation_slice2.md` |
-| **Neighbourhood & city unlocking** (draft, gated on Decisions 21–22) | `docs/implementation_plan_area_unlock.md` |
+| **What the map contains** — famous places, unlocking, Distort, the same map for everyone, the 48 legendary places, Warden landmarks | `docs/design_famous_places.md` |
+| **Building famous places** (Items 17–21) | `docs/implementation_plan_famous_places.md` |
 | **The backstory and theme** — the Stillness, the Distortion, Wardens, the Echo, writing rules | `docs/design_story_and_world.md` |
 | The Black/White and Emerald ROMs, formats, legal + repo guardrails | `docs/design_rom_asset_pipeline.md` |
 | Stats, types, damage, catching, party, PC, blackout | `docs/design_creatures_and_battles.md` |
@@ -498,7 +535,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
             Specs are decisions.
 2 PLAN      Building a phase or slice with no approved implementation_plan_*.md? Write one
             FIRST and PAUSE for human review. (Items 13–16 implement the approved slice-2 plan's
-            §10; Items 17–19 need Decisions 21–22.)
+            §10; Items 17–21 implement the approved famous-places plan, with a pause at 17.)
 3 IMPLEMENT Exactly as written, on a branch. Honor §13 and the standing constraints —
             above all: no Nintendo content; none of the human's places in the repo; no test
             touches the real save, identity, or demo profile; one grid; never force-push main.
@@ -516,21 +553,25 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ```
 
 ## Definition of Done (this build)
-- [ ] **Item 13 (F51)** — minor ways dropped; placement v2; `measure_synth`; fixture v3; the human's area re-converted; **placement ≥ 45%, building tiles ≥ 10%, path tiles ≤ 18%** — or a decision filed.
+- [ ] **Item 13 (F51)** — minor ways dropped; placement v2; `measure_synth`; fixture v3; DC converted from the pinned snapshot; **on DC's built-up cells: placement ≥ 45%, building tiles ≥ 12%, path tiles ≤ 18%** — or a decision filed.
 - [ ] **Item 14 (F53)** — connected rail art; the falsifying pixel test passes.
 - [ ] **Item 15 (F52)** — worker-thread synthesis; steady `FRAME_P95_MS` ≤ 16.6 ms at zoom 1 and 1/16; load frames ≤ 33 ms.
 - [ ] **Item 16** — the four screenshots, `VISIBLE_DOORS` ≥ 3 (zoom 2) and ≥ 8 (zoom 1), **shown to the human; paused for their verdict.**
-- [ ] **HUMAN: Decisions 21, 22, 23, and 24 answered.** If 24 = B, an agent rewrites history only with your explicit go-ahead in chat at the time.
-- [ ] **If 21–22 are answered:** Items 17–19 delivered with their proofs; **paused for review.**
+- [x] **HUMAN: Decisions 21–26 answered** (2026-10-20).
+- [ ] **Item 17** — the famous-places list filled in, the checker in the battery; **the human reviewed it at the pause.**
+- [ ] **Item 18** — the determinism test passes; place stores v4; the in-game install converts only famous places (F45 resolved).
+- [ ] **Item 19** — the reveal engine (any movement, the scaled threshold, sites, the Distort list, the starter city); migration 2.
+- [ ] **Item 20** — the home hub, the Town Map, and `Return home` at the Waypost (viewer level).
+- [ ] **Item 21** — the DC proof **shown to the human; paused.**
 - [ ] **HUMAN: real-device sync gate passes** (§2). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run.** **Closes Phase 0.**
 - [ ] **When a Black/White dump is supplied:** Item 10 — verify markers resolved, `implementation_plan_rom_importer.md` written, preview shown, **paused for review**.
 - [ ] **When an Emerald dump is supplied:** Item 12 — Emerald verify markers resolved, `emerald_tile_map.json` drafted, contact sheets and preview shown, `implementation_plan_rom_tiles.md` written, **paused for review**.
 - [ ] The full §1 battery and every CI workflow (Linux and macOS) are green.
 
-**When all of the above that apply are checked — or Item 16 is done and Decisions 21–22 are still blank — this build's queue is empty. Do NOT invent work.** Legitimate triggers for more:
-- a filled `Your selection:` on Decision 21, 22, or 23 (or any new item in `ongoing_general_errors.md`);
-- the human's verdict at Item 16's or Item 19's pause;
+**When all of the above that apply are checked, this build's queue is empty. Do NOT invent work.** Legitimate triggers for more:
+- a new item in `ongoing_general_errors.md` with a filled `Your selection:`;
+- the human's verdict at Item 16's, 17's, or 21's pause;
 - a ROM dump supplied (Items 10, 12);
 - the §1 battery or any CI workflow regressing;
 - a §9 trigger firing;
