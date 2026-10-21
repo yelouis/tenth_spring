@@ -25,6 +25,7 @@ Columns: 8
 154 154 160	road speckle
 200 200 200	road curb
  90  90  96	road crack
+160 144 128	rail ballast
 107 107 107	rail
 176 120  64	bridge plank
 122  80  40	bridge rail

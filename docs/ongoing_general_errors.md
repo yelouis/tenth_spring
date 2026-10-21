@@ -830,15 +830,25 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Path tiles: **16.6%** (target ≤ 18%, baseline 30.6%) — **PASS**
   - Placement rate: **32.5%** (target ≥ 45%, baseline ≈ 9.5%) — **TARGET MISSED** (improved 3.4x, filed Decision 28).
 
+**M45 — Connected Rail Art (F53, 2026-10-20, pass 18; Item 14).**
+- **What was solved:**
+  - Redrew `RAIL` in `tools/gen_placeholder_atlas.py` as a seamless connector tile per §10.4:
+    - Full-tile gravel ballast bed (`#a09080` / `PALETTE["rail_ballast"]`), with no frame borders.
+    - Two parallel rails 6 px apart (`x=13, 19` for vertical; `y=13, 19` for horizontal) running from center to connected edges.
+    - Sleepers every 6 px across tracks (`PALETTE["tree_trunk"]`), rendered under the rails.
+    - Opposite-edge extension for single connected bits (straight end pieces); east-west track when 0 bits set.
+    - L-bends meeting at center for adjacent bits (e.g. N + E, S + E, S + W, N + W), allowing 4-connected stair-stepped diagonals to read as continuous zig-zag lines.
+  - Regenerated `game/assets/tiles/placeholder_v1.png`, `placeholder_v1.json`, and `assets/palette/tenth_spring.gpl`.
+  - Added falsifying assertion `test_rail_connected_art_falsifying` in `tools/test_gen_placeholder_atlas.py`. All 5 atlas tests pass and byte-for-byte regeneration is preserved.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44.*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45.*
 - **F52 — the overview zoom is far too slow.** `FRAME_P95_MS` at zoom 1/16 measured **86.92 ms** against the 16.6 ms target (M42).
   - **Cause:** synthesis costs about **9.3 ms per cell** on real data (measured this pass) and runs on the main thread. The 8 ms budget (`map_view.gd:19`, `:597`) is checked only *between* cells, so every frame still pays for at least one whole cell. The overview needs ~300 cells.
   - **Agent guide Item 15.**
-- **F53 — diagonal rail lines look like a row of separate boxes.** The atlas draws `RAIL` straight only — vertical if N or S is set, else horizontal (`tools/gen_placeholder_atlas.py:398-446`) — and frames each tile. So a stair-stepped diagonal reads as disconnected pieces. **Agent guide Item 14.**
 - **F45(d) — whole-state conversion on PC.** The in-game download still converts the whole region extract. **Decision 23 = A:** only famous places are converted, each as a fixed unit from the pinned snapshot — agent guide Item 18.
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**

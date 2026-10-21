@@ -50,6 +50,7 @@ PALETTE = {
     "road_curb": (200, 200, 200, 255),     # #c8c8c8
     "road_crack": (90, 90, 96, 255),       # #5a5a60 / roof 7 shade
     # Rail & Bridge
+    "rail_ballast": (160, 144, 128, 255),  # #a09080
     "rail": (107, 107, 107, 255),          # #6b6b6b
     "bridge_plank": (176, 120, 64, 255),   # #b07840
     "bridge_rail": (122, 80, 40, 255),     # #7a5028 / door
@@ -145,6 +146,14 @@ class AtlasBuilder:
         py = row * TILE_SIZE + y
         idx = (py * WIDTH + px) * 4
         self.buffer[idx:idx + 4] = bytes(color)
+
+    def get_pixel(self, col: int, row: int, x: int, y: int) -> tuple:
+        if not (0 <= x < TILE_SIZE and 0 <= y < TILE_SIZE):
+            return (0, 0, 0, 0)
+        px = col * TILE_SIZE + x
+        py = row * TILE_SIZE + y
+        idx = (py * WIDTH + px) * 4
+        return tuple(self.buffer[idx:idx + 4])
 
     def fill_tile(self, col: int, row: int, color: tuple):
         for y in range(TILE_SIZE):
@@ -396,34 +405,148 @@ class AtlasBuilder:
             self.set_pixel(col, row, 13, 12, PALETTE["tall_tips"])
 
     def draw_rail(self, row: int, col: int, mask: int):
-        self.fill_tile(col, row, PALETTE["road"])  # gravel ballast
-        for sx, sy in [(5, 7), (15, 12), (25, 8), (10, 22), (22, 25)]:
-            self.set_pixel(col, row, sx, sy, PALETTE["road_speckle"])
+        ballast = PALETTE["rail_ballast"]
+        rail_col = PALETTE["rail"]
+        sleeper_col = PALETTE["tree_trunk"]
 
-        n_conn = (mask & 1) != 0
-        s_conn = (mask & 4) != 0
-        is_vert = n_conn or s_conn
+        # 1. Full-tile gravel bed (#a09080), with no frame (§10.4)
+        self.fill_tile(col, row, ballast)
 
-        if is_vert:
-            # Sleepers every 6 px
-            for y in range(TILE_SIZE):
-                if y % 6 in (0, 1):
-                    for x in range(6, 26):
-                        self.set_pixel(col, row, x, y, PALETTE["tree_trunk"])
-            # Two vertical rails
-            for y in range(TILE_SIZE):
-                self.set_pixel(col, row, 10, y, PALETTE["rail"])
-                self.set_pixel(col, row, 21, y, PALETTE["rail"])
+        # 2. Connection flags (Bit 0 = N (1), Bit 1 = E (2), Bit 2 = S (4), Bit 3 = W (8))
+        n = (mask & 1) != 0
+        e = (mask & 2) != 0
+        s = (mask & 4) != 0
+        w = (mask & 8) != 0
+
+        # With no bits set, it runs east–west (§10.4)
+        if not (n or e or s or w):
+            e = True
+            w = True
         else:
-            # Sleepers every 6 px
-            for x in range(TILE_SIZE):
-                if x % 6 in (0, 1):
-                    for y in range(6, 26):
-                        self.set_pixel(col, row, x, y, PALETTE["tree_trunk"])
-            # Two horizontal rails
-            for x in range(TILE_SIZE):
-                self.set_pixel(col, row, x, 10, PALETTE["rail"])
-                self.set_pixel(col, row, x, 21, PALETTE["rail"])
+            set_count = (1 if n else 0) + (1 if e else 0) + (1 if s else 0) + (1 if w else 0)
+            if set_count == 1:
+                # With exactly one bit set, track also runs to opposite edge (straight end piece)
+                if n: s = True
+                elif s: n = True
+                elif e: w = True
+                elif w: e = True
+
+        # 3. Sleepers (drawn first, across rails every 6 px)
+        # Vertical arms: sleepers across x in [9, 23]
+        if n:
+            for sy in (3, 4, 9, 10):
+                for sx in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+        if s:
+            for sy in (21, 22, 27, 28):
+                for sx in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+        # Horizontal arms: sleepers across y in [9, 23]
+        if w:
+            for sx in (3, 4, 9, 10):
+                for sy in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+        if e:
+            for sx in (21, 22, 27, 28):
+                for sy in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+
+        # Center sleepers
+        if n and s and not (e or w):
+            for sy in (15, 16):
+                for sx in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+        elif e and w and not (n or s):
+            for sx in (15, 16):
+                for sy in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+        elif n and e and not (s or w):
+            for d in range(-6, 7):
+                cx, cy = 16 + d, 16 - d
+                self.set_pixel(col, row, cx, cy, sleeper_col)
+                self.set_pixel(col, row, cx + 1, cy, sleeper_col)
+        elif s and e and not (n or w):
+            for d in range(-6, 7):
+                cx, cy = 16 + d, 16 + d
+                self.set_pixel(col, row, cx, cy, sleeper_col)
+                self.set_pixel(col, row, cx + 1, cy, sleeper_col)
+        elif s and w and not (n or e):
+            for d in range(-6, 7):
+                cx, cy = 16 + d, 16 - d
+                self.set_pixel(col, row, cx, cy, sleeper_col)
+                self.set_pixel(col, row, cx + 1, cy, sleeper_col)
+        elif n and w and not (s or e):
+            for d in range(-6, 7):
+                cx, cy = 16 + d, 16 + d
+                self.set_pixel(col, row, cx, cy, sleeper_col)
+                self.set_pixel(col, row, cx + 1, cy, sleeper_col)
+        elif (n or s) and (e or w):
+            for sy in (15, 16):
+                for sx in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+            for sx in (15, 16):
+                for sy in range(9, 24):
+                    self.set_pixel(col, row, sx, sy, sleeper_col)
+
+        # 4. Rails (two rails 6 px apart, meeting at centre)
+        if n and e and not (s or w):
+            # L-bend N + E
+            for y in range(0, 14):
+                self.set_pixel(col, row, 19, y, rail_col)
+            for x in range(19, 32):
+                self.set_pixel(col, row, x, 13, rail_col)
+            for y in range(0, 20):
+                self.set_pixel(col, row, 13, y, rail_col)
+            for x in range(13, 32):
+                self.set_pixel(col, row, x, 19, rail_col)
+        elif s and e and not (n or w):
+            # L-bend S + E
+            for y in range(13, 32):
+                self.set_pixel(col, row, 13, y, rail_col)
+            for x in range(13, 32):
+                self.set_pixel(col, row, x, 13, rail_col)
+            for y in range(19, 32):
+                self.set_pixel(col, row, 19, y, rail_col)
+            for x in range(19, 32):
+                self.set_pixel(col, row, x, 19, rail_col)
+        elif s and w and not (n or e):
+            # L-bend S + W
+            for y in range(13, 32):
+                self.set_pixel(col, row, 19, y, rail_col)
+            for x in range(0, 20):
+                self.set_pixel(col, row, x, 13, rail_col)
+            for y in range(19, 32):
+                self.set_pixel(col, row, 13, y, rail_col)
+            for x in range(0, 14):
+                self.set_pixel(col, row, x, 19, rail_col)
+        elif n and w and not (s or e):
+            # L-bend N + W
+            for y in range(0, 14):
+                self.set_pixel(col, row, 13, y, rail_col)
+            for x in range(0, 14):
+                self.set_pixel(col, row, x, 13, rail_col)
+            for y in range(0, 20):
+                self.set_pixel(col, row, 19, y, rail_col)
+            for x in range(0, 20):
+                self.set_pixel(col, row, x, 19, rail_col)
+        else:
+            # Straight tracks or T/4-way junctions
+            if n:
+                for y in range(0, 16):
+                    self.set_pixel(col, row, 13, y, rail_col)
+                    self.set_pixel(col, row, 19, y, rail_col)
+            if s:
+                for y in range(16, 32):
+                    self.set_pixel(col, row, 13, y, rail_col)
+                    self.set_pixel(col, row, 19, y, rail_col)
+            if w:
+                for x in range(0, 16):
+                    self.set_pixel(col, row, x, 13, rail_col)
+                    self.set_pixel(col, row, x, 19, rail_col)
+            if e:
+                for x in range(16, 32):
+                    self.set_pixel(col, row, x, 13, rail_col)
+                    self.set_pixel(col, row, x, 19, rail_col)
 
     def draw_bridge(self, row: int, col: int, mask: int):
         self.fill_tile(col, row, PALETTE["bridge_plank"])
@@ -679,8 +802,8 @@ class AtlasBuilder:
 
         return png_header + ihdr_chunk + idat_chunk + iend_chunk
 
-def generate_atlas_assets():
-    """Generates placeholder_v1.png, placeholder_v1.json, and tenth_spring.gpl."""
+def build_atlas():
+    """Builds AtlasBuilder, json_data dict, and gpl string."""
     # Define row allocations
     row_specs = []
     current_row = 0
@@ -813,8 +936,6 @@ def generate_atlas_assets():
     builder.draw_fog(fog_d50, 50)
     builder.draw_fog(fog_d25, 25)
 
-    png_bytes = builder.to_png_bytes()
-
     json_data = {
         "tile_px": TILE_SIZE,
         "rows": row_specs,
@@ -825,9 +946,14 @@ def generate_atlas_assets():
             "d25": fog_d25,
         },
     }
-    json_bytes = json.dumps(json_data, indent=2).encode("utf-8") + b"\n"
-    gpl_bytes = make_gpl_content().encode("utf-8")
+    return builder, json_data, make_gpl_content()
 
+def generate_atlas_assets():
+    """Generates placeholder_v1.png, placeholder_v1.json, and tenth_spring.gpl."""
+    builder, json_data, gpl_str = build_atlas()
+    png_bytes = builder.to_png_bytes()
+    json_bytes = json.dumps(json_data, indent=2).encode("utf-8") + b"\n"
+    gpl_bytes = gpl_str.encode("utf-8")
     return png_bytes, json_bytes, gpl_bytes
 
 def main():

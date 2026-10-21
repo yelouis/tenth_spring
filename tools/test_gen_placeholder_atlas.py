@@ -137,5 +137,29 @@ class TestGenPlaceholderAtlas(unittest.TestCase):
             self.assertTrue(0 <= g <= 255)
             self.assertTrue(0 <= b <= 255)
 
+    def test_rail_connected_art_falsifying(self):
+        """Falsifying assertion per agent guide §4 (Item 14):
+        In the RAIL tile for mask N + E (0b0011):
+        - Pixels at the centre of the north edge (y=0) and east edge (x=31) are rail colour.
+        - Pixels at the centre of the south edge (y=31) and west edge (x=0) are gravel/ballast."""
+        from gen_placeholder_atlas import build_atlas, PALETTE
+        builder, _, _ = build_atlas()
+        # Rail row is 14, mask N + E is 0b0011 = 3
+        rail_color = PALETTE["rail"]
+
+        # North edge: centre pixels have rail colour
+        north_center_has_rail = any(builder.get_pixel(3, 14, x, 0) == rail_color for x in range(32))
+        # East edge: centre pixels have rail colour
+        east_center_has_rail = any(builder.get_pixel(3, 14, 31, y) == rail_color for y in range(32))
+        # South edge: centre pixels do NOT have rail colour (gravel/ballast)
+        south_center_has_rail = any(builder.get_pixel(3, 14, x, 31) == rail_color for x in range(32))
+        # West edge: centre pixels do NOT have rail colour (gravel/ballast)
+        west_center_has_rail = any(builder.get_pixel(3, 14, 0, y) == rail_color for y in range(32))
+
+        self.assertTrue(north_center_has_rail, "North edge should have rail colour")
+        self.assertTrue(east_center_has_rail, "East edge should have rail colour")
+        self.assertFalse(south_center_has_rail, "South edge should NOT have rail colour (expected gravel)")
+        self.assertFalse(west_center_has_rail, "West edge should NOT have rail colour (expected gravel)")
+
 if __name__ == "__main__":
     unittest.main()
