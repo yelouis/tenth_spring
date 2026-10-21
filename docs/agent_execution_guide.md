@@ -81,7 +81,7 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-20 in this session, HEAD `7f2ca51`)
+## 1. Verified baseline (run 2026-10-20 in this session, HEAD `966fcb7`)
 
 | Battery | Where | Result |
 |---|---|---|
@@ -89,9 +89,8 @@
 | `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** (`sync_e2e_test`, `demo_import_test` — run only through their tools) |
 | `GODOT_BIN=… python3 game/tests/test_runner.py` | Mac, local | **Executed.** IP guard + 17 self-tests, isolation audit, memguard (10), synthetic PBF, demo-screenshot and placeholder-atlas tests, vendored SHA-256, harness self-test → **20/20 `PASS`**, `[REAL SAVE CHECK OK]`, static lint OK |
 | `GODOT_BIN=… python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1` |
-| CI `game_tests` / IP guard / `sync_e2e` | runs `39476386459` / `39476386451` / `39476386443` | **All green** — `game_tests` on Linux and macOS |
-| **Measurement — the human's area** (read-only, all 1,116 inner covered cells of `user://demo/map_data/region.db`) | Mac, local | **29,319** drawable building footprints → **~3,877 doors (≈ 13% placed)**. Tile share: GRASS 51.6%, **PATH 26.5%**, WATER 5.5%, **ROOF + WALL + DOOR 5.2%**, TREE 3.3%, ROAD 2.8%. With service roads and footways removed (an experiment, not code): ≈ 20% placed, PATH 16.0%. *(Kept for history — the area is no longer a famous place.)* |
-| **Measurement — Washington DC, the canonical test city** (pinned `district-of-columbia-261001`, MD5 verified, converted unclipped in **16.7 s**) | Mac, local | **136,325** building candidates → ≈ **9.5% placed** (12,962 doors). Over the 3,706 built-up cells: **PATH 30.6%**, **ROOF + WALL + DOOR 3.6%**, ROAD 4.1%. Store: 71,814 footway and 25,817 service pieces vs 11,766 residential streets. **These are Item 13's baselines.** |
+| CI `game_tests` / IP guard / `sync_e2e` | runs `39545185387` / `39545185312` / `39545185304` | **All green** — `game_tests` on Linux and macOS |
+| **Measurement — Washington DC, the canonical test city** (pinned `district-of-columbia-261001`, MD5 verified, converted unclipped in **15.4 s**) | Mac, local | **136,325** building candidates across 3,706 built-up cells → **44,267 placed (32.5%)**. Building tiles: **18.9%** (target ≥ 12%), path tiles: **16.6%** (target ≤ 18%), road tiles: 6.8%. Decision 28 filed on the placement target. |
 | **Synthesis speed** (same store, 200 cells, features prefetched) | Mac, local | **9.3 ms per cell** on the main thread |
 | `FRAME_P95_MS`, windowed (M35, M42) | Mac | zoom 1: 8.5–13.0 ms ✅; zoom 2: 11.9–12.3 ms ✅; **zoom 1/16: 86.9 ms ❌** (target 16.6) |
 | Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. Ready now. |
@@ -570,7 +569,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ```
 
 ## Definition of Done (this build)
-- [ ] **Item 13 (F51)** — minor ways dropped; placement v2; `measure_synth`; fixture v3; DC converted from the pinned snapshot; **on DC's built-up cells: placement ≥ 45%, building tiles ≥ 12%, path tiles ≤ 18%** — or a decision filed.
+- [x] **Item 13 (F51)** — minor ways dropped; placement v2; `measure_synth`; fixture v3; DC converted from the pinned snapshot; **on DC's built-up cells: placement ≥ 45%, building tiles ≥ 12%, path tiles ≤ 18%** — or a decision filed.
 - [ ] **Item 14 (F53)** — connected rail art; the falsifying pixel test passes.
 - [ ] **Item 15 (F52)** — worker-thread synthesis; steady `FRAME_P95_MS` ≤ 16.6 ms at zoom 1 and 1/16; load frames ≤ 33 ms.
 - [ ] **Item 16** — the four screenshots, `VISIBLE_DOORS` ≥ 3 (zoom 2) and ≥ 8 (zoom 1), **shown to the human; paused for their verdict.**
