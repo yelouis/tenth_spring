@@ -566,3 +566,18 @@ A stair-stepped diagonal now reads as one continuous zig-zag line. Regenerate `p
 
 Commit the new golden hashes, and say in the commit why they changed.
 
+### 10.8 Enterable landmarks on the map (Decision 27) — agent guide Item 22
+Famous interiors (`design_interiors_and_quests.md` §4) must be recognisable on the map before they can be entered (interiors are built in Phase 7).
+1. **Input.** For each cell, the map view passes the famous interiors whose `door` (from `game/config/famous_places.json`) lies in the 3 × 3 neighbourhood: `area[offset]["landmarks"] = [{"id", "name", "door_wm": Vector2}]`. It is projected once with `Grid.latlon_to_wm`.
+2. **Synthesis.** After §4.2's placement:
+   - a placed building whose template contains the landmark's door tile becomes a **landmark**: its `ROOF`, `WALL`, and `DOOR` tiles get variant bit **32** (`ROOF` 32 + colour is ignored and drawn gold; `WALL` 32 or 40 with a window; `DOOR` 32);
+   - a `SIGN` carrying the landmark's name goes beside the door, with priority above every §4.4 category;
+   - if no placed building contains the door — a bridge, an arch, an outdoor structure — place only the sign, on the first `GRASS` or `PATH` tile within 2 tiles of the door;
+   - at most 4 landmarks per cell.
+3. **Atlas** (§5): add rows for `(ROOF, 32)` (gold `#d8a838` / shade `#a07820`), `(WALL, 32)`, `(WALL, 40)`, and `(DOOR, 32)` (the door framed in gold). Regenerate byte-identically.
+4. **Tooltip.** Hovering a landmark's sign or door shows `<name> — can be entered (interiors arrive in a later update)`.
+5. **Tests.** Fixture v4 gains one `famous_places_fixture.json` interior whose door sits on a fixture building.
+   - **Falsifying:** with the entry, that building's roof tiles carry bit 32 and a sign has its name; without it, they don't.
+   - A landmark whose door misses every building yields a sign only.
+   - The atlas JSON covers the new rows.
+

@@ -27,6 +27,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 | `docs/agent_execution_guide.md` | **Start here** — how an engineering agent picks up this project |
 | `docs/master_implementation_plan.md` | Phase order + tuning constants |
 | `docs/design_famous_places.md` | **What the map contains** — the 27 cities, 36 parks and wonders, 48 legendary places, Warden landmarks; unlocking, Distort travel, the same map for everyone |
+| `docs/design_interiors_and_quests.md` | **Enterable famous buildings** (each with a purpose), Pokémon-style puzzles, and the 200+ side quests that reveal what happened |
 | `docs/design_story_and_world.md` | **The backstory and theme** — the Stillness, the Distortion, the nine Wardens, the Echo; every scene and system follows it |
 | `docs/design_rom_asset_pipeline.md` | Bring-your-own-ROM importer, formats, cache, legal and repo guardrails |
 | `docs/design_creatures_and_battles.md` | Stats, types, damage, status, catching, EXP, party, PC box, blackout |

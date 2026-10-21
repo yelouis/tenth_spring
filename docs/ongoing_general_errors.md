@@ -13,6 +13,8 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 >
 > **2026-10-19 (pass 17) — Decisions 16–19 were asked and answered the same day.** 16 (USA only) came as your directive; you filled in 17, 18, and 19, and the follow-up questions on 18 and 19 were asked and answered in chat. All four are under Resolved. The new backstory you asked for is `docs/design_story_and_world.md`.
 >
+> **2026-10-20 — Decision 27** (enterable famous buildings and side quests) came as your directive; it's under Resolved.
+>
 > **2026-10-20 (pass 18) — Decisions 21–26 were asked and answered the same day.** You filled in 21, 22, and 24; 23 came with a question (is the map the same for two friends?), answered in chat. You also narrowed the map to famous places, and the follow-ups were answered in chat as Decisions 25 and 26. All six are under Resolved. The new contract is `docs/design_famous_places.md`.
 
 ### Decision 3: Companion background-geolocation implementation (Phase 0)
@@ -35,6 +37,21 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
 ---
 
 ## ✅ Resolved Decisions
+
+### Decision 27 — Enterable famous buildings, each with a purpose, and abundant side quests (Resolved 2026-10-20 — your directive)
+- **In your words:** "Similar to pokemon, there should be buildings. Famous buildings or famous structures like the new york subway should be enterable. Anything is the enterable should serve a purpose (maybe there is an important trainer in there that you have to beat and receive an item for, or a hidden item on the ground, or a legendary pokemon hiding in the maze of the building). Make sure to have an abundant amount of side quests that help unlock what happened to the world/regions. These side quests should be like similar side quest/puzzles in the actual pokemon games."
+- **What it means** (`design_interiors_and_quests.md`):
+  - **71 famous city interiors** (2–5 per city — the New York Subway, Alcatraz, the Seattle Underground, Grand Central, City Museum, …) **and 36 park visitor centres**, plus the legendary lairs. Every one carries at least two purposes: an important trainer, a Warden, a legendary lair, hidden items, a puzzle, a quest step, fossil revival, or a move tutor.
+  - **13 Pokémon-style puzzle kinds,** written generically: switch hunts, warp tiles, spinner floors, ice slides, boulder pushes, dark rooms, invisible walls, elevator floors, light and mirrors, sequences, time-of-day doors, footprint trails, counterweights.
+  - **Side quests — about 210, all as data:**
+    - 9 regional **Truth quests**, each ending in one of **Dr. Ruth Calder's** field logs, which together explain the world's mystery;
+    - 6 key-item quests (Dowsing Lantern, Veil Lens, Lift Gloves, Line Key, Bicycle, River Oar);
+    - ≥ 4 per city and ≥ 1 per park;
+    - a hint quest before each legendary;
+    - cross-country chains — the Lost Postcards, Letters Home, Old Friends, Night Walker.
+  - **One design call made to honour "anything enterable serves a purpose" — you can override it:** ordinary buildings are no longer entered. They're **searched from the doorway** (one action, the same item tables), so the survival scavenging loop stays without thousands of empty interiors. `design_expeditions_and_survival.md` §1 is updated.
+  - **On the map now** (agent guide Item 22): enterable buildings get a gold roof, a highlighted door, and a name sign. The interiors themselves are built in Phase 7, and the legendary lairs and Wardens in Phase 8.
+- **Contracts updated:** `design_interiors_and_quests.md` (new), `design_expeditions_and_survival.md` §1, `design_famous_places.md` §6 and §9, `design_story_and_world.md` §8–9, `master_implementation_plan.md` Phases 7–8, `README.md`, slice-2 plan §10.8, `implementation_plan_famous_places.md` §1.
 
 ### Decision 21 — "Going to" a neighbourhood: any movement counts (Resolved 2026-10-20)
 - **Your selection:** "Proceed with Option B."
@@ -859,4 +876,5 @@ Founding decisions made with the user during the design brainstorm, recorded her
 23. **Neighbourhoods and cities, not streets (2026-10-20, pass 18).** The human asked that going to a neighbourhood reveal the whole neighbourhood, and that visiting "a couple of neighborhoods in the city" reveal the whole city — instead of revealing only the streets walked. The details became Decisions 21 and 22; the plan is now `docs/implementation_plan_famous_places.md` (renamed when the scope narrowed to famous places — item 24).
 24. **Famous places only, and Distort (2026-10-20, Decisions 25–26).** The human narrowed the map from "the whole USA" to 27 famous cities and 36 famous parks and wonders, made home a hub, and added Distort travel — free to the nearest city, then to any place physically visited, and home only from a Waypost. That reverses the "only teleport is your body" pillar. Real-world travel still opens every door: Wardens need all three of a region's cities, and each of the 48 legendaries has its own place and one decisive battle.
 25. **The same map for everyone (2026-10-20, Decision 23).** The human required that two players at the same place see the same map. The rules: one pinned OpenStreetMap snapshot per release, fixed conversion units, the whole coastline kept, and one global map seed. Per-player randomness is confined to gameplay.
+26. **Buildings you can enter, and quests that tell the story (2026-10-20, Decision 27).** As in Pokémon, famous buildings and structures are enterable — each with a purpose (a trainer, hidden items, a legendary's maze, a puzzle, a quest step) — and over 200 side quests in Pokémon's puzzle traditions piece together what happened to each region, through Dr. Ruth Calder's nine logs. Ordinary buildings are searched from the doorway.
 

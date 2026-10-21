@@ -157,7 +157,7 @@ Nothing is ever re-locked, and reveal states never decrease.
 ---
 
 ## 6. Legendaries (Decision 26)
-- **The lair.** Each legendary waits at a fixed lair inside its place, behind a **challenge** — a maze or puzzle you must clear in-game to reach it.
+- **The lair.** Each legendary waits at a fixed lair inside its place, behind a **challenge** — a maze or puzzle you must clear in-game to reach it. When the place is a building or structure, the challenge is that building's interior (`design_interiors_and_quests.md` §1, §4).
 - **The same for everyone.** Lair layouts are generated from `(dex number, the global map seed)`, so every player meets the same challenge.
 - **Starting challenge themes** (built in Phase 8):
 
@@ -218,5 +218,6 @@ One entry per place — the 27 cities, the 36 legendary islands, and the 12 lege
 | `legendary_dex` | The legendary here (sites and spots) |
 | `city` | The city id (spots only) |
 | `warden` | `{name, type, landmark: {name, lat, lon}}` (one city per region) |
+| `interiors` | `[{id, name, family, purposes, door: {lat, lon}}]` — the place's enterable famous buildings (`design_interiors_and_quests.md` §4), door at the public entrance |
 
 All coordinates are of **public landmarks**, never the human's. Ids and coordinates are filled in by agent guide Item 17 and reviewed by the human.

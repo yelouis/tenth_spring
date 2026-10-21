@@ -6,7 +6,10 @@ This document defines exploring a revealed place in-game: searching sites for it
 
 ## 1. Exploring a site
 
-Arriving at a `known` PlaceNode and entering it opens its **site map** — an interior tilemap generated deterministically from `(category, size, cellSeed)`.
+**What can be entered** changed on 2026-10-20 (Decision 27, `design_interiors_and_quests.md`):
+- **Famous interiors** — famous buildings and structures, each with a purpose — and **haunted interiors** are entered. Each opens a **site map** built from its template family and puzzle modules, laid out by `(interior id, MAP_SEED)`.
+- **Ordinary buildings are searched from the doorway:** one search action rolls the building's category item table, with the same item states. The loop below applies to both: searching from a doorway is a one-step "enter".
+- The original rule — every `known` PlaceNode generating an interior from `(category, size, cellSeed)` — is retired.
 
 ```
 APPROACH → the site chip shows zone, ghost activity, level band, haunt stage

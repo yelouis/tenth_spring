@@ -301,7 +301,7 @@ The credits roll over the Wardens' epilogues and your own map: every street you 
 | Travel | Distance is honest. Far from home, you have what you carry. |
 | Wardens | Trials test survival — darkness, rationing, endurance, weather — not just levels. |
 | The Echo | The last test: your own team, sharper. |
-| Lore | Proposed: survivors' notes found while searching sites, collected in your journal. Original text only. |
+| Lore | **The Calder Logs** — nine field logs, one per region — plus the Lost Postcards and over 200 side quests that piece together what happened (`design_interiors_and_quests.md` §5). Collected in the Walker's Journal. Original text only. |
 
 ---
 
@@ -310,4 +310,5 @@ The credits roll over the Wardens' epilogues and your own map: every street you 
 - **Voice:** plain, warm, a little weary. Survivors speak practically ("Back before dark."). The Echo speaks in the player's own words.
 - **Never:** gore, on-screen deaths, cruelty to Pokémon, or mockery of real places or people.
 - **The title:** "Tenth Spring" is the tenth spring since the Stillness — the season the fog first pulled back.
-- **Open for later slices:** the full opening sequence, Waypost camp layouts and their survivors, survivors' notes, music and sound direction.
+- **Open for later slices:** the full opening sequence, Waypost camp layouts, the Calder Logs' full text, music and sound direction.
+- **Dr. Ruth Calder** — the geographer who mapped the Thinning before the Stillness and recorded the fog's rules region by region before she vanished — is the thread tying the side quests to the main story (`design_interiors_and_quests.md` §5.1).

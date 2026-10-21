@@ -15,12 +15,13 @@
 ---
 
 ## 1. The place list — `game/config/famous_places.json` (Item 17)
-1. **Write the 75 entries** (27 cities, 36 sites, 12 spots) exactly as `design_famous_places.md` §1–§5 and §9 list them. Ids are slugs (`city:new-york`, `site:grand-canyon`, `spot:alcatraz`).
+1. **Write the 75 entries** (27 cities, 36 sites, 12 spots) exactly as `design_famous_places.md` §1–§5 and §9 list them, with each place's `interiors` from `design_interiors_and_quests.md` §4. Ids are slugs (`city:new-york`, `site:grand-canyon`, `spot:alcatraz`).
 2. **Look up each city's and site's OSM boundary relation, and each Waypost and Warden landmark position**, with the public OSM search service — **public place names only**, never a location of the human:
    - `https://nominatim.openstreetmap.org/search?q=<public name>&format=json&limit=5`, with a `User-Agent: TenthSpring-dev/<version>` header and **≥ 1.1 s between requests** (Nominatim's usage policy);
    - **cities:** the `boundary=administrative` relation for the city proper;
    - **sites:** the `boundary=national_park` or `protected_area` relation, or the park or state-park relation for wonders;
    - **Wayposts:** a city's city hall (`amenity=townhall`); a site's main visitor centre, else its main entrance.
+   - **Interiors:** each famous interior's public entrance (`design_interiors_and_quests.md` §4), stored in the place's `interiors` list with its family and purposes.
 
    This is development-time research. **Nothing in the game ever queries a search service** (Decision 13).
 3. **New `tools/check_famous_places.py`** validates the file:
@@ -29,6 +30,7 @@
    - every city and site has `osm_boundary` and `waypost`;
    - every spot names an existing city;
    - every region has exactly one Warden, located in one of its cities;
+   - every city has at least 2 interiors and every site has a visitor-centre interior; every interior has at least two purposes, including T, W, L, or Q (`design_interiors_and_quests.md` §2);
    - coordinates within US bounds.
 
    It runs in the battery.

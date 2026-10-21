@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Buildings, Rail Art, and Speed for the Pokémon-Look Map (F51–F53), then Famous Places — Same Map for Everyone, Unlocking, and Distort (verified 2026-10-20, pass 18; Decisions 21–26 answered the same day)
+# Agent Execution Guide — Active Build: Buildings, Rail Art, and Speed for the Pokémon-Look Map (F51–F53), then Famous Places — Same Map for Everyone, Unlocking, Distort, and Enterable-Building Markers (verified 2026-10-20, pass 18; Decisions 21–27 answered the same day)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
@@ -23,10 +23,13 @@
   - **Legendaries and Wardens (26):** 48 legendaries, each at its own themed place behind a challenge, with one decisive battle. Each region's Warden waits at a fixed landmark, once all three of the region's cities are unlocked. Each region gets its own story and survivors (`design_story_and_world.md` §4a).
   - **The same map for everyone (23 = A):** one pinned OpenStreetMap snapshot (2026-10-01), fixed conversion units per place, the whole coastline kept, and one global map seed. Decision 15's hosted stores are dropped.
   - **Your area is no longer a famous place,** so the canonical test city is **Washington DC** — public, a 21 MB file, nothing private.
+- **Then, Decision 27 (the human's directive):** as in Pokémon, famous buildings and structures — the New York Subway, Alcatraz, the Seattle Underground, … — can be entered, and **each has a purpose** (a trainer, a Warden, hidden items, a legendary's maze, a puzzle, a quest step). Over 200 Pokémon-style side quests reveal what happened to each region (`docs/design_interiors_and_quests.md`).
+  - **Ordinary buildings are searched from the doorway** instead of entered.
+  - **This build only marks** the enterable buildings on the map (Item 22). The interiors and quests themselves are Phase 7–8 work (§9).
 
 **What is approved for build right now:**
 - **Items 13–16** (§2) — the building fix, the rail art, background synthesis, and a stricter proof that pauses for the human's verdict.
-- **Items 17–21** (famous places) — approved by the human's decisions. **Item 17 pauses** for the human to review the filled-in place list.
+- **Items 17–22** (famous places, plus enterable-building markers) — approved by the human's decisions. **Item 17 pauses** for the human to review the filled-in place list.
 
 **Waiting on the human:** Item 10 waits on a Black/White dump, Item 12 on an Emerald dump.
 
@@ -108,7 +111,8 @@
 | 18 | **The same map for everyone + place stores (schema v4)** (plan §2, §3) | The reveal engine reads place stores and `area_cells`. |
 | 19 | **Unlocking: save migration 2 + the reveal engine + the starter city** (plan §4) | Needs Item 18's stores. |
 | 20 | **Distort, the Town Map, and the home hub — viewer level** (plan §5) | Needs the Distort list from Item 19. |
-| 21 | **Real-data proof in Washington DC → PAUSE** (plan §6) | Needs 18–20. |
+| 22 | **Enterable landmarks on the map — gold roof, highlighted door, name sign** (slice-2 plan §10.8; Decision 27) | Needs Item 17's `interiors` and the renderer. Before the proof, so DC's screenshots show them. |
+| 21 | **Real-data proof in Washington DC → PAUSE** (plan §6) | Needs 18–20 and 22. |
 | 10 | **Phase 2 — ROM spike + importer plan** (Black/White) | ⛔ Waits on the human supplying a Black/White dump. |
 | 12 | **Emerald tile spike + tile-importer plan** (Decision 19) | ⛔ Waits on the human supplying an Emerald dump. **This is what makes the map look like real Pokémon.** |
 
@@ -234,7 +238,7 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 
 ---
 
-## 7. Famous places (Items 17–21) — approved by Decisions 21–26
+## 7. Famous places (Items 17–22) — approved by Decisions 21–27
 
 **What this means for the user:** the game's world becomes 27 famous cities and 36 famous parks and wonders.
 - Home is a hub. From day one they can Distort to the famous city nearest home, its Waypost neighbourhood already revealed.
@@ -251,9 +255,9 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 ### 7.1 Item 17 — The famous-places list → PAUSE (plan §1)
 - **Build:**
   - `game/config/famous_places.json` — 75 entries, per `design_famous_places.md` §1–§5 and §9;
-  - the Nominatim lookups for boundary relations, Wayposts, and Warden landmarks — public names only, ≥ 1.1 s apart;
+  - the Nominatim lookups for boundary relations, Wayposts, Warden landmarks, and **each famous interior's public entrance** (`design_interiors_and_quests.md` §4) — public names only, ≥ 1.1 s apart;
   - `tools/check_famous_places.py` in the battery.
-- **Prove:** the checker passes — 27 cities (3 per region), 48 distinct legendaries with no shared place, a boundary and Waypost for every city and site, one Warden per region in one of its cities. **Falsifying:** a copy with two legendaries on one place fails.
+- **Prove:** the checker passes — 27 cities (3 per region); 48 distinct legendaries with no shared place; a boundary and Waypost for every city and site; one Warden per region in one of its cities; ≥ 2 interiors per city and a visitor centre per site, each with ≥ 2 purposes including T, W, L, or Q. **Falsifying:** a copy with two legendaries on one place fails, and so does an interior with only H.
 - **PAUSE:** show the human the list (name → relation id → Waypost), and record their confirmations or swaps in `ongoing_general_errors.md`. Continue to Item 18 only after they answer.
 - **Blast radius:** the config, the checker, `test_runner.py`.
 
@@ -289,11 +293,21 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 - **Prove:** the plan §5 scene tests. **Falsifying:** a locked marker can't be opened.
 - **Blast radius:** the new scenes and tests, `main.gd`, `map_view.gd`/`.tscn`, `EXPECTED`, `design_travel_and_time.md` §4 (mark it built at viewer level).
 
-### 7.5 Item 21 — Real-data proof in Washington DC → PAUSE (plan §6)
+### 7.5 Item 22 — Enterable landmarks on the map (slice-2 plan §10.8; Decision 27)
+- **Build:**
+  - the map view passes each cell's famous interiors to synthesis;
+  - landmark buildings get variant bit 32 (a gold roof, gold-framed walls and door);
+  - a name sign beside the door, or a sign alone for structures;
+  - the four new atlas rows;
+  - the tooltip `<name> — can be entered (interiors arrive in a later update)`.
+- **Prove:** §10.8's tests. **Falsifying:** the fixture building gets bit 32 only when its interior entry exists. Atlas regeneration stays byte-identical.
+- **Blast radius:** `tile_synth2.gd`, `map_view.gd`, `tools/gen_placeholder_atlas.py` + the assets, `tile_synth2_test.gd`, `map_view_test.gd`, the atlas test.
+
+### 7.6 Item 21 — Real-data proof in Washington DC → PAUSE (plan §6)
 - **Steps:**
   1. Convert DC with `--place`.
   2. Make a DC demo profile with the agent-drawn public route, and home at a public point outside DC.
-  3. Capture the Town Map, DC at zoom 1/16, and DC at zoom 1 at the Waypost.
+  3. Capture the Town Map, DC at zoom 1/16, DC at zoom 1 at the Waypost, and DC at zoom 2 on an enterable landmark (for example the Library of Congress), showing its gold roof and sign.
   4. Report the neighbourhoods unlocked, whether the city threshold was reached, and the Distort list.
   5. Show the human.
 - **PAUSE.**
@@ -406,7 +420,8 @@ Redraw `RAIL` as a connector tile, exactly per §10.4. Regenerate `game/assets/t
 
 ## 9. Deferred — trigger-gated, do NOT start
 - **Distort gameplay with a walking avatar** — the real Waypost rule (you must *walk* to the Waypost to go home), the home hub's Rest, PC Box, and Garden, and the session-start banner (`design_famous_places.md` §2–§4; `design_travel_and_time.md` §4–5). **Trigger:** Phase 4. Item 20 builds only the viewer-level structure.
-- **Legendary challenges, Warden trials, region survivors, and the Echo** (`design_famous_places.md` §5–§6; `design_story_and_world.md` §4–§5, §4a; encounters §7). **Trigger:** Phase 8 — after the battle engine exists (Phase 5). Not before.
+- **Famous interiors, puzzles, doorway searching, the quest engine, the Walker's Journal, and the quest content** (`design_interiors_and_quests.md`). **Trigger:** Phase 7 — after the avatar (Phase 4) and the battle engine (Phase 5). Write `implementation_plan_interiors_and_quests.md` first, and pause.
+- **Legendary challenges and lairs, Warden trials, region survivors, and the Echo** (`design_famous_places.md` §5–§6; `design_interiors_and_quests.md` §4; `design_story_and_world.md` §4–§5, §4a; encounters §7). **Trigger:** Phase 8 — after Phase 7. Not before.
 - **Widening the map beyond famous places.** **Trigger:** a human request. The phone and save already keep everything, so nothing is lost meanwhile.
 - **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, ledges and terraces from USGS elevation, and overgrowth by distance (`design_encounters_and_haunted_zones.md` §2a and §3a). **Trigger:** the human approves the look at Item 16's pause. Write `implementation_plan_world_generation_slice3.md` first, and pause.
 - **Moving `MAP_SNAPSHOT` forward.** **Trigger:** a release the human approves. It changes every player's map at once, deliberately.
@@ -500,6 +515,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Distort:** from home, only to the starter city and to places physically visited; home only from a Waypost or by blackout (Decision 25).
 - **The same map for everyone** (Decision 23): `MAP_SNAPSHOT` pinned per release, fixed conversion units, the whole coastline kept, and `MAP_SEED` global. **Never** let a per-player seed or a `-latest` download touch the map.
 - **Legendaries get one decisive battle,** each at its own place behind a challenge; Wardens appear only once their region's three cities are unlocked (Decision 26).
+- **Anything enterable has a purpose** (Decision 27): every famous interior carries ≥ 2 purposes, including a trainer, Warden, legendary, or rewarding quest step. Ordinary buildings are searched from the doorway, never entered. All interiors, puzzles, and quests are original.
 
 ## 14. Where the contracts live
 | Need | Doc |
@@ -511,6 +527,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 | **Slice 2 — "Pokémon look"** (approved, Decision 17 = A) **+ the pass-18 corrections (§10)** | `docs/implementation_plan_world_generation_slice2.md` |
 | **What the map contains** — famous places, unlocking, Distort, the same map for everyone, the 48 legendary places, Warden landmarks | `docs/design_famous_places.md` |
 | **Building famous places** (Items 17–21) | `docs/implementation_plan_famous_places.md` |
+| **Enterable famous buildings, puzzles, and side quests** (Phase 7–8; markers in Item 22) | `docs/design_interiors_and_quests.md` |
 | **The backstory and theme** — the Stillness, the Distortion, Wardens, the Echo, writing rules | `docs/design_story_and_world.md` |
 | The Black/White and Emerald ROMs, formats, legal + repo guardrails | `docs/design_rom_asset_pipeline.md` |
 | Stats, types, damage, catching, party, PC, blackout | `docs/design_creatures_and_battles.md` |
@@ -535,7 +552,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
             Specs are decisions.
 2 PLAN      Building a phase or slice with no approved implementation_plan_*.md? Write one
             FIRST and PAUSE for human review. (Items 13–16 implement the approved slice-2 plan's
-            §10; Items 17–21 implement the approved famous-places plan, with a pause at 17.)
+            §10; Items 17–22 implement the approved famous-places plan, with a pause at 17.)
 3 IMPLEMENT Exactly as written, on a branch. Honor §13 and the standing constraints —
             above all: no Nintendo content; none of the human's places in the repo; no test
             touches the real save, identity, or demo profile; one grid; never force-push main.
@@ -562,7 +579,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [ ] **Item 18** — the determinism test passes; place stores v4; the in-game install converts only famous places (F45 resolved).
 - [ ] **Item 19** — the reveal engine (any movement, the scaled threshold, sites, the Distort list, the starter city); migration 2.
 - [ ] **Item 20** — the home hub, the Town Map, and `Return home` at the Waypost (viewer level).
-- [ ] **Item 21** — the DC proof **shown to the human; paused.**
+- [ ] **Item 22** — enterable landmarks marked on the map (gold roof, door, sign); the falsifying test passes.
+- [ ] **Item 21** — the DC proof, including a landmark close-up, **shown to the human; paused.**
 - [ ] **HUMAN: real-device sync gate passes** (§2). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run.** **Closes Phase 0.**
 - [ ] **When a Black/White dump is supplied:** Item 10 — verify markers resolved, `implementation_plan_rom_importer.md` written, preview shown, **paused for review**.
