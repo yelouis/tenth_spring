@@ -3,6 +3,8 @@ extends Node2D
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
 const ScreenshotConfig := preload("res://scripts/screenshot_config.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
+const Grid := preload("res://world/grid.gd")
+const MapStore := preload("res://world/region_import/map_store.gd")
 
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
@@ -39,22 +41,47 @@ func _ready() -> void:
 	SyncServer.configure_identity(identity)
 	SyncServer.start_server()
 
-	# Item 9 (plan §7.1): Open map view if save holds >= 1 revealed cell, else pairing screen
-	var revealed_cells := 0
-	if DB.is_open():
-		var rows = DB.query_rows("SELECT count(*) as c FROM map_cell WHERE reveal_state > 0;")
-		if not rows.is_empty():
-			revealed_cells = int(rows[0].get("c", 0))
-
-	if revealed_cells >= 1:
-		open_map_view()
+	# Item 20 boot routing (plan §5):
+	# - with a bodyFix inside a famous place, open that place's map view;
+	# - otherwise open the home hub;
+	# - pairing screen stays reachable from the hub.
+	var boot_place_id := get_boot_place_id()
+	if not boot_place_id.is_empty():
+		open_map_view_for_place(boot_place_id)
 	else:
-		open_pairing_screen()
+		open_home_hub()
+
+func get_boot_place_id(custom_stores: Dictionary = {}) -> String:
+	if not DB.is_open():
+		return ""
+	var peer_rows = DB._rows("SELECT last_body_lat, last_body_lon FROM sync_peer WHERE last_body_lat IS NOT NULL AND last_body_lon IS NOT NULL ORDER BY last_body_ts DESC LIMIT 1;")
+	if peer_rows.is_empty():
+		return ""
+	var b_lat := float(peer_rows[0].get("last_body_lat", 0.0))
+	var b_lon := float(peer_rows[0].get("last_body_lon", 0.0))
+	var body_cell := Grid.latlon_to_cell(b_lat, b_lon)
+
+	var stores: Dictionary = custom_stores
+	if stores.is_empty():
+		stores = RevealEngine.load_installed_stores()
+
+	for pid in stores.keys():
+		var s: MapStore = stores[pid]
+		if s.covers_cell(body_cell.x, body_cell.y):
+			var ca := s.get_cell_area(body_cell.x, body_cell.y)
+			if not ca.is_empty():
+				return pid
+	return ""
+
+func clear_current_view() -> void:
+	for child in get_children():
+		if child is CanvasLayer:
+			child.queue_free()
+		elif child.name.begins_with("MapViewer") or child.name.begins_with("HomeHub") or child.name.begins_with("TownMap"):
+			child.queue_free()
 
 func open_map_view() -> Node:
-	var canvas_layer = get_node_or_null("CanvasLayer")
-	if canvas_layer != null:
-		canvas_layer.queue_free()
+	clear_current_view()
 	var map_view_scene = load("res://world/map_view.tscn")
 	if map_view_scene != null:
 		var map_view = map_view_scene.instantiate()
@@ -62,9 +89,44 @@ func open_map_view() -> Node:
 		return map_view
 	return null
 
+func open_map_view_for_place(place_id: String) -> Node:
+	clear_current_view()
+	var map_view_scene = load("res://world/map_view.tscn")
+	if map_view_scene != null:
+		var map_view = map_view_scene.instantiate()
+		add_child(map_view)
+		if map_view.has_method("load_place"):
+			map_view.load_place(place_id)
+		return map_view
+	return null
+
+func open_home_hub() -> Node:
+	clear_current_view()
+	var hub_scene = load("res://scenes/home_hub.tscn")
+	if hub_scene != null:
+		var hub = hub_scene.instantiate()
+		add_child(hub)
+		return hub
+	return null
+
+func open_town_map() -> Node:
+	clear_current_view()
+	var town_map_scene = load("res://scenes/town_map.tscn")
+	if town_map_scene != null:
+		var tm = town_map_scene.instantiate()
+		add_child(tm)
+		return tm
+	return null
+
 func open_pairing_screen() -> void:
-	var pairing_node = get_node_or_null("CanvasLayer/Pairing")
-	if pairing_node != null:
-		pairing_node.show()
+	clear_current_view()
+	var cl = CanvasLayer.new()
+	cl.name = "CanvasLayer"
+	add_child(cl)
+	var pairing_scene = load("res://scenes/pairing.tscn")
+	if pairing_scene != null:
+		var pairing_node = pairing_scene.instantiate()
+		pairing_node.name = "Pairing"
+		cl.add_child(pairing_node)
 		if pairing_node.has_method("refresh_code"):
 			pairing_node.refresh_code()

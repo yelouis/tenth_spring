@@ -913,6 +913,24 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Flutter test: 37 passed (2 skipped).
   - Cross-language loopback sync E2E: PASS.
 
+- **M50 (verified resolved, Item 20, 2026-10-21):**
+  - Implemented `home_hub.tscn`/`.gd` safehouse screen with procedural original pixel art room (`home_hub_room.gd`), disabled buttons for `Rest`, `PC Box`, and `Garden` with tooltip "coming in Phase 4–7", and enabled `Distort` and `Pair Companion` buttons.
+  - Implemented `town_map.tscn`/`.gd` overview with cartographic canvas (`town_map_canvas.gd`), Web Mercator coordinates projection, grey markers for locked places, lit markers for places on `distort_list`, outer rings for fully unlocked cities (`area_reveal` kind `'city'`), and click selection to open map view at the place's Waypost.
+  - Updated `map_view.gd`/`.tscn` with `ReturnHomeButton` in `AttributionUI`, `load_place(place_id, center_waypost)`, camera-to-cell tracking via `get_camera_cell()`, and visibility guard showing `ReturnHomeButton` only when camera is within 1 cell of the place's Waypost.
+  - Updated `main.gd` boot routing to inspect `bodyFix` from `sync_peer` via `get_boot_place_id()`. Opens map view if inside an installed famous place, otherwise opens `home_hub.tscn`.
+  - Created unit/scene test `town_map_test.gd` covering:
+    1. Locked marker cannot be opened (falsifier).
+    2. Lit marker opens and emits waypost coordinates.
+    3. Ringed marker for fully unlocked cities (and absence on sites).
+    4. `Return home` button visible at Waypost / within 1 cell, hidden away from Waypost (> 1 cell).
+    5. Home hub scene button states and tooltips.
+    6. Boot routing for inside-place fix vs outside fix.
+- **Validation:**
+  - `town_map_test.gd` and all 22 Godot tests PASS.
+  - Flutter analyze: 0 issues.
+  - Flutter test: 37 passed (2 skipped).
+  - Cross-language loopback sync E2E: PASS.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent

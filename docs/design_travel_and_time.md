@@ -24,6 +24,8 @@ This document defines the world clock, the 15 mph travel economy, day/night, phy
 
 ## 4. Distort — Travel Between Famous Places (Decision 25, 2026-10-20)
 
+*(Viewer level built in Item 20: `home_hub.tscn`, `town_map.tscn`, Waypost `Return home` button, camera 1-cell tracking, and `main.gd` boot routing. Full walking avatar, session-start banner, and game clock arrive in Phase 4).*
+
 The map contains only famous places (`design_famous_places.md`), so there's nothing to walk across between them. Your real body still decides where you can go; the Distortion carries you there.
 
 - **From home,** Distort for free to any famous place you've physically visited (any recorded movement inside it), plus your **starter city** — the famous city nearest your fuzzed home. You arrive at the place's **Waypost**: city hall for cities, the main visitor centre for parks and wonders.

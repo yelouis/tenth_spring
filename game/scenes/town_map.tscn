@@ -1,0 +1,83 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/town_map.gd" id="1_map"]
+[ext_resource type="Script" path="res://scenes/town_map_canvas.gd" id="2_canvas"]
+
+[node name="TownMap" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_map")
+
+[node name="MapCanvas" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_canvas")
+
+[node name="Markers" type="Control" parent="MapCanvas"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Header" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 20.0
+offset_top = 15.0
+offset_right = -20.0
+offset_bottom = 50.0
+grow_horizontal = 2
+
+[node name="TitleLabel" type="Label" parent="Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 18
+theme_override_colors/font_color = Color(1, 0.9, 0.7, 1)
+text = "TOWN MAP — Distortion Network"
+
+[node name="LegendLabel" type="Label" parent="Header"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.7, 0.8, 0.9, 0.8)
+text = "● Lit: Distort Destination  |  ◎ Ring: City Unlocked  |  · Grey: Locked"
+
+[node name="VSeparator" type="VSeparator" parent="Header"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="Header"]
+custom_minimum_size = Vector2(140, 30)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Back to Safehouse"
+
+[node name="Footer" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 60.0
+offset_top = -55.0
+offset_right = -60.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="InfoLabel" type="Label" parent="Footer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0.9, 0.9, 0.9, 1)
+text = "Hover over a location to inspect Waypost."
+horizontal_alignment = 1
+vertical_alignment = 1

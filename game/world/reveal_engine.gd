@@ -8,21 +8,33 @@ const MapStore := preload("res://world/region_import/map_store.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
 
 static func load_places(config_path: String = "") -> Array:
-	var paths := []
 	if not config_path.is_empty():
-		paths.append(config_path)
-	paths.append("res://config/famous_places.json")
-	paths.append("res://tests/fixtures/famous_places_fixture.json")
-
-	for p in paths:
-		if FileAccess.file_exists(p):
-			var txt := FileAccess.get_file_as_string(p)
+		if FileAccess.file_exists(config_path):
+			var txt := FileAccess.get_file_as_string(config_path)
 			var parsed: Variant = JSON.parse_string(txt)
 			if parsed is Array:
 				return parsed
 			elif parsed is Dictionary and parsed.has("places") and parsed["places"] is Array:
 				return parsed["places"]
-	return []
+		return []
+
+	var out: Array = []
+	var seen_ids := {}
+	for p in ["res://config/famous_places.json", "res://tests/fixtures/famous_places_fixture.json"]:
+		if FileAccess.file_exists(p):
+			var txt := FileAccess.get_file_as_string(p)
+			var parsed: Variant = JSON.parse_string(txt)
+			var list: Array = []
+			if parsed is Array:
+				list = parsed
+			elif parsed is Dictionary and parsed.has("places") and parsed["places"] is Array:
+				list = parsed["places"]
+			for item in list:
+				var i_id: String = str(item.get("id", ""))
+				if not seen_ids.has(i_id):
+					seen_ids[i_id] = true
+					out.append(item)
+	return out
 
 static func load_installed_stores(map_data_dir: String = "") -> Dictionary:
 	var stores: Dictionary = {}

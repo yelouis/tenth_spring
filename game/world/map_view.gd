@@ -10,6 +10,7 @@ const ProfilePaths := preload("res://scripts/profile_paths.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
 const SynthWorker := preload("res://world/synth_worker.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
+const Grid := preload("res://world/grid.gd")
 
 const CELL_SIZE_PX := 1024.0
 const TILE_SIZE_PX := 32
@@ -120,6 +121,10 @@ var _install_panel: PanelContainer = null
 var _install_label: Label = null
 var _cancel_button: Button = null
 var _sign_tooltip: Label = null
+var _return_home_button: Button = null
+var _active_place_id: String = ""
+var _active_waypost_cell: Vector2i = Vector2i.ZERO
+var _has_active_waypost: bool = false
 
 var _map_fetcher = MapFetcher.new()
 var _pending_region: Dictionary = {}
@@ -194,6 +199,9 @@ func _ready() -> void:
 		if _cancel_button != null:
 			_cancel_button.pressed.connect(_on_install_cancel_pressed)
 	_sign_tooltip = get_node_or_null("AttributionUI/SignTooltip") as Label
+	_return_home_button = get_node_or_null("AttributionUI/ReturnHomeButton") as Button
+	if _return_home_button != null:
+		_return_home_button.pressed.connect(_on_return_home_pressed)
 
 	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
@@ -445,6 +453,48 @@ func _focus_initial_cell() -> void:
 func focus_on_cell(cx: int, cy: int) -> void:
 	if _camera != null:
 		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
+	_update_return_home_visibility()
+
+func load_place(place_id: String, center_waypost: bool = true) -> bool:
+	var places: Array = RevealEngine.load_places()
+	for p in places:
+		if str(p.get("id", "")) == place_id:
+			_active_place_id = place_id
+			var wp: Dictionary = p.get("waypost", {})
+			var w_lat := float(wp.get("lat", 0.0))
+			var w_lon := float(wp.get("lon", 0.0))
+			_active_waypost_cell = Grid.latlon_to_cell(w_lat, w_lon)
+			_has_active_waypost = true
+			if center_waypost:
+				focus_on_cell(_active_waypost_cell.x, _active_waypost_cell.y)
+			_update_return_home_visibility()
+			return true
+	return false
+
+func get_camera_cell() -> Vector2i:
+	if _camera == null:
+		return Vector2i.ZERO
+	var cx := int(floor(_camera.position.x / CELL_SIZE_PX))
+	var cy := int(floor(-_camera.position.y / CELL_SIZE_PX))
+	return Vector2i(cx, cy)
+
+func _update_return_home_visibility() -> void:
+	if _return_home_button == null:
+		return
+	if not _has_active_waypost:
+		_return_home_button.visible = false
+		return
+	var cam_cell := get_camera_cell()
+	var dist_x: int = abs(cam_cell.x - _active_waypost_cell.x)
+	var dist_y: int = abs(cam_cell.y - _active_waypost_cell.y)
+	_return_home_button.visible = (dist_x <= 1 and dist_y <= 1)
+
+func _on_return_home_pressed() -> void:
+	var main_node = get_parent()
+	if main_node != null and main_node.has_method("open_home_hub"):
+		main_node.open_home_hub()
+	elif get_tree() != null and get_tree().current_scene == self:
+		get_tree().change_scene_to_file("res://scenes/home_hub.tscn")
 
 func _focus_most_buildings() -> void:
 	if _camera == null:
@@ -525,6 +575,7 @@ func _process(delta: float) -> void:
 		_on_region_lookup_done(lookup_res)
 	_poll_unmapped_cells(delta)
 	_update_sign_tooltip()
+	_update_return_home_visibility()
 	var elapsed_ms := float(Time.get_ticks_usec() - t0) / 1000.0
 	var sample_ms := delta * 1000.0 if delta > 0.0 else elapsed_ms
 	_frame_times.append(sample_ms)
