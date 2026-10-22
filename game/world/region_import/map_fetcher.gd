@@ -6,6 +6,7 @@ extends RefCounted
 
 const Grid := preload("res://world/grid.gd")
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
+const MapConstants := preload("res://world/map_constants.gd")
 
 const INDEX_URL := "https://download.geofabrik.de/index-v1.json"
 const DEFAULT_MAP_DATA_DIR := "user://map_data"
@@ -66,6 +67,24 @@ static func format_download_dialog_text(region_name: String, size_mb: int) -> St
 static func sanitize_region_id(region_id: String) -> String:
 	var s := region_id.strip_edges().replace("/", "_").replace("\\", "_").replace(":", "_")
 	return s if s != "" else "region"
+
+static func build_pbf_url(path_or_url: String) -> String:
+	var s := path_or_url.strip_edges()
+	if s.begins_with("http://") or s.begins_with("https://"):
+		if s.ends_with("-latest.osm.pbf"):
+			return s.trim_suffix("-latest.osm.pbf") + "-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf"
+		return s
+	var prefix := "https://download.geofabrik.de/"
+	var clean := s.trim_prefix("/").trim_suffix(".osm.pbf").trim_suffix("-latest")
+	return prefix + clean + "-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf"
+
+static func build_md5_url(pbf_url: String) -> String:
+	var s := pbf_url.strip_edges()
+	if s.ends_with("-latest.osm.pbf.md5"):
+		return s.trim_suffix("-latest.osm.pbf.md5") + "-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf.md5"
+	if s.ends_with(".md5"):
+		return s
+	return s + ".md5"
 
 func get_index_cache_path() -> String:
 	return map_data_dir + "/index-v1.json"
@@ -218,8 +237,9 @@ func _find_best_region_in_features(lat: float, lon: float, kept_features: Array)
 				best_area = area
 				best_id = rid
 				var urls: Dictionary = props.get("urls", {})
-				var pbf_url: String = str(urls.get("pbf", ""))
-				var md5_url: String = str(urls.get("md5", pbf_url + ".md5"))
+				var raw_pbf: String = str(urls.get("pbf", ""))
+				var pbf_url: String = build_pbf_url(raw_pbf)
+				var md5_url: String = build_md5_url(pbf_url)
 				best_region = {
 					"id": rid,
 					"name": str(props.get("name", "")),

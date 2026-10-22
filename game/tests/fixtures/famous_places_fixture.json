@@ -1,0 +1,39 @@
+{
+  "places": [
+    {
+      "id": "city:fixture-city",
+      "name": "Fixture City",
+      "region": "test",
+      "kind": "city",
+      "osm_boundary": {
+        "relation_id": 9001,
+        "name": "Fixture City",
+        "admin_level": 8
+      },
+      "waypost": {
+        "name": "Fixture Town Hall",
+        "osm_id": 9101,
+        "lat": 0.0103486,
+        "lon": 0.0080489
+      },
+      "interiors": []
+    },
+    {
+      "id": "site:fixture-park",
+      "name": "Fixture Park",
+      "region": "test",
+      "kind": "site",
+      "osm_boundary": {
+        "relation_id": 9002,
+        "name": "Fixture Park"
+      },
+      "waypost": {
+        "name": "Fixture Park Visitor Center",
+        "osm_id": 9102,
+        "lat": 0.010,
+        "lon": 0.020
+      },
+      "interiors": []
+    }
+  ]
+}

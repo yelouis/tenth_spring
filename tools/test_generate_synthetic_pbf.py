@@ -131,7 +131,9 @@ class TestGenerateSyntheticPbf(unittest.TestCase):
                   b"District Line", b"Old Pine Cemetery", b"Deep Forest", b"Town Parking",
                   b"Clear Brook", b"Broad River", b"River Bridge", b"Boundary Market",
                   b"Hidden Tunnel", b"City Library", b"Active Construction",
-                  b"North Elm Street", b"House 1", b"House 2", b"House 3", b"Parking Plaza Shop"]:
+                  b"North Elm Street", b"House 1", b"House 2", b"House 3", b"Parking Plaza Shop",
+                  b"Fixture City", b"Mill District", b"North End", b"Old Town", b"Riverside",
+                  b"Fixture Park", b"Fixture Town Hall", b"Fixture Park Visitor Center"]:
             self.assertIn(s, decomp, f"Expected string '{s.decode()}' missing in decompressed OSMData")
 
     def test_reverse_coastline_flag(self):

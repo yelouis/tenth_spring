@@ -30,6 +30,16 @@ def parse_args():
         help="Path to save database for clip conversion (e.g. user://demo/tenth_spring.db)."
     )
     parser.add_argument(
+        "--place",
+        default=None,
+        help="Convert a famous place (e.g. city:washington-dc)."
+    )
+    parser.add_argument(
+        "--config",
+        default=None,
+        help="Path to famous places JSON config."
+    )
+    parser.add_argument(
         "--margin-cells",
         type=int,
         default=6,
@@ -73,8 +83,8 @@ def main():
         print(f"[FAIL] PBF file not found: {pbf_path}", file=sys.stderr)
         sys.exit(1)
 
-    # Determine memguard step: map_convert_clip if clipping, else map_convert
-    step = "map_convert_clip" if args.clip_to_save else "map_convert"
+    # Determine memguard step: map_convert_clip if clipping or converting place, else map_convert
+    step = "map_convert_clip" if (args.clip_to_save or args.place) else "map_convert"
 
     # Memory Guard check: ensure execution runs under memguard
     if not os.environ.get("TENTH_SPRING_MEMGUARD_HELD"):
@@ -103,6 +113,10 @@ def main():
         f"--pbf={pbf_path}",
         f"--out-dir={args.out_dir}"
     ]
+    if args.place:
+        godot_cmd.append(f"--place={args.place}")
+    if args.config:
+        godot_cmd.append(f"--config={args.config}")
     if args.clip_to_save:
         godot_cmd.append(f"--clip-to-save={args.clip_to_save}")
         godot_cmd.append(f"--margin-cells={args.margin_cells}")

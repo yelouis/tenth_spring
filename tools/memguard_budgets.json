@@ -90,5 +90,12 @@
     "date": "2026-10-20",
     "machine": "darwin arm64",
     "status": "measured"
+  },
+  "map_convert_place": {
+    "budget_gib": 2.5,
+    "peak_gib": 1.695,
+    "date": "2026-10-21",
+    "machine": "darwin arm64",
+    "status": "measured"
   }
 }

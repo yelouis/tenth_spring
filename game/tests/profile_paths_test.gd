@@ -89,6 +89,8 @@ func run_test() -> bool:
 
 	var orig_db_path = DB.DB_PATH
 	var orig_tmp_path = DB.DB_TMP_PATH
+	var pre_real_exists = FileAccess.file_exists("user://tenth_spring.db")
+	var pre_real_sha = FileAccess.get_sha256("user://tenth_spring.db") if pre_real_exists else ""
 
 	var p = ProfilePaths.resolve(["--demo-dir", integ_dir])
 	if not p.ok:
@@ -138,8 +140,10 @@ func run_test() -> bool:
 		return false
 
 	# Assertions: real save was NOT created or modified
-	if FileAccess.file_exists("user://tenth_spring.db"):
-		push_error("Integration test VIOLATION: real save user://tenth_spring.db exists!")
+	var post_real_exists = FileAccess.file_exists("user://tenth_spring.db")
+	var post_real_sha = FileAccess.get_sha256("user://tenth_spring.db") if post_real_exists else ""
+	if pre_real_exists != post_real_exists or pre_real_sha != post_real_sha:
+		push_error("Integration test VIOLATION: real save user://tenth_spring.db was created or modified!")
 		DB.configure_paths(orig_db_path, orig_tmp_path)
 		return false
 

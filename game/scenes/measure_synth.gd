@@ -115,7 +115,7 @@ func _ready() -> void:
 				var ny := cy + dy
 				area[offset] = _get_cell_raw(store, nx, ny)
 
-		var synth_res := TileSynth2.synthesize_cell(cx, cy, area, 0)
+		var synth_res := TileSynth2.synthesize_cell(cx, cy, area)
 		var stats: Dictionary = synth_res.get("stats", {})
 		total_candidates += int(stats.get("building_candidates", 0))
 		total_placed += int(stats.get("buildings_placed", 0))

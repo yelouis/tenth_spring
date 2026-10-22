@@ -100,12 +100,31 @@ func _init_schema() -> void:
 	""")
 
 	_q("""
+	CREATE TABLE IF NOT EXISTS areas (
+		area_key TEXT PRIMARY KEY,
+		kind TEXT NOT NULL,
+		name TEXT NOT NULL DEFAULT '',
+		cell_count INTEGER NOT NULL
+	);
+	""")
+
+	_q("""
+	CREATE TABLE IF NOT EXISTS area_cells (
+		cell_x INTEGER NOT NULL,
+		cell_y INTEGER NOT NULL,
+		area_key TEXT NOT NULL,
+		PRIMARY KEY (cell_x, cell_y)
+	);
+	""")
+	_q("CREATE INDEX IF NOT EXISTS idx_area_cells_area ON area_cells(area_key);")
+
+	_q("""
 	CREATE TABLE IF NOT EXISTS import_state (
 		key TEXT PRIMARY KEY,
 		val TEXT NOT NULL
 	);
 	""")
-	_q("INSERT OR IGNORE INTO import_state (key, val) VALUES ('schema_version', '3');")
+	_q("INSERT OR IGNORE INTO import_state (key, val) VALUES ('schema_version', '4');")
 
 func _q(sql: String, params: Array = []) -> bool:
 	if _db == null:
@@ -250,6 +269,31 @@ func get_state(key: String, default_val: String = "") -> String:
 		return default_val
 	return str(rows[0].get("val", default_val))
 
+func insert_area(area_key: String, kind: String, name: String, cell_count: int) -> bool:
+	return _q(
+		"INSERT OR REPLACE INTO areas (area_key, kind, name, cell_count) VALUES (?, ?, ?, ?);",
+		[area_key, kind, name, cell_count]
+	)
+
+func insert_area_cell(cell_x: int, cell_y: int, area_key: String) -> bool:
+	return _q(
+		"INSERT OR REPLACE INTO area_cells (cell_x, cell_y, area_key) VALUES (?, ?, ?);",
+		[cell_x, cell_y, area_key]
+	)
+
+func get_areas() -> Array:
+	return _rows("SELECT area_key, kind, name, cell_count FROM areas ORDER BY area_key;")
+
+func get_area_cells() -> Array:
+	return _rows("SELECT cell_x, cell_y, area_key FROM area_cells ORDER BY cell_x, cell_y;")
+
+func get_cell_area(cx: int, cy: int) -> Dictionary:
+	var rows := _rows(
+		"SELECT a.area_key, a.kind, a.name, a.cell_count FROM area_cells ac JOIN areas a ON ac.area_key = a.area_key WHERE ac.cell_x = ? AND ac.cell_y = ? LIMIT 1;",
+		[cx, cy]
+	)
+	return rows[0] if not rows.is_empty() else {}
+
 # -------------------------------------------------------------
 # Read queries
 # -------------------------------------------------------------
@@ -330,6 +374,15 @@ func canonical_dump() -> String:
 	var flags := _rows("SELECT cell_x, cell_y, sea FROM cell_flags ORDER BY cell_x, cell_y;")
 	for f in flags:
 		lines.append("FLAG|%d|%d|%d" % [f["cell_x"], f["cell_y"], f["sea"]])
+
+	var areas_rows := _rows("SELECT area_key, kind, name, cell_count FROM areas ORDER BY area_key;")
+	for a in areas_rows:
+		var n: String = a.get("name", "")
+		lines.append("AREA|%s|%s|%s|%d" % [a["area_key"], a["kind"], n, a["cell_count"]])
+
+	var area_cells_rows := _rows("SELECT cell_x, cell_y, area_key FROM area_cells ORDER BY cell_x, cell_y;")
+	for ac in area_cells_rows:
+		lines.append("AREACELL|%d|%d|%s" % [ac["cell_x"], ac["cell_y"], ac["area_key"]])
 
 	return "\n".join(lines) + "\n"
 

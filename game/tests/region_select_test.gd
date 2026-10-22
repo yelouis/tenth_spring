@@ -7,6 +7,7 @@ const MapFetcher := preload("res://world/region_import/map_fetcher.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const MapViewScene := preload("res://world/map_view.tscn")
 const Grid := preload("res://world/grid.gd")
+const MapConstants := preload("res://world/map_constants.gd")
 
 class FakeTransport extends RefCounted:
 	var responses: Dictionary = {} # url -> Dictionary {code, headers, chunks}
@@ -56,7 +57,7 @@ func run_test() -> bool:
 	md5_ctx.update(pbf_bytes)
 	var real_md5 := md5_ctx.finish().hex_encode().to_lower()
 
-	var pbf_url := "https://download.geofabrik.de/north-america/us/synthetic-state-latest.osm.pbf"
+	var pbf_url := "https://download.geofabrik.de/north-america/us/synthetic-state-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf"
 	var md5_url := pbf_url + ".md5"
 
 	# Build nested GeoJSON index around (0.01, 0.01) -> Cell (4, 4) center is ~(0.0103, 0.0103)
@@ -335,7 +336,7 @@ func run_test() -> bool:
 	# 5. Streaming Validation:
 	# Deliver 40 chunks of 1 MiB. max_buffered_bytes <= 1048576, and file grows to k MiB when chunk k+1 arrives.
 	var stream_transport := FakeTransport.new()
-	var stream_pbf_url := "https://download.geofabrik.de/north-america/us/stream-latest.osm.pbf"
+	var stream_pbf_url := "https://download.geofabrik.de/north-america/us/stream-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf"
 	var one_mb := PackedByteArray()
 	one_mb.resize(1048576)
 	one_mb.fill(42)
@@ -391,7 +392,7 @@ func run_test() -> bool:
 	var thread_chunks: Array = []
 	for i in 10:
 		thread_chunks.append(one_mb)
-	var thread_pbf_url := "https://download.geofabrik.de/north-america/us/thread-latest.osm.pbf"
+	var thread_pbf_url := "https://download.geofabrik.de/north-america/us/thread-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf"
 	thread_transport.responses[thread_pbf_url] = {
 		"code": 200,
 		"headers": {"Content-Length": str(10 * 1048576)},
@@ -503,7 +504,7 @@ func run_test() -> bool:
 			DirAccess.remove_absolute(test_db_path + sfx)
 
 	# 8. Valid MD5 Install & Clean-up (preserving existing integration test flow)
-	transport.get_responses[md5_url] = real_md5 + "  synthetic-state-latest.osm.pbf\n"
+	transport.get_responses[md5_url] = real_md5 + "  synthetic-state-" + MapConstants.MAP_SNAPSHOT + ".osm.pbf\n"
 	map_view.set_map_fetcher(fetcher)
 	map_view.configure_unmapped_region([Vector2i(4, 4)])
 	var good_res: Dictionary = map_view.confirm_download_dialog()

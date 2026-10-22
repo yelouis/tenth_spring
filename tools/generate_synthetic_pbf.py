@@ -106,7 +106,10 @@ def generate_synthetic_pbf_bytes(reverse_coastline: bool = False) -> bytes:
         "type", "multipolygon", "outer", "inner", "name",
         "coastline", "railway", "rail", "landuse", "cemetery",
         "forest", "waterway", "stream", "river", "bridge",
-        "tunnel", "construction"
+        "tunnel", "construction", "boundary", "administrative",
+        "admin_level", "national_park", "place", "neighbourhood",
+        "suburb", "quarter", "information", "townhall", "tourism",
+        "8", "10"
     ]
     for s in known_strings:
         st.get(s)
@@ -613,6 +616,148 @@ def generate_synthetic_pbf_bytes(reverse_coastline: bool = False) -> bytes:
         "id": 132,
         "tags": {"building": "retail", "name": "Parking Plaza Shop"},
         "refs": shop_node_ids
+    })
+
+    # === Fixture v4 additions (Item 18, famous places & neighbourhoods) ===
+    # 29. Fixture City: admin_level=8 relation (9001), 6 x 6 cells [cx in 2..7, cy in 2..7]
+    # Bound WM: x in [512, 2048], y in [512, 2048]
+    # Stitched from two ways: 9201 (South+East) and 9202 (North+West)
+    fc_se_pts_wm = [(512.0, 512.0), (2048.0, 512.0), (2048.0, 2048.0)]
+    fc_se_node_ids = []
+    for x, y in fc_se_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        fc_se_node_ids.append(nid)
+    ways.append({
+        "id": 9201,
+        "tags": {},
+        "refs": fc_se_node_ids
+    })
+
+    fc_nw_pts_wm = [(2048.0, 2048.0), (512.0, 2048.0), (512.0, 512.0)]
+    fc_nw_node_ids = [fc_se_node_ids[-1]]
+    for x, y in fc_nw_pts_wm[1:-1]:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        fc_nw_node_ids.append(nid)
+    fc_nw_node_ids.append(fc_se_node_ids[0])
+    ways.append({
+        "id": 9202,
+        "tags": {},
+        "refs": fc_nw_node_ids
+    })
+
+    relations.append({
+        "id": 9001,
+        "tags": {
+            "type": "boundary",
+            "boundary": "administrative",
+            "admin_level": "8",
+            "name": "Fixture City"
+        },
+        "members": [
+            (9201, "outer", 1),
+            (9202, "outer", 1)
+        ]
+    })
+
+    # 30. Mill District: admin_level=10 relation (9010), 2 x 2 cells [cx in 2..3, cy in 2..3]
+    # Bound WM: x in [512, 1024], y in [512, 1024]
+    mill_pts_wm = [(512.0, 512.0), (1024.0, 512.0), (1024.0, 1024.0), (512.0, 1024.0)]
+    mill_node_ids = [fc_se_node_ids[0]]
+    for x, y in mill_pts_wm[1:]:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        mill_node_ids.append(nid)
+    mill_node_ids.append(mill_node_ids[0])
+    ways.append({
+        "id": 9203,
+        "tags": {},
+        "refs": mill_node_ids
+    })
+
+    relations.append({
+        "id": 9010,
+        "tags": {
+            "type": "boundary",
+            "boundary": "administrative",
+            "admin_level": "10",
+            "name": "Mill District"
+        },
+        "members": [
+            (9203, "outer", 1)
+        ]
+    })
+
+    # 31. Three neighbourhood nodes inside Fixture City
+    # North End: cell (4, 7) -> WM (1152, 1920)
+    ne_lat, ne_lon = wm_to_latlon(1152.0, 1920.0)
+    nodes.append((9103, ne_lat, ne_lon, {"place": "neighbourhood", "name": "North End"}))
+
+    # Old Town: cell (4, 4) -> WM (1152, 1152)
+    ot_lat, ot_lon = wm_to_latlon(1152.0, 1152.0)
+    nodes.append((9104, ot_lat, ot_lon, {"place": "neighbourhood", "name": "Old Town"}))
+
+    # Riverside: cell (7, 4) -> WM (1920, 1152)
+    rs_lat, rs_lon = wm_to_latlon(1920.0, 1152.0)
+    nodes.append((9105, rs_lat, rs_lon, {"place": "neighbourhood", "name": "Riverside"}))
+
+    # Waypost for Fixture City: Fixture Town Hall at cell (3, 4)
+    th_lat, th_lon = wm_to_latlon(896.0, 1152.0)
+    nodes.append((9101, th_lat, th_lon, {"amenity": "townhall", "name": "Fixture Town Hall"}))
+
+    # 32. Fixture Park: boundary=national_park relation (9002), 4 x 4 cells east of city [cx in 9..12, cy in 3..6]
+    # Bound WM: x in [2304, 3328], y in [768, 1792]
+    fp_pts_wm = [(2304.0, 768.0), (3328.0, 768.0), (3328.0, 1792.0), (2304.0, 1792.0)]
+    fp_node_ids = []
+    for x, y in fp_pts_wm:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        fp_node_ids.append(nid)
+    fp_node_ids.append(fp_node_ids[0])
+    ways.append({
+        "id": 9204,
+        "tags": {},
+        "refs": fp_node_ids
+    })
+
+    relations.append({
+        "id": 9002,
+        "tags": {
+            "type": "boundary",
+            "boundary": "national_park",
+            "name": "Fixture Park"
+        },
+        "members": [
+            (9204, "outer", 1)
+        ]
+    })
+
+    # Waypost for Fixture Park: Visitor Center at cell (9, 3)
+    vc_lat, vc_lon = wm_to_latlon(2432.0, 896.0)
+    nodes.append((9102, vc_lat, vc_lon, {"tourism": "information", "name": "Fixture Park Visitor Center"}))
+
+    # 33. Distant coastline way in cell (14, 4) - (14, 5) for clip determinism tests
+    dist_coast_pts = [(3712.0, 1000.0), (3712.0, 1250.0), (3712.0, 1500.0)]
+    dist_coast_node_ids = []
+    for x, y in dist_coast_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = wm_to_latlon(x, y)
+        nodes.append((nid, lat, lon, {}))
+        dist_coast_node_ids.append(nid)
+    ways.append({
+        "id": 9205,
+        "tags": {"natural": "coastline"},
+        "refs": dist_coast_node_ids
     })
 
     nodes.sort(key=lambda n: n[0])

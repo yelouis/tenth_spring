@@ -11,7 +11,7 @@ const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
 # Final Golden hash (§8 a, §10.7) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "4168443e14dcbb8bab602a4fc85070a605c8aa9272e4675e77a82ca0a0e02d04"
+const GOLDEN_HASH: String = "c82cac4e1b0bce8a2c1c40cc1f16a7f6feee4d936877074ccf5e917388eea8df"
 
 func run_test() -> bool:
 	_cleanup()

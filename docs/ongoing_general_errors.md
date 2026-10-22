@@ -885,12 +885,27 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Falsification tests: caught duplicate legendary dex (`Duplicate legendary dex 379 on spot spot:statue-of-liberty`) and missing key interior purpose (`Interior boston:faneuil-hall has < 2 purposes: H`).
   - Headless test suite: 20/20 runtime tests passed, static lint and IP guard intact.
 
+**M48 — The Same Map for Everyone + Place Stores Schema v4 (Decision 23 = A, F45(d), Item 18, 2026-10-21).**
+- **What was solved:**
+  - `MapConstants` created with `MAP_SNAPSHOT = "261001"` and `MAP_SEED = 0`.
+  - `TileSynth2` default seed wired to `MapConstants.MAP_SEED`.
+  - `MapFetcher` builds snapshot URLs with `-261001.osm.pbf` and `.md5`, never `-latest`.
+  - `MapStore` upgraded to Schema v4 with `areas` and `area_cells` tables, indices, CRUD helpers (`insert_area`, `insert_area_cell`, `get_areas`, `get_area_cells`), and updated `canonical_dump()`.
+  - `RegionConverter` implemented `--place <id>` with fixed conversion unit (place boundary polygon bounding box + 2 cells margin) and Rule 3 full coastline retention across the extract regardless of clip.
+  - Implemented polygon-way ring stitching and neighbourhood assignment for cities (admin 9/10 relations -> nearest neighbourhood nodes -> 4x4 grid fallback) and single-area site coverage for sites.
+  - Synthetic fixture updated to v4 (`Fixture City` 6x6 cells with 4 neighbourhoods, `Fixture Park` 4x4 cells, Wayposts, and distant coastline).
+  - Determinism test added to `region_import_test.gd`: asserts that `--place` run and clip run with matching unit produce identical canonical hash, and every cell inside the city synthesizes byte-identical tile buffers between two different clips. Falsifier verifies that without Rule 3 (omitting distant coastline outside clip), cell (10, 4) sea flag changes from 0 to 1.
+- **Validation:**
+  - `region_import_test.gd`: All 8 sections PASS, including golden hashes, schema v4 area assertions, determinism test, and coastline retention falsifier.
+  - DC place conversion measured on development machine: `district-of-columbia-261001.osm.pbf` (20.3 MB) converted in 22.77 s, peak RSS 1.695 GiB (budget 2.5 GiB), output store 32 MB with 194,126 poly, 49,600 line, 2,995 place_nodes, 4,469 area_cells partitioned across 9 areas (Washington DC + Wards 1–8).
+  - Verification battery: 20/20 Godot tests PASS, Flutter analyze 0 issues, Flutter test 37 passed (2 skipped), loopback sync E2E PASS.
+- **F45(d) (fixed):** In-game install converts only famous places from the pinned snapshot, resolving F45(d).
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46.*
-- **F45(d) — whole-state conversion on PC.** The in-game download still converts the whole region extract. **Decision 23 = A:** only famous places are converted, each as a fixed unit from the pinned snapshot — agent guide Item 18.
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48.*
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).

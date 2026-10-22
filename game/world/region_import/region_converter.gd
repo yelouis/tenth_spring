@@ -7,6 +7,7 @@ const OsmPbfReader := preload("res://world/region_import/osm_pbf_reader.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const Grid := preload("res://world/grid.gd")
 const PoiMapping := preload("res://config/poi_mapping.gd")
+const MapConstants := preload("res://world/map_constants.gd")
 
 # Injectable memory reader: Callable returning Dictionary with "available" and "physical" in bytes
 var memory_reader: Callable = Callable(self, "_default_memory_reader")
@@ -172,6 +173,414 @@ static func clip_segment_to_box(p1: Vector2, p2: Vector2, box_min: Vector2, box_
 				c2 = code.call(b)
 	return []
 
+static func stitch_ways_to_rings(way_segments: Array) -> Array[PackedVector2Array]:
+	var closed_rings: Array[PackedVector2Array] = []
+	var open_chains: Array[PackedVector2Array] = []
+
+	for seg in way_segments:
+		if not (seg is PackedVector2Array):
+			continue
+		var pts: PackedVector2Array = seg
+		if pts.size() < 2:
+			continue
+		if (pts[0] - pts[pts.size() - 1]).length_squared() < 1e-4 and pts.size() >= 3:
+			closed_rings.append(pts)
+		else:
+			open_chains.append(pts.duplicate())
+
+	while not open_chains.is_empty():
+		var chain: PackedVector2Array = open_chains.pop_front()
+		var progress := true
+		while progress and not open_chains.is_empty():
+			progress = false
+			if (chain[0] - chain[chain.size() - 1]).length_squared() < 1e-4 and chain.size() >= 3:
+				break
+
+			var c_start: Vector2 = chain[0]
+			var c_end: Vector2 = chain[chain.size() - 1]
+
+			for i in range(open_chains.size()):
+				var next_seg: PackedVector2Array = open_chains[i]
+				var n_start: Vector2 = next_seg[0]
+				var n_end: Vector2 = next_seg[next_seg.size() - 1]
+
+				if (c_end - n_start).length_squared() < 1e-3:
+					for k in range(1, next_seg.size()):
+						chain.append(next_seg[k])
+					open_chains.remove_at(i)
+					progress = true
+					break
+				elif (c_end - n_end).length_squared() < 1e-3:
+					for k in range(next_seg.size() - 2, -1, -1):
+						chain.append(next_seg[k])
+					open_chains.remove_at(i)
+					progress = true
+					break
+				elif (c_start - n_end).length_squared() < 1e-3:
+					var new_chain := PackedVector2Array()
+					for k in range(next_seg.size() - 1):
+						new_chain.append(next_seg[k])
+					new_chain.append_array(chain)
+					chain = new_chain
+					open_chains.remove_at(i)
+					progress = true
+					break
+				elif (c_start - n_start).length_squared() < 1e-3:
+					var new_chain := PackedVector2Array()
+					for k in range(next_seg.size() - 1, 0, -1):
+						new_chain.append(next_seg[k])
+					new_chain.append_array(chain)
+					chain = new_chain
+					open_chains.remove_at(i)
+					progress = true
+					break
+
+		if chain.size() >= 3:
+			if (chain[0] - chain[chain.size() - 1]).length_squared() >= 1e-4:
+				chain.append(chain[0])
+			closed_rings.append(chain)
+
+	return closed_rings
+
+static func ring_contains_point(ring: PackedVector2Array, pt: Vector2) -> bool:
+	var n := ring.size()
+	if n < 3:
+		return false
+	var inside := false
+	var j := n - 1
+	for i in range(n):
+		var pi := ring[i]
+		var pj := ring[j]
+		var denom := pj.y - pi.y
+		if absf(denom) < 1e-9:
+			denom = 1e-9
+		if ((pi.y > pt.y) != (pj.y > pt.y)) and (pt.x < (pj.x - pi.x) * (pt.y - pi.y) / denom + pi.x):
+			inside = not inside
+		j = i
+	return inside
+
+static func lookup_place(place_id: String, config_path: String = "") -> Dictionary:
+	var paths := []
+	if not config_path.is_empty():
+		paths.append(config_path)
+	paths.append("res://config/famous_places.json")
+	paths.append("res://tests/fixtures/famous_places_fixture.json")
+
+	for p in paths:
+		if FileAccess.file_exists(p):
+			var txt := FileAccess.get_file_as_string(p)
+			var parsed: Variant = JSON.parse_string(txt)
+			var place_list: Array = []
+			if parsed is Array:
+				place_list = parsed
+			elif parsed is Dictionary and parsed.has("places") and parsed["places"] is Array:
+				place_list = parsed["places"]
+			for pl in place_list:
+				if pl is Dictionary and str(pl.get("id", "")) == place_id:
+					return pl
+	return {}
+
+static func extract_relation_polygon_from_pbf(pbf_path: String, rel_id: int) -> Dictionary:
+	var f := FileAccess.open(pbf_path, FileAccess.READ)
+	if not f:
+		return {"ok": false, "error": "Cannot open PBF file: " + pbf_path}
+
+	var target_way_ids: Dictionary = {}
+	var rel_tags: Dictionary = {}
+	var file_len := f.get_length()
+
+	while f.get_position() < file_len:
+		var blob := OsmPbfReader.read_blob_header_and_data(f)
+		if blob.is_empty():
+			break
+		if blob.get("type", "") != "OSMData":
+			continue
+		var decomp: PackedByteArray = blob.get("decompressed", PackedByteArray())
+		if decomp.is_empty():
+			continue
+		var pr := OsmPbfReader.ProtoReader.new(decomp)
+		var string_table: Array[String] = []
+
+		while pr.has_more():
+			var tag := pr.read_varint()
+			var fn := tag >> 3
+			var wt := tag & 0x7
+			if fn == 1 and wt == 2:
+				var st_len := pr.read_varint()
+				string_table = OsmPbfReader.decode_string_table(pr, st_len)
+			elif fn == 2 and wt == 2:
+				var glen := pr.read_varint()
+				var gr_end := pr.pos + glen
+				while pr.pos < gr_end:
+					var gtag := pr.read_varint()
+					var gfn := gtag >> 3
+					var gwt := gtag & 0x7
+					if gfn == 4 and gwt == 2: # Relation
+						var rlen := pr.read_varint()
+						var rend := pr.pos + rlen
+						var rid := 0
+						var r_keys: Array[int] = []
+						var r_vals: Array[int] = []
+						var r_roles: Array[int] = []
+						var r_memids: Array[int] = []
+						var r_types: Array[int] = []
+						while pr.pos < rend:
+							var rtag := pr.read_varint()
+							var rfn := rtag >> 3
+							var rwt := rtag & 0x7
+							if rfn == 1 and rwt == 0:
+								rid = pr.read_varint()
+							elif rfn == 2 and rwt == 2:
+								var kl := pr.read_varint()
+								var kend := pr.pos + kl
+								while pr.pos < kend:
+									r_keys.append(pr.read_varint())
+							elif rfn == 3 and rwt == 2:
+								var vl := pr.read_varint()
+								var vend := pr.pos + vl
+								while pr.pos < vend:
+									r_vals.append(pr.read_varint())
+							elif rfn == 8 and rwt == 2:
+								var rl := pr.read_varint()
+								var rend_roles := pr.pos + rl
+								while pr.pos < rend_roles:
+									r_roles.append(pr.read_varint())
+							elif rfn == 9 and rwt == 2:
+								var ml := pr.read_varint()
+								var mend := pr.pos + ml
+								var cur_mid := 0
+								while pr.pos < mend:
+									cur_mid += pr.read_sint64()
+									r_memids.append(cur_mid)
+							elif rfn == 10 and rwt == 2:
+								var tl := pr.read_varint()
+								var tend := pr.pos + tl
+								while pr.pos < tend:
+									r_types.append(pr.read_varint())
+							elif rwt == 2:
+								pr.skip(pr.read_varint())
+							elif rwt == 0:
+								pr.read_varint()
+
+						if rid == rel_id:
+							for k_i in r_keys.size():
+								var k_str := string_table[r_keys[k_i]] if k_i < r_keys.size() and r_keys[k_i] < string_table.size() else ""
+								var v_str := string_table[r_vals[k_i]] if k_i < r_vals.size() and r_vals[k_i] < string_table.size() else ""
+								rel_tags[k_str] = v_str
+							for m_i in r_memids.size():
+								var m_type: int = r_types[m_i] if m_i < r_types.size() else 0
+								var m_role: String = string_table[r_roles[m_i]] if m_i < r_roles.size() and r_roles[m_i] < string_table.size() else ""
+								var m_id: int = r_memids[m_i]
+								if m_type == 1: # WAY
+									if m_role == "outer" or m_role == "" or m_role == "enclave":
+										target_way_ids[m_id] = m_role
+							break
+					elif gwt == 2:
+						pr.skip(pr.read_varint())
+					elif gwt == 0:
+						pr.read_varint()
+			elif wt == 2:
+				pr.skip(pr.read_varint())
+			elif wt == 0:
+				pr.read_varint()
+		if not target_way_ids.is_empty():
+			break
+
+	if target_way_ids.is_empty():
+		f.close()
+		return {"ok": false, "error": "Relation %d outer ways not found" % rel_id}
+
+	# 2. Scan ways
+	f.seek(0)
+	var way_refs: Dictionary = {}
+	var needed_node_ids_set: Dictionary = {}
+	var found_ways_count := 0
+
+	while f.get_position() < file_len and found_ways_count < target_way_ids.size():
+		var blob := OsmPbfReader.read_blob_header_and_data(f)
+		if blob.is_empty():
+			break
+		if blob.get("type", "") != "OSMData":
+			continue
+		var decomp: PackedByteArray = blob.get("decompressed", PackedByteArray())
+		if decomp.is_empty():
+			continue
+		var pr := OsmPbfReader.ProtoReader.new(decomp)
+
+		while pr.has_more():
+			var tag := pr.read_varint()
+			var fn := tag >> 3
+			var wt := tag & 0x7
+			if fn == 2 and wt == 2:
+				var glen := pr.read_varint()
+				var gr_end := pr.pos + glen
+				while pr.pos < gr_end:
+					var gtag := pr.read_varint()
+					var gfn := gtag >> 3
+					var gwt := gtag & 0x7
+					if gfn == 3 and gwt == 2: # Way
+						var wlen := pr.read_varint()
+						var wend := pr.pos + wlen
+						var wid := 0
+						var w_refs: Array[int] = []
+						while pr.pos < wend:
+							var wtag := pr.read_varint()
+							var wfn := wtag >> 3
+							var wwt := wtag & 0x7
+							if wfn == 1 and wwt == 0:
+								wid = pr.read_varint()
+							elif wfn == 8 and wwt == 2:
+								var rl := pr.read_varint()
+								var rend := pr.pos + rl
+								var cur_ref := 0
+								while pr.pos < rend:
+									cur_ref += pr.read_sint64()
+									w_refs.append(cur_ref)
+							elif wwt == 2:
+								pr.skip(pr.read_varint())
+							elif wwt == 0:
+								pr.read_varint()
+
+						if target_way_ids.has(wid):
+							way_refs[wid] = w_refs
+							for r in w_refs:
+								needed_node_ids_set[r] = true
+							found_ways_count += 1
+					elif gwt == 2:
+						pr.skip(pr.read_varint())
+					elif gwt == 0:
+						pr.read_varint()
+			elif wt == 2:
+				pr.skip(pr.read_varint())
+			elif wt == 0:
+				pr.read_varint()
+
+	# 3. Scan dense nodes
+	f.seek(0)
+	var node_coords: Dictionary = {}
+	var found_nodes_count := 0
+	var total_needed_nodes := needed_node_ids_set.size()
+
+	while f.get_position() < file_len and found_nodes_count < total_needed_nodes:
+		var blob := OsmPbfReader.read_blob_header_and_data(f)
+		if blob.is_empty():
+			break
+		if blob.get("type", "") != "OSMData":
+			continue
+		var decomp: PackedByteArray = blob.get("decompressed", PackedByteArray())
+		if decomp.is_empty():
+			continue
+		var pr := OsmPbfReader.ProtoReader.new(decomp)
+
+		while pr.has_more():
+			var tag := pr.read_varint()
+			var fn := tag >> 3
+			var wt := tag & 0x7
+			if fn == 2 and wt == 2:
+				var glen := pr.read_varint()
+				var gr_end := pr.pos + glen
+				while pr.pos < gr_end:
+					var gtag := pr.read_varint()
+					var gfn := gtag >> 3
+					var gwt := gtag & 0x7
+					if gfn == 2 and gwt == 2: # DenseNodes
+						var dlen := pr.read_varint()
+						var dend := pr.pos + dlen
+						var id_deltas: Array[int] = []
+						var lat_deltas: Array[int] = []
+						var lon_deltas: Array[int] = []
+						while pr.pos < dend:
+							var dtag := pr.read_varint()
+							var dfn := dtag >> 3
+							var dwt := dtag & 0x7
+							if dfn == 1 and dwt == 2:
+								var l := pr.read_varint()
+								var lend := pr.pos + l
+								while pr.pos < lend:
+									id_deltas.append(pr.read_sint64())
+							elif dfn == 8 and dwt == 2:
+								var l := pr.read_varint()
+								var lend := pr.pos + l
+								while pr.pos < lend:
+									lat_deltas.append(pr.read_sint64())
+							elif dfn == 9 and dwt == 2:
+								var l := pr.read_varint()
+								var lend := pr.pos + l
+								while pr.pos < lend:
+									lon_deltas.append(pr.read_sint64())
+							elif dwt == 2:
+								pr.skip(pr.read_varint())
+							elif dwt == 0:
+								pr.read_varint()
+
+						var cur_id := 0
+						var cur_lat := 0
+						var cur_lon := 0
+						for di in id_deltas.size():
+							cur_id += id_deltas[di]
+							cur_lat += lat_deltas[di]
+							cur_lon += lon_deltas[di]
+							if needed_node_ids_set.has(cur_id):
+								var lat_f := float(cur_lat) * 1e-7
+								var lon_f := float(cur_lon) * 1e-7
+								node_coords[cur_id] = Grid.latlon_to_wm(lat_f, lon_f)
+								found_nodes_count += 1
+					elif gwt == 2:
+						pr.skip(pr.read_varint())
+					elif gwt == 0:
+						pr.read_varint()
+			elif wt == 2:
+				pr.skip(pr.read_varint())
+			elif wt == 0:
+				pr.read_varint()
+
+	f.close()
+
+	var way_segments: Array = []
+	for wid in way_refs.keys():
+		var refs: Array = way_refs[wid]
+		var pts := PackedVector2Array()
+		var ok := true
+		for r in refs:
+			if node_coords.has(r):
+				pts.append(node_coords[r])
+			else:
+				ok = false
+				break
+		if ok and pts.size() >= 2:
+			way_segments.append(pts)
+
+	var rings := stitch_ways_to_rings(way_segments)
+	if rings.is_empty():
+		return {"ok": false, "error": "Stitching failed to produce closed rings for relation %d" % rel_id}
+
+	var outer_poly := rings[0]
+	var max_area := _polygon_area(outer_poly)
+	for i in range(1, rings.size()):
+		var a := _polygon_area(rings[i])
+		if a > max_area:
+			max_area = a
+			outer_poly = rings[i]
+
+	var min_x := INF
+	var min_y := INF
+	var max_x := -INF
+	var max_y := -INF
+	for p in outer_poly:
+		min_x = minf(min_x, p.x)
+		min_y = minf(min_y, p.y)
+		max_x = maxf(max_x, p.x)
+		max_y = maxf(max_y, p.y)
+
+	return {
+		"ok": true,
+		"polygon": outer_poly,
+		"rings": rings,
+		"min_wm": Vector2(min_x, min_y),
+		"max_wm": Vector2(max_x, max_y),
+		"tags": rel_tags
+	}
+
 # -------------------------------------------------------------
 # Main Conversion Routine
 # -------------------------------------------------------------
@@ -179,7 +588,7 @@ static func clip_segment_to_box(p1: Vector2, p2: Vector2, box_min: Vector2, box_
 func _cleanup_cancel(out_db_path: String, store: Object) -> Dictionary:
 	if store != null:
 		store.close()
-	for p in [out_db_path + ".nodes.tmp", out_db_path + ".rels.tmp"]:
+	for p in [out_db_path + ".nodes.tmp", out_db_path + ".rels.tmp", out_db_path + ".coords.tmp", out_db_path + ".nbrs.tmp", out_db_path + ".poly.tmp"]:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
 	for sfx in ["", "-wal", "-shm"]:
@@ -187,7 +596,7 @@ func _cleanup_cancel(out_db_path: String, store: Object) -> Dictionary:
 			DirAccess.remove_absolute(out_db_path + sfx)
 	return {"ok": false, "error": "Cancelled"}
 
-func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, coverage_box: Variant = null) -> Dictionary:
+func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, coverage_box: Variant = null, place_id: String = "", config_path: String = "") -> Dictionary:
 	var t0 := Time.get_ticks_msec()
 
 	if cancel_requested:
@@ -212,17 +621,111 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			"time_ms": Time.get_ticks_msec() - t0
 		}
 
+	# Check for place-based fixed conversion unit
+	var temp_poly_path := out_db_path + ".poly.tmp"
+	var place_poly := PackedVector2Array()
+	var place_kind := ""
+	var place_name := ""
+
+	if not place_id.is_empty():
+		var place_info := lookup_place(place_id, config_path)
+		if place_info.is_empty():
+			store.close()
+			return {"ok": false, "error": "Place not found in configuration: " + place_id}
+		var boundary_val: Variant = place_info.get("osm_boundary", null)
+		var rel_id := 0
+		if boundary_val is Dictionary:
+			rel_id = int(boundary_val.get("relation_id", 0))
+		elif boundary_val is String:
+			var s: String = (boundary_val as String).strip_edges()
+			if s.begins_with("r"):
+				rel_id = int(s.substr(1))
+			else:
+				rel_id = int(s)
+		elif boundary_val is int:
+			rel_id = boundary_val
+		if rel_id == 0:
+			store.close()
+			return {"ok": false, "error": "Place %s has no osm_boundary relation id" % place_id}
+
+		place_kind = str(place_info.get("kind", "city"))
+		place_name = str(place_info.get("name", ""))
+
+		if FileAccess.file_exists(temp_poly_path):
+			var pf := FileAccess.open(temp_poly_path, FileAccess.READ)
+			if pf:
+				var p_txt := pf.get_as_text()
+				var p_parsed: Variant = JSON.parse_string(p_txt)
+				if p_parsed is Dictionary:
+					place_kind = str(p_parsed.get("kind", place_kind))
+					place_name = str(p_parsed.get("name", place_name))
+					var pts_arr: Array = p_parsed.get("pts", [])
+					place_poly = PackedVector2Array()
+					for pt in pts_arr:
+						place_poly.append(Vector2(float(pt[0]), float(pt[1])))
+				pf.close()
+
+		if place_poly.is_empty():
+			var poly_res := extract_relation_polygon_from_pbf(pbf_path, rel_id)
+			if not poly_res.get("ok", false):
+				store.close()
+				return poly_res
+
+			place_poly = poly_res["polygon"]
+			var pf := FileAccess.open(temp_poly_path, FileAccess.WRITE)
+			if pf:
+				var pts_arr: Array = []
+				for p in place_poly:
+					pts_arr.append([p.x, p.y])
+				pf.store_string(JSON.stringify({
+					"kind": place_kind,
+					"name": place_name,
+					"pts": pts_arr
+				}))
+				pf.close()
+
+		var min_x := INF
+		var min_y := INF
+		var max_x := -INF
+		var max_y := -INF
+		for p in place_poly:
+			min_x = minf(min_x, p.x)
+			min_y = minf(min_y, p.y)
+			max_x = maxf(max_x, p.x)
+			max_y = maxf(max_y, p.y)
+
+		var p_min_cx := int(floor(min_x / Grid.CELL_WM))
+		var p_min_cy := int(floor(min_y / Grid.CELL_WM))
+		var p_max_cx := int(floor(max_x / Grid.CELL_WM))
+		var p_max_cy := int(floor(max_y / Grid.CELL_WM))
+
+		var c_min_cx := p_min_cx - 2
+		var c_min_cy := p_min_cy - 2
+		var c_max_cx := p_max_cx + 2
+		var c_max_cy := p_max_cy + 2
+
+		var c_min_x := float(c_min_cx) * Grid.CELL_WM
+		var c_min_y := float(c_min_cy) * Grid.CELL_WM
+		var c_max_x := float(c_max_cx + 1) * Grid.CELL_WM
+		var c_max_y := float(c_max_cy + 1) * Grid.CELL_WM
+
+		clip_rect = Rect2(c_min_x, c_min_y, c_max_x - c_min_x, c_max_y - c_min_y)
+		coverage_box = [c_min_cx, c_min_cy, c_max_cx, c_max_cy]
+
 	# In-memory indices
 	var needed_node_ids := PackedInt64Array()
 	var node_lats := PackedInt32Array()
 	var node_lons := PackedInt32Array()
 	var kept_relations := []
 	var relation_way_ids := {}
+	var neighbourhood_nodes: Array = []
+	var admin_neighbourhood_relations: Array = []
 
 	# Intermediate binary files for checkpoint resume across process restarts
 	var temp_nodes_path := out_db_path + ".nodes.tmp"
 	var temp_coords_path := out_db_path + ".coords.tmp"
 	var temp_rels_path := out_db_path + ".rels.tmp"
+	var temp_nbr_nodes_path := out_db_path + ".nbrs.tmp"
 
 	var start_pass := cur_state_pass.to_int()
 
@@ -456,7 +959,11 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 								var v_str := string_table[r_vals[k_i]] if k_i < r_vals.size() and r_vals[k_i] < string_table.size() else ""
 								tags[k_str] = v_str
 
-							if tags.get("type", "") == "multipolygon":
+							var is_multi: bool = (tags.get("type", "") == "multipolygon")
+							var is_boundary: bool = (tags.get("type", "") == "boundary" or tags.has("boundary"))
+							var is_admin_sub: bool = (tags.get("boundary", "") == "administrative" and str(tags.get("admin_level", "")) in ["9", "10"])
+
+							if is_multi or is_boundary or is_admin_sub:
 								var members := []
 								for m_i in r_memids.size():
 									var m_type: int = r_types[m_i] if m_i < r_types.size() else 0
@@ -550,14 +1057,20 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 									pr.read_varint()
 
 							var has_standalone_tags := false
+							var is_coastline := false
 							for k_i in w_keys.size():
 								var k_str := string_table[w_keys[k_i]] if k_i < w_keys.size() and w_keys[k_i] < string_table.size() else ""
-								if k_str in ["highway", "waterway", "building", "leisure", "natural", "water", "amenity", "railway", "footway", "cycleway", "service", "indoor"]:
+								var v_str := string_table[w_vals[k_i]] if k_i < w_vals.size() and w_vals[k_i] < string_table.size() else ""
+								if k_str == "natural" and v_str == "coastline":
+									is_coastline = true
+									has_standalone_tags = true
+									break
+								elif k_str in ["highway", "waterway", "building", "leisure", "natural", "water", "amenity", "railway", "footway", "cycleway", "service", "indoor"]:
 									has_standalone_tags = true
 									break
 								elif k_str == "landuse":
-									var v_str := string_table[w_vals[k_i]] if k_i < w_vals.size() and w_vals[k_i] < string_table.size() else ""
-									if v_str in ["grass", "meadow", "village_green", "recreation_ground", "forest", "farmland", "orchard", "vineyard", "allotments", "farmyard", "greenhouse_horticulture", "cemetery", "residential", "industrial", "commercial", "retail", "railway", "brownfield", "quarry", "reservoir", "basin"]:
+									var v_str2 := string_table[w_vals[k_i]] if k_i < w_vals.size() and w_vals[k_i] < string_table.size() else ""
+									if v_str2 in ["grass", "meadow", "village_green", "recreation_ground", "forest", "farmland", "orchard", "vineyard", "allotments", "farmyard", "greenhouse_horticulture", "cemetery", "residential", "industrial", "commercial", "retail", "railway", "brownfield", "quarry", "reservoir", "basin"]:
 										has_standalone_tags = true
 										break
 
@@ -573,7 +1086,7 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 									rel_way_refs[wid] = w_refs
 									if has_clip_node:
 										rel_ways_in_clip[wid] = true
-								if has_standalone_tags and has_clip_node:
+								if is_coastline or (has_standalone_tags and has_clip_node):
 									for r in w_refs:
 										id_chunk.append(r)
 									if id_chunk.size() >= ID_CHUNK_SIZE:
@@ -820,6 +1333,22 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 											var name := str(tags.get("name", ""))
 											store.insert_place(cur_id, cell.x, cell.y, name, cat, lat_f, lon_f)
 											poi_count += 1
+
+									var place_tag := str(tags.get("place", ""))
+									if place_tag in ["neighbourhood", "suburb", "quarter"]:
+										var lat_f := float(cur_lat) * 1e-7
+										var lon_f := float(cur_lon) * 1e-7
+										var name := str(tags.get("name", ""))
+										var wm_pt := Grid.latlon_to_wm(lat_f, lon_f)
+										neighbourhood_nodes.append({
+											"id": cur_id,
+											"name": name,
+											"lat": lat_f,
+											"lon": lon_f,
+											"wm": wm_pt,
+											"wm_x": wm_pt.x,
+											"wm_y": wm_pt.y
+										})
 						elif gwt == 2:
 							pr.skip(pr.read_varint())
 						elif gwt == 0:
@@ -841,6 +1370,11 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 				cf.store_32(node_lons[i])
 			cf.close()
 
+		var nbf := FileAccess.open(temp_nbr_nodes_path, FileAccess.WRITE)
+		if nbf:
+			nbf.store_string(JSON.stringify(neighbourhood_nodes))
+			nbf.close()
+
 		store.set_state("pass", "2")
 		print("Pass 2 finished: resolved coords, %d POIs inserted" % poi_count)
 
@@ -858,6 +1392,21 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 					node_lats[i] = cf.get_32()
 					node_lons[i] = cf.get_32()
 				cf.close()
+		if FileAccess.file_exists(temp_nbr_nodes_path):
+			var nbf := FileAccess.open(temp_nbr_nodes_path, FileAccess.READ)
+			if nbf:
+				var parsed_nbrs = JSON.parse_string(nbf.get_as_text())
+				if typeof(parsed_nbrs) == TYPE_ARRAY:
+					neighbourhood_nodes = []
+					for item in parsed_nbrs:
+						neighbourhood_nodes.append({
+							"id": int(item.get("id", 0)),
+							"name": str(item.get("name", "")),
+							"lat": float(item.get("lat", 0.0)),
+							"lon": float(item.get("lon", 0.0)),
+							"wm": Vector2(float(item.get("wm_x", 0.0)), float(item.get("wm_y", 0.0)))
+						})
+				nbf.close()
 
 	# =========================================================
 	# PASS 3: Assemble way geometries, rings & multipolygons
@@ -994,12 +1543,12 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			elif wt == 0:
 				pr.read_varint()
 
-	# Assemble and write kept multipolygon relations
+	# Assemble and write kept multipolygon and boundary relations
 	for rel in kept_relations:
 		var tags: Dictionary = rel.get("tags", {})
 		var members: Array = rel.get("members", [])
-		var outer_rings: Array[PackedVector2Array] = []
-		var inner_rings: Array[PackedVector2Array] = []
+		var outer_way_pts: Array = []
+		var inner_way_pts: Array = []
 
 		for m in members:
 			var wid: int = int(m.get("id", 0))
@@ -1007,12 +1556,26 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			if resolved_ways.has(wid):
 				var w_pts: PackedVector2Array = resolved_ways[wid]
 				if role == "inner":
-					inner_rings.append(w_pts)
+					inner_way_pts.append(w_pts)
 				else:
-					outer_rings.append(w_pts)
+					outer_way_pts.append(w_pts)
+
+		if outer_way_pts.is_empty():
+			continue
+
+		var outer_rings := stitch_ways_to_rings(outer_way_pts)
+		var inner_rings := stitch_ways_to_rings(inner_way_pts)
 
 		if outer_rings.is_empty():
 			continue
+
+		var is_admin_sub: bool = (tags.get("boundary", "") == "administrative" and str(tags.get("admin_level", "")) in ["9", "10"])
+		if is_admin_sub:
+			admin_neighbourhood_relations.append({
+				"id": int(rel.get("id", 0)),
+				"name": str(tags.get("name", "")),
+				"poly": outer_rings[0]
+			})
 
 		var poly_info := classify_polygon(tags)
 		if poly_info.is_empty():
@@ -1074,7 +1637,90 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			cov_rect = Rect2i(0, 0, 1, 1)
 		store.set_state("clip", "0")
 
-	store.set_state("schema_version", "3")
+	# Populate areas and area_cells (schema v4)
+	if not place_id.is_empty() and not place_poly.is_empty():
+		var city_neighbourhood_nodes: Array = []
+		for nn in neighbourhood_nodes:
+			if ring_contains_point(place_poly, nn["wm"]):
+				city_neighbourhood_nodes.append(nn)
+		city_neighbourhood_nodes.sort_custom(func(a, b): return a["id"] < b["id"])
+		admin_neighbourhood_relations.sort_custom(func(a, b): return a["id"] < b["id"])
+
+		var neighbourhood_counts: Dictionary = {}
+		var neighbourhood_names: Dictionary = {}
+		var assigned_cells: Dictionary = {}
+		var total_inside_cells := 0
+
+		var cov_min_cx := cov_rect.position.x
+		var cov_min_cy := cov_rect.position.y
+		var cov_max_cx := cov_rect.position.x + cov_rect.size.x - 1
+		var cov_max_cy := cov_rect.position.y + cov_rect.size.y - 1
+
+		for cy in range(cov_min_cy, cov_max_cy + 1):
+			for cx in range(cov_min_cx, cov_max_cx + 1):
+				var c_center := Vector2((float(cx) + 0.5) * Grid.CELL_WM, (float(cy) + 0.5) * Grid.CELL_WM)
+				if not ring_contains_point(place_poly, c_center):
+					continue
+
+				total_inside_cells += 1
+
+				if place_kind == "site":
+					assigned_cells[Vector2i(cx, cy)] = place_id
+				else: # city
+					var assigned_key := ""
+					var assigned_name := ""
+
+					# (a) Admin 9 or 10 relation containing it (lower id first)
+					for ar in admin_neighbourhood_relations:
+						if ring_contains_point(ar["poly"], c_center):
+							assigned_key = "osm:r%d" % ar["id"]
+							assigned_name = ar["name"]
+							break
+
+					# (b) Else nearest neighbourhood node inside city (WM-m distance; ties to lower id)
+					if assigned_key == "" and not city_neighbourhood_nodes.is_empty():
+						var best_dist_sq := INF
+						var best_id := -1
+						var best_name := ""
+						for nn in city_neighbourhood_nodes:
+							var d2: float = (nn["wm"] - c_center).length_squared()
+							if d2 < best_dist_sq or (is_equal_approx(d2, best_dist_sq) and (best_id == -1 or nn["id"] < best_id)):
+								best_dist_sq = d2
+								best_id = nn["id"]
+								best_name = nn["name"]
+						if best_id != -1:
+							assigned_key = "osm:n%d" % best_id
+							assigned_name = best_name
+
+					# (c) Else grid fallback: grid:<city_id>:<floor(cx/4)>:<floor(cy/4)>
+					if assigned_key == "":
+						var gx := floori(float(cx) / 4.0)
+						var gy := floori(float(cy) / 4.0)
+						assigned_key = "grid:%s:%d:%d" % [place_id, gx, gy]
+						assigned_name = ""
+
+					assigned_cells[Vector2i(cx, cy)] = assigned_key
+					neighbourhood_counts[assigned_key] = int(neighbourhood_counts.get(assigned_key, 0)) + 1
+					neighbourhood_names[assigned_key] = assigned_name
+
+		store.begin_transaction()
+		if place_kind == "site":
+			store.insert_area(place_id, "site", place_name, total_inside_cells)
+			for c in assigned_cells.keys():
+				store.insert_area_cell(c.x, c.y, place_id)
+		else: # city
+			store.insert_area(place_id, "city", place_name, total_inside_cells)
+			for a_key in neighbourhood_counts.keys():
+				store.insert_area(a_key, "neighbourhood", neighbourhood_names.get(a_key, ""), neighbourhood_counts[a_key])
+			for c in assigned_cells.keys():
+				store.insert_area_cell(c.x, c.y, assigned_cells[c])
+		store.commit()
+
+	store.set_state("schema_version", "4")
+	if not place_id.is_empty():
+		store.set_state("place_id", place_id)
+		store.set_state("snapshot", MapConstants.MAP_SNAPSHOT)
+
 	_compute_and_write_sea_flags(store, cov_rect)
 
 	# Clean up temporary index files
@@ -1084,6 +1730,10 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 		DirAccess.remove_absolute(temp_coords_path)
 	if FileAccess.file_exists(temp_rels_path):
 		DirAccess.remove_absolute(temp_rels_path)
+	if FileAccess.file_exists(temp_nbr_nodes_path):
+		DirAccess.remove_absolute(temp_nbr_nodes_path)
+	if FileAccess.file_exists(temp_poly_path):
+		DirAccess.remove_absolute(temp_poly_path)
 
 	var h := store.canonical_dump_sha256()
 	var elapsed := Time.get_ticks_msec() - t0

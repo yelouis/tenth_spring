@@ -267,7 +267,7 @@ func _open_worker_stores() -> void:
 		var store := MapStore.new(p)
 		if store.open_store(true):
 			var schema_ver := store.get_state("schema_version", "")
-			if schema_ver == "3":
+			if schema_ver == "4":
 				_worker_stores.append(store)
 			else:
 				store.close()
@@ -342,7 +342,7 @@ func _process_request(req: Dictionary) -> Dictionary:
 	var signs_list: Array = []
 
 	if has_map_data or is_covered_by_store:
-		var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area, 0)
+		var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
 		tile_buf = synth_res.get("tiles", PackedByteArray())
 		signs_list = synth_res.get("signs", [])
 		has_map_data = true

@@ -5,9 +5,13 @@ extends Node
 
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
+const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
+const Grid := preload("res://world/grid.gd")
+const MapConstants := preload("res://world/map_constants.gd")
 
-const GOLDEN_CANONICAL_HASH: String = "08c313dac4aabf3fcd1ad40273453f79417da845aba6914090abbbf0debd6481"
+const GOLDEN_CANONICAL_HASH: String = "155f5365149c70d4b4a550b445f9dc5b6c883ffc1939fe7f8dbf476308f14955"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
+const FIXTURE_CONFIG: String = "res://tests/fixtures/famous_places_fixture.json"
 const TEST_DB_PATH: String = "user://test/map_data/region_import_test.db"
 
 func run_test() -> bool:
@@ -30,14 +34,14 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# Verify schema version 3
-	if store.get_state("schema_version") != "3":
-		push_error("Expected schema_version '3', got '%s'" % store.get_state("schema_version"))
+	# Verify schema version 4
+	if store.get_state("schema_version") != "4":
+		push_error("Expected schema_version '4', got '%s'" % store.get_state("schema_version"))
 		store.close()
 		_cleanup()
 		return false
 
-	# Verify counts: 14 poly, 11 line, 3 place_nodes
+	# Verify counts: 14 poly, 14 line, 4 place_nodes
 	var poly_count: int = int(store._rows("SELECT count(*) as c FROM features_poly;")[0]["c"])
 	var line_count: int = int(store._rows("SELECT count(*) as c FROM features_line;")[0]["c"])
 	var node_count: int = int(store._rows("SELECT count(*) as c FROM place_nodes;")[0]["c"])
@@ -48,14 +52,14 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	if line_count != 11:
-		push_error("Expected 11 features_line, got %d" % line_count)
+	if line_count != 14:
+		push_error("Expected 14 features_line, got %d" % line_count)
 		store.close()
 		_cleanup()
 		return false
 
-	if node_count != 3:
-		push_error("Expected 3 place_nodes, got %d" % node_count)
+	if node_count != 4:
+		push_error("Expected 4 place_nodes, got %d" % node_count)
 		store.close()
 		_cleanup()
 		return false
@@ -193,7 +197,7 @@ func run_test() -> bool:
 	# 4. Equivalence Test (falsifying): Clip covering full fixture
 	# Canonical dump hash MUST be identical to unclipped run.
 	# ---------------------------------------------------------
-	var full_clip := Rect2(1024.0, 1024.0, 512.0, 512.0)
+	var full_clip := Rect2(768.0, 768.0, 3072.0, 768.0)
 	var conv_eq := RegionConverter.new()
 	var res_eq := conv_eq.convert(FIXTURE_PBF, TEST_DB_PATH, full_clip)
 	if not res_eq.get("ok", false):
@@ -349,10 +353,10 @@ func run_test() -> bool:
 		return false
 
 	var o_poly: int = int(ocean_store._rows("SELECT count(*) as c FROM features_poly;")[0]["c"])
-	var o_line: int = int(ocean_store._rows("SELECT count(*) as c FROM features_line;")[0]["c"])
+	var o_non_coast: int = int(ocean_store._rows("SELECT count(*) as c FROM features_line WHERE kind != 'coastline';")[0]["c"])
 	var o_node: int = int(ocean_store._rows("SELECT count(*) as c FROM place_nodes;")[0]["c"])
-	if o_poly != 0 or o_line != 0 or o_node != 0:
-		push_error("Empty ocean clip expected 0 features, got %d poly, %d line, %d nodes" % [o_poly, o_line, o_node])
+	if o_poly != 0 or o_non_coast != 0 or o_node != 0:
+		push_error("Empty ocean clip expected 0 features, got %d poly, %d non-coast line, %d nodes" % [o_poly, o_non_coast, o_node])
 		ocean_store.close()
 		_cleanup()
 		return false
@@ -371,20 +375,227 @@ func run_test() -> bool:
 
 	ocean_store.close()
 	_cleanup()
+
+	# ---------------------------------------------------------
+	# 7. Schema v4 Place Stores Verification (Fixture Places)
+	# ---------------------------------------------------------
+	var city_db := TEST_DB_PATH + "_city.db"
+	_cleanup_path(city_db)
+	var conv_city := RegionConverter.new()
+	var res_city := conv_city.convert(FIXTURE_PBF, city_db, null, null, "city:fixture-city", FIXTURE_CONFIG)
+	if not res_city.get("ok", false):
+		push_error("Fixture city conversion failed: %s" % res_city.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var city_store := MapStore.new(city_db)
+	if not city_store.open_store(false):
+		push_error("Failed to open fixture city store: %s" % city_store.last_error)
+		_cleanup()
+		return false
+
+	if city_store.get_state("schema_version") != "4":
+		push_error("Expected city store schema_version '4', got '%s'" % city_store.get_state("schema_version"))
+		city_store.close()
+		_cleanup()
+		return false
+
+	if city_store.get_state("place_id") != "city:fixture-city":
+		push_error("Expected place_id 'city:fixture-city', got '%s'" % city_store.get_state("place_id"))
+		city_store.close()
+		_cleanup()
+		return false
+
+	if city_store.get_state("snapshot") != MapConstants.MAP_SNAPSHOT:
+		push_error("Expected snapshot '%s', got '%s'" % [MapConstants.MAP_SNAPSHOT, city_store.get_state("snapshot")])
+		city_store.close()
+		_cleanup()
+		return false
+
+	var city_areas := city_store.get_areas()
+	var city_areas_map := {}
+	for a in city_areas:
+		city_areas_map[a["area_key"]] = a
+
+	if not city_areas_map.has("city:fixture-city") or city_areas_map["city:fixture-city"]["cell_count"] != 36:
+		push_error("Expected city:fixture-city area with 36 cells, got %s" % str(city_areas_map.get("city:fixture-city")))
+		city_store.close()
+		_cleanup()
+		return false
+
+	var expected_neighbourhoods := {
+		"osm:n9103": {"name": "North End", "cell_count": 10},
+		"osm:n9104": {"name": "Old Town", "cell_count": 12},
+		"osm:n9105": {"name": "Riverside", "cell_count": 10},
+		"osm:r9010": {"name": "Mill District", "cell_count": 4}
+	}
+	for k in expected_neighbourhoods.keys():
+		if not city_areas_map.has(k):
+			push_error("Missing expected neighbourhood area %s" % k)
+			city_store.close()
+			_cleanup()
+			return false
+		var exp_info: Dictionary = expected_neighbourhoods[k]
+		if city_areas_map[k]["name"] != exp_info["name"] or city_areas_map[k]["cell_count"] != exp_info["cell_count"]:
+			push_error("Area %s mismatch: expected %s, got %s" % [k, str(exp_info), str(city_areas_map[k])])
+			city_store.close()
+			_cleanup()
+			return false
+
+	var city_ac_count: int = int(city_store._rows("SELECT count(*) as c FROM area_cells;")[0]["c"])
+	if city_ac_count != 36:
+		push_error("Expected 36 area_cells for city, got %d" % city_ac_count)
+		city_store.close()
+		_cleanup()
+		return false
+
+	city_store.close()
+
+	# Site conversion
+	var site_db := TEST_DB_PATH + "_site.db"
+	_cleanup_path(site_db)
+	var conv_site := RegionConverter.new()
+	var res_site := conv_site.convert(FIXTURE_PBF, site_db, null, null, "site:fixture-park", FIXTURE_CONFIG)
+	if not res_site.get("ok", false):
+		push_error("Fixture site conversion failed: %s" % res_site.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var site_store := MapStore.new(site_db)
+	if not site_store.open_store(false):
+		push_error("Failed to open fixture site store: %s" % site_store.last_error)
+		_cleanup()
+		return false
+
+	var site_areas := site_store.get_areas()
+	if site_areas.size() != 1 or site_areas[0]["area_key"] != "site:fixture-park" or site_areas[0]["cell_count"] != 16:
+		push_error("Unexpected site areas: %s" % str(site_areas))
+		site_store.close()
+		_cleanup()
+		return false
+
+	var site_ac_count: int = int(site_store._rows("SELECT count(*) as c FROM area_cells WHERE area_key = 'site:fixture-park';")[0]["c"])
+	if site_ac_count != 16:
+		push_error("Expected 16 area_cells for site, got %d" % site_ac_count)
+		site_store.close()
+		_cleanup()
+		return false
+
+	site_store.close()
+
+	# ---------------------------------------------------------
+	# 8. Determinism Test & Coastline Retention Falsifier (§2.5)
+	# ---------------------------------------------------------
+	var det_a_db := TEST_DB_PATH + "_det_a.db"
+	var det_b_db := TEST_DB_PATH + "_det_b.db"
+	_cleanup_path(det_a_db)
+	_cleanup_path(det_b_db)
+
+	# Clip A matches --place fixed unit (cx in 1..10, cy in 1..10)
+	var clip_a := Rect2(256.0, 256.0, 2560.0, 2560.0)
+	var conv_a := RegionConverter.new()
+	var res_a := conv_a.convert(FIXTURE_PBF, det_a_db, clip_a, [1, 1, 10, 10], "city:fixture-city", FIXTURE_CONFIG)
+	if not res_a.get("ok", false):
+		push_error("Determinism clip A failed: %s" % res_a.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	# Clip B is a larger rectangle covering distant coastline (cx in 1..15, cy in 1..10)
+	var clip_b := Rect2(256.0, 256.0, 3840.0, 2560.0)
+	var conv_b := RegionConverter.new()
+	var res_b := conv_b.convert(FIXTURE_PBF, det_b_db, clip_b, [1, 1, 15, 10])
+	if not res_b.get("ok", false):
+		push_error("Determinism clip B failed: %s" % res_b.get("error", "unknown"))
+		_cleanup()
+		return false
+
+	var s_place := MapStore.new(city_db)
+	s_place.open_store(false)
+	var s_a := MapStore.new(det_a_db)
+	s_a.open_store(false)
+	var s_b := MapStore.new(det_b_db)
+	s_b.open_store(false)
+
+	# --place run and Clip A run give identical canonical hashes
+	var hash_place := s_place.canonical_dump_sha256()
+	var hash_a := s_a.canonical_dump_sha256()
+	if hash_place != hash_a:
+		push_error("Determinism failed: --place hash %s != Clip A hash %s" % [hash_place, hash_a])
+		s_place.close()
+		s_a.close()
+		s_b.close()
+		_cleanup()
+		return false
+
+	# Every cell inside the city has byte-identical tile_synth2 buffers between --place and Clip B
+	for cy in range(3, 9):
+		for cx in range(3, 9):
+			var area_p := _build_area(s_place, cx, cy)
+			var area_b := _build_area(s_b, cx, cy)
+			var synth_p := TileSynth2.synthesize_cell(cx, cy, area_p)
+			var synth_b := TileSynth2.synthesize_cell(cx, cy, area_b)
+			if synth_p["tiles"] != synth_b["tiles"]:
+				push_error("Determinism failed: tile buffer mismatch at city cell (%d, %d)" % [cx, cy])
+				s_place.close()
+				s_a.close()
+				s_b.close()
+				_cleanup()
+				return false
+
+	# Falsification check (§2.5): before Rule 3, dropping distant coastline outside Clip A changes cell (10, 4) sea flag
+	var flag_with_rule3: int = s_a.get_cell_sea(10, 4)
+	if flag_with_rule3 != 0:
+		push_error("Expected cell (10, 4) sea flag 0 with Rule 3, got %d" % flag_with_rule3)
+		s_place.close()
+		s_a.close()
+		s_b.close()
+		_cleanup()
+		return false
+
+	s_a._q("DELETE FROM features_line WHERE kind = 'coastline' AND cell_x = 14;")
+	s_a._q("DELETE FROM cell_flags;")
+	var conv_falsify := RegionConverter.new()
+	conv_falsify._compute_and_write_sea_flags(s_a, Rect2i(1, 1, 10, 10))
+	var flag_without_rule3: int = s_a.get_cell_sea(10, 4)
+	if flag_without_rule3 != 1:
+		push_error("Falsifier failed: expected cell (10, 4) sea flag 1 without Rule 3, got %d" % flag_without_rule3)
+		s_place.close()
+		s_a.close()
+		s_b.close()
+		_cleanup()
+		return false
+
+	s_place.close()
+	s_a.close()
+	s_b.close()
+	_cleanup()
 	return true
 
-func _cleanup() -> void:
-	var base_dir := TEST_DB_PATH.get_base_dir()
-	if not DirAccess.dir_exists_absolute(base_dir):
-		return
-	var siblings = [
-		TEST_DB_PATH,
-		TEST_DB_PATH + "-wal",
-		TEST_DB_PATH + "-shm",
-		TEST_DB_PATH + ".nodes.tmp",
-		TEST_DB_PATH + ".coords.tmp",
-		TEST_DB_PATH + ".rels.tmp"
-	]
-	for p in siblings:
+static func _build_area(store: MapStore, cx: int, cy: int) -> Dictionary:
+	var area: Dictionary = {}
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			var offset := Vector2i(dx, dy)
+			var nx := cx + dx
+			var ny := cy + dy
+			area[offset] = {
+				"polys": store.get_features_poly(nx, ny),
+				"lines": store.get_features_line(nx, ny),
+				"places": store.get_place_nodes(nx, ny),
+				"covered": store.covers_cell(nx, ny),
+				"sea": store.get_cell_sea(nx, ny)
+			}
+	return area
+
+static func _cleanup_path(path: String) -> void:
+	for suffix in ["", "-wal", "-shm", ".nodes.tmp", ".coords.tmp", ".rels.tmp"]:
+		var p: String = path + suffix
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
+
+func _cleanup() -> void:
+	_cleanup_path(TEST_DB_PATH)
+	_cleanup_path(TEST_DB_PATH + "_city.db")
+	_cleanup_path(TEST_DB_PATH + "_site.db")
+	_cleanup_path(TEST_DB_PATH + "_det_a.db")
+	_cleanup_path(TEST_DB_PATH + "_det_b.db")

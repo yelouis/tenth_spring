@@ -395,8 +395,8 @@ func _load_map_stores() -> void:
 				var store := MapStore.new(p)
 				if store.open_store(true):
 					var schema_ver := store.get_state("schema_version", "")
-					if schema_ver != "3":
-						print("map: skipping %s — store schema %s, need 3" % [f, schema_ver])
+					if schema_ver != "4":
+						print("map: skipping %s — store schema %s, need 4" % [f, schema_ver])
 						store.close()
 					else:
 						_map_stores.append(store)
@@ -487,7 +487,7 @@ func _focus_most_buildings() -> void:
 			for dy in range(-1, 2):
 				for dx in range(-1, 2):
 					area[Vector2i(dx, dy)] = _get_cell_features(cx + dx, cy + dy)
-			var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area, 0)
+			var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
 			buf = synth_res.get("tiles", PackedByteArray())
 
 		var door_count := 0
@@ -1029,7 +1029,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 					has_map_data = true
 				if n_feat.get("is_covered", false):
 					is_covered_by_store = true
-		var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area, 0)
+		var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
 		item = {
 			"buf": synth_res.get("tiles", PackedByteArray()),
 			"signs": synth_res.get("signs", []),

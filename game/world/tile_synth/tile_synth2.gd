@@ -6,6 +6,7 @@ extends RefCounted
 
 const MapStore := preload("res://world/region_import/map_store.gd")
 const Grid := preload("res://world/grid.gd")
+const MapConstants := preload("res://world/map_constants.gd")
 
 # Tile Vocabulary (§3)
 const TILE_VOID := 0
@@ -245,7 +246,7 @@ static func _can_place_template(col0: int, row0: int, w: int, h: int, grid_class
 	return true
 
 ## Synthesize a cell's 32x32 tiles from a 3x3 neighbourhood (§4)
-static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int = 0) -> Dictionary:
+static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int = MapConstants.MAP_SEED) -> Dictionary:
 	var total_tiles: int = WORK_SIZE * WORK_SIZE
 	var grid_class := PackedByteArray()
 	grid_class.resize(total_tiles)
