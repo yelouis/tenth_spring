@@ -216,6 +216,10 @@ func _ready() -> void:
 	_set_zoom_step(1.0)
 	if _focus_mode == "most_buildings":
 		_focus_most_buildings()
+	elif _focus_mode == "waypost":
+		_focus_waypost()
+	elif _focus_mode == "landmark":
+		_focus_landmark()
 	else:
 		_focus_initial_cell()
 
@@ -591,6 +595,35 @@ func _focus_most_buildings() -> void:
 		focus_on_cell(best_cell.x, best_cell.y)
 	else:
 		_focus_initial_cell()
+
+func _focus_waypost() -> void:
+	if _has_active_waypost:
+		focus_on_cell(_active_waypost_cell.x, _active_waypost_cell.y)
+		return
+	var places: Array = RevealEngine.load_places()
+	for p in places:
+		if str(p.get("id", "")) == _active_place_id or _active_place_id.is_empty():
+			var wp: Dictionary = p.get("waypost", {})
+			var w_lat := float(wp.get("lat", 0.0))
+			var w_lon := float(wp.get("lon", 0.0))
+			var cell := Grid.latlon_to_cell(w_lat, w_lon)
+			focus_on_cell(cell.x, cell.y)
+			return
+	_focus_initial_cell()
+
+func _focus_landmark() -> void:
+	var places: Array = RevealEngine.load_places()
+	for p in places:
+		if str(p.get("id", "")) == _active_place_id or _active_place_id.is_empty():
+			var interiors: Array = p.get("interiors", [])
+			if not interiors.is_empty():
+				var door: Dictionary = interiors[0].get("door", {})
+				var d_lat := float(door.get("lat", 0.0))
+				var d_lon := float(door.get("lon", 0.0))
+				var cell := Grid.latlon_to_cell(d_lat, d_lon)
+				focus_on_cell(cell.x, cell.y)
+				return
+	_focus_initial_cell()
 
 func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
@@ -1283,6 +1316,10 @@ func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String
 	_set_zoom_step(zoom_step)
 	if _focus_mode == "most_buildings":
 		_focus_most_buildings()
+	elif _focus_mode == "waypost":
+		_focus_waypost()
+	elif _focus_mode == "landmark":
+		_focus_landmark()
 	else:
 		_focus_initial_cell()
 	_pending_blit_cells.clear()

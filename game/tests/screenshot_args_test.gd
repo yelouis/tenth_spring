@@ -76,6 +76,12 @@ func run_test() -> bool:
 		push_error("Unsupported focus test failed: %s" % str(r_focus_random))
 		return false
 
+	# 4b. Refusal 5: Unsupported screen
+	var r_screen_bad: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--screen=invalid"], false, repo_root)
+	if r_screen_bad.get("ok", true) != false or r_screen_bad.get("exit_code", 0) != 2 or r_screen_bad.get("error", "") != "[FAIL] unsupported screen invalid":
+		push_error("Unsupported screen test failed: %s" % str(r_screen_bad))
+		return false
+
 	# 5. Valid Arguments & Defaults
 	var r_valid: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--zoom=2", "--frames=15", "--focus=most_buildings"], false, repo_root)
 	if not r_valid.get("ok", false) or not r_valid.get("is_screenshot", false):
@@ -88,6 +94,21 @@ func run_test() -> bool:
 	var r_mv: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=most_visited"], false, repo_root)
 	if not r_mv.get("ok", false) or r_mv.get("focus", "") != "most_visited":
 		push_error("most_visited config test failed: %s" % str(r_mv))
+		return false
+
+	var r_waypost: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=waypost"], false, repo_root)
+	if not r_waypost.get("ok", false) or r_waypost.get("focus", "") != "waypost":
+		push_error("waypost config test failed: %s" % str(r_waypost))
+		return false
+
+	var r_landmark: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=landmark"], false, repo_root)
+	if not r_landmark.get("ok", false) or r_landmark.get("focus", "") != "landmark":
+		push_error("landmark config test failed: %s" % str(r_landmark))
+		return false
+
+	var r_town_map: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--screen=town_map"], false, repo_root)
+	if not r_town_map.get("ok", false) or r_town_map.get("screen", "") != "town_map":
+		push_error("town_map config test failed: %s" % str(r_town_map))
 		return false
 
 	# Default zoom=1, frames=10, focus=most_visited

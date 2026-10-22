@@ -944,6 +944,22 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Flutter test: 37 passed (2 skipped).
   - Cross-language loopback sync E2E: PASS.
 
+- **M52 (verified resolved, Item 21, 2026-10-21):**
+  - Converted Washington DC from pinned snapshot `district-of-columbia-261001.osm.pbf` (MD5: `8e2b9f111425b9b1a7b544cc2fe56e15`) with `--place city:washington-dc` into place store v4 (`city:washington-dc.db`, 4,469 cells across 9 areas).
+  - Populated demo profile `user://demo_dc` with public walk route through DC landmarks, revealing 4,469 cells and 2 neighbourhoods (Ward 2, Ward 6).
+  - Validated city threshold $T = 2$ reached -> `city:washington-dc` unlocked in `area_reveal` (`kind = 'city'`). Designated home outside DC at Bethesda, MD (`Vector2i(-33524, 18435)`), adding `city:washington-dc` to `distort_list` as starter city.
+  - Enhanced screenshot harness (`screenshot_config.gd`, `town_map.gd`, `main.gd`, `map_view.gd`, `tools/demo_screenshot.py`, and `screenshot_args_test.gd`): added `--screen {map,town_map}` and `--focus {most_visited,most_buildings,waypost,landmark}` support.
+  - Captured the 4 required proof screenshots in `user://demo_dc`:
+    1. `shot_town_map.png` — Town Map with DC lit and ringed as an unlocked starter city.
+    2. `shot_z0.0625_dc.png` — DC at zoom 1/16, showing full city revealed vs outside fog (`LOAD_MAX_FRAME_MS: 33.33 ms`, `FRAME_P95_MS: 18.06 ms`, `VISIBLE_DOORS: 1021`).
+    3. `shot_z1_waypost.png` — DC at zoom 1 at the Waypost (John A. Wilson Building, `(-33497, 18384)`, `LOAD_MAX_FRAME_MS: 16.67 ms`, `FRAME_P95_MS: 16.67 ms`).
+    4. `shot_z2_landmark.png` — DC at zoom 2 on enterable landmark (Library of Congress, Thomas Jefferson & John Adams Buildings, `(-33485, 18381)`, showing gold roof, gold-framed walls/doors, and sign; `LOAD_MAX_FRAME_MS: 17.54 ms`, `FRAME_P95_MS: 16.67 ms`).
+- **Validation:**
+  - `screenshot_args_test.gd` and all 22 Godot tests PASS.
+  - Flutter analyze: 0 issues.
+  - Flutter test: 37 passed (2 skipped).
+  - Cross-language loopback sync E2E: PASS.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent

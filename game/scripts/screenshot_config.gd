@@ -7,10 +7,12 @@ extends RefCounted
 const ERR_IN_REPO: String = "[FAIL] screenshot path must be outside the repository"
 const ERR_UNSUPPORTED_ZOOM: String = "[FAIL] unsupported zoom %s"
 const ERR_UNSUPPORTED_FOCUS: String = "[FAIL] unsupported focus %s"
+const ERR_UNSUPPORTED_SCREEN: String = "[FAIL] unsupported screen %s"
 const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 1, 2, 3]
-const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings"]
+const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "waypost", "landmark"]
+const SUPPORTED_SCREENS: Array = ["map", "town_map"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""
@@ -19,6 +21,8 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var frames_val := 10
 	var focus_str := ""
 	var focus_val := "most_visited"
+	var screen_str := ""
+	var screen_val := "map"
 	var has_screenshot := false
 
 	var repo_root := repo_root_override
@@ -56,6 +60,13 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		elif arg == "--focus" and i + 1 < user_args.size():
 			focus_str = str(user_args[i + 1]).strip_edges()
 			i += 1
+		elif arg.begins_with("--screen="):
+			screen_str = arg.trim_prefix("--screen=").strip_edges()
+		elif arg == "--screen" and i + 1 < user_args.size():
+			screen_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--town-map":
+			screen_str = "town_map"
 		i += 1
 
 	if not has_screenshot:
@@ -85,6 +96,13 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		else:
 			return {"ok": false, "error": ERR_UNSUPPORTED_FOCUS % focus_str, "exit_code": 2}
 
+	# Refusal 3b: Unsupported screen
+	if not screen_str.is_empty():
+		if screen_str in SUPPORTED_SCREENS:
+			screen_val = screen_str
+		else:
+			return {"ok": false, "error": ERR_UNSUPPORTED_SCREEN % screen_str, "exit_code": 2}
+
 	# Refusal 4: In-repo path (§7.4 rule 2)
 	if screenshot_path.is_empty() or not screenshot_path.ends_with(".png"):
 		return {"ok": false, "error": ERR_IN_REPO, "exit_code": 2}
@@ -108,5 +126,6 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"screenshot_path": abs_path,
 		"zoom": zoom_val,
 		"frames": frames_val,
-		"focus": focus_val
+		"focus": focus_val,
+		"screen": screen_val
 	}

@@ -26,14 +26,27 @@ func _ready() -> void:
 	RevealEngine.apply(DB)
 
 	if s_cfg.get("is_screenshot", false):
+		if s_cfg.get("screen", "map") == "town_map":
+			var town_map = open_town_map()
+			if town_map != null and town_map.has_method("setup_screenshot"):
+				town_map.setup_screenshot(
+					str(s_cfg.get("screenshot_path", "")),
+					int(s_cfg.get("frames", 10))
+				)
+			return
+
+		var boot_place_id := get_boot_place_id()
 		var map_view = open_map_view()
-		if map_view != null and map_view.has_method("setup_screenshot"):
-			map_view.setup_screenshot(
-				str(s_cfg.get("screenshot_path", "")),
-				float(s_cfg.get("zoom", 1.0)),
-				int(s_cfg.get("frames", 10)),
-				str(s_cfg.get("focus", "most_visited"))
-			)
+		if map_view != null:
+			if not boot_place_id.is_empty() and map_view.has_method("load_place"):
+				map_view.load_place(boot_place_id, false)
+			if map_view.has_method("setup_screenshot"):
+				map_view.setup_screenshot(
+					str(s_cfg.get("screenshot_path", "")),
+					float(s_cfg.get("zoom", 1.0)),
+					int(s_cfg.get("frames", 10)),
+					str(s_cfg.get("focus", "most_visited"))
+				)
 		return
 
 	var identity = PcIdentity.new()
@@ -114,6 +127,7 @@ func open_town_map() -> Node:
 	var town_map_scene = load("res://scenes/town_map.tscn")
 	if town_map_scene != null:
 		var tm = town_map_scene.instantiate()
+		tm.size = get_viewport_rect().size
 		add_child(tm)
 		return tm
 	return null

@@ -94,6 +94,7 @@
 | **Measurement — Washington DC, the canonical test city** (pinned `district-of-columbia-261001`, MD5 verified, converted unclipped in **15.4 s**) | Mac, local | **136,325** building candidates across 3,706 built-up cells → **44,267 placed (32.5%)**. Building tiles: **18.9%** (target ≥ 12%), path tiles: **16.6%** (target ≤ 18%), road tiles: 6.8%. Decision 28 filed on the placement target. |
 | **Proof v2 (M47, Item 16)** | Mac, local | `shot_z2_mb_cleared`: **VISIBLE_DOORS 7** (target ≥ 3 ✅); `shot_z1_mb_cleared`: **VISIBLE_DOORS 20** (target ≥ 8 ✅); all `FRAME_P95_MS` **16.67 ms** ✅ |
 | **Place stores v4 & determinism (M48, Item 18)** | Mac, local | Determinism test and Rule 3 falsifier PASS; DC converted with `--place city:washington-dc` in **22.77 s**, peak RSS **1.695 GiB** (budget 2.5 GiB), store **32 MB**, **4,469 area_cells** across 9 areas (DC + 8 Wards). |
+| **Real-data proof in DC (M52, Item 21)** | Mac, local | Captured Town Map (DC lit & ringed), DC zoom 1/16 overview, DC zoom 1 at Waypost, and DC zoom 2 enterable landmark (Library of Congress, gold roof/door/sign). All 22 tests PASS. |
 | **Synthesis speed** (same store, 200 cells, features prefetched) | Mac, local | Dedicated `SynthWorker` off main thread, 256-cell raw-row LRU |
 | `FRAME_P95_MS`, windowed (M35, M46) | Mac | zoom 1: **16.67 ms** ✅ (load max frame **24.68 ms** ✅ ≤ 33 ms); **zoom 1/16: 16.67 ms** ✅ (load max frame **27.28 ms** ✅ ≤ 33 ms, down from 86.9 ms ❌) |
 | Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. Ready now. |
@@ -582,7 +583,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **Item 19** — the reveal engine (any movement, the scaled threshold, sites, the Distort list, the starter city); migration 2.
 - [x] **Item 20** — the home hub, the Town Map, and `Return home` at the Waypost (viewer level).
 - [x] **Item 22** — enterable landmarks marked on the map (gold roof, door, sign); the falsifying test passes.
-- [ ] **Item 21** — the DC proof, including a landmark close-up, **shown to the human; paused.**
+- [x] **Item 21** — the DC proof, including a landmark close-up, **shown to the human; paused.**
 - [ ] **HUMAN: real-device sync gate passes** (§2). **Closes Phase 1.**
 - [ ] **HUMAN: D3 device soak run.** **Closes Phase 0.**
 - [ ] **When a Black/White dump is supplied:** Item 10 — verify markers resolved, `implementation_plan_rom_importer.md` written, preview shown, **paused for review**.

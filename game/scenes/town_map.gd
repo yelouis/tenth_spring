@@ -170,3 +170,36 @@ func _get_db():
 	if root != null and root.has_node("DB"):
 		return root.get_node("DB")
 	return null
+
+var _screenshot_mode: bool = false
+var _screenshot_path: String = ""
+var _screenshot_target_frames: int = 10
+var _screenshot_frames: int = 0
+
+func setup_screenshot(path: String, frames: int = 10) -> void:
+	_screenshot_mode = true
+	_screenshot_path = path
+	_screenshot_target_frames = frames
+	_screenshot_frames = 0
+	if not RenderingServer.frame_post_draw.is_connected(_on_frame_post_draw):
+		RenderingServer.frame_post_draw.connect(_on_frame_post_draw)
+
+func _on_frame_post_draw() -> void:
+	if not _screenshot_mode:
+		return
+	_screenshot_frames += 1
+	if _screenshot_frames >= _screenshot_target_frames:
+		_screenshot_mode = false
+		var img: Image = get_viewport().get_texture().get_image()
+		if img != null and not img.is_empty():
+			var err := img.save_png(_screenshot_path)
+			if err != OK:
+				printerr("[FAIL] Failed to save screenshot to %s: %d" % [_screenshot_path, err])
+				get_tree().quit(1)
+				return
+			print("SCREENSHOT_SAVED %s" % _screenshot_path.get_file())
+			get_tree().quit(0)
+		else:
+			printerr("[FAIL] Viewport texture returned empty image")
+			get_tree().quit(1)
+
