@@ -31,6 +31,15 @@ func run_test() -> bool:
 	_cleanup_test_files()
 	DB.init_db()
 
+	# Revert to schema version 1 to explicitly test v1 -> v2 migration
+	DB.execute_query("DROP TABLE IF EXISTS area_reveal;")
+	DB.execute_query("DROP TABLE IF EXISTS distort_list;")
+	DB.execute_query("UPDATE meta SET value = '1' WHERE key = 'schema_version';")
+	if DB.get_schema_version() != 1:
+		push_error("FAIL: Expected initial schema_version 1 for migration test")
+		_cleanup_test_files()
+		return false
+
 	# Seed a visit_log row to verify it remains unchanged across migrations
 	DB.insert_visit_log({
 		"seq": 1,
@@ -43,17 +52,19 @@ func run_test() -> bool:
 		"kind": "visit"
 	})
 
-	# 1. Run migration version 2
-	var mig_v2 = [
-		{
-			"version": 2,
-			"statements": ["ALTER TABLE map_cell ADD COLUMN t INTEGER;"]
-		}
-	]
-	DB._run_migrations(mig_v2)
+	# 1. Run migration version 2 (from DB.MIGRATIONS)
+	DB._run_migrations(DB.MIGRATIONS)
 
 	if DB.get_schema_version() != 2:
 		push_error("FAIL: Expected schema_version 2 after migration, got %d" % DB.get_schema_version())
+		_cleanup_test_files()
+		return false
+
+	# Verify area_reveal and distort_list tables were created
+	var ar_check = DB._rows("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'area_reveal';")
+	var dl_check = DB._rows("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'distort_list';")
+	if ar_check.is_empty() or dl_check.is_empty():
+		push_error("FAIL: Migration 2 tables area_reveal or distort_list missing")
 		_cleanup_test_files()
 		return false
 
@@ -65,7 +76,7 @@ func run_test() -> bool:
 		return false
 
 	# 2. Re-running migration v2 is a no-op
-	DB._run_migrations(mig_v2)
+	DB._run_migrations(DB.MIGRATIONS)
 	if DB.get_schema_version() != 2:
 		push_error("FAIL: Expected schema_version to remain 2 on idempotent re-run")
 		_cleanup_test_files()

@@ -41,21 +41,21 @@ func run_test() -> bool:
 		return false
 
 	var version = DB.get_schema_version()
-	if version != 1:
-		push_error("FAIL: Expected schema_version 1, got %d" % version)
+	if version != 2:
+		push_error("FAIL: Expected schema_version 2, got %d" % version)
 		_cleanup_test_files()
 		return false
 
-	# 2. Verify sqlite_master lists exactly the nine v1 tables
+	# 2. Verify sqlite_master lists exactly the eleven v2 tables
 	var master_rows = DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';")
 	var table_names = []
 	for r in master_rows:
 		table_names.append(r.get("name", ""))
 	table_names.sort()
-	var expected_tables = ["base_state", "map_cell", "meta", "osm_cache", "place_node", "player_profile", "sync_peer", "visit_log", "world_clock"]
+	var expected_tables = ["area_reveal", "base_state", "distort_list", "map_cell", "meta", "osm_cache", "place_node", "player_profile", "sync_peer", "visit_log", "world_clock"]
 	expected_tables.sort()
 	if table_names != expected_tables:
-		push_error("FAIL: Tables in sqlite_master do not match expected 9 tables: " + str(table_names))
+		push_error("FAIL: Tables in sqlite_master do not match expected 11 tables: " + str(table_names))
 		_cleanup_test_files()
 		return false
 

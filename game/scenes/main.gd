@@ -2,6 +2,7 @@ extends Node2D
 
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
 const ScreenshotConfig := preload("res://scripts/screenshot_config.gd")
+const RevealEngine := preload("res://world/reveal_engine.gd")
 
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
@@ -20,6 +21,7 @@ func _ready() -> void:
 
 	DB.configure_paths(profile.db_path, profile.db_tmp_path)
 	DB.init_db()
+	RevealEngine.apply(DB)
 
 	if s_cfg.get("is_screenshot", false):
 		var map_view = open_map_view()

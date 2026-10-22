@@ -18,7 +18,7 @@ enum PlaceRevealState { unknown, known, cleared }
 
 ## 2. Visit Detection
 
-> **Changed 2026-10-20 (Decisions 21–22, 25):** reveals now happen per **area**, not per street. Any real movement — visit or passing through — inside a famous city's neighbourhood reveals the neighbourhood; enough neighbourhoods reveal the city; any movement inside a famous park or wonder reveals all of it (`design_famous_places.md` §3). Built in `implementation_plan_famous_places.md`. Until that lands, the corridor and visit rules below still drive reveals. Afterwards, the phone still records visits and corridors exactly as below, and the PC turns them into area unlocks.
+> **Built (Item 19, Decisions 21–22, 25):** reveals now happen per **area**, not per street. Any real movement — visit or corridor passing through (Decision 21 = B) — inside a famous place unlocks the area: a neighbourhood in a city, the city when threshold $T$ is reached (Decision 22 = A), or the whole site for a park or wonder. The area rule supersedes 60 m corridor reveals inside famous places; outside famous places, raw corridor and visit rules remain active. The phone records visits and corridors, and `RevealEngine.apply(DB)` turns them into area unlocks and Distort destinations.
 
 A **visit** = the device dwelling within `visitRadiusMeters` (75 m) of a point for ≥ `visitDwellSeconds` (120 s). Driving past does *not* count as visiting a POI — it reveals the road corridor only.
 

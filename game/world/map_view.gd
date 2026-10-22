@@ -9,6 +9,7 @@ const MapFetcher := preload("res://world/region_import/map_fetcher.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
 const SynthWorker := preload("res://world/synth_worker.gd")
+const RevealEngine := preload("res://world/reveal_engine.gd")
 
 const CELL_SIZE_PX := 1024.0
 const TILE_SIZE_PX := 32
@@ -1328,6 +1329,9 @@ func _on_install_finished(result: Dictionary) -> void:
 		_install_panel.visible = false
 	if result.get("ok", false):
 		_load_map_stores()
+		var db_inst = _get_db()
+		if db_inst != null:
+			RevealEngine.apply(db_inst, _map_stores)
 		_synth_cache.clear()
 		_store_cache.clear()
 		_clear_rendered_layers()

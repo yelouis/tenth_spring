@@ -5,6 +5,7 @@ extends Node
 # Receives companion scout reports and commits to demo profile.
 
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
+const RevealEngine := preload("res://world/reveal_engine.gd")
 
 var total_elapsed: float = 0.0
 var no_session_elapsed: float = 0.0
@@ -99,6 +100,13 @@ func _process(delta: float) -> void:
 				_finish_and_quit()
 
 func _finish_and_quit() -> void:
+	if DB.is_open():
+		if DB.get_db_meta("home_cell", "").is_empty():
+			var place_rows = DB._rows("SELECT cell_x, cell_y FROM place_node WHERE cell_x IS NOT NULL ORDER BY visit_count DESC LIMIT 1;")
+			if not place_rows.is_empty():
+				var hc = Vector2i(int(place_rows[0]["cell_x"]), int(place_rows[0]["cell_y"]))
+				RevealEngine.designate_home(DB, {}, [], hc)
+		RevealEngine.apply(DB)
 	print("DEMO_IMPORT_COMPLETE applied %d rows" % total_applied)
 	DB.close()
 	get_tree().quit(0)

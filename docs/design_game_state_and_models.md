@@ -82,3 +82,11 @@ An explorable real-world location.
 Append-only real-world evidence table — the memoir. Rows originate on the phone (already fuzzed to 3 decimals ≈ 110 m), sync one hop to the PC (E2E-encrypted, sequence-numbered — `design_companion_and_sync.md` §3), and are acked off the phone's outbox.
 * `seq` (int): sync sequence number. `placeId?`, `lat/lon` (fuzzed), `startedAt`, `dwellSeconds`, `kind` (`visit | corridor`).
 * Feeds familiarity, the PC-side "intel ceremony" reveal, and the memoir view. Never leaves the paired pair of devices.
+
+## 9. Famous Places, Reveal Engine & Distort List (Schema v2)
+
+Migration 2 adds tables for famous place and neighbourhood unlocks (`docs/implementation_plan_famous_places.md` §4):
+* **`area_reveal` (`area_key` TEXT PRIMARY KEY, `kind` TEXT NOT NULL, `unlocked_at` INTEGER NOT NULL)**: Tracks unlocked neighbourhoods (`osm:r<id>`, `osm:n<id>`, `grid:...`), cities (`city:<id>`), and sites (`site:<id>`). Unlocked areas reveal all constituent cells in `map_cell` via `upsert_map_cell(cx, cy, 1)`.
+* **`distort_list` (`place_id` TEXT PRIMARY KEY, `unlocked_at` INTEGER NOT NULL, `reason` TEXT NOT NULL)**: The player's fast-travel and Town Map destinations (`reason`: `'starter' | 'visited'`).
+* **`meta('home_cell', '<cx>,<cy>')`**: Set by `RevealEngine.designate_home(db, stores, places, cell)`. Identifies the player's home cell and determines the starter city (the famous city whose Waypost is nearest to home). Home never leaves the PC.
+* **Map Store Schema v4**: Places are packaged into `.db` files with tables `areas` and `area_cells` alongside features, with deterministic spatial partitioning and fixed canonical dumps.

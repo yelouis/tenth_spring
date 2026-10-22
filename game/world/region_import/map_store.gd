@@ -287,6 +287,9 @@ func get_areas() -> Array:
 func get_area_cells() -> Array:
 	return _rows("SELECT cell_x, cell_y, area_key FROM area_cells ORDER BY cell_x, cell_y;")
 
+func get_cells_for_area(area_key: String) -> Array:
+	return _rows("SELECT cell_x, cell_y FROM area_cells WHERE area_key = ? ORDER BY cell_x, cell_y;", [area_key])
+
 func get_cell_area(cx: int, cy: int) -> Dictionary:
 	var rows := _rows(
 		"SELECT a.area_key, a.kind, a.name, a.cell_count FROM area_cells ac JOIN areas a ON ac.area_key = a.area_key WHERE ac.cell_x = ? AND ac.cell_y = ? LIMIT 1;",

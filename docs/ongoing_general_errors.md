@@ -901,6 +901,18 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Verification battery: 20/20 Godot tests PASS, Flutter analyze 0 issues, Flutter test 37 passed (2 skipped), loopback sync E2E PASS.
 - **F45(d) (fixed):** In-game install converts only famous places from the pinned snapshot, resolving F45(d).
 
+- **M49 (verified resolved, Item 19, 2026-10-21):**
+  - Upgraded database schema to version 2 with Migration 2 creating `area_reveal` and `distort_list` tables, plus `meta('home_cell')` storage. Added CRUD helpers to `db.gd` (`get_db_meta`, `set_db_meta`, `get_area_reveal`, `insert_area_reveal`, `get_all_area_reveals`, `get_distort_entry`, `insert_distort_entry`, `get_all_distort_entries`).
+  - Implemented `RevealEngine` (`game/world/reveal_engine.gd`) with `apply(db_inst, stores, places)` and `designate_home(db_inst, stores, places, home_cell)`. Any movement (visits and corridors alike, Decision 21 = B) unlocks neighbourhoods and sites. Implemented scaled city threshold $T = 1$ if $n=1$, else clamp(ceil(0.10 * n), 2, 5) (Decision 22 = A), with unlocked city inserted into `area_reveal` and all constituent cells revealed via `upsert_map_cell(cx, cy, 1)` with existing MAX semantics keeping `cleared` intact.
+  - Wired call sites in `sync_server.gd` (after committed sync batch), `map_view.gd` (after place store installation), `main.gd` (at boot), and `demo_import_server.gd` (after demo import, designating home from most-visited place node if unset).
+  - Maintained Golden Invariant 1: raw sync ingest transaction writes only `map_cell`, `place_node`, and `visit_log`; `RevealEngine.apply` runs in its own separate transaction after sync commit.
+  - Created `reveal_engine_test.gd` covering cases (a)–(g) on fixture v4; test (a) falsifier proves corridor movement reveals all 12 Old Town cells (previously only 60 m corridor cell). Updated `db_migration_test.gd` covering v1 -> v2 migration and `db_test.gd` asserting v2 tables.
+- **Validation:**
+  - `reveal_engine_test.gd` and all 21 Godot tests PASS.
+  - Flutter analyze: 0 issues.
+  - Flutter test: 37 passed (2 skipped).
+  - Cross-language loopback sync E2E: PASS.
+
 ---
 
 ## 🔎 Verification Findings — open, for the next agent

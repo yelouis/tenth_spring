@@ -5,7 +5,7 @@ extends Node
 # Uses WAL journal mode, synchronous FULL, bound parameters on all queries,
 # and one-time legacy JSON import without runtime fallback.
 
-const CURRENT_SCHEMA_VERSION: int = 1
+const CURRENT_SCHEMA_VERSION: int = 2
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
@@ -18,7 +18,15 @@ var _in_transaction: bool = false
 var last_error: String = ""
 var _active_bak_path: String = ""
 
-const MIGRATIONS: Array = []
+const MIGRATIONS: Array = [
+	{
+		"version": 2,
+		"statements": [
+			"CREATE TABLE IF NOT EXISTS area_reveal (area_key TEXT PRIMARY KEY, kind TEXT NOT NULL, unlocked_at INTEGER NOT NULL);",
+			"CREATE TABLE IF NOT EXISTS distort_list (place_id TEXT PRIMARY KEY, unlocked_at INTEGER NOT NULL, reason TEXT NOT NULL);"
+		]
+	}
+]
 
 func configure_paths(new_db_path: String, new_tmp_path: String) -> void:
 	DB_PATH = new_db_path
@@ -501,6 +509,46 @@ func get_schema_version() -> int:
 	if rows.is_empty():
 		return 0
 	return int(rows[0].get("value", 0))
+
+func get_db_meta(key: String, default_val: String = "") -> String:
+	if _db == null:
+		return default_val
+	var rows = _rows("SELECT value FROM meta WHERE key = ?;", [key])
+	return str(rows[0]["value"]) if not rows.is_empty() else default_val
+
+func set_db_meta(key: String, val: String) -> bool:
+	last_error = ""
+	return _q("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value;", [key, val])
+
+func get_area_reveal(area_key: String) -> Dictionary:
+	if _db == null:
+		return {}
+	var rows = _rows("SELECT area_key, kind, unlocked_at FROM area_reveal WHERE area_key = ?;", [area_key])
+	return rows[0] if not rows.is_empty() else {}
+
+func insert_area_reveal(area_key: String, kind: String, unlocked_at: int) -> bool:
+	last_error = ""
+	return _q("INSERT OR IGNORE INTO area_reveal (area_key, kind, unlocked_at) VALUES (?, ?, ?);", [area_key, kind, unlocked_at])
+
+func get_all_area_reveals() -> Array:
+	if _db == null:
+		return []
+	return _rows("SELECT area_key, kind, unlocked_at FROM area_reveal ORDER BY area_key;")
+
+func get_distort_entry(place_id: String) -> Dictionary:
+	if _db == null:
+		return {}
+	var rows = _rows("SELECT place_id, unlocked_at, reason FROM distort_list WHERE place_id = ?;", [place_id])
+	return rows[0] if not rows.is_empty() else {}
+
+func insert_distort_entry(place_id: String, unlocked_at: int, reason: String) -> bool:
+	last_error = ""
+	return _q("INSERT OR IGNORE INTO distort_list (place_id, unlocked_at, reason) VALUES (?, ?, ?);", [place_id, unlocked_at, reason])
+
+func get_all_distort_entries() -> Array:
+	if _db == null:
+		return []
+	return _rows("SELECT place_id, unlocked_at, reason FROM distort_list ORDER BY place_id;")
 
 func close() -> void:
 	if _db != null:

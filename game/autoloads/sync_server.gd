@@ -8,6 +8,7 @@ const DEFAULT_PORT: int = 7350
 const CORRIDOR_REVEAL_METERS: float = 60.0
 
 const Grid := preload("res://world/grid.gd")
+const RevealEngine := preload("res://world/reveal_engine.gd")
 
 signal sync_completed(peer_id: String, applied_count: int)
 signal peer_paired(phone_id: String)
@@ -215,6 +216,8 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 		return {"status": "error", "message": "storage error"}
 
 	DB.commit_transaction()
+
+	RevealEngine.apply(DB)
 
 	sync_completed.emit(peer_id, applied_count)
 

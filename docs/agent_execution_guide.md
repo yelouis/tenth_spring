@@ -579,7 +579,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **HUMAN: Decisions 21–26 answered** (2026-10-20).
 - [x] **Item 17** — the famous-places list filled in, the checker in the battery; **the human reviewed it at the pause.**
 - [x] **Item 18** — the determinism test passes; place stores v4; the in-game install converts only famous places (F45 resolved).
-- [ ] **Item 19** — the reveal engine (any movement, the scaled threshold, sites, the Distort list, the starter city); migration 2.
+- [x] **Item 19** — the reveal engine (any movement, the scaled threshold, sites, the Distort list, the starter city); migration 2.
 - [ ] **Item 20** — the home hub, the Town Map, and `Return home` at the Waypost (viewer level).
 - [ ] **Item 22** — enterable landmarks marked on the map (gold roof, door, sign); the falsifying test passes.
 - [ ] **Item 21** — the DC proof, including a landmark close-up, **shown to the human; paused.**
