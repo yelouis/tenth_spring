@@ -6,6 +6,7 @@ extends Node
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const RegionConverter := preload("res://world/region_import/region_converter.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
+const Grid := preload("res://world/grid.gd")
 
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
@@ -464,6 +465,143 @@ func run_test() -> bool:
 	var s_5_5: Dictionary = synth_5_5.get("stats", {})
 	if s_5_5.get("building_candidates") != 0 or s_5_5.get("buildings_placed") != 0 or s_5_5.get("fallback_placed") != 0:
 		push_error("(n) Stats mismatch in cell (5, 5): %s" % str(s_5_5))
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (o) Landmark buildings and outdoor structures (§10.8, Item 22)
+	# -------------------------------------------------------------
+	# Falsifying test:
+	# Without landmark entry, cell (4, 4) Building 1 roof tiles carry NO bit 32,
+	# and signs list has no "Fixture Town Hall".
+	var town_hall_wm: Vector2 = Grid.latlon_to_wm(0.0099174007, 0.0099174007)
+	var without_lm_has_bit32 := false
+	for r in 32:
+		for c in 32:
+			var idx := (r * 32 + c) * 3
+			var cls: int = tiles_4_4[idx]
+			var v: int = tiles_4_4[idx + 1]
+			if cls == TileSynth2.TILE_ROOF and (v == 32 or (v & 32) != 0):
+				without_lm_has_bit32 = true
+	var without_lm_has_sign := false
+	for s in synth_4_4.get("signs", []):
+		if s == "Fixture Town Hall":
+			without_lm_has_sign = true
+
+	if without_lm_has_bit32 or without_lm_has_sign:
+		push_error("(o) [falsifier] Building 1 carried landmark bit 32 or sign before landmark was passed in area")
+		store.close()
+		_cleanup()
+		return false
+
+	# With landmark entry:
+	var area_4_4_lm := _build_area(store, 4, 4)
+	area_4_4_lm[Vector2i.ZERO]["landmarks"] = [{
+		"id": "fixture-city:town-hall",
+		"name": "Fixture Town Hall",
+		"door_wm": town_hall_wm
+	}]
+	var synth_4_4_lm := TileSynth2.synthesize_cell(4, 4, area_4_4_lm, 0)
+	var tiles_4_4_lm: PackedByteArray = synth_4_4_lm["tiles"]
+
+	var with_lm_roof_32_count := 0
+	var with_lm_door_32_count := 0
+	var with_lm_wall_landmark_count := 0
+	for r in 32:
+		for c in 32:
+			var idx := (r * 32 + c) * 3
+			var cls: int = tiles_4_4_lm[idx]
+			var v: int = tiles_4_4_lm[idx + 1]
+			if cls == TileSynth2.TILE_ROOF and v == 32:
+				with_lm_roof_32_count += 1
+			elif cls == TileSynth2.TILE_DOOR and v == 32:
+				with_lm_door_32_count += 1
+			elif cls == TileSynth2.TILE_WALL and (v == 32 or v == 40):
+				with_lm_wall_landmark_count += 1
+
+	if with_lm_roof_32_count == 0:
+		push_error("(o) Landmark building in cell (4, 4) produced 0 ROOF 32 tiles")
+		store.close()
+		_cleanup()
+		return false
+	if with_lm_door_32_count != 1:
+		push_error("(o) Landmark building in cell (4, 4) expected 1 DOOR 32 tile, got %d" % with_lm_door_32_count)
+		store.close()
+		_cleanup()
+		return false
+	if with_lm_wall_landmark_count == 0:
+		push_error("(o) Landmark building in cell (4, 4) produced 0 WALL 32/40 tiles")
+		store.close()
+		_cleanup()
+		return false
+
+	var th_sign_idx := -1
+	for s_i in synth_4_4_lm["signs"].size():
+		if synth_4_4_lm["signs"][s_i] == "Fixture Town Hall":
+			th_sign_idx = s_i
+			break
+	if th_sign_idx == -1:
+		push_error("(o) 'Fixture Town Hall' sign missing from landmark synth signs: %s" % str(synth_4_4_lm["signs"]))
+		store.close()
+		_cleanup()
+		return false
+
+	var th_sign_tile_count := 0
+	for r in 32:
+		for c in 32:
+			var idx := (r * 32 + c) * 3
+			if tiles_4_4_lm[idx] == TileSynth2.TILE_SIGN and tiles_4_4_lm[idx + 1] == th_sign_idx:
+				th_sign_tile_count += 1
+	if th_sign_tile_count != 1:
+		push_error("(o) 'Fixture Town Hall' sign tile count expected 1, got %d" % th_sign_tile_count)
+		store.close()
+		_cleanup()
+		return false
+
+	# Landmark missing every building (outdoor structure):
+	# Door placed on grass of cell (5, 5) (u=1, v=1) where there are 0 buildings
+	var area_5_5_lm := _build_area(store, 5, 5)
+	var outdoor_wm := Vector2(5.0 * Grid.CELL_WM + 1.0 * Grid.TILE_WM, 5.0 * Grid.CELL_WM + 1.0 * Grid.TILE_WM)
+	area_5_5_lm[Vector2i.ZERO]["landmarks"] = [{
+		"id": "fixture-park:scenic-lookout",
+		"name": "Scenic Lookout",
+		"door_wm": outdoor_wm
+	}]
+	var synth_5_5_lm := TileSynth2.synthesize_cell(5, 5, area_5_5_lm, 0)
+	var tiles_5_5_lm: PackedByteArray = synth_5_5_lm["tiles"]
+
+	var outdoor_roof_32 := 0
+	for r in 32:
+		for c in 32:
+			var idx := (r * 32 + c) * 3
+			if tiles_5_5_lm[idx] == TileSynth2.TILE_ROOF and tiles_5_5_lm[idx + 1] == 32:
+				outdoor_roof_32 += 1
+	if outdoor_roof_32 != 0:
+		push_error("(o) Outdoor landmark without building produced unexpected ROOF 32 tiles: %d" % outdoor_roof_32)
+		store.close()
+		_cleanup()
+		return false
+
+	var lookout_sign_idx := -1
+	for s_i in synth_5_5_lm["signs"].size():
+		if synth_5_5_lm["signs"][s_i] == "Scenic Lookout":
+			lookout_sign_idx = s_i
+			break
+	if lookout_sign_idx == -1:
+		push_error("(o) 'Scenic Lookout' sign missing from signs list")
+		store.close()
+		_cleanup()
+		return false
+
+	var lookout_sign_tiles := 0
+	for r in 32:
+		for c in 32:
+			var idx := (r * 32 + c) * 3
+			if tiles_5_5_lm[idx] == TileSynth2.TILE_SIGN and tiles_5_5_lm[idx + 1] == lookout_sign_idx:
+				lookout_sign_tiles += 1
+	if lookout_sign_tiles != 1:
+		push_error("(o) 'Scenic Lookout' sign tile count expected 1, got %d" % lookout_sign_tiles)
 		store.close()
 		_cleanup()
 		return false

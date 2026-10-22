@@ -16,7 +16,18 @@
         "lat": 0.0103486,
         "lon": 0.0080489
       },
-      "interiors": []
+      "interiors": [
+        {
+          "id": "fixture-city:town-hall",
+          "name": "Fixture Town Hall",
+          "family": "hall",
+          "purposes": "Q T",
+          "door": {
+            "lat": 0.0099174007,
+            "lon": 0.0099174007
+          }
+        }
+      ]
     },
     {
       "id": "site:fixture-park",

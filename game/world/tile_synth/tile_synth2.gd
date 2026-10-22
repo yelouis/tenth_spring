@@ -872,6 +872,57 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					})
 
 	# -------------------------------------------------------------
+	# 5c. Landmark Buildings (§10.8)
+	# -------------------------------------------------------------
+	var landmark_sign_specs: Array[Dictionary] = []
+	var raw_landmarks: Array = area.get(Vector2i.ZERO, {}).get("landmarks", [])
+	for i in range(mini(raw_landmarks.size(), 4)):
+		var lm: Dictionary = raw_landmarks[i]
+		var lm_name: String = str(lm.get("name", ""))
+		var door_wm: Vector2 = lm.get("door_wm", Vector2.ZERO)
+		var door_gx: int = int(floor(door_wm.x / Grid.TILE_WM))
+		var door_gy: int = int(floor(door_wm.y / Grid.TILE_WM))
+		var door_c: int = door_gx - cx * 32 + 4
+		var door_r: int = 35 - (door_gy - cy * 32)
+
+		var matching_b = null
+		for b in placed_buildings:
+			if door_c >= b["col0"] and door_c < b["col0"] + b["w"] and door_r >= b["row0"] and door_r < b["row0"] + b["h"]:
+				matching_b = b
+				break
+
+		if matching_b != null:
+			# Landmark building: ROOF -> 32, WALL -> 32 or 40, DOOR -> 32
+			for tr in matching_b["h"]:
+				var cur_r: int = matching_b["row0"] + tr
+				for tc in matching_b["w"]:
+					var cur_c: int = matching_b["col0"] + tc
+					var idx: int = cur_r * WORK_SIZE + cur_c
+					var cls: int = grid_class[idx]
+					if cls == TILE_ROOF:
+						grid_variant[idx] = 32
+					elif cls == TILE_WALL:
+						var has_window: bool = (tc % 2 != 0)
+						grid_variant[idx] = 40 if has_window else 32
+					elif cls == TILE_DOOR:
+						grid_variant[idx] = 32
+
+			var d_col: int = matching_b["door_cols"][0]
+			var d_r: int = matching_b["row0"] + matching_b["h"] - 1
+			var d_c: int = matching_b["col0"] + d_col
+			landmark_sign_specs.append({
+				"name": lm_name,
+				"is_building": true,
+				"door_pos": Vector2i(d_c, d_r)
+			})
+		else:
+			landmark_sign_specs.append({
+				"name": lm_name,
+				"is_building": false,
+				"door_pos": Vector2i(door_c, door_r)
+			})
+
+	# -------------------------------------------------------------
 	# 4b. Paths after buildings (§10.2 step 1)
 	# -------------------------------------------------------------
 	var path_list: Array = line_groups["path"]
@@ -1187,6 +1238,67 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 
 	var signs_list: Array[String] = []
 	var placed_sign_tiles: Array[Vector2i] = []
+
+	# Landmark signs (§10.8 step 2) placed before ordinary signs
+	for lm_sign in landmark_sign_specs:
+		if signs_list.size() >= 16:
+			break
+		var target_pos := Vector2i(-1, -1)
+		var p0: Vector2i = lm_sign["door_pos"]
+
+		if lm_sign["is_building"]:
+			# Candidate tiles beside the door: south-west, south-east, west, east, south, rings 1..2
+			var candidates: Array[Vector2i] = [
+				Vector2i(p0.x - 1, p0.y + 1),
+				Vector2i(p0.x + 1, p0.y + 1),
+				Vector2i(p0.x - 1, p0.y),
+				Vector2i(p0.x + 1, p0.y),
+				Vector2i(p0.x, p0.y + 1)
+			]
+			for rad in [1, 2]:
+				for off in [Vector2i(0, -rad), Vector2i(rad, 0), Vector2i(0, rad), Vector2i(-rad, 0)]:
+					var cand_p: Vector2i = p0 + off
+					if not candidates.has(cand_p):
+						candidates.append(cand_p)
+
+			for cand_p in candidates:
+				if cand_p.x >= 4 and cand_p.x <= 35 and cand_p.y >= 4 and cand_p.y <= 35:
+					var cls: int = grid_class[cand_p.y * WORK_SIZE + cand_p.x]
+					if cls == TILE_GRASS or cls == TILE_PATH:
+						target_pos = cand_p
+						break
+		else:
+			# Structure with no building: first GRASS or PATH tile within 2 tiles of door
+			if p0.x >= 4 and p0.x <= 35 and p0.y >= 4 and p0.y <= 35:
+				var p0_cls: int = grid_class[p0.y * WORK_SIZE + p0.x]
+				if p0_cls == TILE_GRASS or p0_cls == TILE_PATH:
+					target_pos = p0
+			if target_pos.x == -1:
+				for rad in [1, 2]:
+					var ring_offsets: Array[Vector2i] = [Vector2i(0, -rad), Vector2i(rad, 0), Vector2i(0, rad), Vector2i(-rad, 0),
+						Vector2i(-rad, -rad), Vector2i(rad, -rad), Vector2i(rad, rad), Vector2i(-rad, rad)]
+					for off in ring_offsets:
+						var cand_p: Vector2i = p0 + off
+						if cand_p.x >= 4 and cand_p.x <= 35 and cand_p.y >= 4 and cand_p.y <= 35:
+							var cls: int = grid_class[cand_p.y * WORK_SIZE + cand_p.x]
+							if cls == TILE_GRASS or cls == TILE_PATH:
+								target_pos = cand_p
+								break
+					if target_pos.x != -1:
+						break
+
+		if target_pos.x != -1:
+			var too_close := false
+			for st in placed_sign_tiles:
+				if maxi(absi(target_pos.x - st.x), absi(target_pos.y - st.y)) <= 3:
+					too_close = true
+					break
+			if not too_close:
+				var s_idx := signs_list.size()
+				grid_class[target_pos.y * WORK_SIZE + target_pos.x] = TILE_SIGN
+				grid_variant[target_pos.y * WORK_SIZE + target_pos.x] = s_idx
+				placed_sign_tiles.append(target_pos)
+				signs_list.append(lm_sign["name"])
 
 	for cand in sign_candidates:
 		if signs_list.size() >= 16:

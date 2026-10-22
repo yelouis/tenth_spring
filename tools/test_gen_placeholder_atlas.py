@@ -94,8 +94,12 @@ class TestGenPlaceholderAtlas(unittest.TestCase):
         expected_pairs.append((10, 0))  # BRIDGE
         expected_pairs.append((11, 0))  # PLAZA
         for v in range(8): expected_pairs.append((12, v))  # ROOF 0..7
+        expected_pairs.append((12, 32))  # ROOF 32 (landmark gold)
         for v in range(16): expected_pairs.append((13, v))  # WALL 0..15
+        expected_pairs.append((13, 32))  # WALL 32 (landmark plain)
+        expected_pairs.append((13, 40))  # WALL 40 (landmark window)
         for v in range(8): expected_pairs.append((14, v))  # DOOR 0..7
+        expected_pairs.append((14, 32))  # DOOR 32 (landmark gold framed)
         expected_pairs.append((15, 0))  # FENCE
         expected_pairs.append((16, 0))  # FLOWERS
         expected_pairs.append((17, 0))  # GRAVE

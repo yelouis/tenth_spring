@@ -23,11 +23,17 @@ static func wm_to_latlon(p: Vector2) -> Vector2:
 
 static func latlon_to_cell(lat: float, lon: float) -> Vector2i:
 	var wm := latlon_to_wm(lat, lon)
-	return Vector2i(int(floor(wm.x / CELL_WM)), int(floor(wm.y / CELL_WM)))
+	return wm_to_cell(wm.x, wm.y)
+
+static func wm_to_cell(wm_x: float, wm_y: float) -> Vector2i:
+	return Vector2i(int(floor(wm_x / CELL_WM)), int(floor(wm_y / CELL_WM)))
 
 static func latlon_to_tile(lat: float, lon: float) -> Vector2i:
 	var wm := latlon_to_wm(lat, lon)
-	return Vector2i(int(floor(wm.x / TILE_WM)), int(floor(wm.y / TILE_WM)))
+	return wm_to_tile(wm.x, wm.y)
+
+static func wm_to_tile(wm_x: float, wm_y: float) -> Vector2i:
+	return Vector2i(int(floor(wm_x / TILE_WM)), int(floor(wm_y / TILE_WM)))
 
 static func cell_center_latlon(cell: Vector2i) -> Vector2:
 	var cx := (float(cell.x) + 0.5) * CELL_WM

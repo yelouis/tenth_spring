@@ -55,6 +55,10 @@ var _store_paths: Array[String] = []
 var _store_paths_changed: bool = false
 var _worker_stores: Array[MapStore] = []
 var _store_cache: LruCache = null
+var _worker_landmarks_by_cell: Dictionary = {}
+
+func set_landmarks(lms: Dictionary) -> void:
+	_worker_landmarks_by_cell = lms.duplicate()
 
 # Queues
 # Request items: Dictionary {cell: Vector2i, priority_dist: float, needs_overview: bool, reveal_state: int, preview_cleared: bool}
@@ -288,6 +292,7 @@ func _get_cell_features(cell_x: int, cell_y: int) -> Dictionary:
 		"polys": [],
 		"lines": [],
 		"places": [],
+		"landmarks": _worker_landmarks_by_cell.get(Vector2i(cell_x, cell_y), []),
 		"sea": 0,
 		"has_data": false,
 		"covered": false,

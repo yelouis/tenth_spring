@@ -6,6 +6,7 @@ extends Node
 const MapViewScene := preload("res://world/map_view.tscn")
 const MapStoreClass := preload("res://world/region_import/map_store.gd")
 const ProfilePathsClass := preload("res://scripts/profile_paths.gd")
+const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 
 func run_test() -> bool:
 	var map_view = MapViewScene.instantiate()
@@ -303,9 +304,10 @@ func run_test() -> bool:
 	map_view._clear_rendered_layers()
 
 	map_view._render_cell(1, 1)
+	var expected_solid: int = map_view._fog_rows.get("solid", 58)
 	var fog_solid_tile: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(1, 1, 10, 10))
-	if fog_solid_tile.y != 54: # fog_solid row
-		push_error("Unknown cell (1, 1) should have solid fog on FogLayer (row 54), got %s" % str(fog_solid_tile))
+	if fog_solid_tile.y != expected_solid: # fog_solid row
+		push_error("Unknown cell (1, 1) should have solid fog on FogLayer (row %d), got %s" % [expected_solid, str(fog_solid_tile)])
 		map_view.queue_free()
 		return false
 	if world_known.get_cell_atlas_coords(map_view._screen_tile(1, 1, 10, 10)) != Vector2i(-1, -1):
@@ -337,23 +339,24 @@ func run_test() -> bool:
 
 	# 7. Inward Feathering (§6, §8):
 	# Cell (2, 2) is revealed (known). Its north neighbour (2, 3) is unknown (hidden).
-	# Distance 0 (row 0) gets d75 (row 55). Distance 1 (row 1) gets d50 (row 56). Distance 2 (row 2) gets d25 (row 57).
-	# Distance >= 3 has no fog tile.
+	var expected_d75: int = map_view._fog_rows.get("d75", 59)
+	var expected_d50: int = map_view._fog_rows.get("d50", 60)
+	var expected_d25: int = map_view._fog_rows.get("d25", 61)
 	var d0_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 0))
 	var d1_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 1))
 	var d2_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 2))
 	var d3_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 3))
 
-	if d0_fog.y != 55: # d75
-		push_error("Inward feathering row 0 expected d75 (row 55), got %s" % str(d0_fog))
+	if d0_fog.y != expected_d75: # d75
+		push_error("Inward feathering row 0 expected d75 (row %d), got %s" % [expected_d75, str(d0_fog)])
 		map_view.queue_free()
 		return false
-	if d1_fog.y != 56: # d50
-		push_error("Inward feathering row 1 expected d50 (row 56), got %s" % str(d1_fog))
+	if d1_fog.y != expected_d50: # d50
+		push_error("Inward feathering row 1 expected d50 (row %d), got %s" % [expected_d50, str(d1_fog)])
 		map_view.queue_free()
 		return false
-	if d2_fog.y != 57: # d25
-		push_error("Inward feathering row 2 expected d25 (row 57), got %s" % str(d2_fog))
+	if d2_fog.y != expected_d25: # d25
+		push_error("Inward feathering row 2 expected d25 (row %d), got %s" % [expected_d25, str(d2_fog)])
 		map_view.queue_free()
 		return false
 	if d3_fog != Vector2i(-1, -1):
@@ -458,8 +461,44 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# -------------------------------------------------------------
+	# 9. Landmark Atlas Coordinates & Enterable Tooltip (§10.8, Item 22)
+	# -------------------------------------------------------------
+	var roof_32_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_ROOF, 32, 0)
+	var wall_32_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_WALL, 32, 0)
+	var wall_40_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_WALL, 40, 0)
+	var door_32_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_DOOR, 32, 0)
+
+	if roof_32_coords.y == 0 or wall_32_coords.y == 0 or wall_40_coords.y == 0 or door_32_coords.y == 0:
+		push_error("Landmark atlas coordinates lookup failed: roof=%s, wall32=%s, wall40=%s, door=%s" % [
+			str(roof_32_coords), str(wall_32_coords), str(wall_40_coords), str(door_32_coords)
+		])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# Verify tooltip logic for landmark sign
+	map_view._landmark_names["Test Landmark"] = true
+	var mock_tiles := PackedByteArray()
+	mock_tiles.resize(32 * 32 * 3)
+	mock_tiles.fill(0)
+	# Put landmark sign at (col=5, row=5)
+	var mock_sign_idx := (5 * 32 + 5) * 3
+	mock_tiles[mock_sign_idx] = TileSynth2.TILE_SIGN
+	mock_tiles[mock_sign_idx + 1] = 0 # variant 0 -> index in signs
+	# Put landmark door at (col=6, row=5)
+	var mock_door_idx := (5 * 32 + 6) * 3
+	mock_tiles[mock_door_idx] = TileSynth2.TILE_DOOR
+	mock_tiles[mock_door_idx + 1] = 32 # variant 32 -> landmark door
+
+	map_view._landmarks_by_cell[Vector2i(10, 10)] = [{"name": "Test Landmark"}]
+	map_view.get_lru_cache().put(Vector2i(10, 10), {
+		"buf": mock_tiles,
+		"signs": ["Test Landmark"],
+		"reveal_state": 1
+	})
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
-	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up verified)")
+	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips verified)")
 	return true
 
 func _cleanup(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:

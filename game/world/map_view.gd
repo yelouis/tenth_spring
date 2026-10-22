@@ -154,6 +154,10 @@ var _class_any_variant: Dictionary = {}
 var _masked_classes: Dictionary = {}
 var _fog_rows: Dictionary = {}
 
+# Landmarks mapping
+var _landmarks_by_cell: Dictionary = {}
+var _landmark_names: Dictionary = {}
+
 # Screenshot mode state
 var _screenshot_mode: bool = false
 var _screenshot_path: String = ""
@@ -206,6 +210,7 @@ func _ready() -> void:
 	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
 	_init_tile_sets()
+	_load_landmarks()
 	_load_start_time_usec = Time.get_ticks_usec()
 	_load_map_stores()
 	_set_zoom_step(1.0)
@@ -213,6 +218,30 @@ func _ready() -> void:
 		_focus_most_buildings()
 	else:
 		_focus_initial_cell()
+
+func _load_landmarks() -> void:
+	_landmarks_by_cell.clear()
+	_landmark_names.clear()
+	var places: Array = RevealEngine.load_places()
+	for p in places:
+		var interiors: Array = p.get("interiors", [])
+		for interior in interiors:
+			var i_id: String = str(interior.get("id", ""))
+			var i_name: String = str(interior.get("name", ""))
+			var door: Dictionary = interior.get("door", {})
+			var d_lat := float(door.get("lat", 0.0))
+			var d_lon := float(door.get("lon", 0.0))
+			var wm: Vector2 = Grid.latlon_to_wm(d_lat, d_lon)
+			var cell: Vector2i = Grid.wm_to_cell(wm.x, wm.y)
+			var lm_dict := {
+				"id": i_id,
+				"name": i_name,
+				"door_wm": wm
+			}
+			if not _landmarks_by_cell.has(cell):
+				_landmarks_by_cell[cell] = []
+			_landmarks_by_cell[cell].append(lm_dict)
+			_landmark_names[i_name] = true
 
 func _check_demo_mode() -> void:
 	var profile = ProfilePaths.resolve_from_cmdline()
@@ -415,6 +444,8 @@ func _load_map_stores() -> void:
 		_synth_worker.start(store_paths)
 	else:
 		_synth_worker.set_store_paths(store_paths)
+	if _synth_worker != null:
+		_synth_worker.set_landmarks(_landmarks_by_cell)
 
 func _get_db() -> Node:
 	return get_node_or_null("/root/DB")
@@ -613,10 +644,28 @@ func _update_sign_tooltip() -> void:
 	if _synth_cache.has(cell):
 		var item = _synth_cache.get_item(cell)
 		if item is Dictionary and item.get("reveal_state", 0) > 0:
-			var signs: Array = item.get("signs", [])
-			for s in signs:
-				if s is Dictionary and s.get("pos", Vector2i(-1, -1)) == Vector2i(col, row):
-					_sign_tooltip.text = s.get("name", "")
+			var buf: PackedByteArray = item.get("buf", PackedByteArray())
+			var signs = item.get("signs", [])
+			var t_idx := (row * 32 + col) * 3
+			if t_idx + 2 < buf.size():
+				var t_class := int(buf[t_idx])
+				var t_variant := int(buf[t_idx + 1])
+				if t_class == TileSynth2.TILE_SIGN:
+					if t_variant >= 0 and t_variant < signs.size():
+						var s_name := str(signs[t_variant])
+						if _landmark_names.has(s_name):
+							_sign_tooltip.text = "%s — can be entered (interiors arrive in a later update)" % s_name
+						else:
+							_sign_tooltip.text = s_name
+						_sign_tooltip.global_position = get_viewport().get_mouse_position() + Vector2(12, 12)
+						_sign_tooltip.visible = true
+						return
+				elif t_class == TileSynth2.TILE_DOOR and (t_variant & 32 != 0 or t_variant == 32):
+					var cell_lms: Array = _landmarks_by_cell.get(cell, [])
+					var lm_name := "Landmark"
+					if not cell_lms.is_empty():
+						lm_name = str(cell_lms[0].get("name", "Landmark"))
+					_sign_tooltip.text = "%s — can be entered (interiors arrive in a later update)" % lm_name
 					_sign_tooltip.global_position = get_viewport().get_mouse_position() + Vector2(12, 12)
 					_sign_tooltip.visible = true
 					return
@@ -1020,7 +1069,16 @@ func _get_cell_features(cell_x: int, cell_y: int) -> Dictionary:
 	if _store_cache.has(key):
 		return _store_cache.get_item(key)
 
-	var features := {"polys": [], "lines": [], "places": [], "sea": 0, "has_data": false, "covered": false, "is_covered": false}
+	var features := {
+		"polys": [],
+		"lines": [],
+		"places": [],
+		"landmarks": _landmarks_by_cell.get(key, []),
+		"sea": 0,
+		"has_data": false,
+		"covered": false,
+		"is_covered": false
+	}
 	for store in _map_stores:
 		var polys = store.get_features_poly(cell_x, cell_y)
 		var lines = store.get_features_line(cell_x, cell_y)

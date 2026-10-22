@@ -92,6 +92,8 @@ PALETTE = {
     "void": (42, 50, 66, 255),             # #2a3242
     "fog": (13, 17, 25, 255),              # #0d1119
     "ink_outline": (26, 26, 32, 255),      # #1a1a20
+    "gold_roof_base": (216, 168, 56, 255),  # #d8a838
+    "gold_roof_shade": (160, 120, 32, 255), # #a07820
     "transparent": (0, 0, 0, 0),
 }
 
@@ -577,7 +579,10 @@ class AtlasBuilder:
                     self.set_pixel(col, row, x, y, joint_color)
 
     def draw_roof(self, row: int, col: int, variant: int, mask: int):
-        colors = ROOF_COLORS[variant % 8]
+        if variant == 32:
+            colors = {"base": PALETTE["gold_roof_base"], "shade": PALETTE["gold_roof_shade"]}
+        else:
+            colors = ROOF_COLORS[variant % 8]
         self.fill_tile(col, row, colors["base"])
         # Subtle shingle lines
         for y in range(TILE_SIZE):
@@ -615,10 +620,11 @@ class AtlasBuilder:
     def draw_wall(self, row: int, col: int, variant: int, mask: int):
         self.fill_tile(col, row, PALETTE["wall"])
         roof_idx = variant % 8
-        has_window = (variant >= 8)
+        has_window = (variant >= 8 and variant != 32)
+        is_gold = (variant in (32, 40))
 
-        # Base / foundation trim in roof color
-        trim_color = ROOF_COLORS[roof_idx]["base"]
+        # Base / foundation trim in roof color (or gold)
+        trim_color = PALETTE["gold_roof_base"] if is_gold else ROOF_COLORS[roof_idx]["base"]
         for y in range(30, 32):
             for x in range(TILE_SIZE):
                 self.set_pixel(col, row, x, y, trim_color)
@@ -628,19 +634,21 @@ class AtlasBuilder:
         s_conn = (mask & 4) != 0
         w_conn = (mask & 8) != 0
 
+        outline_color = PALETTE["gold_roof_base"] if is_gold else PALETTE["wall_outline"]
+
         # Outline where W or E = 0
         if not w_conn:
             for y in range(TILE_SIZE):
-                self.set_pixel(col, row, 0, y, PALETTE["wall_outline"])
-                self.set_pixel(col, row, 1, y, PALETTE["wall_outline"])
+                self.set_pixel(col, row, 0, y, outline_color)
+                self.set_pixel(col, row, 1, y, outline_color)
         if not e_conn:
             for y in range(TILE_SIZE):
-                self.set_pixel(col, row, 30, y, PALETTE["wall_outline"])
-                self.set_pixel(col, row, 31, y, PALETTE["wall_outline"])
+                self.set_pixel(col, row, 30, y, outline_color)
+                self.set_pixel(col, row, 31, y, outline_color)
 
         if not n_conn:
             for x in range(TILE_SIZE):
-                self.set_pixel(col, row, x, 0, PALETTE["wall_outline"])
+                self.set_pixel(col, row, x, 0, outline_color)
 
         if has_window:
             # 10 x 8 px window centered: x in 11..20, y in 10..17
@@ -654,17 +662,19 @@ class AtlasBuilder:
 
     def draw_door(self, row: int, col: int, variant: int):
         self.fill_tile(col, row, PALETTE["wall"])
+        is_gold = (variant == 32)
+        frame_color = PALETTE["gold_roof_base"] if is_gold else PALETTE["door_frame"]
         # 14 x 20 px door: x in 9..22, y in 10..29
         for dy in range(10, 30):
             for dx in range(9, 23):
                 if dx in (9, 22) or dy in (10, 29):
-                    self.set_pixel(col, row, dx, dy, PALETTE["door_frame"])
+                    self.set_pixel(col, row, dx, dy, frame_color)
                 else:
                     self.set_pixel(col, row, dx, dy, PALETTE["bridge_rail"])
         # Handle at (20, 20)
         self.set_pixel(col, row, 20, 20, PALETTE["path"])
         # 2-px mat at bottom x in 8..23, y in 30..31
-        mat_color = ROOF_COLORS[variant % 8]["base"]
+        mat_color = PALETTE["gold_roof_base"] if is_gold else ROOF_COLORS[variant % 8]["base"]
         for my in range(30, 32):
             for mx in range(8, 24):
                 self.set_pixel(col, row, mx, my, mat_color)
@@ -837,8 +847,12 @@ def build_atlas():
     r_bridge = add_row(10, 0, True)
     r_plaza = add_row(11, 0, False)
     r_roof = [add_row(12, v, True) for v in range(8)]
+    r_roof_landmark = add_row(12, 32, True)
     r_wall = [add_row(13, v, True) for v in range(16)]
+    r_wall_landmark = add_row(13, 32, True)
+    r_wall_landmark_win = add_row(13, 40, True)
     r_door = [add_row(14, v, False) for v in range(8)]
+    r_door_landmark = add_row(14, 32, False)
     r_fence = add_row(15, 0, True)
     r_flowers = add_row(16, 0, False)
     r_grave = add_row(17, 0, False)
@@ -904,15 +918,22 @@ def build_atlas():
     for v in range(8):
         for mask in range(NUM_COLS):
             builder.draw_roof(r_roof[v], mask, v, mask)
+    for mask in range(NUM_COLS):
+        builder.draw_roof(r_roof_landmark, mask, 32, mask)
 
     # Render WALL variants
     for v in range(16):
         for mask in range(NUM_COLS):
             builder.draw_wall(r_wall[v], mask, v, mask)
+    for mask in range(NUM_COLS):
+        builder.draw_wall(r_wall_landmark, mask, 32, mask)
+    for mask in range(NUM_COLS):
+        builder.draw_wall(r_wall_landmark_win, mask, 40, mask)
 
     # Render DOOR variants
     for v in range(8):
         builder.draw_door(r_door[v], 0, v)
+    builder.draw_door(r_door_landmark, 0, 32)
 
     # Render FENCE
     for mask in range(NUM_COLS):
