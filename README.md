@@ -80,7 +80,14 @@ python3 -I tools/memguard.py run <step> -- <command...>
 ```
 
 ### Launching Godot
-Always launch Godot through `python3 -I tools/godot.py` (which enforces `--headless`, an absolute `--path <repo>/game`, and refuses `--script` files that do not extend `SceneTree` or `MainLoop`). Never run a `*_test.gd` file directly with `--script`; to run a single test, use:
+Always launch Godot through `python3 -I tools/godot.py` (which enforces `--headless`, an absolute `--path <repo>/game`, and refuses `--script` files that do not extend `SceneTree` or `MainLoop`).
+
+**In a fresh clone or a new git worktree, import the project once before running any test** — otherwise every script that uses `class_name` fails to parse (F58):
+```bash
+python3 -I tools/godot.py --memguard-step godot_import --import
+```
+
+Never run a `*_test.gd` file directly with `--script`; to run a single test, use:
 ```bash
 python3 game/tests/test_runner.py --only <test_name>
 ```

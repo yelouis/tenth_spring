@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-22, pass 20; Decisions 29–36 answered)
+# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-22, pass 21; Decisions 29–36 answered)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
@@ -15,6 +15,9 @@
 - **No commerce:** no Steam, no sales.
 
 **Where things stand.**
+- **Pass 21 (2026-10-22, M56):**
+  - **Item 23 is verified** — the launch wrapper and `test_runner --only`, on `main`.
+  - **Item 24 stopped, correctly,** on the Lincoln Memorial. Pass 21 confirmed both causes and wrote the fix into the plan (slice-2 §11.1a). **Item 24 continues from its uncommitted work**, below.
 - **Pass 19 verified the whole pass-18 queue** (Items 13–22; M53) and found four problems: F54–F57 (`ongoing_general_errors.md`, *Verification Findings*).
   - **F54:** two of DC's four enterable landmarks don't show.
   - **F55:** DC's "neighbourhoods" are its 8 political wards.
@@ -31,16 +34,16 @@
   - The human gives you the file paths in chat. **Never write them in the repo.**
 - **The pass-20 content** — the 30 new legendary places, the Glow, new puzzles and quests — is in the design docs already. This queue builds the parts that belong to Phases 2–3.
 
-**What is approved for build right now:** Items **23, 24, 24a, 25, 12, 30, 26, 27, 28, 10, and 29**, in §2's order.
+**What is approved for build right now:** Items **24 (continued), 24a, 25, 12, 30, 26, 27, 28, 10, and 29**, in §2's order.
 - **They pause at** Items 25, 12, 30, 28, and 29, for the human's verdict.
 - **Items 27 and 28 land together** (§2).
 
 **What NOT to touch:**
-- §16 — already delivered;
-- §17 — accepted equivalents;
-- §18 — intentional decisions.
+- §15 — already delivered;
+- §16 — accepted equivalents;
+- §17 — intentional decisions.
 
-§15 is the phase roadmap — scope, not an approved queue.
+§14 is the phase roadmap — scope, not an approved queue.
 
 **Specs are decisions, not suggestions.** Every number, constant, file name, message shape, and literal string here and in the docs it points to is deliberate. Implement as written; do not substitute your own values.
 - **If a value is genuinely impossible:** keep the *intent*, deviate minimally, and note it in the commit body.
@@ -72,7 +75,8 @@
    - If a step exits **75** (no room) or **76** (stopped for memory), report it — don't retry in a loop.
    - The Mac is shared with other projects that use tens of GB. **Never** deliberately starve it.
 7. **Godot on the human's Mac** is at `/Applications/Godot.app/Contents/MacOS/Godot` (4.3-stable), **not** on `PATH`. Set `GODOT_BIN` to it.
-   - **After Item 23, launch Godot only through `tools/godot.py`**, never directly.
+   - **Launch Godot only through `tools/godot.py`**, never directly (Item 23, delivered).
+   - **In a fresh clone or a new git worktree, import first:** `python3 -I tools/godot.py --memguard-step godot_import --import`. Without the import cache, every `class_name` script fails to parse and the battery fails in confusing ways (F58).
    - **Never run a test file with `--script`** — use `test_runner.py --only <test>`.
    - **Turn off any editor feature that starts Godot by itself** (a Godot extension's language server): two of the four crashes came from one (F57).
 8. **Download nothing** except what an item names:
@@ -87,7 +91,7 @@
    Never commit a download. Never fetch `-latest` for game data.
 9. **Every change leaves the §1 battery and all CI workflows green** — that is the regression bar. **The one sanctioned exception:** `sync_e2e` between Item 27 and Item 28 (§2).
 10. **Anything touching the companion's location access or cross-device sync needs a real-device check** before it's declared done (§2, HUMAN actions).
-11. **The golden invariants (§18) stay green, always.**
+11. **The golden invariants (§17) stay green, always.**
 12. **Detailed behaviour lives in `docs/design_*.md` (contracts) and `docs/implementation_plan_*.md` (build steps).** This guide tells you how to build and prove each item; where it quotes a contract, the contract wins.
 13. **One item = one Conventional Commit**, WHY in the body. Record the resolution in `ongoing_general_errors.md` as part of the item.
 14. **Say what actually ran.** "Source-verified," "statically checked," and "executed" are three different claims. Name the machine (Linux CI, macOS CI, the human's Mac). Game-side claims count as executed only when a run printed the `PASS` lines.
@@ -97,23 +101,23 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-22 in this session, HEAD `0f84697` plus doc-only changes)
+## 1. Verified baseline (run 2026-10-22 in this session, pass 21 — `main` at `fced8ac`)
 
 | Battery | Where | Result |
 |---|---|---|
 | `cd companion && flutter analyze` | Mac, local | **No issues found** |
 | `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** (`sync_e2e_test`, `demo_import_test` — run only through their tools) |
-| `GODOT_BIN=… python3 game/tests/test_runner.py` | Mac, local | **Executed.** IP guard and self-tests, isolation audit, memguard, synthetic PBF, demo-screenshot, placeholder-atlas and famous-places tests, vendored SHA-256, harness self-test → **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK. *(The `ERROR` lines in its log are its own negative tests — injected legacy-import and migration failures.)* |
-| `GODOT_BIN=… python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green.** `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1`; `[OK] Cross-language loopback sync succeeded!` |
-| CI on `0f84697` | `game_tests` 39726058576, IP guard 39726058569, `sync_e2e` 39726058546 | **All green** — `game_tests` on Linux and macOS |
+| `tools/godot.py --import`, then `python3 game/tests/test_runner.py`, on a **clean checkout of `main`** | Mac, local | **Executed.** **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK — including Item 23's no-direct-launch rule |
+| `python3 game/tests/test_runner.py --only grid_test` | Mac, local | `PASS grid_test` + the real-save check, exit 0 |
+| **F57 falsifier:** `python3 -I tools/godot.py --script res://tests/tile_synth2_test.gd` | Mac, local | **exit 2**, refused with the message; no Godot window |
+| `python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green** — `[OK] Cross-language loopback sync succeeded!` |
+| CI on `fced8ac` | `game_tests` 39888089603, IP guard 39888089510, `sync_e2e` 39888089403 | **All green** on the item branch and on `main` |
+| **DC landmarks** — Item 24's uncommitted work, `check_landmarks.py` (pass 21, reproduced) | Mac | Library of Congress `placed=1 gold_tiles=308` · Air and Space `288` · Washington Monument `20` · **Lincoln Memorial `placed=0 gold_tiles=0`** |
 | **DC placement** (pass 18, Item 13) | Mac | 136,325 candidates → **32.5% placed**; building tiles **18.9%**; path tiles **16.6%** |
-| **DC landmarks** (pass 19, read-only check) | Mac | Library of Congress **placed 0 of 2 candidates**; Lincoln Memorial **gold tiles 0**; Air and Space **240**; Washington Monument **10** — F54 |
 | **Frame times** (pass 18, Items 15, 21) | Mac, windowed | zoom 1: `FRAME_P95_MS` 16.67; whole-city zoom 1/16: **18.06** and `LOAD_MAX_FRAME_MS` **33.33** — F56 |
-| **DC neighbourhoods** (pass 18, Item 18) | Mac | **9 areas** — DC plus Wards 1–8 — so 2 wards unlock the city (F55) |
-| **Godot crash reports** (pass 19) | Mac | 4 reports, one stack: `Main::start()` → `OS_MacOS::alert()` → abort. Two from an editor's `language_server`, two from scripts running a test file directly (F57) |
+| **DC neighbourhoods** (pass 18, Item 18) | Mac | **9 areas** — DC plus Wards 1–8 — F55 |
 | **The human's ROMs** (pass 20, header read only) | Mac | Emerald `BPEE`, SHA-1 `f3ae0881…07b7` (the clean dump); Black `IRBO`, **modified** (not a retail dump) |
-| Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. Folded into Item 28's pause. |
-| ~~D3 device soak~~ | — | **Retired** with background capture (Decision 29) |
+| Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. At Item 28's pause. |
 
 ---
 
@@ -121,8 +125,7 @@
 
 | # | Item | Why this position |
 |---|---|---|
-| 23 | **Launch wrapper + `test_runner --only` — F57** ✅ **DONE** (`tools/godot.py`, `--only`, static lint) | Every later item launches Godot. This stops the crashes first. |
-| 24 | **Landmarks first — F54** (slice-2 plan §11.1) | Synthesis change. The ruin pass (25) must never hide a landmark, and DC's proof must show all four. |
+| 24 | **Landmarks first — F54, continued** (slice-2 plan §11.1 + **§11.1a**) — finish the uncommitted work on `item-24-landmarks-first` | Synthesis change. The ruin pass (25) must never hide a landmark, and DC's proof must show all four. |
 | 24a | **The place list, revised:** the pass-19 swaps, the 30 Gen 6–8 places, the Glow's six interiors, and `requires` (`implementation_plan_famous_places.md` §8.1) | Data only. Items 25 and 30 render interiors from this list. The human reviews the new rows at Item 25's pause. |
 | 25 | **The ruin pass + frame targets + overview chunks + DC proof v3 → PAUSE** (slice-2 plan §11.2–11.7; F56) | Needs 24. Adds the tile vocabulary that Item 12's mapping table must cover. |
 | 12 | **Emerald tile spike + mapping table + tile-importer plan → PAUSE** (Decision 19; ROM supplied) | **This is what makes the map look like real Pokémon.** Its mapping must include Item 25's new tiles, and the look-alike compositions Item 30 needs. |
@@ -156,79 +159,57 @@
   This closes Phases 0 and 1.
 - **At Item 29's pause:** the sprite preview and the importer plan.
 
-Deferred (trigger-gated, **do not start**): §14.
+Deferred (trigger-gated, **do not start**): §13.
 
 ---
 
-## 3. Item 23 — Launch wrapper and `test_runner --only` (F57)
+## 3. Item 24 — Landmarks first (F54) — continue from the uncommitted work
 
-**What this means for the user:** no more Godot crash pop-ups while the agent works. Every crash so far came from the tools launching Godot the wrong way.
+**What this means for the user:** every enterable landmark shows on the map, gilded, with its sign — including the Lincoln Memorial, whose real outline the converter has been throwing away.
+
+### Where it stands
+- **Built and uncommitted** on local branch `item-24-landmarks-first`, in the human's working tree. **Keep it — don't start over:**
+  - slice-2 plan §11.1 in `game/world/tile_synth/tile_synth2.gd`: landmarks first, `PATH` allowed underneath, 21 nudges, shrink-to-fit, gilding at placement, and the `landmarks_placed` / `landmarks_sign_only` stats;
+  - `tools/check_landmarks.py`, with `game/scenes/check_landmarks.gd` and `.tscn` (memguard step `check_landmarks`, budget 0.5 GiB, measured peak 0.195 GiB);
+  - `tile_synth2_test` (p.1)–(p.3), all passing.
+- **Measured** (pass 21, reproduced): the Library of Congress `placed=1 gold_tiles=308`, Air and Space `288`, the Washington Monument `20` — and **the Lincoln Memorial `placed=0`**.
 
 ### The gap
-- **Every launcher builds its own Godot command,** with a *relative* `--path game` that breaks when the working directory isn't the repo root:
-  - `tools/map_convert.py:67-68,108-109`;
-  - `tools/measure_synth.py:53-54`;
-  - `tools/demo_import.py:96`;
-  - `tools/demo_screenshot.py:132`;
-  - `tools/sync_e2e.py:39`;
-  - `game/tests/test_runner.py:287,308`.
-- **Nothing stops a test file being run directly.** `godot --script tests/x.gd` aborts in a window, because the test isn't a `SceneTree` script — that's the `tile_synth2_test` abort in the memguard log (10-21 16:16Z).
-- **There is no way to run one test** without running all 22.
+1. **The converter drops the memorial's outline.** `game/world/region_import/region_converter.gd:1768-1769` drops every way with a `building:part` key. The memorial's outline (OpenStreetMap way 398769543) is `building=yes` plus `building:part=no` — "the whole building".
+2. **The door and the footprint sit in different cells.** The landmarks-first block reads only `area[Vector2i.ZERO]["landmarks"]` and matches only centre-anchored candidates (the `raw_landmarks` line of the "5a-0. Landmarks First" block). The memorial's door is one cell north of the cell its footprint is anchored in, so neither cell can pair them.
 
 ### Implementation
-1. **New `tools/godot.py`** (Python stdlib, `python3 -I`):
-   - **Resolve `GODOT_BIN`.** If it's unset or not executable, print `godot.py: set GODOT_BIN to your Godot 4.3 binary` and exit 2.
-   - **Always pass an absolute** `--path <repo root>/game`.
-   - **Always pass `--headless`,** unless `--windowed` is given (the screenshot harness passes it).
-   - **Refuse `--script <file>`** unless the file's first non-comment, non-blank line is `extends SceneTree` or `extends MainLoop`. Print `godot.py: refusing --script <file>: it doesn't extend SceneTree or MainLoop — run tests with game/tests/test_runner.py --only <name>` and exit 2.
-   - **Pass every other argument through** unchanged, print the exact command it runs, and return Godot's exit code.
-   - **`--memguard-step <name>`** runs it under `tools/memguard.py run <name>`, for callers that aren't already guarded. Never wrap twice.
-2. **Switch all nine launch sites above to `tools/godot.py`.** No other file may contain `"--path", "game"` or call `GODOT_BIN` directly — add that check to the static lint in `test_runner.py`.
-3. **`game/tests/test_runner.py --only <test name>`:**
-   - passes `--only=<name>` to `res://tests/test_main.tscn`, and the harness runs just that entry of `EXPECTED`;
-   - it still runs the real-save check;
-   - an unknown name prints `test_runner: no test named <name> (see EXPECTED)` and exits 2.
-4. **README → Setup notes:** a short "Launching Godot" paragraph with rule 7 of the standing constraints.
+Exactly **slice-2 plan §11.1a**:
+1. **the tag rule:** keep `building=*` unless `building:part` has a value other than `no`;
+2. **3 × 3 matching:**
+   - landmarks from all nine offsets;
+   - footprints from all nine cells, shifted into the centre cell's frame;
+   - each cell places only footprints anchored in itself;
+   - a sign-only fallback only when no footprint is found anywhere;
+3. **`stats.landmark_ids_placed`,** with `check_landmarks.py` synthesizing the door's cell and its 8 neighbours;
+4. **the three tag cases** added to the synthetic PBF (`tools/generate_synthetic_pbf.py`). Regenerate it, and say in the commit why the golden hashes change;
+5. **re-convert** `user://measure_dc` and `user://demo_dc` from the pinned DC snapshot.
 
 ### Validation
-- **Falsifying:** `python3 -I tools/godot.py --script res://tests/tile_synth2_test.gd` exits 2 with the refusal message, **and no Godot window or crash report appears**. On the old code, the same direct run aborts.
-- `python3 game/tests/test_runner.py --only tile_synth2_test` prints exactly one test `PASS` line plus the real-save check.
-- `--only nonexistent` exits 2 with the message.
-- The static lint fails on a planted `"--path", "game"` in a scratch copy of a tool.
-- The full §1 battery and every workflow are green.
+- **Falsifying — run against the old code first:**
+  - `region_import_test`: the `building=yes` + `building:part=no` way is stored. The `building:part=yes` ways are not.
+  - `tile_synth2_test` (p.4): a landmark straddling a cell edge is gilded in its anchor cell, and its door cell places **no** sign-only fallback.
+- (p.1)–(p.3) still pass.
+- **Acceptance on DC:** all four interiors print `placed=1` and `gold_tiles > 0`. Report every line.
+- **`measure_synth` on DC:** report placement, building tiles, and path tiles beside pass 18's (32.5%, 18.9%, 16.6%). A few more buildings are expected.
+- The full §1 battery, then every workflow.
 
 ### Blast radius (same commit)
-The nine launch sites · `game/tests/test_main.gd` (the `--only` filter) · `README.md` · `ongoing_general_errors.md` (F57 → Resolved).
+- `region_converter.gd`;
+- `tools/generate_synthetic_pbf.py`, its fixture, and `region_import_test.gd` with its golden hashes;
+- `tile_synth2.gd` and its test;
+- `tools/check_landmarks.py` and its scene, and `tools/memguard_budgets.json`;
+- slice-2 plan §11.1 and §11.1a ("built");
+- `ongoing_general_errors.md` (F54 → Resolved).
 
 ---
 
-## 4. Item 24 — Landmarks first (F54)
-
-**What this means for the user:** every enterable landmark actually shows on the map, gilded, with its sign — starting with the Library of Congress, which today isn't drawn at all.
-
-### The gap
-- **Landmarks go through the ordinary placement rules,** after every larger building has taken its space (`game/world/tile_synth/tile_synth2.gd`, the loop before `:875`). The Library of Congress's two buildings are rejected outright.
-- **The door must lie exactly inside the placed template** (`:888-892`), so the Lincoln Memorial — placed, but with its door point just outside — is never gilded.
-
-### Implementation
-Exactly **slice-2 plan §11.1**:
-- find each landmark's footprint (door inside, else within 2 store units);
-- place landmarks **before** the ordinary loop, allowing `PATH` underneath, with 21 nudges and then shrink-to-fit;
-- gild at placement time;
-- `stats` gains `landmarks_placed` and `landmarks_sign_only`;
-- new `tools/check_landmarks.py` with `res://scenes/check_landmarks.tscn`, launched through `tools/godot.py` (memguard step `check_landmarks`).
-
-### Validation
-- **`tile_synth2_test` (p)** — the falsifying fixture, the door 2 tiles outside, and the shrink case (§11.7). Run (p) against the old code first: it must fail.
-- **Acceptance on DC:** `check_landmarks.py --store <DC store> --place city:washington-dc` prints `placed=1` and `gold_tiles > 0` for all four DC interiors. Report every line.
-- `measure_synth` on DC still runs. Report placement and tile percentages beside the pass-18 numbers (they may move slightly).
-
-### Blast radius (same commit)
-`tile_synth2.gd` · `tile_synth2_test.gd` and its golden hashes, saying why they changed · `tools/check_landmarks.py` and its scene · slice-2 plan §11.1 ("built") · `ongoing_general_errors.md` (F54 → Resolved).
-
----
-
-## 5. Item 24a — The place list, revised
+## 4. Item 24a — The place list, revised
 
 **What this means for the user:** the 30 new legendary places of Generations 6–8, the lake trio in their right homes, Las Vegas's Glow, and every lore requirement become real data the game can use.
 
@@ -266,7 +247,7 @@ Exactly `implementation_plan_famous_places.md` §8.1. The rows are `design_famou
 
 ---
 
-## 6. Item 25 — The ruin pass, honest frame targets, overview chunks, and proof v3 → PAUSE
+## 5. Item 25 — The ruin pass, honest frame targets, overview chunks, and proof v3 → PAUSE
 
 **What this means for the user:** the cities look emptied — houses fallen in or gone to grass, side streets overgrown, tidy blocks around the survivors' camps — instead of a census of every house. And the whole-city view stops stuttering.
 
@@ -310,7 +291,7 @@ Exactly **slice-2 plan §11.2–11.6**:
 
 ---
 
-## 7. Item 12 — Emerald tile spike, mapping table, and tile-importer plan → PAUSE
+## 6. Item 12 — Emerald tile spike, mapping table, and tile-importer plan → PAUSE
 
 **What this means for the user:** the moment the map stops looking like placeholder art and starts looking like a real Pokémon game. It's the change they've asked for since pass 17.
 
@@ -357,7 +338,7 @@ Exactly **slice-2 plan §11.2–11.6**:
 
 ---
 
-## 8. Item 30 — Landmark set pieces → PAUSE
+## 7. Item 30 — Landmark set pieces → PAUSE
 
 **What this means for the user:** the Statue of Liberty looks like the Statue of Liberty, and the Lincoln Memorial like the Lincoln Memorial — not a gold-roofed box.
 
@@ -386,7 +367,7 @@ Exactly **slice-2 plan §12**:
 
 ---
 
-## 9. Item 26 — The places pack (F55)
+## 8. Item 26 — The places pack (F55)
 
 **What this means for the user:** the phone and the game agree, cell for cell, on every neighbourhood and park. And DC's ~130 real neighbourhoods replace its 8 wards, so revealing the city takes real exploring.
 
@@ -426,7 +407,7 @@ Exactly **`implementation_plan_explore_here.md` §1–§2** and famous-places pl
 
 ---
 
-## 10. Item 27 — Companion: Explore Here (shares a branch with Item 28)
+## 9. Item 27 — Companion: Explore Here (shares a branch with Item 28)
 
 **What this means for the user:** the phone stops tracking them. They tap one big button when they're somewhere new, and it tells them on the spot what they've unlocked.
 
@@ -457,7 +438,7 @@ Exactly **`implementation_plan_explore_here.md` §3**:
 
 ---
 
-## 11. Item 28 — PC: explore ingest, migration 3, RevealEngine v2, boot, demo, e2e → PAUSE + real-phone check
+## 10. Item 28 — PC: explore ingest, migration 3, RevealEngine v2, boot, demo, e2e → PAUSE + real-phone check
 
 **What this means for the user:** what the phone discovered appears on the PC by the same rules. No coordinate is stored anywhere. And quitting the game never sends them home for free.
 
@@ -498,7 +479,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 12. Item 10 — Black/White sprite spike (sprites only — Decision 34)
+## 11. Item 10 — Black/White sprite spike (sprites only — Decision 34)
 
 **What this means for the user:** the first real Pokémon on screen — the battle sprites for #1–649, read from their own cartridge's dump.
 
@@ -533,7 +514,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 13. Item 29 — Gen 8 data pack and fan sprites spike, then the importer plan → PAUSE
+## 12. Item 29 — Gen 8 data pack and fan sprites spike, then the importer plan → PAUSE
 
 **What this means for the user:** all 905 Pokémon — Galar's included — with real stats, the Fairy type, Mega forms, and the Smogon artists credited.
 
@@ -580,7 +561,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 14. Deferred — trigger-gated, do NOT start
+## 13. Deferred — trigger-gated, do NOT start
 - **The Phase 2 production importer** — the GDScript modules and the first-run download. **Trigger:** the human approves `implementation_plan_rom_importer.md` at Item 29's pause, and `implementation_plan_rom_tiles.md` at Item 12's.
 - **Distort gameplay with a walking avatar** — the real Waypost rule, the hub's Rest, PC Box, and Garden, the arrival and resume banners, and weariness's Waypost beds (`design_travel_and_time.md` §4–5; `design_long_game.md` §4.4). **Trigger:** Phase 4.
 - **The battle engine with Gen 8 rules, Mega Evolution, weariness, and fixed-level trainers** (`design_creatures_and_battles.md`; `design_long_game.md`). **Trigger:** Phase 5, after Phase 2 lands. Write its plan first.
@@ -590,6 +571,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 - **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, and ledges. **Trigger:** the human approves the ruined look at Item 25's pause. Write `implementation_plan_world_generation_slice3.md` first, and pause.
 - **Widening the map beyond famous places.** **Trigger:** a human request. Explore Here records nothing outside famous places, so players will explore new places when they arrive.
 - **Moving `MAP_SNAPSHOT` forward,** and with it a new places pack. **Trigger:** a release the human approves.
+- **F58 — the runner could import a fresh checkout itself.** When `game/.godot/` is missing, `test_runner.py` could run `tools/godot.py --memguard-step godot_import --import` first. **Trigger:** an agent or CI job stumbles on a fresh clone again. Until then the README and standing constraint 7 tell you to import.
 - **F49 — memguard `run` logs a 0.0 peak for short steps.** **Trigger:** the next change to `tools/memguard.py` — take the first sample after 0.2 s, then every `POLL_SECONDS`.
 - **mDNS auto-discovery (F27 d).** **Trigger:** the human reports that re-scanning is a real nuisance.
 - **A Windows CI job.** **Trigger:** Phase 10 release prep, or the human playing on Windows.
@@ -597,7 +579,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 15. Phase roadmap — scope, not an approved queue
+## 14. Phase roadmap — scope, not an approved queue
 
 Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`**. Order:
 
@@ -607,7 +589,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ---
 
-## 16. Already delivered — do NOT rework
+## 15. Already delivered — do NOT rework
+- **Pass 20 build, verified in pass 21 (M55, M56):** **Item 23** — `tools/godot.py` (headless by default, an absolute `--path`, refusal of non-`SceneTree` scripts, `--memguard-step`), all nine launch sites switched, `test_runner.py --only`, and the no-direct-launch lint.
 - **Phase 0 capture pipeline:** the `LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart`, the Drift outbox, `GpxReplaySource`, and the scout-ledger UI. **Item 27 deletes these by design** (Decision 29) — that's not rework.
 - **Early fixes:** F1, F2, F3, F5, F6, F8, F9, F11, F13, F17, F18, F21, F22.
 - **Pass 12 build (M12–M15):** the Godot test harness + `game_tests` CI; the IP guard; vendored `godot-sqlite` v4.4 + the real SQLite engine; pinned-TLS pairing and sync; the `sync_e2e` CI workflow.
@@ -636,7 +619,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
   **Items 24, 25, 26, and 28 *change* parts of these by plan** — landmark placement, synthesis, neighbourhood assignment, and the reveal engine. They don't rewrite them.
 
-## 17. Accepted equivalents — do NOT "fix" these back
+## 16. Accepted equivalents — do NOT "fix" these back
 - **`get_blob_head()` default mode** falls back from `HEAD:path` to the index (`:path`), so staged-but-uncommitted files are still checked.
 - **The IP guard's path rule** also blocks any `roms/` path component — broader than the spec; keep it.
 - **`test_f22_save_isolation.py`** stays as a fast static pre-check; the proof is the runner-level snapshot.
@@ -656,7 +639,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Item 6's commit message lists template sizes `3×3` and `7×6`;** the code uses the plan's `4×3`, `5×4`, and footprint-sized `block_l`. The code is right.
 - **Until Items 27 and 28 delete them:** `relocation_manager.gd`'s minimal-circle snap; `nativeVisits()` returning `null`; `_triggerManualScout` clearing SnackBars; and `buildBatchPayload`'s `"bodyFix": ?bodyFix`.
 
-## 18. Intentional decisions — do NOT change
+## 17. Intentional decisions — do NOT change
 - **No Nintendo content in the repo, ever.**
   - Species, moves, and items are referenced by number. Names, stats, and sprites come from the player's caches through `asset_db` only.
   - The Smogon fan sprites and PokéAPI data are downloaded on the player's machine, never committed. Only manifests and credits are (Decision 32).
@@ -699,7 +682,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Minor ways are never drawn.** Buildings come before footpaths, and roads before buildings. **Landmarks come before every other building** (after Item 24). Synthesis never runs on the main thread.
 - **Stack:** Godot 4.3 (PC; Decision 31 = A) + Flutter (companion). No Steam, no monetization.
 
-## 19. Where the contracts live
+## 18. Where the contracts live
 | Need | Doc |
 |---|---|
 | Pillars, stack, setup | `README.md` |
@@ -736,10 +719,10 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 2 PLAN      Building a phase or slice with no approved implementation_plan_*.md? Write one FIRST
             and PAUSE for human review. (Items 24–30 implement approved plans: slice-2 §11–§12,
             famous-places §8, explore-here §1–§4. Items 10, 12, and 29 are spikes that end in plans.)
-3 IMPLEMENT Exactly as written, on a branch. Honor §18 and the standing constraints — above all:
+3 IMPLEMENT Exactly as written, on a branch. Honor §17 and the standing constraints — above all:
             no Nintendo content or fan sprites in the repo; none of the human's places or ROM paths;
             no test touches the real save, identity, or demo profile; Godot only through
-            tools/godot.py (after Item 23); never force-push main.
+            tools/godot.py; never force-push main.
 4 VALIDATE  This item's validation (run the falsifier against the OLD code first), then the full §1
             battery on the Mac with GODOT_BIN, then every workflow on GitHub, Linux and macOS. Report
             each numeric target beside its measured value. Map pictures come only from the harness.
@@ -756,8 +739,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ## Definition of Done (this build)
 - [x] **HUMAN: Decisions 29–36 answered** (2026-10-21 and 2026-10-22).
-- [ ] **Item 23 (F57)** — `tools/godot.py`; every launcher switched; `test_runner --only`; the falsifying refusal passes.
-- [ ] **Item 24 (F54)** — landmarks first; all four DC landmarks `placed=1`, `gold_tiles > 0`.
+- [x] **Item 23 (F57)** — `tools/godot.py`; every launcher switched; `test_runner --only`; the falsifying refusal passes (verified pass 21, M56).
+- [ ] **Item 24 (F54)** — landmarks first, plus §11.1a (the `building:part` rule and 3 × 3 matching); all four DC landmarks `placed=1`, `gold_tiles > 0`.
 - [ ] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended; rows reported.
 - [ ] **Item 25** — the ruin pass; every §11.4 measure reported beside its target; frame targets met with `VSYNC_MS`; five screenshots **shown; paused.**
 - [ ] **Item 12** — Emerald verify markers resolved; `emerald_tile_map.json` with the ruin tiles, compositions, and gaps; contact sheets and preview shown; `implementation_plan_rom_tiles.md`; **paused.**
@@ -774,7 +757,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - a new item in `ongoing_general_errors.md` with a filled `Your selection:`;
 - the human's verdict at a pause;
 - the §1 battery or any CI workflow regressing;
-- a §14 trigger firing;
+- a §13 trigger firing;
 - the human assigning something.
 
 Otherwise report that the queue is complete and stop.

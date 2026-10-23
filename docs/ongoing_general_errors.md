@@ -1122,29 +1122,84 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Added `--only <test_name>` to `game/tests/test_runner.py` and `--only=<name>` filtering in `game/tests/test_main.gd` (running just the named entry in `EXPECTED` plus `real_save_untouched` and the runner-level protected save check; exiting 2 on unknown test names).
   - Added the "Launching Godot" section to `README.md`.
 
+**M56 — Pass 21: Item 23 verified; Item 24's stop confirmed, with both causes found (2026-10-22, HEAD `fced8ac`, plus Item 24 uncommitted on `item-24-landmarks-first`).**
+- **Executed this pass** (the human's Mac):
+  - **on a clean checkout of `main`,** after `tools/godot.py --import`:
+    - the full game runner: **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, and static lint OK, including Item 23's new no-direct-launch rule;
+    - `sync_e2e`: `[OK] Cross-language loopback sync succeeded!`;
+  - the companion: `flutter analyze` clean, and `flutter test` **37 passed, 2 skipped**;
+  - CI on `fced8ac`: green on both the item branch and `main` (`game_tests` 39888089603, IP guard 39888089510, `sync_e2e` 39888089403).
+- **Item 23 (F57): confirmed in source and by running it.**
+  - `python3 -I tools/godot.py --script res://tests/tile_synth2_test.gd` → exit 2, with the refusal message and no Godot window — the falsifier passes.
+  - `test_runner.py --only nonexistent_test` → exit 2, with `test_runner: no test named nonexistent_test (see EXPECTED)`.
+  - `--only grid_test` → exactly `PASS grid_test` plus the real-save check.
+  - All nine launch sites go through the wrapper, and the item branch was deleted after merging, per the new rule.
+- **Item 24 (in progress, uncommitted): it matches slice-2 plan §11.1, and the stop was correct.** Re-running its `tools/check_landmarks.py` on the DC store reproduces the implementor's numbers exactly:
+  - Library of Congress `placed=1 gold_tiles=308`;
+  - Air and Space `288`;
+  - Washington Monument `20`;
+  - Lincoln Memorial `placed=0 gold_tiles=0`.
+
+  Its `tile_synth2_test` passes, including (p).
+- **The Lincoln Memorial's two causes, confirmed independently:**
+  - OpenStreetMap's own record of way 398769543 shows `building=yes` + `building:part=no`;
+  - `region_converter.gd:1768-1769` drops any way with a `building:part` key;
+  - the DC store holds no building named "Lincoln Memorial" — only a park polygon and four outbuildings;
+  - the memorial's footprint is anchored one cell south of the cell holding its door.
+
+  See F54 for the fix.
+- **New:** F58 (a fresh checkout fails the battery until it's imported).
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23).*
-- **F54 (found 2026-10-21, pass 19) — enterable landmarks don't reliably show up.** Synthesizing DC's four landmark cells directly (read-only, the DC place store):
+- **F54 (found 2026-10-21, pass 19; updated 2026-10-22 on Item 24) — enterable landmarks don't reliably show up; Lincoln Memorial missed by `building:part=no` and 2-store-unit distance.** Synthesizing DC's four landmark cells directly (read-only, the DC place store):
   - **the Library of Congress:** 2 candidate buildings, **0 placed** — no building at all, only its sign;
   - **the Lincoln Memorial:** 2 buildings placed, but the door point falls outside both, so **no gold roof**;
   - the Air and Space Museum (240 gold roof tiles) and the Washington Monument (10) work.
 
   Item 21's `shot_z2_landmark.png` shows only trees and paths — M52's "showing gold roof, gold-framed walls/doors, and sign" doesn't match the image.
   - **Causes:** landmarks go through the same rejection rules as ordinary buildings (`tile_synth2.gd`, placement), and the door must lie *exactly* inside the template (`:888-892`).
-  - **Agent guide Item 24.**
+  - **Agent guide Item 24 — implemented `implementation_plan_world_generation_slice2.md` §11.1 as written and hit a stop-and-report acceptance miss on `dc:lincoln-memorial`:**
+    - With §11.1 implemented verbatim (`tile_synth2_test` `(p)` passing, including falsifying boxed-in landmark, door 2 tiles outside, and shrink-to-fit), `tools/check_landmarks.py --store "user://demo_dc/map_data/city:washington-dc.db" --place city:washington-dc` prints:
+      - `LANDMARK dc:library-of-congress placed=1 gold_tiles=308 sign=1` (fixed: was `placed=0 gold_tiles=0`)
+      - `LANDMARK dc:air-and-space placed=1 gold_tiles=288 sign=1`
+      - `LANDMARK dc:washington-monument placed=1 gold_tiles=20 sign=1`
+      - `LANDMARK dc:lincoln-memorial placed=0 gold_tiles=0 sign=1` (**misses §11.1 step 5 target `placed=1` and `gold_tiles > 0`**)
+    - **Why `dc:lincoln-memorial` still prints `placed=0 gold_tiles=0`:**
+      1. **The actual Lincoln Memorial building in the pinned DC PBF (`district-of-columbia-261001.osm.pbf`, OSM way `398769543`, `name="Lincoln Memorial"`, bbox `38.8890125..38.8895317, -77.0503866..-77.0499568`) carries BOTH `building=yes` AND `building:part=no`.** In OSM, `building:part=no` means "this way is the whole building, not a building part." However, `game/world/region_import/region_converter.gd:1768` (`if tags.has("building:part"): return {}`, implementing slice-2 plan §2.1 "`building:part` is ignored") drops any way that has the `building:part` key at all — even when its value is `"no"`. Consequently, the actual Lincoln Memorial building polygon (whose bbox contains `dc:lincoln-memorial`'s door `(38.8893, -77.0502)` at store units `(5.69, 2.20)` in cell `(-33505, 18382)`, with centroid in cell `(-33505, 18381)`) was never written to `features_poly` in the DC store.
+      2. **The two buildings that *are* in cell `(-33505, 18382)` are outbuildings:** a `building=cabin` at store units `(8.81..12.25, 0.47..3.59)` (`3.18` store units = `50.8` WM-m from the door point) and `Gift & Cafe` at `(10.94..12.12, 15.03..16.19)` (`14.07` store units from the door). Under §11.1 step 1's exact threshold ("within **2 store units** (32 WM-m, 4 tiles) of the door point"), `3.18 > 2.0`, so neither outbuilding is matched.
+    - **Options for the maintainer:**
+      - **Option A — Fix `region_converter.gd` (`classify_polygon`) so `building:part=no` is not dropped** (`if tags.get("building:part", "no") != "no": return {}`), reconvert the DC store from the pinned PBF, and in `tile_synth2.gd` §11.1 step 1 allow a landmark footprint to be claimed from the 3 × 3 neighbourhood (or by `id` / door containment across cell boundaries) when the building's centroid lies in the adjacent cell (`(-33505, 18381)` for Lincoln Memorial while the door `(38.8893, -77.0502)` is `2.20` store units north of the boundary in `(-33505, 18382)`), OR move `dc:lincoln-memorial`'s door 35 m south to `38.8892, -77.0502` (inside cell `(-33505, 18381)` where way `398769543`'s centroid sits).
+      - **Option B — Keep the existing DC store and widen §11.1 step 1's fallback radius from `2` store units (32 WM-m) to `4` store units (64 WM-m)** so the nearest building in cell `(-33505, 18382)` (at `3.18` store units) is claimed as the Lincoln Memorial's landmark building without reconverting the store.
+      - **Option C — Keep §11.1 and `region_converter.gd` unchanged, and move `dc:lincoln-memorial`'s door in `game/config/famous_places.json` to the east steps / entrance (`lat: 38.8893, lon: -77.0497`)** which lies within 2 store units of the placed building in cell `(-33505, 18382)`.
+  - **Pass 21 — verified, and decided without needing the human (M56):** the miss is real, and both causes are gaps in the plan, not mistakes in the code.
+    - **B and C would draw the wrong building.** The only buildings within reach of the door are a small cabin and a gift shop: widening the radius (B) claims the cabin, and the east-steps door (C) lands inside the cabin's outline. Either way, a cabin would be gilded as "the Lincoln Memorial".
+    - **A's converter fix is right.** `building:part=no` literally means "this is the whole building". Its door-move variant is a one-off patch for one landmark, so it isn't taken.
+    - **The cross-cell part generalises:** any landmark whose building straddles a cell edge has the same problem, and doors near a 256 m cell edge are common.
+    - **The fix, now written into `implementation_plan_world_generation_slice2.md` §11.1a:**
+      1. the converter keeps `building=*` ways unless `building:part` has a value other than `no`;
+      2. every cell matches landmarks and footprints across its whole 3 × 3 neighbourhood, and places only the footprints anchored in itself;
+      3. `stats.landmark_ids_placed`, with `check_landmarks.py` checking all nine cells;
+      4. DC re-converted;
+      5. falsifying tests for the tag rule and the cross-cell case.
+    - **Agent guide Item 24 continues from the uncommitted work** on `item-24-landmarks-first`.
+- **F58 (minor, found 2026-10-22, pass 21) — a fresh checkout fails the battery until Godot imports the project.**
+  - In a new clone or git worktree, `game/.godot/` (ignored by git) doesn't exist yet. Scripts that use `class_name` then fail to parse, so `test_runner.py` prints `[TEST RUNNER FAIL] Godot exited with code 0` or `1`, and `sync_e2e` times out on `Parse error`.
+  - CI avoids it by running `python3 -I tools/godot.py --memguard-step godot_import --import` first.
+  - **Fixed in docs this pass:** README → *Launching Godot*, and the agent guide's standing constraint 7.
+  - **Not a code defect,** but the runner could do the import itself when `game/.godot/` is missing. That's deferred, with a trigger (guide §13).
 - **F55 — DC's "neighbourhoods" are its 8 political wards.** The neighbourhood rule takes `admin_level` 9 relations first (`implementation_plan_famous_places.md` §3.1a). In DC those are Wards 1–8, so the city has 8 huge "neighbourhoods" rather than its ~130 real ones (Dupont Circle, Georgetown, …), and 2 wards unlock it. **Agent guide Item 26** (the places pack).
 - **F56 (minor) — frame-time reporting.**
   - Every windowed run reports `FRAME_P95_MS: 16.67` — the 60 Hz vsync interval — and M46/M47 call that a PASS against "≤ 16.6 ms". That's a spec defect: with vsync on, 16.67 *is* a perfect frame.
   - Item 21's whole-city overview did miss: `FRAME_P95_MS 18.06`, `LOAD_MAX_FRAME_MS 33.33` (targets 16.6 / 33).
   - **The fix:** targets become "≤ 16.7 ms (no dropped vsync frames)" and "≤ 33.4 ms", and the overview gets an LOD for many cells. Agent guide Item 25.
-- **F57 — RESOLVED (2026-10-22, Item 23, M55).** Every Godot launch site now goes through `tools/godot.py`, which enforces `--headless`, an absolute `--path <repo>/game`, and refuses `--script` files that do not extend `SceneTree` or `MainLoop`; single tests run via `game/tests/test_runner.py --only <name>`.
-- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §14).
+- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §13).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
   - **ROM import half:** Open, scheduled for the ROM spike (agent guide Item 10).
 - **F7 — retired by Decision 29 (2026-10-21).** The 300 m home grid on the phone vs one home cell on the PC no longer matters: no home location reaches the PC at all, only the starter city's id. `fuzz.dart` is deleted in Item 27.
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §14 (Deferred).**
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §13 (Deferred).**
 - **Pending physical-device gates (human action required):**
   - ~~D3 device soak~~ — retired with background capture (Decision 29).
   - **Explore Here on a real phone (Phase 0 exit, after Item 27):** tap Explore Here inside a famous place and outside every one; check the messages, then Report to PC (agent guide §2).

@@ -75,7 +75,7 @@ CREATE TABLE cell_flags (
 
 | kind | subkind | OSM tags |
 |---|---|---|
-| `building` | the `building` value | `building=*` except `building=no`; `building:part` is ignored |
+| `building` | the `building` value | `building=*` except `building=no`; skipped when it also has `building:part` with any value but `no` (§11.1a). Ways tagged only `building:part=*` are never stored |
 | `water` | — | `natural=water`, `water=*`, `waterway=riverbank`, `landuse=reservoir`, `landuse=basin` |
 | `wetland` | — | `natural=wetland` |
 | `sand` | — | `natural=beach`, `natural=sand` |
@@ -614,6 +614,47 @@ Famous interiors (`design_interiors_and_quests.md` §4) must be recognisable on 
    - It prints one line per interior of the place: `LANDMARK <interior id> placed=<0|1> gold_tiles=<n> sign=<0|1>`. Interior ids are public slugs.
    - **Acceptance on DC:** the Library of Congress, the Air and Space Museum, the Washington Monument, and the Lincoln Memorial each print `placed=1` and `gold_tiles > 0`.
    - **Baseline** (pass 19, read-only): the Library of Congress `placed=0`; the Lincoln Memorial `gold_tiles=0`.
+
+### 11.1a Pass-21 amendments — a building the converter dropped, and a door across a cell edge (F54 follow-up, Item 24)
+Item 24 built §11.1 exactly. Three of DC's four landmarks then passed, but the Lincoln Memorial still printed `placed=0`. Pass 21 confirmed two causes, both gaps in this plan rather than in the code.
+
+**1. The converter drops real buildings tagged `building:part=no`** — amends §2.1.
+- The Lincoln Memorial's outline in OpenStreetMap (way 398769543) is tagged `building=yes` *and* `building:part=no` — "this is the whole building, not a part".
+- `region_converter.gd:1768-1769` drops any way that has the `building:part` key, whatever its value, so the memorial never reached the store. The cells around it hold only a park polygon and four small outbuildings.
+- **The rule now:** a way with `building=*` (not `no`) is a building **unless** it also carries `building:part` with a value other than `no`. A way with only `building:part=*` is never stored, as before.
+
+**2. A landmark whose door and building fall in different cells is never matched** — amends §11.1 step 1.
+- The memorial's footprint straddles a cell edge. Its bounding-box centre, and so its anchor cell (§2.3), is one cell south of the cell that holds its door point.
+- §11.1 looked only at landmarks whose door lies in the centre cell, and only at buildings anchored there, so neither cell could match the pair.
+- **The rule now — every cell sees the whole 3 × 3 neighbourhood:**
+  - **Landmarks considered:** those whose door lies anywhere in the nine cells — `area[offset]["landmarks"]` for every offset, which the map view already passes (§10.8 step 1).
+  - **Footprints considered:** buildings anchored in **any** of the nine cells. Those from offset `(dx, dy)` are shifted by `(16·dx, 16·dy)` store units into the centre cell's frame, and they're tested by §11.1 step 1's rules: door inside the outer ring, else the nearest within 2 store units.
+  - **Ties** go to the larger A, then the lower `(dy, dx)` offset.
+  - **Then each cell acts only on what it owns:**
+    - if the chosen footprint is anchored in the **centre** cell, place and gild it here (§11.1 steps 2–3), with its sign beside its door;
+    - if it's anchored in **another** cell, do nothing here — that cell places it;
+    - if **no** footprint is found and the door lies in the centre cell, place the sign only, as before.
+
+  Every cell evaluates the same choice from the same data, so each landmark is drawn exactly once.
+- **The 4-per-cell cap** counts landmarks *placed* in the cell, taken in offset order (`dy`, then `dx`, from −1 to 1), then in list order.
+
+**3. Report which landmarks were placed.**
+- `stats` gains `"landmark_ids_placed"`, the interior ids placed in this cell.
+- `tools/check_landmarks.py` synthesizes the door's cell **and its 8 neighbours**. It prints `placed=1` if any of them placed the landmark, and sums `gold_tiles` over all nine.
+
+**Rejected:**
+- **A wider search radius** (the implementor's option B) would gild a nearby cabin as "the Lincoln Memorial".
+- **Moving the door** (option C) points at the same cabin.
+- Both would draw the wrong building.
+
+**Tests:**
+- **`region_import_test` — falsifying:** a fixture way tagged `building=yes` + `building:part=no` is stored; one tagged only `building:part=yes` is not; one with `building=yes` + `building:part=yes` is not.
+- **`tile_synth2_test` (p.4) — falsifying:** a fixture landmark whose footprint straddles a cell edge, door in the north cell and anchor in the south cell.
+  - The south cell gilds it and gets its sign.
+  - The north cell places **no** sign-only fallback.
+  - Both cells report it exactly once between them, in `landmark_ids_placed`.
+- **Re-convert DC** (`user://measure_dc` and `user://demo_dc`) from the pinned snapshot. There's no schema bump here; Item 26's bump to `'5'` re-converts every store anyway.
+- **Acceptance:** all four DC interiors print `placed=1` and `gold_tiles > 0`. Report `measure_synth`'s numbers beside pass 18's — a few more buildings will now be stored.
 
 ### 11.2 The ruin pass (Decision 30) — Item 25
 A new step **5d** runs after landmarks and fallback houses and before door paths. Step **6.5** runs after parks and cemeteries and before scatter. Both are pure functions of the cell, its 3 × 3 neighbourhood, the place's Waypost, and `MAP_SEED`, so every player sees the same ruins.
