@@ -77,11 +77,7 @@ def main():
 
     game_dir = os.path.join(repo_root, "game")
     companion_dir = os.path.join(repo_root, "companion")
-
-    godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-    if not godot_bin:
-        print("[FAIL] Godot executable not found in PATH or GODOT_BIN", file=sys.stderr)
-        sys.exit(1)
+    godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
     flutter_bin = os.environ.get("FLUTTER_BIN") or shutil.which("flutter")
     if not flutter_bin:
@@ -93,7 +89,15 @@ def main():
     print(f"Port: {args.port}")
 
     # 3. Start Godot demo import server scene
-    godot_cmd = [godot_bin, "--headless", "--path", "game", "res://scenes/demo_import_server.tscn", "--"]
+    godot_cmd = [
+        sys.executable,
+        "-I",
+        godot_wrapper,
+        "--memguard-step",
+        "demo_import",
+        "res://scenes/demo_import_server.tscn",
+        "--",
+    ]
     if args.demo_dir:
         godot_cmd.append(f"--demo-dir={args.demo_dir}")
     else:

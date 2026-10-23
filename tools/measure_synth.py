@@ -43,16 +43,13 @@ def main():
         res = subprocess.run(cmd)
         sys.exit(res.returncode)
 
-    godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-    if not godot_bin:
-        print("[FAIL] Godot executable not found in PATH or GODOT_BIN", file=sys.stderr)
-        sys.exit(1)
-
+    godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
     godot_cmd = [
-        godot_bin,
-        "--headless",
-        "--path",
-        "game",
+        sys.executable,
+        "-I",
+        godot_wrapper,
+        "--memguard-step",
+        "measure_synth",
         "res://scenes/measure_synth.tscn",
         "--",
         f"--store={args.store}"

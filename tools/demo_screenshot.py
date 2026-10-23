@@ -103,10 +103,7 @@ def main():
         res = subprocess.run(cmd)
         sys.exit(res.returncode)
 
-    godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-    if not godot_bin:
-        print("[FAIL] Godot executable not found in PATH or GODOT_BIN", file=sys.stderr)
-        sys.exit(1)
+    godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
     zooms = args.zooms if args.zooms else ["1"]
 
@@ -128,9 +125,12 @@ def main():
                 focus_tag = "_mv"
             out_png = os.path.join(real_out, f"shot_z{z}{focus_tag}{suffix}.png")
         godot_cmd = [
-            godot_bin,
-            "--path",
-            "game",
+            sys.executable,
+            "-I",
+            godot_wrapper,
+            "--memguard-step",
+            "demo_screenshot",
+            "--windowed",
             "--resolution",
             "1280x720",
             "--",

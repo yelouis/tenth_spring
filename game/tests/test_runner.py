@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import argparse
 import os
+import re
 import sys
 import shutil
 import subprocess
@@ -110,8 +112,90 @@ def snapshot_protected_files(user_dir):
 	return snapshot
 
 def main():
+	parser = argparse.ArgumentParser(description="Run Tenth Spring test suite and static checks.")
+	parser.add_argument(
+		"--only",
+		default="",
+		help="Run a single named test from EXPECTED plus the real-save check."
+	)
+	args = parser.parse_args()
+
 	game_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 	repo_root = os.path.dirname(game_dir)
+	godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
+
+	EXPECTED = [
+		"corridor_reveal_radius_test",
+		"db_legacy_import_test",
+		"db_migration_test",
+		"db_test",
+		"frame_codec_test",
+		"grid_test",
+		"idempotent_sync_test",
+		"map_view_test",
+		"pairing_codes_test",
+		"pc_identity_test",
+		"profile_paths_test",
+		"qr_code_test",
+		"real_save_untouched",
+		"region_import_pause_test",
+		"region_import_test",
+		"region_select_test",
+		"reveal_engine_test",
+		"screenshot_args_test",
+		"sync_ingest_isolation_test",
+		"sync_session_test",
+		"tile_synth2_test",
+		"town_map_test"
+	]
+
+	if args.only:
+		if args.only not in EXPECTED or args.only == "real_save_untouched":
+			print(f"test_runner: no test named {args.only} (see EXPECTED)", file=sys.stderr)
+			sys.exit(2)
+		user_dir = get_godot_user_dir()
+		pre_snap = snapshot_protected_files(user_dir)
+		only_cmd = [
+			sys.executable, "-I", godot_wrapper,
+			"--memguard-step", "godot_tests",
+			"res://tests/test_main.tscn",
+			"--", f"--only={args.only}"
+		]
+		only_res = subprocess.run(
+			only_cmd,
+			cwd=repo_root,
+			capture_output=True,
+			text=True,
+			timeout=300
+		)
+		if only_res.returncode in (75, 76):
+			print(only_res.stderr or only_res.stdout)
+			sys.exit(only_res.returncode)
+		only_out = (only_res.stdout or "") + (only_res.stderr or "")
+		print(only_out)
+		if only_res.returncode != 0 or "SCRIPT ERROR" in only_out:
+			print(f"[TEST RUNNER FAIL] Godot exited with code {only_res.returncode}")
+			sys.exit(1)
+		lines = only_out.splitlines()
+		if any(line.strip().startswith("FAIL ") for line in lines):
+			print("[TEST RUNNER FAIL] Test failure detected in output")
+			sys.exit(1)
+		passed_tests = [line.strip().split()[1] for line in lines if line.strip().startswith("PASS ")]
+		expected_only = sorted([args.only, "real_save_untouched"])
+		if sorted(passed_tests) != expected_only:
+			print(f"[TEST RUNNER FAIL] Passed tests {passed_tests} do not match expected {expected_only}")
+			sys.exit(1)
+		test_dir = os.path.join(user_dir, "test")
+		if not os.path.isdir(test_dir):
+			print(f"\n[REAL SAVE CHECK FAIL] computed Godot user dir is wrong: {user_dir}")
+			sys.exit(1)
+		post_snap = snapshot_protected_files(user_dir)
+		for rel_file in PROTECTED_SAVE_FILES:
+			if pre_snap.get(rel_file) != post_snap.get(rel_file):
+				print(f"\n[REAL SAVE CHECK FAIL] {rel_file} changed during the test run")
+				sys.exit(1)
+		print(f"[REAL SAVE CHECK OK] Godot user dir verified: {user_dir} (test/ exists, protected files untouched)")
+		sys.exit(0)
 
 	# Runner hook check: unless in CI, verify core.hooksPath is .githooks
 	if os.environ.get("CI") != "true":
@@ -241,59 +325,33 @@ def main():
 	check_vendored_checksums(game_dir)
 	print("[VENDORED EXTENSION OK] All vendored files match VENDORED.sha256 exactly.\n")
 
-	EXPECTED = [
-		"corridor_reveal_radius_test",
-		"db_legacy_import_test",
-		"db_migration_test",
-		"db_test",
-		"frame_codec_test",
-		"grid_test",
-		"idempotent_sync_test",
-		"map_view_test",
-		"pairing_codes_test",
-		"pc_identity_test",
-		"profile_paths_test",
-		"qr_code_test",
-		"real_save_untouched",
-		"region_import_pause_test",
-		"region_import_test",
-		"region_select_test",
-		"reveal_engine_test",
-		"screenshot_args_test",
-		"sync_ingest_isolation_test",
-		"sync_session_test",
-		"tile_synth2_test",
-		"town_map_test"
-	]
+	# Check for Godot executable via tools/godot.py to run runtime GDScript tests
+	print(f"=== Game Runtime Test Suite (Headless Godot) ===")
 
-	# Check for Godot executable to run runtime GDScript tests
-	godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-	if not godot_bin:
+	# F29 Runner-level snapshot: snapshot protected save files before first Godot invocation
+	user_dir = get_godot_user_dir()
+	pre_snap = snapshot_protected_files(user_dir)
+
+	# 1. Harness self-test (TENTH_SPRING_HARNESS_SELFTEST=1 must exit 1 and report FAIL harness_selftest)
+	print("Running harness self-test...")
+	selftest_env = os.environ.copy()
+	selftest_env["TENTH_SPRING_HARNESS_SELFTEST"] = "1"
+	selftest_guarded = [
+		sys.executable, "-I", godot_wrapper,
+		"--memguard-step", "godot_selftest",
+		"res://tests/test_main.tscn"
+	]
+	selftest_res = subprocess.run(
+		selftest_guarded,
+		cwd=repo_root,
+		capture_output=True,
+		text=True,
+		env=selftest_env,
+		timeout=300
+	)
+	if selftest_res.returncode == 2 and "your Godot 4.3 binary" in ((selftest_res.stdout or "") + (selftest_res.stderr or "")):
 		print("game runtime tests SKIPPED — Godot not installed; CI runs them\n")
 	else:
-		print(f"=== Game Runtime Test Suite (Headless Godot) ===")
-		print(f"Using Godot binary: {godot_bin}")
-
-		# F29 Runner-level snapshot: snapshot protected save files before first Godot invocation
-		user_dir = get_godot_user_dir()
-		pre_snap = snapshot_protected_files(user_dir)
-
-		memguard_script = os.path.join(repo_root, "tools", "memguard.py")
-
-		# 1. Harness self-test (TENTH_SPRING_HARNESS_SELFTEST=1 must exit 1 and report FAIL harness_selftest)
-		print("Running harness self-test...")
-		selftest_env = os.environ.copy()
-		selftest_env["TENTH_SPRING_HARNESS_SELFTEST"] = "1"
-		selftest_cmd = [godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"]
-		selftest_guarded = [sys.executable, "-I", memguard_script, "run", "godot_selftest", "--"] + selftest_cmd
-		selftest_res = subprocess.run(
-			selftest_guarded,
-			cwd=repo_root,
-			capture_output=True,
-			text=True,
-			env=selftest_env,
-			timeout=300
-		)
 		if selftest_res.returncode in (75, 76):
 			print(selftest_res.stderr or selftest_res.stdout)
 			sys.exit(selftest_res.returncode)
@@ -305,8 +363,11 @@ def main():
 
 		# 2. Main test suite
 		print("Running main game test suite...")
-		main_cmd = [godot_bin, "--headless", "--path", "game", "res://tests/test_main.tscn"]
-		main_guarded = [sys.executable, "-I", memguard_script, "run", "godot_tests", "--"] + main_cmd
+		main_guarded = [
+			sys.executable, "-I", godot_wrapper,
+			"--memguard-step", "godot_tests",
+			"res://tests/test_main.tscn"
+		]
 		main_res = subprocess.run(
 			main_guarded,
 			cwd=repo_root,
@@ -437,6 +498,33 @@ def main():
 				print(f"\n[LINT FAIL] {rel_path}: HTTP class '{token}' forbidden outside {map_fetcher_rel} (Item 10)")
 				total_errors += 1
 				break
+
+	# Item 23 (F57) Static Rule: Fail if any file in tools/ or game/ other than tools/godot.py
+	# passes ("--path", "game") or reads GODOT_BIN directly.
+	path_game_re = re.compile(r'["\']--path["\']\s*,\s*["\']game["\']')
+	forbidden_bin_var = "GODOT_" + "BIN"
+	godot_wrapper_real = os.path.realpath(godot_wrapper)
+	self_real = os.path.realpath(__file__)
+	for py_root in (os.path.join(repo_root, "tools"), game_dir):
+		for root, _, files in os.walk(py_root):
+			for f in sorted(files):
+				if not f.endswith(".py"):
+					continue
+				py_full = os.path.join(root, f)
+				if os.path.realpath(py_full) == godot_wrapper_real:
+					continue
+				rel_py = os.path.relpath(py_full, repo_root)
+				with open(py_full, "r", encoding="utf-8") as pf:
+					py_text = pf.read()
+				if os.path.realpath(py_full) != self_real and path_game_re.search(py_text):
+					print(f"\n[LINT FAIL] {rel_py}: direct --path game launch forbidden outside tools/godot.py (F57)")
+					total_errors += 1
+				for line_no, py_line in enumerate(py_text.splitlines(), 1):
+					code_part = py_line.split("#", 1)[0]
+					if forbidden_bin_var in code_part:
+						print(f"\n[LINT FAIL] {rel_py}:{line_no}: direct {forbidden_bin_var} reference forbidden outside tools/godot.py (F57)")
+						total_errors += 1
+						break
 
 	if total_errors > 0:
 		print(f"\nStatic lint failed with {total_errors} error(s).")

@@ -121,7 +121,7 @@
 
 | # | Item | Why this position |
 |---|---|---|
-| 23 | **Launch wrapper + `test_runner --only` — F57** | Every later item launches Godot. This stops the crashes first. |
+| 23 | **Launch wrapper + `test_runner --only` — F57** ✅ **DONE** (`tools/godot.py`, `--only`, static lint) | Every later item launches Godot. This stops the crashes first. |
 | 24 | **Landmarks first — F54** (slice-2 plan §11.1) | Synthesis change. The ruin pass (25) must never hide a landmark, and DC's proof must show all four. |
 | 24a | **The place list, revised:** the pass-19 swaps, the 30 Gen 6–8 places, the Glow's six interiors, and `requires` (`implementation_plan_famous_places.md` §8.1) | Data only. Items 25 and 30 render interiors from this list. The human reviews the new rows at Item 25's pause. |
 | 25 | **The ruin pass + frame targets + overview chunks + DC proof v3 → PAUSE** (slice-2 plan §11.2–11.7; F56) | Needs 24. Adds the tile vocabulary that Item 12's mapping table must cover. |

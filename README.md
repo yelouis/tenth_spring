@@ -79,6 +79,12 @@ Heavy developer commands (Godot runs, Flutter test suites, spikes, map converter
 python3 -I tools/memguard.py run <step> -- <command...>
 ```
 
+### Launching Godot
+Always launch Godot through `python3 -I tools/godot.py` (which enforces `--headless`, an absolute `--path <repo>/game`, and refuses `--script` files that do not extend `SceneTree` or `MainLoop`). Never run a `*_test.gd` file directly with `--script`; to run a single test, use:
+```bash
+python3 game/tests/test_runner.py --only <test_name>
+```
+
 ### Run the PC game
 Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. The game opens at the home hub; **Distort** opens the Town Map of the places you can reach, and **Pair Companion** links your phone. The map is built from Pokémon-style pieces over your real streets (slice 2), drawn with original placeholder tiles; the real Pokémon tiles arrive once you import your own Emerald ROM.
 

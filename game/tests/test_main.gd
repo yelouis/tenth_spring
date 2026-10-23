@@ -22,10 +22,22 @@ func _ready() -> void:
 	var all_passed = true
 
 	# 2. Discover tests in res://tests/
+	var only_test := ""
+	for a in OS.get_cmdline_args():
+		var sa := String(a)
+		if sa.begins_with("--only="):
+			only_test = sa.substr("--only=".length()).strip_edges()
+	for a in OS.get_cmdline_user_args():
+		var sa := String(a)
+		if sa.begins_with("--only="):
+			only_test = sa.substr("--only=".length()).strip_edges()
+
 	var test_files: Array[String] = []
 	var raw_files = DirAccess.get_files_at("res://tests/")
 	for f in raw_files:
 		if f.ends_with("_test.gd"):
+			if only_test != "" and f != (only_test + ".gd"):
+				continue
 			test_files.append(f)
 	test_files.sort()
 

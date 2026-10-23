@@ -54,19 +54,14 @@ def parse_args():
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
     args = parse_args()
-
-    godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-    if not godot_bin:
-        print("[FAIL] Godot executable not found in PATH or GODOT_BIN", file=sys.stderr)
-        sys.exit(1)
 
     if args.print_region:
         godot_cmd = [
-            godot_bin,
-            "--headless",
-            "--path",
-            "game",
+            sys.executable,
+            "-I",
+            godot_wrapper,
             "res://scenes/map_convert.tscn",
             "--",
             f"--print-region={args.print_region}"
@@ -104,10 +99,11 @@ def main():
         sys.exit(res.returncode)
 
     godot_cmd = [
-        godot_bin,
-        "--headless",
-        "--path",
-        "game",
+        sys.executable,
+        "-I",
+        godot_wrapper,
+        "--memguard-step",
+        step,
         "res://scenes/map_convert.tscn",
         "--",
         f"--pbf={pbf_path}",

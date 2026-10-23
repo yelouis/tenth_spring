@@ -20,11 +20,7 @@ def main():
 
     game_dir = os.path.join(repo_root, "game")
     companion_dir = os.path.join(repo_root, "companion")
-
-    godot_bin = os.environ.get("GODOT_BIN") or shutil.which("godot") or shutil.which("godot4")
-    if not godot_bin:
-        print("[FAIL] Godot executable not found in PATH or GODOT_BIN")
-        sys.exit(1)
+    godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
     flutter_bin = os.environ.get("FLUTTER_BIN") or shutil.which("flutter")
     if not flutter_bin:
@@ -32,11 +28,18 @@ def main():
         sys.exit(1)
 
     print(f"=== Cross-Language Sync E2E Test ===")
-    print(f"Using Godot: {godot_bin}")
+    print(f"Using Godot wrapper: {godot_wrapper}")
     print(f"Using Flutter: {flutter_bin}")
 
     # 1. Launch Godot E2E server scene
-    godot_cmd = [godot_bin, "--headless", "--path", "game", "res://tests/sync_e2e_server.tscn"]
+    godot_cmd = [
+        sys.executable,
+        "-I",
+        godot_wrapper,
+        "--memguard-step",
+        "sync_e2e",
+        "res://tests/sync_e2e_server.tscn",
+    ]
     print(f"Step 1: Starting Godot server: {' '.join(godot_cmd)}")
 
     godot_proc = subprocess.Popen(

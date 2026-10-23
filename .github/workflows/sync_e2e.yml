@@ -30,9 +30,10 @@ jobs:
           grep " Godot_v4.3-stable_linux.x86_64.zip$" SHA512-SUMS.txt | sha512sum -c -
           unzip -q Godot_v4.3-stable_linux.x86_64.zip
           sudo mv Godot_v4.3-stable_linux.x86_64 /usr/local/bin/godot
+          echo "GODOT_BIN=/usr/local/bin/godot" >> $GITHUB_ENV
 
       - name: Import Godot project assets
-        run: python3 -I tools/memguard.py run godot_import -- godot --headless --path game --import
+        run: python3 -I tools/godot.py --memguard-step godot_import --import
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
