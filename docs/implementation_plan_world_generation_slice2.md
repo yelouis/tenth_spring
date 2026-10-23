@@ -595,7 +595,7 @@ Famous interiors (`design_interiors_and_quests.md` §4) must be recognisable on 
 
 §11.1 fixes F54. §11.2–11.4 are the ruin pass. §11.5 fixes F56. §11.6–11.7 are the proof and the tests.
 
-### 11.1 Landmarks first (F54) — amends §4.2 and §10.8 — Item 24
+### 11.1 Landmarks first (F54) — amends §4.2 and §10.8 — Item 24 (built)
 1. **Find each landmark's footprint before anything is placed.** For each landmark in the centre cell (at most 4, in `famous_places.json` order), take:
    - the centre-anchored building candidate (§4.2, A ≥ 60) whose outer ring contains the door point;
    - else the candidate whose outer ring passes within **2 store units** (32 WM-m, 4 tiles) of the door point — nearest first, ties to the larger A, using point-to-segment distance on the unclipped footprint;
@@ -615,7 +615,7 @@ Famous interiors (`design_interiors_and_quests.md` §4) must be recognisable on 
    - **Acceptance on DC:** the Library of Congress, the Air and Space Museum, the Washington Monument, and the Lincoln Memorial each print `placed=1` and `gold_tiles > 0`.
    - **Baseline** (pass 19, read-only): the Library of Congress `placed=0`; the Lincoln Memorial `gold_tiles=0`.
 
-### 11.1a Pass-21 amendments — a building the converter dropped, and a door across a cell edge (F54 follow-up, Item 24)
+### 11.1a Pass-21 amendments — a building the converter dropped, and a door across a cell edge (F54 follow-up, Item 24 — built)
 Item 24 built §11.1 exactly. Three of DC's four landmarks then passed, but the Lincoln Memorial still printed `placed=0`. Pass 21 confirmed two causes, both gaps in this plan rather than in the code.
 
 **1. The converter drops real buildings tagged `building:part=no`** — amends §2.1.

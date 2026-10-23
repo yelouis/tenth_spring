@@ -9,7 +9,7 @@ const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const Grid := preload("res://world/grid.gd")
 const MapConstants := preload("res://world/map_constants.gd")
 
-const GOLDEN_CANONICAL_HASH: String = "155f5365149c70d4b4a550b445f9dc5b6c883ffc1939fe7f8dbf476308f14955"
+const GOLDEN_CANONICAL_HASH: String = "fb7d26d6189721ed0b0652e9a69a0a92d0b4e105e904d5a303d8b34544bb368e"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const FIXTURE_CONFIG: String = "res://tests/fixtures/famous_places_fixture.json"
 const TEST_DB_PATH: String = "user://test/map_data/region_import_test.db"
@@ -41,13 +41,27 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# Verify counts: 14 poly, 14 line, 4 place_nodes
+	# Verify counts: 15 poly (incl. Temple Whole with building=yes + building:part=no), 14 line, 4 place_nodes
+	var bp_whole_rows := store._rows("SELECT count(*) as c FROM features_poly WHERE name = 'Temple Whole';")
+	if int(bp_whole_rows[0]["c"]) != 1:
+		push_error("[falsifier] Expected 'Temple Whole' (building=yes + building:part=no) to be stored, got %d" % int(bp_whole_rows[0]["c"]))
+		store.close()
+		_cleanup()
+		return false
+
+	var bp_part_rows := store._rows("SELECT count(*) as c FROM features_poly WHERE name IN ('Temple Part Only', 'Temple Both Part');")
+	if int(bp_part_rows[0]["c"]) != 0:
+		push_error("Expected building:part=yes ways to be excluded, got %d" % int(bp_part_rows[0]["c"]))
+		store.close()
+		_cleanup()
+		return false
+
 	var poly_count: int = int(store._rows("SELECT count(*) as c FROM features_poly;")[0]["c"])
 	var line_count: int = int(store._rows("SELECT count(*) as c FROM features_line;")[0]["c"])
 	var node_count: int = int(store._rows("SELECT count(*) as c FROM place_nodes;")[0]["c"])
 
-	if poly_count != 14:
-		push_error("Expected 14 features_poly, got %d" % poly_count)
+	if poly_count != 15:
+		push_error("Expected 15 features_poly, got %d" % poly_count)
 		store.close()
 		_cleanup()
 		return false

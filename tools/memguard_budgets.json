@@ -97,5 +97,12 @@
     "date": "2026-10-21",
     "machine": "darwin arm64",
     "status": "measured"
+  },
+  "check_landmarks": {
+    "budget_gib": 0.5,
+    "peak_gib": 0.195,
+    "date": "2026-10-22",
+    "machine": "darwin arm64",
+    "status": "measured"
   }
 }

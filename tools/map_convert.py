@@ -78,8 +78,13 @@ def main():
         print(f"[FAIL] PBF file not found: {pbf_path}", file=sys.stderr)
         sys.exit(1)
 
-    # Determine memguard step: map_convert_clip if clipping or converting place, else map_convert
-    step = "map_convert_clip" if (args.clip_to_save or args.place) else "map_convert"
+    # Determine memguard step: map_convert_place for --place, map_convert_clip for --clip-to-save, else map_convert
+    if args.place:
+        step = "map_convert_place"
+    elif args.clip_to_save:
+        step = "map_convert_clip"
+    else:
+        step = "map_convert"
 
     # Memory Guard check: ensure execution runs under memguard
     if not os.environ.get("TENTH_SPRING_MEMGUARD_HELD"):

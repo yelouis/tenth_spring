@@ -48,9 +48,13 @@ const SALT_TREE_VARIANT := 6
 const SALT_NOISE_LATTICE := 7
 const SALT_FALLBACK_SKIP := 8
 
-# Forbidden building placement tile classes (§4.2, §10.2)
+# Forbidden building placement tile classes (§4.2, §10.2, §11.1)
 const FORBIDDEN_BUILDING_TILES: Array[int] = [
 	TILE_WATER, TILE_ROAD, TILE_PATH, TILE_RAIL, TILE_BRIDGE,
+	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
+]
+const FORBIDDEN_LANDMARK_TILES: Array[int] = [
+	TILE_WATER, TILE_ROAD, TILE_RAIL, TILE_BRIDGE,
 	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
 ]
 const FORBIDDEN_SOUTH_RING_TILES: Array[int] = [
@@ -73,6 +77,31 @@ const NUDGE_OFFSETS: Array[Vector2i] = [
 	Vector2i(-2, 0),
 	Vector2i(0, 2),
 	Vector2i(0, -2)
+]
+
+# Landmark nudge offsets (21 total, §11.1 step 2)
+const LANDMARK_NUDGE_OFFSETS: Array[Vector2i] = [
+	Vector2i(0, 0),
+	Vector2i(1, 0),
+	Vector2i(-1, 0),
+	Vector2i(0, 1),
+	Vector2i(0, -1),
+	Vector2i(1, 1),
+	Vector2i(-1, 1),
+	Vector2i(1, -1),
+	Vector2i(-1, -1),
+	Vector2i(2, 0),
+	Vector2i(-2, 0),
+	Vector2i(0, 2),
+	Vector2i(0, -2),
+	Vector2i(3, 0),
+	Vector2i(-3, 0),
+	Vector2i(0, 3),
+	Vector2i(0, -3),
+	Vector2i(4, 0),
+	Vector2i(-4, 0),
+	Vector2i(0, 4),
+	Vector2i(0, -4)
 ]
 
 ## Portable FNV-1a 32-bit hash (§3)
@@ -224,16 +253,17 @@ static func get_waterway_width(subkind: String) -> int:
 		_:
 			return 1
 
-## Check whether building template fits at (col0, row0) (§10.2 steps 2-3)
-static func _can_place_template(col0: int, row0: int, w: int, h: int, grid_class: PackedByteArray, reserved_grid: PackedByteArray) -> bool:
+## Check whether building template fits at (col0, row0) (§10.2 steps 2-3, §11.1 step 2)
+static func _can_place_template(col0: int, row0: int, w: int, h: int, grid_class: PackedByteArray, reserved_grid: PackedByteArray, allow_path: bool = false) -> bool:
 	if col0 < 5 or col0 + w > 35 or row0 < 5 or row0 + h > 35:
 		return false
+	var forbidden: Array[int] = FORBIDDEN_LANDMARK_TILES if allow_path else FORBIDDEN_BUILDING_TILES
 	for tr in h:
 		var r: int = row0 + tr
 		for tc in w:
 			var c: int = col0 + tc
 			var idx: int = r * WORK_SIZE + c
-			if grid_class[idx] in FORBIDDEN_BUILDING_TILES or reserved_grid[idx] != 0:
+			if grid_class[idx] in forbidden or reserved_grid[idx] != 0:
 				return false
 	var south_r: int = row0 + h
 	if south_r >= WORK_SIZE:
@@ -244,6 +274,40 @@ static func _can_place_template(col0: int, row0: int, w: int, h: int, grid_class
 		if grid_class[idx] in FORBIDDEN_SOUTH_RING_TILES:
 			return false
 	return true
+
+## Point-to-ring distance in store units (§11.1 step 1)
+static func _point_to_ring_dist_su(pt: Vector2, ring: PackedVector2Array) -> float:
+	var n: int = ring.size()
+	if n == 0:
+		return INF
+	var min_d_sq := INF
+	for i in n:
+		var a: Vector2 = ring[i]
+		var b: Vector2 = ring[(i + 1) % n]
+		var ab := b - a
+		var len_sq := ab.length_squared()
+		var t := 0.0
+		if len_sq > 1e-8:
+			t = clampf((pt - a).dot(ab) / len_sq, 0.0, 1.0)
+		var proj := a + ab * t
+		var d_sq := (pt - proj).length_squared()
+		if d_sq < min_d_sq:
+			min_d_sq = d_sq
+	return sqrt(min_d_sq)
+
+## Template door column offsets for a given template and width (§4.2)
+static func _template_door_cols(t_name: String, w: int, gx0: int, gy0: int, world_seed: int) -> Array[int]:
+	var cols: Array[int] = []
+	if t_name == "house_s":
+		var d_col: int = 1 if u_rand(gx0, gy0, world_seed, SALT_DOOR_ROOF) < 0.5 else 2
+		cols.append(d_col)
+	elif t_name == "house_m":
+		cols.append(2)
+	else:
+		for off in [2, 10, 18]:
+			if off < w - 1:
+				cols.append(off)
+	return cols
 
 ## Synthesize a cell's 32x32 tiles from a 3x3 neighbourhood (§4)
 static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int = MapConstants.MAP_SEED) -> Dictionary:
@@ -701,6 +765,8 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			"area": A,
 			"col0": col0,
 			"row0": row0,
+			"cc": cc,
+			"rc": rc,
 			"w": w,
 			"h": h,
 			"roof_rows": roof_rows,
@@ -713,8 +779,313 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			"rings": rings
 		})
 
+	var total_building_candidates: int = building_candidates.size()
+	var landmarks_placed_count := 0
+	var landmarks_sign_only_count := 0
+	var landmark_ids_placed: Array[String] = []
+	var landmark_sign_specs: Array[Dictionary] = []
+
+	# -------------------------------------------------------------
+	# 5a-0. Landmarks First (§11.1 + §11.1a, Item 24)
+	# -------------------------------------------------------------
+	# Collect footprints from all 9 cells in offset order (dy, then dx, from -1 to 1),
+	# shifted by (16*dx, 16*dy) store units into the centre cell's frame (§11.1a step 2).
+	var neigh_footprints: Array[Dictionary] = []
+	var used_neigh_footprints: Dictionary = {}
+	var used_candidate_indices: Dictionary = {}
+
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			var off := Vector2i(dx, dy)
+			if off == Vector2i.ZERO:
+				for c_idx in building_candidates.size():
+					var cand: Dictionary = building_candidates[c_idx]
+					neigh_footprints.append({
+						"offset": Vector2i.ZERO,
+						"center_idx": c_idx,
+						"area": float(cand["area"]),
+						"outer_ring": cand["rings"][0]
+					})
+			else:
+				var shift_su := Vector2(16.0 * float(dx), 16.0 * float(dy))
+				var n_polys: Array = area.get(off, {}).get("polys", [])
+				for poly in n_polys:
+					if poly.get("kind", "") != "building":
+						continue
+					var geom = poly.get("geom_rings", null)
+					if geom == null:
+						continue
+					var rings: Array[PackedVector2Array] = []
+					if geom is PackedByteArray:
+						rings = MapStore.unpack_rings(geom)
+					elif geom is Array:
+						for r_item in geom:
+							rings.append(PackedVector2Array(r_item))
+					if rings.is_empty() or rings[0].size() < 3:
+						continue
+					var outer_ring: PackedVector2Array = rings[0]
+					var A_n: float = _shoelace_area(outer_ring) * 256.0
+					if A_n < 60.0:
+						continue
+					var shifted_ring := PackedVector2Array()
+					shifted_ring.resize(outer_ring.size())
+					for p_i in outer_ring.size():
+						shifted_ring[p_i] = outer_ring[p_i] + shift_su
+					neigh_footprints.append({
+						"offset": off,
+						"center_idx": -1,
+						"area": A_n,
+						"outer_ring": shifted_ring
+					})
+
+	# Collect landmarks from all 9 cells in offset order (dy, then dx, from -1 to 1), then list order
+	var all_landmarks: Array[Dictionary] = []
+	var seen_lm_ids: Dictionary = {}
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			var off := Vector2i(dx, dy)
+			var cell_lms: Array = area.get(off, {}).get("landmarks", [])
+			for lm_item in cell_lms:
+				var lm_id: String = str(lm_item.get("id", ""))
+				var dedup_key: String = lm_id if not lm_id.is_empty() else str(lm_item.get("name", "")) + ":" + str(lm_item.get("door_wm", Vector2.ZERO))
+				if seen_lm_ids.has(dedup_key):
+					continue
+				seen_lm_ids[dedup_key] = true
+				all_landmarks.append({
+					"lm": lm_item,
+					"door_offset": off
+				})
+
+	var cell_origin_wm := Vector2(float(cx) * Grid.CELL_WM, float(cy) * Grid.CELL_WM)
+
+	for entry in all_landmarks:
+		var lm: Dictionary = entry["lm"]
+		var door_offset: Vector2i = entry["door_offset"]
+		var lm_id: String = str(lm.get("id", ""))
+		var lm_name: String = str(lm.get("name", ""))
+		var door_wm: Vector2 = lm.get("door_wm", Vector2.ZERO)
+		var door_su: Vector2 = (door_wm - cell_origin_wm) / MapStore.GEOM_UNIT_WM
+		var door_gx: int = int(floor(door_wm.x / Grid.TILE_WM))
+		var door_gy: int = int(floor(door_wm.y / Grid.TILE_WM))
+		var door_c: int = door_gx - cx * 32 + 4
+		var door_r: int = 35 - (door_gy - cy * 32)
+
+		var matched_nf_idx := -1
+		# First: candidate whose outer ring contains the door point
+		# Ties go to the larger A, then the lower (dy, dx) offset (§11.1a step 2)
+		var best_inside_area := -1.0
+		var best_inside_off := Vector2i(99, 99)
+		for nf_i in neigh_footprints.size():
+			if used_neigh_footprints.has(nf_i):
+				continue
+			var nf: Dictionary = neigh_footprints[nf_i]
+			var outer_ring: PackedVector2Array = nf["outer_ring"]
+			if _point_in_ring(door_su.x, door_su.y, outer_ring):
+				var c_area: float = float(nf["area"])
+				var c_off: Vector2i = nf["offset"]
+				var better := false
+				if c_area > best_inside_area + 1e-5:
+					better = true
+				elif absf(c_area - best_inside_area) <= 1e-5:
+					if c_off.y < best_inside_off.y or (c_off.y == best_inside_off.y and c_off.x < best_inside_off.x):
+						better = true
+				if better:
+					best_inside_area = c_area
+					best_inside_off = c_off
+					matched_nf_idx = nf_i
+
+		# Else: candidate whose outer ring passes within 2 store units (32 WM-m, 4 tiles) of door point
+		# — nearest first, ties to the larger A, then the lower (dy, dx) offset
+		if matched_nf_idx == -1:
+			var best_dist := INF
+			var best_near_area := -1.0
+			var best_near_off := Vector2i(99, 99)
+			for nf_i in neigh_footprints.size():
+				if used_neigh_footprints.has(nf_i):
+					continue
+				var nf: Dictionary = neigh_footprints[nf_i]
+				var outer_ring: PackedVector2Array = nf["outer_ring"]
+				var d_su: float = _point_to_ring_dist_su(door_su, outer_ring)
+				if d_su <= 2.0 + 1e-5:
+					var c_area: float = float(nf["area"])
+					var c_off: Vector2i = nf["offset"]
+					var better := false
+					if d_su < best_dist - 1e-5:
+						better = true
+					elif absf(d_su - best_dist) <= 1e-5:
+						if c_area > best_near_area + 1e-5:
+							better = true
+						elif absf(c_area - best_near_area) <= 1e-5:
+							if c_off.y < best_near_off.y or (c_off.y == best_near_off.y and c_off.x < best_near_off.x):
+								better = true
+					if better:
+						best_dist = d_su
+						best_near_area = c_area
+						best_near_off = c_off
+						matched_nf_idx = nf_i
+
+		if matched_nf_idx == -1:
+			# If no footprint is found anywhere and the door lies in the centre cell, place the sign only (§11.1a step 2)
+			if door_offset == Vector2i.ZERO and landmarks_placed_count + landmarks_sign_only_count < 4:
+				landmarks_sign_only_count += 1
+				landmark_sign_specs.append({
+					"name": lm_name,
+					"is_building": false,
+					"door_pos": Vector2i(door_c, door_r)
+				})
+			continue
+
+		used_neigh_footprints[matched_nf_idx] = true
+		var chosen_nf: Dictionary = neigh_footprints[matched_nf_idx]
+		if chosen_nf["offset"] != Vector2i.ZERO:
+			# Anchored in another cell: do nothing here — that cell places it (§11.1a step 2)
+			continue
+
+		if landmarks_placed_count >= 4:
+			continue
+
+		var matched_idx: int = int(chosen_nf["center_idx"])
+		var lb: Dictionary = building_candidates[matched_idx]
+		var orig_w: int = lb["w"]
+		var orig_h: int = lb["h"]
+		var orig_t: String = lb["template"]
+		var cc: float = lb["cc"]
+		var rc: float = lb["rc"]
+
+		# Build shrink sequence (§11.1 step 2):
+		# original -> (w-2, h-2) down to 6x5 for block_l -> house_m (5x4) -> house_s (4x3)
+		var size_attempts: Array[Dictionary] = []
+		size_attempts.append({
+			"w": orig_w,
+			"h": orig_h,
+			"roof_rows": lb["roof_rows"],
+			"template": orig_t
+		})
+		if orig_t == "block_l":
+			var cur_w: int = orig_w
+			var cur_h: int = orig_h
+			while cur_w > 6 or cur_h > 5:
+				var next_w: int = maxi(6, cur_w - 2)
+				var next_h: int = maxi(5, cur_h - 2)
+				if next_w == cur_w and next_h == cur_h:
+					break
+				cur_w = next_w
+				cur_h = next_h
+				size_attempts.append({
+					"w": cur_w,
+					"h": cur_h,
+					"roof_rows": cur_h - 2,
+					"template": "block_l"
+				})
+			size_attempts.append({"w": 5, "h": 4, "roof_rows": 2, "template": "house_m"})
+			size_attempts.append({"w": 4, "h": 3, "roof_rows": 2, "template": "house_s"})
+		elif orig_t == "house_m":
+			size_attempts.append({"w": 4, "h": 3, "roof_rows": 2, "template": "house_s"})
+
+		var lm_placed := false
+		var chosen_col0 := 0
+		var chosen_row0 := 0
+		var chosen_w := orig_w
+		var chosen_h := orig_h
+		var chosen_roof_rows: int = lb["roof_rows"]
+		var chosen_t := orig_t
+
+		for attempt in size_attempts:
+			var aw: int = attempt["w"]
+			var ah: int = attempt["h"]
+			var base_col0: int = clampi(int(round(cc - float(aw) / 2.0)), 5, 35 - aw)
+			var base_row0: int = clampi(int(round(rc - float(ah) / 2.0)), 5, 35 - ah)
+			for nudge in LANDMARK_NUDGE_OFFSETS:
+				var test_col: int = clampi(base_col0 + nudge.x, 5, 35 - aw)
+				var test_row: int = clampi(base_row0 + nudge.y, 5, 35 - ah)
+				if _can_place_template(test_col, test_row, aw, ah, grid_class, reserved_grid, true):
+					chosen_col0 = test_col
+					chosen_row0 = test_row
+					chosen_w = aw
+					chosen_h = ah
+					chosen_roof_rows = attempt["roof_rows"]
+					chosen_t = attempt["template"]
+					lm_placed = true
+					break
+			if lm_placed:
+				break
+
+		if not lm_placed:
+			landmarks_sign_only_count += 1
+			landmark_sign_specs.append({
+				"name": lm_name,
+				"is_building": false,
+				"door_pos": Vector2i(door_c, door_r)
+			})
+			continue
+
+		# Placed landmark leaves the ordinary candidate list (§11.1 step 2)
+		used_candidate_indices[matched_idx] = true
+		buildings_placed_count += 1
+		landmarks_placed_count += 1
+		if not lm_id.is_empty():
+			landmark_ids_placed.append(lm_id)
+
+		var gx0_lm: int = cx * 32 + (chosen_col0 - 4)
+		var gy0_lm: int = cy * 32 + (35 - chosen_row0)
+		var cand_door_cols := _template_door_cols(chosen_t, chosen_w, gx0_lm, gy0_lm, world_seed)
+		# Its door is the template door column nearest the real door point's column (§11.1 step 2)
+		var best_door_col: int = cand_door_cols[0]
+		var best_col_diff: int = absi((chosen_col0 + best_door_col) - door_c)
+		for d_off in cand_door_cols:
+			var diff: int = absi((chosen_col0 + d_off) - door_c)
+			if diff < best_col_diff:
+				best_col_diff = diff
+				best_door_col = d_off
+
+		# Gild at placement time: ROOF 32, WALL 32 or 40, DOOR 32 (§11.1 step 3)
+		for tr in chosen_h:
+			var r: int = chosen_row0 + tr
+			for tc in chosen_w:
+				var c: int = chosen_col0 + tc
+				var idx: int = r * WORK_SIZE + c
+				if tr < chosen_roof_rows:
+					grid_class[idx] = TILE_ROOF
+					grid_variant[idx] = 32
+				else:
+					if tr == chosen_h - 1 and tc == best_door_col:
+						grid_class[idx] = TILE_DOOR
+						grid_variant[idx] = 32
+						all_doors.append(Vector2i(c, r))
+					else:
+						grid_class[idx] = TILE_WALL
+						var has_window: bool = (tc % 2 != 0)
+						grid_variant[idx] = 40 if has_window else 32
+
+		for tc in chosen_w:
+			var s_idx: int = (chosen_row0 + chosen_h) * WORK_SIZE + (chosen_col0 + tc)
+			reserved_grid[s_idx] = 1
+
+		placed_buildings.append({
+			"col0": chosen_col0,
+			"row0": chosen_row0,
+			"w": chosen_w,
+			"h": chosen_h,
+			"door_cols": [best_door_col],
+			"is_landmark": true
+		})
+
+		var lm_door_r: int = chosen_row0 + chosen_h - 1
+		var lm_door_c: int = chosen_col0 + best_door_col
+		landmark_sign_specs.append({
+			"name": lm_name,
+			"is_building": true,
+			"door_pos": Vector2i(lm_door_c, lm_door_r)
+		})
+
+	# Remove placed landmarks from ordinary candidate list
+	var remaining_candidates: Array[Dictionary] = []
+	for c_idx in building_candidates.size():
+		if not used_candidate_indices.has(c_idx):
+			remaining_candidates.append(building_candidates[c_idx])
+
 	# Order: descending A, then ascending row0, then ascending col0
-	building_candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+	remaining_candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if not is_equal_approx(a["area"], b["area"]):
 			return a["area"] > b["area"]
 		if a["row0"] != b["row0"]:
@@ -722,7 +1093,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		return a["col0"] < b["col0"]
 	)
 
-	for b in building_candidates:
+	for b in remaining_candidates:
 		var base_col0: int = b["col0"]
 		var base_row0: int = b["row0"]
 		var w: int = b["w"]
@@ -868,59 +1239,9 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						"row0": chosen_row0,
 						"w": 4,
 						"h": 3,
-						"door_cols": [door_col]
+						"door_cols": [door_col],
+						"is_landmark": false
 					})
-
-	# -------------------------------------------------------------
-	# 5c. Landmark Buildings (§10.8)
-	# -------------------------------------------------------------
-	var landmark_sign_specs: Array[Dictionary] = []
-	var raw_landmarks: Array = area.get(Vector2i.ZERO, {}).get("landmarks", [])
-	for i in range(mini(raw_landmarks.size(), 4)):
-		var lm: Dictionary = raw_landmarks[i]
-		var lm_name: String = str(lm.get("name", ""))
-		var door_wm: Vector2 = lm.get("door_wm", Vector2.ZERO)
-		var door_gx: int = int(floor(door_wm.x / Grid.TILE_WM))
-		var door_gy: int = int(floor(door_wm.y / Grid.TILE_WM))
-		var door_c: int = door_gx - cx * 32 + 4
-		var door_r: int = 35 - (door_gy - cy * 32)
-
-		var matching_b = null
-		for b in placed_buildings:
-			if door_c >= b["col0"] and door_c < b["col0"] + b["w"] and door_r >= b["row0"] and door_r < b["row0"] + b["h"]:
-				matching_b = b
-				break
-
-		if matching_b != null:
-			# Landmark building: ROOF -> 32, WALL -> 32 or 40, DOOR -> 32
-			for tr in matching_b["h"]:
-				var cur_r: int = matching_b["row0"] + tr
-				for tc in matching_b["w"]:
-					var cur_c: int = matching_b["col0"] + tc
-					var idx: int = cur_r * WORK_SIZE + cur_c
-					var cls: int = grid_class[idx]
-					if cls == TILE_ROOF:
-						grid_variant[idx] = 32
-					elif cls == TILE_WALL:
-						var has_window: bool = (tc % 2 != 0)
-						grid_variant[idx] = 40 if has_window else 32
-					elif cls == TILE_DOOR:
-						grid_variant[idx] = 32
-
-			var d_col: int = matching_b["door_cols"][0]
-			var d_r: int = matching_b["row0"] + matching_b["h"] - 1
-			var d_c: int = matching_b["col0"] + d_col
-			landmark_sign_specs.append({
-				"name": lm_name,
-				"is_building": true,
-				"door_pos": Vector2i(d_c, d_r)
-			})
-		else:
-			landmark_sign_specs.append({
-				"name": lm_name,
-				"is_building": false,
-				"door_pos": Vector2i(door_c, door_r)
-			})
 
 	# -------------------------------------------------------------
 	# 4b. Paths after buildings (§10.2 step 1)
@@ -1264,14 +1585,14 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			for cand_p in candidates:
 				if cand_p.x >= 4 and cand_p.x <= 35 and cand_p.y >= 4 and cand_p.y <= 35:
 					var cls: int = grid_class[cand_p.y * WORK_SIZE + cand_p.x]
-					if cls == TILE_GRASS or cls == TILE_PATH:
+					if cls == TILE_GRASS or cls == TILE_PATH or cls == TILE_TALL_GRASS or cls == TILE_FLOWERS:
 						target_pos = cand_p
 						break
 		else:
 			# Structure with no building: first GRASS or PATH tile within 2 tiles of door
 			if p0.x >= 4 and p0.x <= 35 and p0.y >= 4 and p0.y <= 35:
 				var p0_cls: int = grid_class[p0.y * WORK_SIZE + p0.x]
-				if p0_cls == TILE_GRASS or p0_cls == TILE_PATH:
+				if p0_cls == TILE_GRASS or p0_cls == TILE_PATH or p0_cls == TILE_TALL_GRASS or p0_cls == TILE_FLOWERS:
 					target_pos = p0
 			if target_pos.x == -1:
 				for rad in [1, 2]:
@@ -1281,7 +1602,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						var cand_p: Vector2i = p0 + off
 						if cand_p.x >= 4 and cand_p.x <= 35 and cand_p.y >= 4 and cand_p.y <= 35:
 							var cls: int = grid_class[cand_p.y * WORK_SIZE + cand_p.x]
-							if cls == TILE_GRASS or cls == TILE_PATH:
+							if cls == TILE_GRASS or cls == TILE_PATH or cls == TILE_TALL_GRASS or cls == TILE_FLOWERS:
 								target_pos = cand_p
 								break
 					if target_pos.x != -1:
@@ -1451,9 +1772,12 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		"tiles": output,
 		"signs": PackedStringArray(signs_list),
 		"stats": {
-			"building_candidates": building_candidates.size(),
+			"building_candidates": total_building_candidates,
 			"buildings_placed": buildings_placed_count,
-			"fallback_placed": fallback_placed_count
+			"fallback_placed": fallback_placed_count,
+			"landmarks_placed": landmarks_placed_count,
+			"landmarks_sign_only": landmarks_sign_only_count,
+			"landmark_ids_placed": landmark_ids_placed
 		}
 	}
 

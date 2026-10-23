@@ -1763,9 +1763,9 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 static func classify_polygon(tags: Dictionary) -> Dictionary:
 	var name: String = str(tags.get("name", ""))
 
-	# 1. building: building=* except building=no; building:part is ignored
+	# 1. building: building=* except building=no; building:part!=no is ignored (§11.1a)
 	if tags.has("building"):
-		if tags.has("building:part"):
+		if tags.has("building:part") and str(tags["building:part"]) != "no":
 			return {}
 		var b_val: String = str(tags["building"])
 		if b_val != "no":

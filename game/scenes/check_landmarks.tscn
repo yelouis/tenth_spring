@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://check_landmarks_scene_01"]
+
+[ext_resource type="Script" path="res://scenes/check_landmarks.gd" id="1_check_landmarks"]
+
+[node name="CheckLandmarks" type="Node"]
+script = ExtResource("1_check_landmarks")

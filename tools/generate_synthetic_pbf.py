@@ -109,7 +109,7 @@ def generate_synthetic_pbf_bytes(reverse_coastline: bool = False) -> bytes:
         "tunnel", "construction", "boundary", "administrative",
         "admin_level", "national_park", "place", "neighbourhood",
         "suburb", "quarter", "information", "townhall", "tourism",
-        "8", "10"
+        "8", "10", "building:part", "no"
     ]
     for s in known_strings:
         st.get(s)
@@ -758,6 +758,55 @@ def generate_synthetic_pbf_bytes(reverse_coastline: bool = False) -> bytes:
         "id": 9205,
         "tags": {"natural": "coastline"},
         "refs": dist_coast_node_ids
+    })
+
+    # === Pass 21 additions (Item 24, §11.1a: building:part tag cases in Cell (3, 4)) ===
+    # 34a. Way 9206: building=yes + building:part=no ("Temple Whole") -> stored
+    bp_no_pts = [(2.0, 2.0), (5.0, 2.0), (5.0, 5.0), (2.0, 5.0)]
+    bp_no_node_ids = []
+    for u, v in bp_no_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(3, 4, u, v)
+        nodes.append((nid, lat, lon, {}))
+        bp_no_node_ids.append(nid)
+    bp_no_node_ids.append(bp_no_node_ids[0])
+    ways.append({
+        "id": 9206,
+        "tags": {"building": "yes", "building:part": "no", "name": "Temple Whole"},
+        "refs": bp_no_node_ids
+    })
+
+    # 34b. Way 9207: building:part=yes only ("Temple Part Only") -> not stored
+    bp_only_pts = [(6.0, 2.0), (9.0, 2.0), (9.0, 5.0), (6.0, 5.0)]
+    bp_only_node_ids = []
+    for u, v in bp_only_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(3, 4, u, v)
+        nodes.append((nid, lat, lon, {}))
+        bp_only_node_ids.append(nid)
+    bp_only_node_ids.append(bp_only_node_ids[0])
+    ways.append({
+        "id": 9207,
+        "tags": {"building:part": "yes", "name": "Temple Part Only"},
+        "refs": bp_only_node_ids
+    })
+
+    # 34c. Way 9208: building=yes + building:part=yes ("Temple Both Part") -> not stored
+    bp_both_pts = [(10.0, 2.0), (13.0, 2.0), (13.0, 5.0), (10.0, 5.0)]
+    bp_both_node_ids = []
+    for u, v in bp_both_pts:
+        nid = next_node_id
+        next_node_id += 1
+        lat, lon = cell_local_to_latlon(3, 4, u, v)
+        nodes.append((nid, lat, lon, {}))
+        bp_both_node_ids.append(nid)
+    bp_both_node_ids.append(bp_both_node_ids[0])
+    ways.append({
+        "id": 9208,
+        "tags": {"building": "yes", "building:part": "yes", "name": "Temple Both Part"},
+        "refs": bp_both_node_ids
     })
 
     nodes.sort(key=lambda n: n[0])

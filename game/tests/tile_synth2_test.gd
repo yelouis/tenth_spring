@@ -607,6 +607,194 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
+	# (p) Landmarks first (§11.1, §11.7, Item 24)
+	# -------------------------------------------------------------
+	# 1. Falsifying: a fixture landmark boxed in by minor-road PATH tiles is placed and gilded,
+	#    where the pass-18 rules reject it.
+	var p1_area := _build_empty_area()
+	var p1_ring := PackedVector2Array([
+		Vector2(6.0, 6.0), Vector2(8.0, 6.0), Vector2(8.0, 8.0), Vector2(6.0, 8.0)
+	]) # 32x32 WM-m -> A = 1024 -> house_m (5x4)
+	p1_area[Vector2i.ZERO]["polys"] = [{
+		"kind": "building",
+		"subkind": "civic",
+		"name": "Boxed Library",
+		"geom_rings": [p1_ring]
+	}]
+	# Box in with minor-road (width <= 2 -> PATH) lines across the footprint so all 13 pass-18 nudges hit PATH
+	var p1_lines: Array = []
+	for y_su in [4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]:
+		p1_lines.append({
+			"kind": "road",
+			"subkind": "residential",
+			"geom_pts": PackedVector2Array([Vector2(3.0, float(y_su)), Vector2(11.0, float(y_su))])
+		})
+	p1_area[Vector2i.ZERO]["lines"] = p1_lines
+	var p1_door_wm := Vector2(4.0 * Grid.CELL_WM + 7.0 * MapStore.GEOM_UNIT_WM, 4.0 * Grid.CELL_WM + 7.0 * MapStore.GEOM_UNIT_WM)
+	p1_area[Vector2i.ZERO]["landmarks"] = [{
+		"id": "fixture:boxed-library",
+		"name": "Boxed Library",
+		"door_wm": p1_door_wm
+	}]
+	var p1_res := TileSynth2.synthesize_cell(4, 4, p1_area, 0)
+	var p1_tiles: PackedByteArray = p1_res["tiles"]
+	var p1_gold := 0
+	for i in range(0, p1_tiles.size(), 3):
+		var cls: int = p1_tiles[i]
+		var v: int = p1_tiles[i + 1]
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0:
+			p1_gold += 1
+	if p1_gold == 0 or int(p1_res.get("stats", {}).get("landmarks_placed", 0)) != 1:
+		push_error("(p.1) [falsifier] Landmark boxed in by minor-road PATH tiles was rejected (gold=%d, stats=%s)" % [p1_gold, str(p1_res.get("stats", {}))])
+		store.close()
+		_cleanup()
+		return false
+
+	# 2. A landmark whose door point lies 2 tiles (1 store unit) outside its footprint is still gilded.
+	var p2_area := _build_empty_area()
+	p2_area[Vector2i.ZERO]["polys"] = [{
+		"kind": "building",
+		"subkind": "civic",
+		"name": "Memorial Hall",
+		"geom_rings": [p1_ring]
+	}]
+	# Door at y = 5.0 store units (1 store unit = 2 tiles south of outer ring y=6..8)
+	var p2_door_wm := Vector2(4.0 * Grid.CELL_WM + 7.0 * MapStore.GEOM_UNIT_WM, 4.0 * Grid.CELL_WM + 5.0 * MapStore.GEOM_UNIT_WM)
+	p2_area[Vector2i.ZERO]["landmarks"] = [{
+		"id": "fixture:memorial-hall",
+		"name": "Memorial Hall",
+		"door_wm": p2_door_wm
+	}]
+	var p2_res := TileSynth2.synthesize_cell(4, 4, p2_area, 0)
+	var p2_tiles: PackedByteArray = p2_res["tiles"]
+	var p2_gold := 0
+	for i in range(0, p2_tiles.size(), 3):
+		var cls: int = p2_tiles[i]
+		var v: int = p2_tiles[i + 1]
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0:
+			p2_gold += 1
+	if p2_gold == 0 or int(p2_res.get("stats", {}).get("landmarks_placed", 0)) != 1:
+		push_error("(p.2) Landmark with door 2 tiles outside footprint was not gilded (gold=%d)" % p2_gold)
+		store.close()
+		_cleanup()
+		return false
+
+	# 3. A footprint too big for its gap is placed shrunk.
+	var p3_area := _build_empty_area()
+	# Large footprint: 6..12 x 6..11 store units -> w_t=12, h_t=10 (block_l 12x10)
+	var p3_ring := PackedVector2Array([
+		Vector2(5.0, 5.0), Vector2(11.0, 5.0), Vector2(11.0, 10.0), Vector2(5.0, 10.0)
+	])
+	p3_area[Vector2i.ZERO]["polys"] = [{
+		"kind": "building",
+		"subkind": "civic",
+		"name": "Shrunk Museum",
+		"geom_rings": [p3_ring]
+	}]
+	# Flank with primary roads (ROAD, w=3) leaving only an ~8-tile wide gap around x=8 store units (col=20),
+	# so 12x10 fails all 21 nudges, but shrinking fits inside the gap.
+	p3_area[Vector2i.ZERO]["lines"] = [
+		{
+			"kind": "road",
+			"subkind": "primary",
+			"geom_pts": PackedVector2Array([Vector2(5.0, 1.0), Vector2(5.0, 15.0)])
+		},
+		{
+			"kind": "road",
+			"subkind": "primary",
+			"geom_pts": PackedVector2Array([Vector2(11.0, 1.0), Vector2(11.0, 15.0)])
+		}
+	]
+	var p3_door_wm := Vector2(4.0 * Grid.CELL_WM + 8.0 * MapStore.GEOM_UNIT_WM, 4.0 * Grid.CELL_WM + 7.5 * MapStore.GEOM_UNIT_WM)
+	p3_area[Vector2i.ZERO]["landmarks"] = [{
+		"id": "fixture:shrunk-museum",
+		"name": "Shrunk Museum",
+		"door_wm": p3_door_wm
+	}]
+	var p3_res := TileSynth2.synthesize_cell(4, 4, p3_area, 0)
+	var p3_tiles: PackedByteArray = p3_res["tiles"]
+	var p3_gold := 0
+	for i in range(0, p3_tiles.size(), 3):
+		var cls: int = p3_tiles[i]
+		var v: int = p3_tiles[i + 1]
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0:
+			p3_gold += 1
+	if p3_gold == 0 or p3_gold >= 120 or int(p3_res.get("stats", {}).get("landmarks_placed", 0)) != 1:
+		push_error("(p.3) Shrunk landmark failed to place or did not shrink (gold=%d)" % p3_gold)
+		store.close()
+		_cleanup()
+		return false
+
+	# 4. Falsifying (§11.1a): a fixture landmark whose footprint straddles a cell edge,
+	#    door in the north cell (4, 5) and anchor in the south cell (4, 4).
+	#    - The south cell gilds it and gets its sign.
+	#    - The north cell places NO sign-only fallback.
+	#    - Both cells report it exactly once between them, in landmark_ids_placed.
+	var p4_ring_south_frame := PackedVector2Array([
+		Vector2(6.0, 12.0), Vector2(10.0, 12.0), Vector2(10.0, 17.5), Vector2(6.0, 17.5)
+	]) # bbox center y = 14.75 in south cell (4, 4) -> anchored in (4, 4); extends 1.5 su into north cell (4, 5)
+	var p4_poly := {
+		"kind": "building",
+		"subkind": "yes",
+		"name": "Straddling Memorial",
+		"geom_rings": [p4_ring_south_frame]
+	}
+	# Door at y = 1.0 store unit inside north cell (4, 5) -> y = 17.0 in south cell frame (inside outer ring 12..17.5)
+	var p4_door_wm := Vector2(4.0 * Grid.CELL_WM + 8.0 * MapStore.GEOM_UNIT_WM, 5.0 * Grid.CELL_WM + 1.0 * MapStore.GEOM_UNIT_WM)
+	var p4_lm := {
+		"id": "fixture:straddling-memorial",
+		"name": "Straddling Memorial",
+		"door_wm": p4_door_wm
+	}
+
+	# Synthesize south cell (4, 4): poly in ZERO, landmark door in north neighbour (0, 1)
+	var p4_south_area := _build_empty_area()
+	p4_south_area[Vector2i.ZERO]["polys"] = [p4_poly]
+	p4_south_area[Vector2i(0, 1)]["landmarks"] = [p4_lm]
+	var p4_south_res := TileSynth2.synthesize_cell(4, 4, p4_south_area, 0)
+	var p4_south_tiles: PackedByteArray = p4_south_res["tiles"]
+	var p4_south_gold := 0
+	for i in range(0, p4_south_tiles.size(), 3):
+		var cls: int = p4_south_tiles[i]
+		var v: int = p4_south_tiles[i + 1]
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0:
+			p4_south_gold += 1
+	var p4_south_has_sign := false
+	for s in p4_south_res.get("signs", []):
+		if s == "Straddling Memorial":
+			p4_south_has_sign = true
+
+	# Synthesize north cell (4, 5): poly in south neighbour (0, -1), landmark door in ZERO
+	var p4_north_area := _build_empty_area()
+	p4_north_area[Vector2i(0, -1)]["polys"] = [p4_poly]
+	p4_north_area[Vector2i.ZERO]["landmarks"] = [p4_lm]
+	var p4_north_res := TileSynth2.synthesize_cell(4, 5, p4_north_area, 0)
+	var p4_north_has_sign := false
+	for s in p4_north_res.get("signs", []):
+		if s == "Straddling Memorial":
+			p4_north_has_sign = true
+
+	var p4_south_ids: Array = p4_south_res.get("stats", {}).get("landmark_ids_placed", [])
+	var p4_north_ids: Array = p4_north_res.get("stats", {}).get("landmark_ids_placed", [])
+	var p4_north_sign_only: int = int(p4_north_res.get("stats", {}).get("landmarks_sign_only", 0))
+
+	if p4_south_gold == 0 or not p4_south_has_sign:
+		push_error("(p.4) [falsifier] South anchor cell failed to gild straddling landmark or place its sign (gold=%d, has_sign=%s)" % [p4_south_gold, str(p4_south_has_sign)])
+		store.close()
+		_cleanup()
+		return false
+	if p4_north_has_sign or p4_north_sign_only != 0:
+		push_error("(p.4) [falsifier] North door cell placed unexpected sign-only fallback (has_sign=%s, sign_only=%d)" % [str(p4_north_has_sign), p4_north_sign_only])
+		store.close()
+		_cleanup()
+		return false
+	if p4_south_ids != ["fixture:straddling-memorial"] or not p4_north_ids.is_empty():
+		push_error("(p.4) [falsifier] Expected landmark_ids_placed once in south cell only, got south=%s north=%s" % [str(p4_south_ids), str(p4_north_ids)])
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
 	# (a) Final Golden Hash Verification over cells (4,4), (4,5), (5,4), (5,5)
 	# -------------------------------------------------------------
 	var all_cells = [
@@ -657,6 +845,19 @@ func _build_area(store: MapStore, cx: int, cy: int) -> Dictionary:
 				"places": store.get_place_nodes(nx, ny),
 				"covered": store.covers_cell(nx, ny),
 				"sea": store.get_cell_sea(nx, ny)
+			}
+	return area
+
+func _build_empty_area() -> Dictionary:
+	var area: Dictionary = {}
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			area[Vector2i(dx, dy)] = {
+				"polys": [],
+				"lines": [],
+				"places": [],
+				"covered": true,
+				"sea": 0
 			}
 	return area
 
