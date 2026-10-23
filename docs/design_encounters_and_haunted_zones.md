@@ -35,13 +35,13 @@ Each map cell carries one **zone**, derived deterministically from OSM tags (`de
 | **`ruins`** | `historic=ruins`, `building=ruins`, `abandoned:*`, `disused:*` | **0.45** | Rock/Psychic: Unown 201, Bronzor 436 | Sableye 302, Gastly 92, Haunter 93, Yamask 562, Golett 622 |
 | **`hospital`** | `amenity=hospital` | **0.30** | Psychic: Chingling 433, Hypno 97 | Duskull 355, Misdreavus 200, Litwick 607, Lampent 608 |
 
-The roster spans all 649 Gen 1–5 species (Decision 12). Gen 5's Ghost lines are placed where they fit the setting: Litwick/Lampent in hospitals and institutions, Yamask in cemeteries and ruins, Golett in ruins and industry, Frillish at the waterfront. Their final forms (Chandelure, Cofagrigus, Golurk, Jellicent) come from evolution, or appear as zone bosses (§5). The full weighted tables live in `game/config/spawn_tables.json` (dex numbers + weights only). These are **starting content**, tunable in Phase 11 balance.
+The roster spans all 905 Gen 1–8 species (Decision 32). Gen 5's Ghost lines are placed where they fit the setting: Litwick/Lampent in hospitals and institutions, Yamask in cemeteries and ruins, Golett in ruins and industry, Frillish at the waterfront. Their final forms (Chandelure, Cofagrigus, Golurk, Jellicent) come from evolution, or appear as zone bosses (§5). The full weighted tables live in `game/config/spawn_tables.json` (dex numbers + weights only). These are **starting content**, tunable in Phase 11 balance.
 
 ### 2a. Where in the USA (Decision 18 = A for the Pokédex, 2026-10-19)
 Zones say *what kind of place*; Decision 18 adds *where in the country*, so that the size of the USA matters (`design_story_and_world.md` §7):
 - **Biome per cell** — desert, forest, coast, mountains, wetland, plains, snow, or city — from real land cover and climate. The data source and rule are fixed in the slice that builds spawns (slice 3), using public-domain US federal data where possible.
 - **Region per cell** — one of the 9 US Census divisions (DC, Puerto Rico, and the US Virgin Islands count as South Atlantic).
-- **Every species gets a home:** about a third live **everywhere**, about 40% only in certain **biomes**, about 20% only in **one region**, and the **legendary and mythical** species (about 48) are bound to one region's great landmarks (§7).
+- **Every species gets a home:** about a third live **everywhere**, about 40% only in certain **biomes**, about 20% only in **one region**, and the **legendary and mythical** species (82, at 78 places — Decision 32) are bound to one region's great landmarks (§7).
 - Spawn tables gain `biomes` and `region` keys per entry (dex numbers only). A zone pool entry is eligible in a cell only if the cell's biome and region allow it.
 
 ## 3. Ghost prevalence — the horror undertone, as a formula
@@ -65,6 +65,9 @@ Thin spots where the Distortion's copies bleed through (`design_story_and_world.
   - Levels use the local §4 band.
   - The §3 ghost share still applies to the non-field draws.
 - **Never** legendary or mythical species — they can't be copied. So the Pokédex can never be finished at home (§7).
+- **Ultra Beasts** (Decision 32) appear **only** in fields, and only once Necrozma has been caught or defeated (`design_famous_places.md` §1.4).
+  - They are 1 in 50 of field-pool draws, and only in fields that open after the player holds 6 or more Anchors.
+  - They aren't copies; they come from somewhere else through the thinnest fog.
 - **Legibility:** fields are drawn with the distortion tint, and a chip reads `Distortion Field — <h> h left`.
 
 ## 4. Levels — real geography is the difficulty curve
@@ -77,6 +80,8 @@ Thin spots where the Distortion's copies bleed through (`design_story_and_world.
 | 50+ mi | 30–55 |
 
 Modifiers: +2 at night for haunted-pool draws; +2 per haunt stage inside haunted territory; zone bosses = band max + 5. Players get stronger by **actually traveling** — the furthest places hold the strongest Pokémon.
+- **Extended across the country** (Decision 35, so a team can reach Warden strength by travelling): 50–300 mi 30–50 · 300–1,000 mi 42–62 · 1,000–2,000 mi 55–75 · 2,000 mi or more 65–85. These replace the single 50+ mi row (`design_long_game.md` §4.2).
+- **"Home" here means the starter city** (Decision 29: no home location reaches the PC).
 
 ## 5. Haunted zones (replaces zombie colonies)
 
@@ -100,15 +105,15 @@ Each zone's root site is a haunted interior with a **zone boss** — a high-leve
 ## 6. Real-world-gated events
 
 These tie Ghost legends to the core twist — **things you must physically do in real life**:
-- **Spiritomb (442):** finding the Odd Keystone at a `ruins` site, then having **physically visited 32 distinct haunted real places** (cemeteries, ruins, hospitals), awakens Spiritomb at the home safehouse — an echo of Platinum's 32-encounter requirement.
+- **Spiritomb (442):** find the Odd Keystone at a `ruins` site. Then send **Explore Here reports from 32 distinct areas** (neighbourhoods or parks) that each contain a cemetery, ruin, or hospital, and Spiritomb wakes at the home safehouse — an echo of Platinum's 32-encounter requirement. *(Amended for Decision 29: the unit is now an explored area.)*
 - **Rotom (479):** appears at night in abandoned electronics stores (`shop=electronics` inside `retail`).
 
 ## 7. Famous places: legendaries, Warden trials, and the finale
 
-Since 2026-10-20 the map contains only **famous places**: 27 cities and 36 parks, monuments, and wonders (`design_famous_places.md`, Decisions 25–26). Legendaries and Wardens live there.
+Since 2026-10-20 the map contains only **famous places**: 27 cities and 60 parks, monuments, and wonders (`design_famous_places.md`, Decisions 25–26). Legendaries and Wardens live there.
 
 ### 7.1 Legendaries (Decisions 18 and 26)
-- **Where:** each of the 48 legendary and mythical species waits at **its own famous place**, never two in one spot. The table — dex number, place, region, theme — is `design_famous_places.md` §1.2, and the config is `game/config/famous_places.json`.
+- **Where:** each of the 78 legendary places holds **its own** legendary or mythical species, never two in one spot. The other 4 of the 82 species come by evolution (Decision 32). The table — dex number, place, region, theme — is `design_famous_places.md` §1.2, and the config is `game/config/famous_places.json`.
 - **Requires real reach:** the place must be unlocked by a real visit (for a spot inside a city, its neighbourhood), then reached in-game from the Waypost.
 - **A challenge stands in the way:** a maze or puzzle in front of its lair, generated from `(dex number, MAP_SEED)` so it's the same for every player. The themes and lore requirements are in `design_famous_places.md` §6.
 - **One decisive battle:** catching it **or** defeating it ends it forever, and both count for the Pokédex. Blacking out or fleeing doesn't use up the chance — redo the challenge and try again. *(This replaces `legendaryRespawnGameDays`, which is retired.)*
@@ -120,15 +125,15 @@ The Pokédex is complete when every non-legendary species is **caught**, and eve
 ### 7.3 Warden trials (Decisions 18 and 26)
 - **Nine Wardens,** one per region (`design_story_and_world.md` §4), each at **one fixed landmark** (`design_famous_places.md` §5).
 - **A Warden appears only after all three of the region's cities are fully unlocked** (`design_famous_places.md` §3.2).
-- **Team levels:** `22 + 6 × anchorsHeld` (22 → 70). Each trial applies its region's survival rule (story §4 table).
+- **Team levels — fixed, never relative** (Decision 35): every Warden fields a **level-75** team, built like a competitive team and played by the strongest AI. Each trial applies its region's survival rule (story §4 table). *(Replaces `22 + 6 × anchorsHeld`.)*
 - **Winning** grants that region's **Anchor** (a key item) and its perk.
-- **Each region's survivors** — three named trainers, one per city (story §4a) — can be battled at levels `18 + 6 × anchorsHeld`.
+- **Each region's survivors** — three named trainers, one per city (story §4a) — field fixed **level-50** teams. After the region's Warden, their "Old Friends" rematches are at **80**, and the Warden's own rematch at **90** (Decision 35; replaces `18 + 6 × anchorsHeld`).
 - The names, types, rules, and perks are starting content, tunable.
 
 ### 7.4 The finale — the Echo (replaces the Giratina arc)
 - **Unlocked by holding all nine Anchors.**
-- **Where:** the famous place with the most real-world visits inside its boundary. The player Distorts there and walks from the Waypost.
-- **The battle:** an exact mirror of the player's current party — species, moves, abilities, natures, held items — at the player's levels + 5 (cap 100), IVs 31, the strongest AI tier, and no items on either side.
+- **Where:** the famous place explored on the most distinct days (Explore Here reports, Decision 29). The player Distorts there and walks from the Waypost.
+- **The battle:** a perfected mirror of the player's current party. The same species, at the player's levels + 5 (**cap 100**), with IVs 31, competitive EV spreads, and competitive natures, abilities, held items, and movesets from everything each species can learn (`design_long_game.md` §4.3). The strongest AI tier, and no bag items on either side. *(Decision 35: at level 100 the Echo's edge is the build, not the level.)*
 - **Before it:** the escalating Echo encounters in `design_story_and_world.md` §5.1 — Hollow Trainers at 3+ Anchors, more frequent fields at 6+.
 
 ## 8. Legibility and fairness

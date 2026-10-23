@@ -30,8 +30,8 @@ To stop it, you must earn the trust of the **nine Wardens** who hold the line ac
 
 | Theme | What it means | Where players feel it |
 |---|---|---|
-| **Presence holds the world** | Walking is an act of resistance. Places are real because someone goes there. | Real visits reveal the map; places you walk often are safer to explore; the fog stays wherever nobody walks. |
-| **Absence becomes haunting** | The emptied world isn't evil — it's grieving. Ghost Pokémon are drawn to what people left behind. | Cemeteries, ruins, and abandoned hospitals teem with Ghosts; hauntings spread when ignored; night belongs to them. |
+| **Presence holds the world** | Walking is an act of resistance. Places are real because someone goes there. | Exploring in real life (Explore Here) reveals the map; places you explore on many days are safer; the fog stays wherever nobody goes. |
+| **Absence becomes haunting** | The emptied world isn't evil — it's grieving. Ghost Pokémon are drawn to what people left behind. | Cemeteries, ruins, and abandoned hospitals teem with Ghosts; hauntings spread when ignored; night belongs to them. Half the houses have fallen in or vanished under grass, side streets are turning back into meadow, and only the great landmarks stand untouched. |
 | **You have what you carry** | No shops, no healing network, no rescue. | Healing only at home; items are scavenged by searching real kinds of places; the bag drops where you black out; far from home you fight with the six you brought. |
 | **Home is the anchor** | The one place that never fades is the place you always return to. | Full heal, the PC box, and the berry garden are home-only; blacking out wakes you at home; a haunting that reaches home seals the PC. |
 | **The mirror** | The fog copies what crosses it, and it has been learning from you. | Distortion Fields copy other regions' Pokémon; the Echo's fragments wear familiar shapes; the finale is your own team, stronger. |
@@ -78,17 +78,17 @@ You grew up in the Stillness, in a house that never faded, because someone alway
 - never follow footprints into the fog.
 
 On the first morning of the tenth spring, three things happen:
-1. **The fog pulls back.** It recedes further than it has in ten years — along every street you have actually walked.
+1. **The fog pulls back.** For the first time in ten years it lifts from the heart of the great city nearest home — the firm ground your family used to walk.
 2. **A partner arrives.** A Pokémon wanders out of the receding fog into your garden and will not leave. It becomes your first partner. *(Proposed: a choice of three; dex numbers are fixed in the slice that builds the opening.)*
 3. **Something walks like you.** At the edge of your lamplight that evening, a shape stands just as you stand, and moves when you move.
 
 A survivor's note pinned to your door explains what the Wardens have long feared: **the Distortion is learning.** It has copied places and Pokémon for ten years. Now it is copying a person. The note says to find a Warden.
 
 ### 2.6 What "Walker" means in play
-The phone companion is your **Ledger**. In the story it is the field journal every Walker keeps of where they have been. Your real walks are your character's scouting trips, and they reveal the world as **known** — grey silhouettes seen from the road. Going there *in the game* is what clears a place and lets you search it. The world remembers your footsteps, never your luggage: walking in real life reveals, it never gives (pillar 2).
+The phone companion is your **Ledger** — the field journal every Walker keeps. When you reach somewhere new in real life, you open it and press **Explore Here** to mark the ground as walked. That's what a Walker's footsteps do: the fog lifts from the whole neighbourhood, or the whole park. It shows as **known** — grey silhouettes seen from the road. Going there *in the game* is what clears a place and lets you search it. The world remembers your footsteps, never your luggage: exploring in real life reveals, it never gives (pillar 2).
 
 **Distorting.** Since the Stillness, most of the country is fog. What still holds are the great cities and the great wild places, the ground walked by millions for generations (`design_famous_places.md`). A Walker can do one thing no one else can: **step through the Distortion** to firm ground they have walked themselves.
-- **From home,** your safehouse, you can Distort to any famous place you've physically visited — and, from the first morning, to the great city nearest home, whose pull you've always felt.
+- **From home,** your safehouse, you can Distort to any famous place you've explored — and, from the first morning, to the great city nearest home, whose pull you've always felt.
 - **The way back** opens only at a place's **Waypost**: the lamplit camp the survivors keep at its heart. So the old rule still holds — be back at the Waypost before dark.
 
 ---
@@ -104,9 +104,10 @@ The phone companion is your **Ledger**. In the story it is the field journal eve
 
 | In the story | In the game |
 |---|---|
-| Places hold where people walk | A real visit reveals a map cell (`known`); traveling there in-game clears it (`cleared`) — `design_world_generation.md` §1 |
+| Places hold where people walk | An Explore Here report reveals a neighbourhood or a whole park (`known`); traveling there in-game clears it (`cleared`) — `design_world_generation.md` §1–2 |
 | Unwalked places sink under the fog | `unknown` cells are impassable fog — the Distortion's shimmer (`design_art_direction.md` §3) |
-| Ground you walk often is firmer | Familiarity: repeat real visits mean fewer encounters and pre-mapped interiors (`design_expeditions_and_survival.md` §3) |
+| Ground you walk often is firmer | Familiarity: exploring an area on more days means fewer encounters and pre-mapped interiors (`design_expeditions_and_survival.md` §3) |
+| What's left untended falls | Ordinary buildings stand, lie ruined, or are gone; streets crack and grow over; only the landmarks and the blocks around each Waypost are kept (`implementation_plan_world_generation_slice2.md` §11) |
 | The healing network is dark | Full healing only at the home safehouse |
 | The storage network is down | The PC box only at home |
 | The shops are empty | Items come only from searching places, by category (`design_resources_and_base.md` §1) |
@@ -116,9 +117,26 @@ The phone companion is your **Ledger**. In the story it is the field journal eve
 | Grief gathers and spreads | Haunted zones seed at cemeteries, ruins, and hospitals, and grow; at stage 4 next to home the Distortion jams the PC |
 | Thin spots open and close | **Distortion Fields** (§6) |
 | You move at walking pace | The 15 mph travel clock; the bicycle doubles it |
-| Your body opens the doors | You can Distort only to famous places you've physically visited (plus the starter city); a session starts where your phone is if that's inside a famous place, else at home |
+| Your footsteps open the doors | You can Distort only to famous places you've explored for real (plus the starter city) |
 | The way home is at the Wayposts | You Distort home only from a place's Waypost, or by blacking out |
 | The Echo is learning you | Escalating Echo encounters, then the finale (§5) |
+
+---
+
+### 3.1 What Calder learned — the fog's nine rules
+Dr. Ruth Calder recorded the Distortion region by region before she vanished (`design_interiors_and_quests.md` §5.1). Each region's log names **one rule**, drawn from how that region went dark (§4a). Each rule explains a system the player already knows, so the lore and the game tell the same story.
+
+| Region | Log | The rule | What it explains in play |
+|---|---|---|---|
+| New England | *The Unkept Lamps* | **Absence feeds it; presence starves it.** A place nobody walks thins, then fades, and a kept light holds it back. | Fog over unexplored places; Explore Here reveals; the night light radius; the lamps at every Waypost. |
+| Middle Atlantic | *What Runs Through It* | **It drinks whatever runs through it** — power, signals, water. It started underground and climbed. | Why the healing and storage networks died, and why the PC works only at home; dark tunnels. |
+| South Atlantic | *The Untended* | **It hides in what grows untended.** | Fallen houses and overgrown streets; tall grass as encounter ground; the berry garden stays safe because you tend it. |
+| East South Central | *The Breathing Hills* | **It breathes.** Thin spots open and close like lungs. | Distortion Fields open, linger a day, and close. |
+| West South Central | *Smoke Roads* | **It travels with what travels** — smoke, rivers, roads, and whatever you carry. | Pokémon from far regions in fields; the bag the fog takes when you black out. |
+| East North Central | *The Ice Winter* | **It gathers where grief is**, and spreads from there when nobody tends it. | Haunted zones at cemeteries, ruins, and hospitals, and why they grow. |
+| West North Central | *Reading the Sky* | **It behaves like weather:** it builds, it rolls, and it can be read. | Night surges; field forecasts (Calla's perk); weather in the Warden trials. |
+| Mountain | *What Will Not Copy* | **It cannot copy what is firm** — the oldest ground, the legendary Pokémon, and stones from the firmest places. | Legendaries never appear in fields; each has one decisive battle; the Anchors pin the Echo. |
+| Pacific | *The Echo* | **It copies what crosses it — and it has begun to copy a person.** | Hollow Trainers, the Echo, and the finale (§5). |
 
 ---
 
@@ -127,10 +145,10 @@ The phone companion is your **Ledger**. In the story it is the field journal eve
 The country divides into the nine **US Census divisions** (Decision 18). Every state belongs to exactly one. **DC, Puerto Rico, and the US Virgin Islands count as South Atlantic** for the game.
 
 **Trials (Decision 18 = B; refined 2026-10-20, Decision 26):**
-- **A Warden appears only once all three of their region's famous cities are fully unlocked** — you've physically visited enough neighbourhoods in each (`design_famous_places.md` §3.2). They have been watching to see whether you can hold a whole region.
+- **A Warden appears only once all three of their region's famous cities are fully unlocked** — you've explored enough neighbourhoods in each, in real life (`design_famous_places.md` §3.2). They have been watching to see whether you can hold a whole region.
 - **Each Warden waits at one fixed landmark** in one of the region's cities (`design_famous_places.md` §5).
 - Trials can be taken **in any order.**
-- **Team levels scale with the Anchors you already hold:** level `22 + 6 × anchorsHeld`. So 22 for your first Warden and 70 for your ninth.
+- **Every Warden fields a fixed level-75 team** (Decision 35), built like a competitive team and played to win, whenever you arrive. They are the strongest trainers left in the country, and they don't go easy on anyone. A Warden's ace can Mega Evolve (Decision 36).
 - **Each trial has a survival rule**, drawn from that region's hardship.
 - Winning earns that Warden's **Anchor** — all nine are required for the finale — plus their part of the story and a small survival **perk**.
 
@@ -153,7 +171,7 @@ The country divides into the nine **US Census divisions** (Decision 18). Every s
 
 ### 4a. The regions' own stories
 
-Each region went dark its own way. These are the survivors you meet there, and can battle, at the region's three cities. Their teams scale like the Wardens' (`22 + 6 × anchorsHeld`, minus 4). *The names and types are starting content, built in Phase 8.*
+Each region went dark its own way. These are the survivors you meet there, and can battle, at the region's three cities. Their teams are fixed at level 50, and their "Old Friends" rematches after the region's Warden at level 80 (Decision 35). *The names and types are starting content, built in Phase 8.*
 
 **New England — the Lantern Coast.**
 - **How it went dark:** the fog came in off the Atlantic on the first night of a winter storm and never lifted. One by one the harbour lights went out, the ships stopped coming, and the coastal towns emptied inland. Ice Pokémon came down from the mountains into the empty streets.
@@ -196,7 +214,7 @@ Each region went dark its own way. These are the survivors you meet there, and c
   - **Austin** — Jess Tran, a food-truck cook who feeds anyone who passes (Fire).
 
 **East North Central — the Inland Seas.**
-- **How it went dark:** the lakes froze one winter and never fully thawed, and the fog came across the ice. Factories fell silent, the ferries stopped, and the lakeshore towns emptied. Water and Steel Pokémon haunt the harbours.
+- **How it went dark:** the lakes froze one winter and never fully thawed, and the fog came across the ice. Factories fell silent, the ferries stopped, and the lakeshore towns emptied. Where the towns grieved most — their cemeteries and hospitals — the fog gathered thickest, and it has spread from there ever since. Water and Steel Pokémon haunt the harbours.
 - **Its Warden:** Ingrid Halvorsen captains the last ferry on Lake Erie.
 - **Survivors:**
   - **Chicago** — Mae Kowal, a train conductor who still walks the empty elevated tracks (Electric).
@@ -212,7 +230,7 @@ Each region went dark its own way. These are the survivors you meet there, and c
   - **Kansas City** — Rita Delgado, a pitmaster who keeps the smokehouse fires going (Fire).
 
 **Mountain — the Ghost Frontier.**
-- **How it went dark:** the old mining and boom towns had emptied long before the Stillness, so the fog found them first and spread along the highways. The desert cities lost their water and their lights. Ghost Pokémon are everywhere, and calm — here they've had the longest to settle.
+- **How it went dark:** the old mining and boom towns had emptied long before the Stillness, so the fog found them first and spread along the highways. The desert cities lost their water and their lights — all but one. Las Vegas kept its lights, and the towns around it went dark faster than anywhere else in the country (§4b). Ghost Pokémon are everywhere, and calm — here they've had the longest to settle. And yet, after all that time, the canyons and caverns are still exactly themselves.
 - **Its Warden:** Silas Vance keeps the Neon Boneyard in Las Vegas.
 - **Survivors:**
   - **Las Vegas** — Lucky Morales, a retired stage magician (Psychic).
@@ -229,6 +247,43 @@ Each region went dark its own way. These are the survivors you meet there, and c
 
 ---
 
+### 4b. The Glow — a pocket of order, and its price (Las Vegas, Decision 33)
+
+**What it is.** Under the Fremont Street canopy in downtown Las Vegas, the lights never went out. When the Stillness came, the casino workers, performers, and regulars who stayed sealed the doors and kept the power on. Ten years later, **the Glow** is a working town, the only place in the country that still looks like the Lit Years:
+- music every night and hot food;
+- trade in **Glow chips**, the town's money;
+- the **Glow Arena**, a battle hall with rules that change every day (`design_long_game.md` §4.7, if chosen).
+
+**The House.** A council called the House runs the Glow, and its rules are simple: *everyone works, everyone plays, nobody leaves after dark, and the House keeps the lights on.*
+- Chips are earned by work, by winning the House's **skill games** (logic and memory puzzles — the Glow never runs games of chance), or by winning in the Arena.
+- The House's champion waits at the top of the STRAT tower, the Glow's beacon.
+
+**The secret.** The Glow's power doesn't come from the dam or the sun.
+- In the first winter, the House found something in the dark beneath Fremont Street: **Necrozma**, a creature made of hunger for light. The House built a vault of mirrors around it. Necrozma drinks light, and the mirrors bend what it drinks into power.
+- To keep it fed, the mirrors pull light from across the desert. One by one the small desert towns' lamps dimmed and went out, and each town that went dark sank under the fog. **These are "the towns that went first"** (the Mountain Truth quest), and the Glow shone brighter with every one.
+
+**Who knows:**
+- **Silas Vance,** the Warden, keeps the Neon Boneyard as a quiet memorial: every sign in it came from a town the Glow drained.
+- **Lucky Morales** suspects.
+- **Elena Ruiz** in Phoenix has water and power records that don't add up.
+
+**The player's path:**
+1. Win in the Glow Arena and earn the House's trust.
+2. Beat the House's skill games and its champion at the top of the STRAT tower.
+3. **"The Light Bill":** find the House's ledger of drained towns.
+4. Open the vault, and turn the mirrors back toward the desert. Each town relit opens a door.
+5. Face Necrozma in its one decisive battle.
+
+**After.** The Glow's lights dim to candlelight, but its people stay. They start walking their own streets, and that holds the fog better than stolen light ever did — Calder's first rule, that presence starves it (§3.1). The Arena reopens, lit by the Neon Museum's restored signs.
+
+**Tone.**
+- A pocket of order with a hidden cost.
+- The House's people are survivors who made a bad bargain, not villains with a plan.
+- Necrozma is freed, never punished, and nothing cruel happens on screen.
+- The Glow is the first of what could become a pattern — a working town with a price — and later slices may add others.
+
+---
+
 ## 5. The Echo — the antagonist and the finale
 
 **What it is.** The Distortion learning a shape. For ten years it copied places and Pokémon from the few people still walking. You walk more than anyone, so it is learning you: how you walk, which way you turn, the Pokémon you trust. It wants a shape of its own — and yours is the one it knows best.
@@ -241,25 +296,31 @@ Each region went dark its own way. These are the survivors you meet there, and c
 | 0–2 | Flavour only: a figure at the edge of your lamplight on night travel; footprints matching yours along the fog margin. |
 | 3–5 | **Hollow Trainers:** on rare night encounters, a faceless trainer blocks your way with a copy of one of your Pokémon (level = your highest − 2). Beating one gives nothing — the fog gives nothing. |
 | 6–8 | The Echo speaks in your words, quoting your own journal. Distortion Fields open more often (§6). |
-| 9 | **The call.** The Echo takes your shape at the **famous place you have visited most in real life** (the one with the most recorded visits inside its boundary). |
+| 9 | **The call.** The Echo takes your shape at the **famous place you've explored most in real life**: the most distinct days with an Explore Here report inside it, ties to the place explored first. |
 
 ### 5.2 The finale — "The Last Walk"
-- **Where:** the famous place you have visited most in real life. You Distort there and walk from its Waypost to wherever the Echo stands; the walk is part of the finale.
-- **The battle:** the Echo leads an **exact mirror of your current party** — the same species, moves, abilities, natures, and held items — at **your levels + 5** (cap 100), with perfect IVs (31). It uses the strongest AI tier, and **no items** are allowed on either side.
-- **Why a mirror:** you can't out-gear your own team, only out-think it. The finale rewards the team you built across the whole country, and every player's finale is different.
+- **Where:** the famous place you've explored most in real life. You Distort there and walk from its Waypost to wherever the Echo stands; the walk is part of the finale.
+- **The battle:** the Echo leads a **perfected mirror of your current party** — the same species, at **your levels + 5**, capped at 100.
+  - **Level 100 is the cap,** so against a level-100 team the Echo's edge comes entirely from how its Pokémon are built (the human's rule, 2026-10-22):
+    - **perfect IVs** — 31 in every stat;
+    - **a competitive EV spread** for each species' role, using all 510 points;
+    - the **nature, ability, held item, and four moves** a competitive player would choose for that species, from everything it can learn — not the moves you taught it.
+  - It plays with the strongest AI tier, and **no bag items** are allowed on either side.
+  - The builds come from the same rules as the Wardens' (`design_long_game.md` §4.3).
+- **Why a perfected mirror:** it's your own team as a master would build it. You can't out-level it — at 100, nobody can — so you have to out-think it. The finale rewards the team you built across the whole country, and every player's finale is different.
 - **Blacking out** follows the normal rules — you wake at home and your bag lies where you fell. The Echo waits; you can return.
 
 ### 5.3 The ending
 Defeated, the Echo loses the shape it stole and comes apart. The Distortion recedes from everywhere anyone has walked — **but not from the unwalked**. The fog remains wherever nobody goes. One battle doesn't save the world; walking does.
 
-The credits roll over the Wardens' epilogues and your own map: every street you ever walked, lit.
+The credits roll over the Wardens' epilogues and your own map: every neighbourhood you ever explored, lit.
 
 **After the credits:**
 - Distortion Fields keep opening — the Echo's leftover copies;
 - haunted zones still grow;
 - legendaries still wait at their landmarks.
 
-*Proposed:* each new real-world spring, an "Eleventh Spring" rematch with a fresh Echo at your newest most-visited famous place.
+*Proposed:* each new real-world spring, an "Eleventh Spring" rematch with a fresh Echo at your newest most-explored famous place.
 
 ---
 
@@ -276,14 +337,26 @@ The credits roll over the Wardens' epilogues and your own map: every street you 
 
 ## 7. Completing the Pokédex (Decision 18)
 
-- **649 species.** The Pokédex is complete when every **non-legendary species is caught**, and every **legendary or mythical species is caught or defeated**.
+- **905 species** — Generations 1–8 (Decision 32). The Pokédex is complete when every **non-legendary species is caught**, and every **legendary or mythical species is caught or defeated**. The four that come only by evolution (Silvally, Cosmoem, Urshifu, Melmetal) count when obtained.
 - **Where species live:**
   - about a third live everywhere;
   - about 40% live only in certain **biomes** (desert, forest, coast, mountains, wetland, plains, snow, city);
   - about 20% live only in **one of the nine regions**;
-  - the **48 legendary and mythical species** each wait at **their own famous place**, themed to them and spread across all 9 regions. The full table is `design_famous_places.md` §1.2.
+  - the **82 legendary and mythical species** wait at **78 famous places** of their own, themed to them and spread across all 9 regions;
+  - the **11 Ultra Beasts** come only through Distortion Fields, after Necrozma is freed (`design_famous_places.md` §1.4).
+
+  The full table of legendary places is `design_famous_places.md` §1.2.
 - **Distortion Fields** can bring any non-legendary species anywhere, slowly. **Legendaries require travel**, so the Pokédex can never be completed at home.
-- **One decisive battle per legendary** (Decision 26). Each waits behind a challenge — a maze or puzzle — and can be **caught or defeated once**; either ends it forever and counts for the Pokédex. Blacking out or running away doesn't use up the chance. Some have lore requirements: Regigigas needs the three Regis in your party, Keldeo needs the three Swords of Justice met, and Arceus needs all nine Anchors (`design_famous_places.md` §6).
+- **One decisive battle per legendary** (Decision 26). Each waits behind a challenge — a maze or puzzle — and can be **caught or defeated once**; either ends it forever and counts for the Pokédex. Blacking out or running away doesn't use up the chance. Twenty have **lore requirements**, as in their legends — among them:
+  - Lugia comes after the three birds, and Ho-Oh after the three beasts;
+  - Rayquaza after Kyogre and Groudon, Giratina after Dialga and Palkia, and Kyurem after Reshiram and Zekrom;
+  - Regigigas after the three Regis, and Keldeo after the three Swords;
+  - Darkrai needs Cresselia's Moon Feather, and Shaymin comes only to a gardener;
+  - Arceus needs all nine Anchors;
+  - Eternatus needs the sword and the shield (Zacian and Zamazenta), Enamorus the three storm-spirits, and Calyrex a steed and a harvest;
+  - Zygarde needs 50 of its 100 cells, found across the country.
+
+  Every requirement is "caught or defeated", so no choice can lock a player out (`design_famous_places.md` §6).
 - **Why one chance:** legendaries are anchors of reality, like the Wardens' stones. The Distortion can't copy them, and once one has been met, it has been *met*.
 
 ---
@@ -301,7 +374,7 @@ The credits roll over the Wardens' epilogues and your own map: every street you 
 | Travel | Distance is honest. Far from home, you have what you carry. |
 | Wardens | Trials test survival — darkness, rationing, endurance, weather — not just levels. |
 | The Echo | The last test: your own team, sharper. |
-| Lore | **The Calder Logs** — nine field logs, one per region — plus the Lost Postcards and over 200 side quests that piece together what happened (`design_interiors_and_quests.md` §5). Collected in the Walker's Journal. Original text only. |
+| Lore | **The Calder Logs** — nine field logs, one per region, each naming one of the fog's rules (§3.1) — plus the Lost Postcards and over 200 side quests that piece together what happened (`design_interiors_and_quests.md` §5, `content_quest_roster.md`). Collected in the Walker's Journal. Original text only. |
 
 ---
 

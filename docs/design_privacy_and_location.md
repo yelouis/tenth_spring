@@ -4,25 +4,30 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 
 ## 1. Data Contracts (non-negotiable)
 
-- **Your devices only**: raw GPS traces never leave the phone. Fuzzed `VisitLog` rows travel exactly one hop — phone → paired PC — over a direct, end-to-end-encrypted LAN channel (`design_companion_and_sync.md` §3). No account, no server, no cloud relay, no analytics containing coordinates. The game save stores map state at fuzzed precision only.
-- **Fuzzing at source**: coordinates are reduced to 3-decimal precision (~110 m) *on the phone before storage or sync* — higher precision never persists and never transits. The safehouse is stored only as a fuzzed cell (`homeFuzzMeters = 300` snap) — the exact home point never persists anywhere on either device.
-- **No third-party SDKs** with location access, on either app. **Map data is fully offline (Decision 13 = C).** The PC downloads whole regional OpenStreetMap files (e.g. a US state) and reads every street and building locally; no map request ever names a place or area the player has been. The only thing a download reveals is which region was chosen.
-- **Coarse area reveals & home privacy (Item 21 / Decision 26):** map reveals in famous places occur at the whole-neighbourhood and whole-city level (`area_reveal`), which is strictly coarser than the fuzzed movement breadcrumbs. The designated home cell (`meta('home_cell')`) is stored exclusively in PC local state and never syncs or transits anywhere; it is used solely on the PC to compute the nearest famous city to unlock as the starter city.
-- **Export & erase**: settings on both devices expose "export my map" (GeoJSON, from the PC) and "erase everything" (wipes phone outbox + PC world + pairing). Both are one tap, no dark patterns.
-- **Enforced separation**: the sync ingest has no write path into the bag, party, PC box, or Pokémon tables (see `design_resources_and_base.md` §5) — real movement unlocks access, never cargo or creatures, at the architecture level.
+- **One reading, on purpose, never kept** (Decision 29, 2026-10-21):
+  - the phone reads your location **only** when you tap **Explore Here** or **Set home**, with "while using the app" permission;
+  - the reading is looked up on the phone against the bundled places pack, then **discarded** — it is never stored, logged, or sent, at any precision;
+  - there is no background location, no visit detection, and no route tracing.
+- **Only area names leave the phone:** an explore event names a famous place and one of its areas (`place_id`, `area_key`); "Set home" names only the starter city. They travel one hop — phone → paired PC — over the direct, end-to-end-encrypted LAN channel (`design_companion_and_sync.md` §3). No account, no server, no cloud relay, no analytics.
+- **Your home never leaves the phone,** not even fuzzed. The phone picks the nearest famous city itself, and the PC learns only that city.
+- **Reveals are coarse by design:** the PC reveals whole neighbourhoods, cities, and parks — it never knows where inside them you stood.
+- **No third-party SDKs** with location access, on either app.
+- **Map data is fully offline** (Decisions 13, 23): the PC downloads pinned state files of OpenStreetMap and reads them locally; no map request ever names a place or area you've been. Only which state is ever revealed.
+- **Export & erase:** both devices offer "export my map" (from the PC) and "erase everything" (the phone's outbox and pairing, plus the PC's world). Both are one tap, with no dark patterns.
+- **Enforced separation:** the report ingest has no write path into the bag, party, PC box, or Pokémon tables (`design_resources_and_base.md` §5). Real-world exploring unlocks access, never cargo or creatures.
 
-## 2. Capture Strategy (battery + trust)
-
-- Capture lives entirely in the **companion app**. Primary: OS significant-location-change + visit APIs (iOS `CLVisit`, Android fused provider with PASSIVE/BALANCED priority). Target battery cost < 3%/day.
-- No continuous high-accuracy tracking, ever. Corridor traces come from SLC breadcrumbs interpolated along the road network, not from polling.
-- **Concrete settings (as implemented):** accuracy `medium`, distance filter **25 m**, interval **2 min**; Android runs a foreground service with a persistent low-priority notification, iOS uses `allowBackgroundLocationUpdates` with `pauseLocationUpdatesAutomatically`. These are the battery-budget levers — see the master plan's Core Configurations before touching them.
-- Graceful degradation: with "While Using" permission only, the pipeline still works — visits are detected while the companion is open and a manual "scout here" button logs the current place — from a **fresh one-shot fix taken when the button is tapped**, never a cached one, stamped with that fix's own time (F36). "Always" permission is the *enhancement*, never the wall.
+## 2. How a reading is taken
+- **Permission:** "while using the app" only, asked the first time the player taps Explore Here, with the plain-language rationale in §3. "Always" is never requested; Android and iOS background modes are removed.
+- **The reading:** `geolocator` `getCurrentPosition` at accuracy `high`, with a 10 s time limit. If the reported accuracy is worse than **100 m**, the app says `Your location is too fuzzy here — try again in the open.` and records nothing.
+- **Battery:** one GPS reading per tap. There's nothing to budget.
 
 ## 3. Onboarding & Consent UX
-
-- Flow: the PC game's tutorial establishes the fantasy first, then hands off to the companion install + QR pairing ("recruit your scout"). The permission ask happens on the phone at that moment, with a plain-language screen: what is collected, where it lives (your phone and your PC, nowhere else), what it's used for (drawing your map), and what it is never used for (selling, ads, resources).
-- The safehouse is player-designated **on the PC** with an explicit "this stays fuzzy" note — we show the fuzz circle on the map so the promise is visible.
-- Kill-switch: "pause scouting" one-tap toggle on the companion's main screen (and mirrored in the PC pause menu as a status indicator), no punishment attached.
+- **The flow:** the PC's tutorial establishes the fantasy, then hands off to the companion install and QR pairing ("recruit your scout"). The phone explains its single permission at first use, in plain language:
+  - **what it is:** one location reading when you tap a button;
+  - **where it goes:** it's checked on your phone against a map of famous places, then thrown away;
+  - **what leaves the phone:** only the name of the neighbourhood or park you unlocked, sent to your own PC;
+  - **what it's never used for:** tracking, selling, ads, or resources.
+- **Setting home** explains: `We use this once to find the famous city nearest you. Only the city's name is saved.`
 
 ## 4. Compliance Notes (verify before release)
 
@@ -31,7 +36,6 @@ Location data is the game's fuel and its biggest liability. The pillar — **"yo
 - GDPR/CCPA posture: on-device-only architecture keeps us out of controller territory for location data; the export/erase controls in §1 are still implemented as if it applied (cheap goodwill).
 
 ## 5. Files
-* `companion/lib/capture/capture_service.dart` — SLC/visit subscription, battery budget guards.
-* `companion/lib/capture/fuzz.dart` — all precision-reduction in one reviewed file (the only place raw coordinates exist).
+* `companion/lib/explore/explore_service.dart` — the one-shot reading, the pack lookup, and the immediate discard (the only place a coordinate exists, and only in memory).
 * `companion/lib/screens/onboarding_consent.dart` — canonical rationale copy.
-* `game/sync/ingest` (PC) — visit-batch validation; structurally has no write access to bag, party, PC box, or Pokémon tables.
+* `game/autoloads/sync_server.gd` (PC) — explore-event validation against the places pack; structurally no write access to the bag, party, PC box, or Pokémon tables.

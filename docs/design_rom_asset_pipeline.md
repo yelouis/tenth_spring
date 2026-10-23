@@ -9,7 +9,11 @@ This document defines how Tenth Spring gets Pokémon sprites, species data, move
 
 PokeMMO distributes no assets and requires players to supply their own ROMs; it has no reported takedown. ROM hacks follow the same principle: they ship as patches against the player's own ROM, never as the ROM itself. BYOR reduces risk substantially, but it does **not** eliminate it — see §8.
 
-**Scope (Decision 12, 2026-10-08): all 649 Pokémon of Generations 1–5.** Generations 6–9 are out of scope permanently. Their games are 3DS/Switch titles built from 3D models, not sprites. The sprites found online are rips or fan redraws, and using them would break this document's first rule.
+**Scope (Decision 32, 2026-10-22): all 905 Pokémon of Generations 1–8.**
+- **Sprites:** #1–649 come from the player's Black/White ROM. #650–905 come from the **Smogon Sprite Project**, the community's Black/White-style fan sprites, free for non-profit use with credit (§2a).
+- **Data:** all 905 species' data comes from **PokéAPI's open data** (BSD 3-Clause), because no Gen 5 cartridge holds Gen 6–8 data (§2a).
+- **All of it lands on the player's machine and never in the repo.** Fan sprites depict Nintendo's characters, so they follow the same rule as ROM content.
+- *Superseded:* Decision 12's "Generations 6–9 are out of scope permanently". Gen 9 stays out of scope.
 
 ---
 
@@ -19,6 +23,7 @@ PokeMMO distributes no assets and requires players to supply their own ROMs; it 
 |---|---|
 | Importer and parser code | ROM files (`.nds`, `.gba`, …) |
 | Game mechanics: formulas, type chart, our own spawn tables (species referenced by **National Dex number**) | Sprites, palettes, item icons, audio, tilesets extracted from a ROM |
+| SHA-256 manifests and per-sprite **credits** for the downloaded content (`game/config/fan_sprite_manifest.json`, `fan_sprite_credits.json`, `data_pack_manifest.json`) — hashes and artist names only | **Fan sprites** (#650–905) and the **data pack** (PokéAPI's CSV files, which include species, move, and item names) |
 | Original art: UI, fonts, the placeholder map tiles (the no-ROM look) | Nintendo text banks: species/move/item names, Pokédex entries |
 | Tile **mapping tables** that reference ROM metatiles by number (`game/config/emerald_tile_map.json`) | Tile graphics, palettes, and metatile data extracted from a ROM |
 | Decoding rules for text (functional code, not text) | Extracted stat tables (base stats, learnsets, move data) |
@@ -33,34 +38,58 @@ All extracted content lands in **`user://rom_cache/`** on the player's machine �
 
 | ROM | Game code | Provides | Required? |
 |---|---|---|---|
-| **Pokémon Black or White (USA)** | `IRBO` (Black) / `IRAO` (White) at header `0x0C` — **verify** both against the No-Intro DAT | **All data for all 649 species**: base stats, types, abilities, learnsets, evolutions, moves (559), items, item icons, and all names/text. Battle sprites (animated, 96×96) for **all 649**. | **Always** — the only source of Pokémon content |
-| **Pokémon Emerald (USA)** | `BPEE` at header `0xAC` — **verify** against the No-Intro DAT | **Overworld map art:** tileset graphics, palettes, and metatile definitions and behaviours, turned into the map's tile atlas (§5) | **For the Pokémon-style map.** Without it, the map uses the original placeholder tiles (the no-ROM look) |
+| **Pokémon Black or White (USA)** | `IRBO` (Black) / `IRAO` (White) at header `0x0C` | **Battle sprites** (animated, 96×96) for **#1–649**, and item icons for Gen 5 items. *Since Decision 32 its data and text are no longer read* — they come from the data pack (§2a). | For the #1–649 sprites. Without it, those species show original silhouettes. |
+| **Pokémon Emerald (USA)** | `BPEE` at header `0xAC`. Known clean SHA-1 `f3ae088181bf583e55daf962a92bb46f4f1d07b7` — the dump the community's Emerald decompilation rebuilds byte-for-byte; confirmed against the human's file on 2026-10-22 | **Overworld map art:** tileset graphics, palettes, and metatile definitions and behaviours, turned into the map's tile atlas (§5) | **For the Pokémon-style map.** Without it, the map uses the original placeholder tiles (the no-ROM look) |
 
 **Black and White are interchangeable** for our purposes. Their version differences are wild-encounter tables and exclusive story content, neither of which we read. The importer accepts either and treats them identically.
 
-**Why Black/White is the single data source.** One parser for every species means:
-- Gen 1–4 Pokémon keep the Gen 5 moves they can learn in Black/White.
-- Only one text decoder is needed (Gen 5 text, not Gen 4's custom character table).
-- Every species' data shares one format.
-
-Battle *rules* still follow Generation IV (`design_creatures_and_battles.md`); Gen 5 supplies data, not rules.
+**Why the data moved to PokéAPI (Decision 32).** No Gen 5 cartridge contains Gen 6–8 species, moves, or the Fairy type. One data source for all 905 species keeps every species in one format under one ruleset, Generation 8 (`design_creatures_and_battles.md`). *(This replaces "Black/White is the single data source".)*
 
 **Rules for everyone — the game, its docs, and any agent working on it:**
 - **Never download a ROM, link to a ROM site, or help a user find one.** Only users supply ROMs.
-- **Verify on import.** The game code must match the table above. The file's SHA-1 must match the No-Intro known-good hash for that title. *(Hashes are deliberately not hardcoded here: the importing agent takes them from the No-Intro DAT and records the source, never a guess.)* A ROM that fails either check is rejected with a plain-language message.
-- **v1 rejects** modified ROMs (hacks), non-USA releases, and Black 2/White 2. B2W2's archive layout differs; supporting it is a possible later extension.
+- **Verify on import.** The game code must match the table above.
+  - **Emerald must be the clean dump** (the SHA-1 above): the tile mapping table depends on exact offsets.
+  - **Black/White:** a known-good SHA-1 (recorded from the No-Intro DAT, with its source) imports normally. **A modified Black or White ROM is accepted for sprites only** (Decision 34): the importer records its SHA-1, shows `Modified ROM — only its Pokémon sprites are used`, and accepts it only if the sprite archive passes every sprite check in §7.
+  - A ROM that fails is rejected with a plain-language message.
+- **v1 rejects** non-USA releases and Black 2/White 2. B2W2's archive layout differs; supporting it is a possible later extension.
+
+### 2a. Generations 6–8 — the data pack and the fan sprites (Decision 32)
+**Both are downloaded by the game on the player's machine,** with the player's consent and the download size shown first. Both are pinned to exact versions, verified against committed SHA-256 manifests, and stored in `user://rom_cache/`. They are never committed, and CI never downloads them.
+
+| Content | Source (pinned) | Licence / terms | Lands in |
+|---|---|---|---|
+| **Data for all 905 species:** stats, types, abilities, level-up learnsets, evolutions, moves, items, and names | **PokéAPI** — the CSV files under `data/v2/csv/` of `github.com/PokeAPI/pokeapi`, at one commit recorded in `game/config/data_sources.json` | BSD 3-Clause (© Paul Hallett and PokéAPI contributors) | `data/*.json`, `text/en/*.json` |
+| **Battle sprites #650–905:** front, back, shiny front, shiny back | **The Smogon Sprite Project's** Black/White-style sprites, as served by `github.com/PokeAPI/sprites` (folder `sprites/pokemon/versions/generation-v/black-white/` — the spike confirms the exact paths). PokéAPI serves them with Smogon's permission, and states that the sprites above #650 are not official. Pinned to one commit. | "Free for use as long as the spriter or the project itself is credited", and "free for non-profit use" (the Smogon Sprite Project thread) | `sprites/front/{dex}.png` and the other sprite folders, beside the ROM's |
+
+**Rules for both:**
+- **Pinned and verified.** `game/config/data_sources.json` records each repository and commit. `data_pack_manifest.json` and `fan_sprite_manifest.json` hold the SHA-256 of every file. A file that fails its hash is refused, and the import reports which.
+- **Only #650–905 are taken from the sprite repository.** Its lower numbers are Nintendo's own sprites, so the importer never requests them — #1–649 come only from the player's ROM.
+- **Learnsets follow the latest game:** a species' level-up moves come from Sword/Shield if it appears there, else the newest earlier game that has it — Legends: Arceus for #899–905, then Brilliant Diamond/Shining Pearl, Let's Go, and Ultra Sun/Ultra Moon. The spike records the exact version-group ids.
+- **Moves:** those introduced by Gen 8 or earlier, excluding Z-Moves and Max Moves (Decision 36 = Mega Evolution only).
+- **Mega forms** (Decision 36): the data pack also imports the 48 Mega forms' stats, types, and abilities. Their Black/White-style sprites come from the same pinned sprite repository where they exist (Smogon's X/Y Sprite Project drew them), else they're listed as pending.
+- **Gaps:** a species with no Black/White-style fan sprite yet (the project's Gen 8 download predates Legends: Arceus) shows an original silhouette with a "sprite pending" flag, and the import report lists its dex number. Never substitute another style.
+- **Credits are required.** `game/config/fan_sprite_credits.json` maps each dex number to its spriter(s), from the project's credit sheet — artist names only, never species names. The game's Credits screen and `CREDITS.md` show them with "Smogon Sprite Project", and the Pokédex shows each sprite's artist.
+
+**Sources** (checked 2026-10-22):
+- [Smogon Sprite Project — Gen 8 thread](https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/) (the terms quoted above)
+- [X/Y Sprite Project — Gen 6](https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/)
+- [PokéAPI sprites](https://github.com/PokeAPI/sprites) ("the sprites with IDs greater than 650 are thus not official"; thanks Smogon "for allowing us to use and serve their custom B&W-style sprites")
+- [PokéAPI licence](https://raw.githubusercontent.com/PokeAPI/pokeapi/master/LICENSE.md) (BSD 3-Clause)
 
 ## 3. Import flow (first run, and on demand)
 
 The Black/White ROM and the Emerald ROM are imported separately (§2), each with its own verify step and its own part of the cache; either can be present without the other.
 
 ```
+0 FETCH    (once, with consent) Download the data pack and the #650–905 fan sprites (§2a); verify every
+           file against its SHA-256 manifest.
 1 LOCATE   Player picks a ROM file in a native file dialog. Store only its path.
-2 VERIFY   Game code in §2's table; SHA-1 == No-Intro hash for that title. Reject otherwise.
+2 VERIFY   Game code in §2's table. Emerald: the clean SHA-1. Black/White: a known-good SHA-1, or
+           "modified — sprites only" (§2).
 3 PARSE    Read the NDS header → file name table (FNT) + file allocation table (FAT).
 4 EXTRACT  Pull that ROM's archives in §5 by path; unpack each NARC.
-5 DECODE   Sprites → PNG. Data: fixed-layout records → species/move/item/evolution/learnset tables.
-           Text: decrypt message banks → names.
+5 DECODE   Sprites → PNG (#1–649 from the ROM). Data and names: the data pack's CSV files → species, move,
+           item, evolution, and learnset tables (§2a). The ROM's own data and text are not read.
 6 WRITE    user://rom_cache/ (layout §6). Write the manifest last.
 7 VALIDATE Spot-checks (§7) before marking the cache valid.
 ```
@@ -98,7 +127,7 @@ The Black/White ROM and the Emerald ROM are imported separately (§2), each with
 
 ## 5. What to extract
 
-**Black/White** (file counts from Project Pokémon's Black archive list; White must match — **verify**):
+**Black/White** (file counts from Project Pokémon's Black archive list; White must match — **verify**). *Since Decision 32, only the sprite archive `/a/0/0/4` and the item icons are read. The data and text rows below are kept as the record of the format, and are not imported.*
 
 | Archive | Contents | Cache output |
 |---|---|---|
@@ -119,7 +148,7 @@ The Black/White ROM and the Emerald ROM are imported separately (§2), each with
 
 - **The bridge is a committed mapping table**, `game/config/emerald_tile_map.json`. It maps each `(class, variant, mask)` of the slice-2 tile vocabulary (slice-2 plan §3) to metatile numbers, plus multi-metatile building compositions for the building templates.
 - **Numbers only — never pixels.** The table is written by the Emerald tile spike, from the player's own ROM, and reviewed by the human.
-- **Not extracted:** Emerald's maps, events, text, sprites, music, or Pokémon data. The world is generated from OpenStreetMap; Pokémon content comes only from Black/White.
+- **Not extracted:** Emerald's maps, events, text, sprites, music, or Pokémon data. The world is generated from OpenStreetMap; Pokémon sprites come from Black/White and the fan sprites, and Pokémon data from the data pack (§2a).
 
 ## 6. Cache layout and versioning
 
@@ -140,7 +169,16 @@ user://rom_cache/
 Spot-check against facts the player's own ROMs must contain. Any failure leaves that part of the cache invalid and reports which check failed.
 
 **Black/White:**
-- Species count = **649**; move count = **559**.
+- Species count = **905**, from the data pack. The move count is whatever §2a's rule yields; the spike records it.
+- **Gen 6+ typing**, primary then secondary:
+
+  | Dex | Species | Types |
+  |---|---|---|
+  | `#36` | Clefable | Fairy |
+  | `#282` | Gardevoir | Psychic / Fairy |
+  | `#778` | Mimikyu | Ghost / Fairy |
+  | `#887` | Dragapult | Dragon / Ghost |
+- **Every #1–649 sprite decodes** from the ROM, and **every #650–905 sprite** is present or listed as pending (§2a).
 - Types, primary then secondary:
 
   | Dex | Species | Types |
@@ -158,6 +196,7 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
   - the grass, tall-grass, and water tiles each pass a pixel-variance threshold that a wrong decompression or palette cannot pass;
   - the importer refuses a mapping table entry that points past the end of a tileset's metatile table.
 - **Chandelure's static front sprite** is a real image, not noise. Two checks: ≤ 16 distinct colours per palette, and a pixel-variance threshold that "static" from a wrong decryption or wrong cell assembly cannot pass.
+- **Dragapult's fan sprite** (#887) loads and passes the same variance check.
 
 
 ## 8. Legal and repository guardrails (non-negotiable)
@@ -208,13 +247,16 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
 
    The hook is local, so a clone without it has no pre-publication defense. The local battery therefore **fails if `core.hooksPath` is not `.githooks`**. It skips that check only when `CI=true`, where the range and tree scans apply instead.
 4. **ROM-dependent tests** run **only** when a developer supplies ROMs locally (`TENTH_SPRING_ROM_BW`, `TENTH_SPRING_ROM_GBA`). Otherwise they are skipped with an explicit message, never faked. CI never has a ROM.
+   - **The same holds for the data pack and fan sprites** (`TENTH_SPRING_DATA_PACK` points at a local download).
+   - **Paths to a developer's ROMs are never written in the repo** — only the environment variable names.
+   - **No test fixture may contain a fan sprite or a data-pack file.**
 5. **No Nintendo trademarks in branding.** Do not use "Pokémon" or other Nintendo trademarks in the game's title, logo, store pages, or release names. The game is "Tenth Spring."
 6. **The phone companion contains no Nintendo assets or names**, ever (`design_companion_and_sync.md` §1). It is a location tracker and must stay store-listable.
 
 ## 9. Distribution
 
 - **No commerce of any kind:** no Steam, no sales, no ads, and no donations tied to the game. Any of these makes a takedown far more likely.
-- **The asset-free client** is distributed via GitHub Releases from the public repo. Players install it, then import their own ROMs (§3).
+- **The asset-free client** is distributed via GitHub Releases from the public repo. Players install it, then import their own ROMs (§3). On first run it offers to download the data pack and the fan sprites (§2a), showing the size and the credits.
 - **Honest risk statement:** BYOR keeps Nintendo's assets out of our distribution, which is what separated PokeMMO's survival from Essentials' takedown. It is not immunity: Prism was a patch and still received a cease-and-desist once it became high-profile.
   - Keep the project low-profile.
   - If a takedown notice ever arrives, comply immediately and stop distribution. Do not argue it in public.
@@ -231,3 +273,6 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
 * `game/rom/gen3_tiles.gd` — Gen 3 tileset, palette, metatile, and attribute decoding.
 * `game/rom/tile_atlas_builder.gd` — builds `tiles/emerald_v1.png` and `.json` from `game/config/emerald_tile_map.json`.
 * `tools/check_no_nintendo_assets.py` — the §8.3 guard.
+* `game/rom/data_pack.gd` — downloads, verifies, and parses the PokéAPI CSV files (§2a).
+* `game/rom/fan_sprites.gd` — downloads and verifies the #650–905 sprites; writes them beside the ROM's.
+* `game/config/data_sources.json`, `data_pack_manifest.json`, `fan_sprite_manifest.json`, `fan_sprite_credits.json` — pins, hashes, and credits (repo-safe).

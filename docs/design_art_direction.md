@@ -10,10 +10,13 @@ The pivot changes where art comes from. **Pokémon and item art come from the pl
 
 | Art | Source | In repo? |
 |---|---|---|
-| Pokémon battle sprites (front/back, shiny) — 96×96, animated, Black/White style, for all 649 (Decision 10 = B) | Player's Black/White ROM via the importer | **Never** |
+| Pokémon battle sprites #1–649 (front/back, shiny) — 96×96, animated, Black/White style (Decision 10 = B) | Player's Black/White ROM via the importer | **Never** |
+| Pokémon battle sprites #650–905 — the **Smogon Sprite Project's** Black/White-style fan sprites (Decision 32) | Downloaded on the player's machine, credited (`design_rom_asset_pipeline.md` §2a) | **Never** (credits only) |
 | Item icons | Player's ROM via the importer | **Never** |
 | Overworld map tiles (layout generated from OSM) | Player's **Emerald** ROM via the importer (Decision 19) | **Never** |
 | Placeholder map tiles — the no-ROM look | Original, code-drawn (`placeholder_v1`) | Yes |
+| **Landmark set pieces** — the famous buildings Emerald has no look-alike for (§1a) | Original (code-drawn or commissioned), in the Emerald style | Yes |
+| **Modern props Emerald lacks** — cars, traffic lights, street lamps, bus stops | Free, credited libraries (§2a), palette-matched to the Emerald tiles | Yes, with `CREDITS.md` |
 | Player overworld sprite, battle UI, menus, fonts | Original | Yes |
 | Battle backgrounds per zone | Original | Yes |
 | Fog, distortion, night, and lamp effects | Original shaders | Yes |
@@ -22,11 +25,71 @@ The pivot changes where art comes from. **Pokémon and item art come from the pl
 
 **Battle layout** is built for a 96×96 animated sprite box at integer scale, never stretched.
 
+## 1a. Landmarks — the real world's famous buildings in Pokémon style (2026-10-22)
+The human noted that "the art from the ROMs might not be enough for things like the monuments in real life." Emerald draws its own region's towns, not the Statue of Liberty. Each famous interior (`design_interiors_and_quests.md` §4) gets its look from the first source that fits:
+
+1. **An Emerald look-alike,** composed from the player's ROM through the mapping table (numbers only, never pixels — `design_rom_asset_pipeline.md` §5):
+
+   | Emerald building (by function) | Stands in for |
+   |---|---|
+   | the pyramid-shaped battle hall | The Pyramid (Memphis) |
+   | the space centre's dome | Space Center Houston, Kennedy Space Center |
+   | the tall battle tower | Empire State Building, Willis Tower, Renaissance Center, Terminal Tower, Freedom Tower, Cathedral of Learning, the STRAT |
+   | the art museum | Philadelphia Museum of Art, Nelson-Atkins, Boston Public Library, Library of Congress |
+   | the maritime museum | Georgia Aquarium, American Museum of Natural History, Field Museum, the natural-science museums |
+   | the contest hall | the Fox Theatres, Ryman Auditorium, the Smith Center, Preservation Hall, TCL Chinese Theatre |
+   | the department store | Reading Terminal, Pike Place, French Market, and West Side Market halls |
+   | the game corner | the Glow's casinos on Fremont Street |
+   | the weather institute | Griffith Observatory, McDonald Observatory |
+   | the power plant | Michigan Central Station, the Edison laboratory, the Flats |
+   | the league's grand hall | the state capitols (Rhode Island, Texas, Colorado, Arizona) |
+   | the battle dome and the stadium | Fenway Park, the Astrodome, Churchill Downs |
+   | the elevated cycling road | the "L", the Stone Arch Bridge, the Hot Metal Bridge |
+   | the trick house | City Museum (St. Louis) |
+
+2. **A free, credited library piece** (§2a) — mainly modern props, not landmarks.
+3. **An original set piece** — a multi-tile stamp drawn in the Emerald style: 16-colour palettes, a 1-px dark outline, light from the top left. Needed first for the icons nothing else can stand in for:
+   - the Statue of Liberty and the Gateway Arch;
+   - the Lincoln Memorial and the Washington Monument;
+   - the Space Needle, Coit Tower, and the Golden Gate's towers;
+   - Boston Light and the Cape Hatteras lighthouse;
+   - Alcatraz's cellhouse and Nashville's Parthenon;
+   - Independence Hall, Grand Central's facade, and the Neon Museum's signs.
+
+   Code-drawn first, as `placeholder_v1` was; a human pixel artist can replace any of them later.
+
+**The register** (slice-2 plan §12, agent guide Item 30). `game/config/landmark_art.json` maps each interior id to its source: `{"source": "original", "stamp": "<stamp id>"}` or `{"source": "emerald", "composition": "<composition id>"}`. The synthesizer places a set piece on the landmark's footprint in place of the gold-roof template (slice-2 plan §11.1). A landmark with no entry keeps the gold roof.
+
+**Searched and not found** (2026-10-22): free (CC0 or CC-BY) top-down pixel art of US landmarks in a compatible style. That's why original set pieces are the plan.
+
 ## 2. The rip trap — read before sourcing any tiles
 
 This applies to every piece of art that **isn't** read from the player's ROM at runtime. ROM tiles are never committed, so they never meet this problem; a downloaded tileset would.
 
 **Many "Diamond/Pearl tilesets" circulating online are rips of Nintendo's art.** Committing one puts Nintendo assets into a public repo — exactly what the BYOR model exists to prevent. Before licensing any tileset: confirm the author drew it, get commercial-use-or-better license terms in writing, and prefer artists with a portfolio of original work. When in doubt, commission.
+
+## 2a. Free libraries — vetted, and how to credit them (2026-10-22)
+The human asked for free 2D art libraries "(give credit) … that fits the pokemon theme". What the search found — **check each asset page's licence again at the moment of download**, and record it in `CREDITS.md`:
+
+| Library | Licence | What it offers | Our use |
+|---|---|---|---|
+| [Kenney — RPG Urban Pack](https://opengameart.org/content/rpg-urban-pack) ([itch.io](https://kenney-assets.itch.io/rpg-urban-kit)) | **CC0** (attribution appreciated, not required) | 480+ urban tiles: roads, buildings, vehicles, details; six walking characters | **Modern props** — cars, signs, traffic lights, street lamps — palette-matched to Emerald |
+| [Kenney — Roguelike Modern City](https://opengameart.org/content/roguelike-modern-city-pack) | **CC0** | 1,000+ tiles: roads, parking, buildings | More modern props |
+| [tiny16 tileset](https://opengameart.org/content/tiny16-tileset) (FuwanekoGames) | **CC-BY 3.0** | 16×16 pastel town tiles, "somewhat Pokémon inspired" | A fallback for town pieces Emerald lacks |
+| Ninja Adventure (Pixel-boy and AAA, itch.io) | **CC0**, per the author's own statement | A large top-down pack of terrain, villages, and props | **Snow and winter tiles**, which Emerald lacks — check its contents first |
+| [Tuxemon tileset](https://opengameart.org/content/tuxemon-tileset) (Buch) | CC-BY-SA 3.0 | 16×16 Pokémon-like terrain | **Not used for now:** an unresolved comment says two of its tiles were copied from another artist, and share-alike would bind our derived atlas |
+| [Pokémon-inspired 16×16 tiles](https://opengameart.org/content/pokemon-inspired-16x16-tiles) (Red_Voxel) | unclear (CC-BY-SA listed, CC0 claimed) | trees, a mailbox, tall grass | **Not used** until the licence is clear |
+
+**Rules:**
+- **The rip trap (§2) applies to every library piece.** Check the author's other work, and refuse anything that looks traced from a Pokémon game.
+- **Palette matching is allowed and credited.** Recolouring a CC0 or CC-BY tile to the Emerald look is a modification, so `CREDITS.md` says "recoloured".
+- **`CREDITS.md`** (repo root) lists every third-party file with:
+  - title, author, licence, and source link;
+  - what we changed;
+  - where it's used.
+
+  CC-BY and CC-BY-SA pieces also credit in-game, on the Credits screen.
+- **Never mix in a library's characters or monsters.** The player sprite is original, and the Pokémon come from the ROM and the fan sprites.
 
 ## 3. Technical spec (every original asset must comply)
 
@@ -40,7 +103,7 @@ This applies to every piece of art that **isn't** read from the player's ROM at 
 ## 4. Mood rules
 
 - **Cozy tiles, quiet dread.** The overworld stays readable and warm by day. Dread arrives through light and colour: night's deep blue tint with warm lamp pools; haunted territory's distortion tint, which deepens per haunt stage.
-- **Overgrowth everywhere.** Tall grass bursts through roads and lots; weathering increases with distance from home, so home turf feels kept and the frontier feels swallowed.
+- **Overgrowth everywhere.** Tall grass bursts through roads and lots, and half the houses have fallen in or vanished (the ruin pass, Decision 30). Weathering increases with distance from each place's Waypost, so the survivors' camp feels kept and the outskirts feel swallowed.
 - Ghost encounters get a brief fog-in transition instead of the standard battle swirl.
 - UI is diegetic-lite: a journal-style Pokédex, hand-drawn map markers, no glossy sci-fi.
 

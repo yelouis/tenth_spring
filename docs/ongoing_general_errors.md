@@ -16,28 +16,159 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 > **2026-10-20 — Decision 27** (enterable famous buildings and side quests) came as your directive; it's under Resolved.
 >
 > **2026-10-20 (pass 18) — Decisions 21–26 were asked and answered the same day.** You filled in 21, 22, and 24; 23 came with a question (is the map the same for two friends?), answered in chat. You also narrowed the map to famous places, and the follow-ups were answered in chat as Decisions 25 and 26. All six are under Resolved. The new contract is `docs/design_famous_places.md`.
+>
+> **2026-10-21 (pass 19) — one new decision needs you: 31** (stay with Godot, or rebuild as an Emerald ROM hack). You also gave two directives, now Decisions 29 and 30 under Resolved: **Explore Here** replaces background tracking, and the map shows **a ruined, overgrown world** rather than every real house. Decision 30 also answers the open Decision 28 (the building-placement target). Decisions 3 and 5 (background capture and its 8-hour battery soak) are retired by Decision 29.
+>
+> **2026-10-22 (pass 20) — three directives and two new questions.**
+> - **Directives, now under Resolved:**
+>   - **Decision 32:** Pokémon through Generation 8, using the Smogon Sprite Project's fan sprites.
+>   - **Decision 33:** Las Vegas casinos are back, as a working society with a dark secret.
+>   - **Decision 34:** your ROMs are on your machine. The Emerald file is a clean dump; the Black file is a modified version, which works only for sprites.
+> - **Answered in chat the same day:**
+>   - **Decision 31 = A** — stay with Godot.
+>   - **Decision 35** — survival plus fixed level-75 Wardens.
+>   - **Decision 36 = B** — Mega Evolution only.
+>
+>   All three are under Resolved. No decision is open.
 
-### Decision 28 — Building placement target (32.5% vs ≥ 45% target on Washington DC)
-Under Item 13 (F51), the minor-ways filter (§10.1) and building placement v2 (§10.2) were implemented exactly as specified:
-- Minor ways dropped from store (schema bumped to `'3'`, `map_view.gd` skips with `need 3`);
-- Layer split: roads drawn before buildings (4a), paths drawn after buildings skipping building tiles (4b);
-- Plaza allowed under templates; 1-tile south ring row checked and reserved on placement;
-- 13-offset nudge: `(0,0), (1,0), (-1,0), (0,1), (0,-1), (1,1), (-1,1), (1,-1), (-1,-1), (2,0), (-2,0), (0,2), (0,-2)` clamped to `[5, 35 - w] × [5, 35 - h]`;
-- Statistics returned from `synthesize_cell`.
+## ✅ Resolved Decisions
 
-Measurements on Washington DC (`district-of-columbia-261001.osm.pbf`, 3,706 built-up cells, 136,325 candidates):
-- **Building tiles:** **18.9%** of built-up tiles (target ≥ 12%, baseline 3.6%) — **PASS**
-- **Path tiles:** **16.6%** of built-up tiles (target ≤ 18%, baseline 30.6%) — **PASS**
-- **Placement:** **32.5%** (44,267 placed / 136,325 candidates; target ≥ 45%, baseline ≈ 9.5%) — **TARGET MISSED** (improved 3.4x from baseline, but misses 45%).
+### Decision 31 — Stay with Godot (Resolved 2026-10-22: Option A)
+**What this is about.** Tenth Spring is built in **Godot**, a general-purpose game engine. You asked whether Godot is still right, because it crashed during the last build, and whether ROM hacks have a better design. Most serious Pokémon ROM hacks of Emerald are built on the community's rebuilt source code of the original game (the "decomp"). You edit the real game's code and maps, compile a new Game Boy Advance ROM, and share it as a patch players apply to their own copy of the original game.
 
-Per §10.3 and agent guide Item 13: *"If the rules above, implemented exactly, miss a target, do not tune them silently. Report the measured numbers, then STOP and file a decision with options — for example, a 3 × 3 small house, or allowing buildings over minor paths."*
+**First, the crashes (pass 19 investigation, F57).** All four crash reports on your Mac (Oct 15, 20, 20, 21) have the same cause, and none happened while the game was running:
+- Godot was **launched incorrectly by the implementing agent's tools** — twice by its code editor's background "language server", and twice by quick scripts that ran a single test file directly in a window.
+- Godot then tried to show an error popup ("couldn't detect what to run" / "this script can't be run directly"), and the popup itself crashed because no normal app window could be opened.
+- The fix is a launch wrapper and two rules (agent guide Item 23), not a new engine.
 
-- **Option A — Accept 32.5% placement as the approved Item 13 baseline and proceed to Item 14.** (Recommended). 44,267 buildings are placed in DC; building tiles cover 18.9% of built-up cells (beating the 12% target); the four DC proof screenshots at Item 16 allow you to judge the visual appearance directly before tuning template geometry.
-- **Option B — Introduce a 3 × 3 tile (24 × 24 m) `house_xs` template for small row houses (A < 150 m²).** Allows tighter packing in dense urban row-house blocks where 4 × 3 templates overlap.
-- **Option C — Allow building templates to overlap minor paths (treating paths like plaza/grass during template collision check).** Allows templates to cover walking paths while still respecting roads.
-- **Your selection:** _____
+- **Option A — Stay with Godot** *(recommended)*. Godot does what a GBA ROM cannot:
+  - real streets at real scale, since a single city like New York is bigger than the 32 MB a GBA ROM can hold;
+  - the phone link;
+  - the save database;
+  - the same generated map for everyone.
 
-### Decision 3: Companion background-geolocation implementation (Phase 0)
+  We borrow the parts of ROM-hack design that are better. The Emerald look comes through your own cartridge (agent guide Item 12). And we adopt the decomp's proven systems as *designs* to reimplement: tiles that carry behaviours (ice, spinner arrows, ledges, encounter grass), a scripting language for events and quests, and trainers, encounters, and items as data. *Cost:* the battle system, menus, Pokédex, and trainers still have to be built (Phases 5–8) — the biggest remaining job.
+- **Option B — Rebuild as an Emerald decomp ROM hack** (the community "pokeemerald-expansion" project).
+  - *Gains:* the whole Pokémon game for free — battles, catching, menus, Pokédex, trainers, puzzles, the authentic Emerald graphics, and up to Gen 9 species (with fan-made sprites).
+  - *Costs:*
+    - **Real-scale cities don't fit** in a GBA ROM, so each place becomes a small, simplified hand-built town — your "real streets" choice (Decision 17) is lost.
+    - **The phone can't talk to a GBA game;** a separate PC tool would have to write unlocks into the save file.
+    - **The decomp's source code contains Nintendo's graphics,** so this public repo would have to go private, and the game would ship as a patch — Pokémon Prism was a patch and still got a cease-and-desist.
+    - **Most of what's built so far** (the map generator, renderer, and famous-places conversion) would be discarded.
+- **Option C — Build in a fan-game engine** (Pokémon Essentials on RPG Maker XP, or Pokémon SDK). Battles and menus come ready-made, but these engines are designed around hand-drawn maps, ship with Nintendo assets, and have no route to a generated real-world map or a phone link. Not recommended.
+- **Recommendation: A.** The crashes were launch mistakes, not engine instability, and only a general-purpose engine can hold real streets and a phone link. Worth deciding later, separately: building the battle system by porting the logic of a proven open-source battle simulator, rather than writing it from scratch (a Phase 5 plan question).
+- **Your selection:** **A — stay with Godot** (answered in chat). The launch wrapper is agent guide Item 23.
+
+
+---
+
+### Decision 35 — The long game: survival plus mastery (Resolved 2026-10-22: a mix of A and C)
+**What this is about.** In the main-series games, a level-100 team beats everything, and Tenth Spring is far longer than those games (27 cities and 78 legendaries, in any order). You asked for ideas that keep it interesting without "relative levelling" that makes the Wardens always stronger than you. The full brainstorm — fifteen ideas, with pros and cons — is `docs/design_long_game.md`.
+- **Option A — Fair rules and real survival** *(recommended)*. Named battles use **fixed rules**, the same for everyone whenever they arrive:
+  - **Warden trials and city survivors use "Anchor Rules":** every Pokémon on both sides fights at level 50, the standard format of real Pokémon tournaments, so the battle tests your team and your play, not your grinding. In the story, an Anchor holds everything near it to its true measure.
+  - **The Echo and the "Old Friends" rematches use the same rule at level 100.** The Echo's +5 levels are dropped.
+  - **Everywhere else, levels matter as usual,** with these added:
+    - wild levels by real distance from home, rising to 60–85 across the country;
+    - **scaled experience**, so beating far weaker Pokémon teaches little;
+    - **weariness**: Pokémon tire on long trips until they rest at home or a Waypost bed;
+    - **fog-swollen bosses** with auras and extra actions;
+    - **inverted type matchups** inside the deepest fog;
+    - **the Glow Arena** in Las Vegas, with rotating rules, as the endgame.
+- **Option B — Trust caps.** Pokémon above `30 + 8 × anchorsHeld` may disobey until you've earned more Anchors, as badges did in the old games. Wardens get fixed levels (all at 60), with no level rules in battle. *Simpler, but once you hold enough Anchors, a level-100 team dominates again.*
+- **Option C — Mastery only.** No caps and no level rules. Wardens get fixed level-75 teams with competitive builds and the strongest AI, and the challenge comes from bosses, attrition, and smarter opponents. *Least restrictive, but late regions will feel easy for strong teams.*
+- **Recommendation: A** — the Battle Tower answer the real games use for their endgame, plus survival pressure that fits this world.
+- **Your selection:** in your words, "I like the survival aspect and the mastery where each warden gets fixed level 75 competitive teams."
+  - **Taken from C (mastery):**
+    - **every Warden fields a fixed level-75 team,** built like a competitive team and played by the strongest AI, whenever you arrive and whatever your levels;
+    - no level caps and no level-flattening;
+    - fog-swollen bosses and smarter opponents.
+  - **Taken from A (survival):** weariness on long trips, on top of home-only healing and scarce PP.
+  - **Agent's reading, to confirm or change** (`design_long_game.md` §4):
+    - **City survivors** follow the same principle at a fixed **level 50**. Their "Old Friends" rematches are at **80**, and Warden rematches at **90**. Their old formulas scaled with your Anchors, which is the relative levelling you rejected.
+    - **Wild levels extend across the country,** up to 65–85 at 2,000 miles or more. Without that, nothing in the world would raise a team to Warden strength.
+    - **The Echo keeps "+5", capped at 100.** A stronger mirror of your party was your own choice for the finale (Decision 18). *Your amendment the same day:* "level 100 is the cap so we cannot do more than level 100. However, make their pokemon EV and IV, competitive with competitive movesets." So at 100 the Echo's edge is the build — perfect IVs, competitive EVs, natures, abilities, items, and movesets (`design_long_game.md` §4.3).
+  - **Not chosen:** Anchor Rules (level 50 for everyone), obedience caps, and inverted fog. They stay in `design_long_game.md` §3 as ideas. *Scaled experience arrives anyway, because Generation 8's own rules use it (Decision 32).*
+
+### Decision 36 — Mega Evolution only (Resolved 2026-10-22: Option B)
+**What this is about.** Going up to Gen 8 (Decision 32) brings each generation's special battle mechanic: **Mega Evolution** (Gen 6 — a temporary stronger form, with the Smogon project's Mega sprites available), **Z-Moves** (Gen 7 — one super-move per battle), and **Dynamax** (Gen 8 — giant forms for three turns).
+- **Option A — None** *(recommended)*. The Gen 8 rules without any gimmick. Easier to balance, and fair-rules battles (Decision 35) stay clean.
+- **Option B — Mega Evolution only,** as late-game content: a Mega Stone is earned per species through a legendary-scale quest. Adds the most-loved gimmick, with sprites available.
+- **Option C — All three.**
+- **Your selection:** **B — Mega Evolution only** (answered in chat). The rules are in `design_creatures_and_battles.md` §16:
+  - **one Mega per battle,** with the Walker's Keystone;
+  - **47 Mega Stones,** each earned as a late-game reward from existing content: Warden and Old Friends rematches, Truth quests, and Glow Arena streaks;
+  - Mega Rayquaza needs no stone;
+  - **Wardens' aces can Mega Evolve;**
+  - **no Z-Moves and no Dynamax,** and no Primal Reversion.
+
+
+### Decision 32 — Pokémon through Generation 8, with the Smogon Sprite Project's sprites (Resolved 2026-10-22 — your directive; supersedes Decision 12's "Gen 6–9 out of scope permanently")
+- **In your words:** "Use the fan made sprites from the Smogon Sprite Project. Go up to pokemon gen 8. Expand the places for legendaries as you do so, all with proper backstories and themes."
+- **What it means:**
+  - **905 species** (#1–905), including the Legends: Arceus species (#899–905).
+  - **82 legendary and mythical species** wait at **78 famous places**; 30 places are new. Silvally, Cosmoem, Urshifu, and Melmetal come by evolution.
+  - **The 11 Ultra Beasts** appear only in Distortion Fields, after Necrozma is caught or defeated.
+- **Sprites:**
+  - #1–649 come from your Black/White ROM.
+  - #650–905 are the **Smogon Sprite Project's Black/White-style fan sprites**, downloaded on your machine from a pinned copy (PokéAPI's sprite repository serves them with Smogon's permission).
+  - Their terms are free for non-profit use, with credit to the spriter or the project. Credits go in-game and in `CREDITS.md`.
+  - **They are never committed** — they depict Nintendo's characters, so they follow the same rule as ROM content.
+- **Data:** Black/White has no Gen 6–8 data, so all 905 species' data (stats, types, moves, learnsets, abilities, evolutions) comes from **PokéAPI's open data** (BSD 3-Clause, a pinned commit), downloaded on your machine at import. **Battles follow Generation 8 rules,** including the **Fairy type** and Gen 6+ type chart. Gimmicks are Decision 36.
+- **Contracts:** `design_rom_asset_pipeline.md`, `design_creatures_and_battles.md`, `design_famous_places.md` §1.2 and §1.4, `design_interiors_and_quests.md` §4.3, and `design_encounters_and_haunted_zones.md` §3a and §7.
+
+### Decision 33 — Las Vegas casinos are back: a working society with a dark secret (Resolved 2026-10-22 — your directive; reverses pass 19's casino exclusion)
+- **In your words:** "Las Vegas casinos are ok. It gives off the impression that even in an apocalypse there can be mini societies that form with working electricity. Think about how zombie movies still have some pockets of functioning society (albeit there can be a hidden dark backstory)."
+- **What it means** (`design_story_and_world.md` §4b, `design_interiors_and_quests.md` §4.1):
+  - **The Glow:** under the Fremont Street canopy, the lights never went out. A casino society called **the House** runs it, with power, music, food, and trade in Glow chips.
+  - **Its secret:** the lights are stolen. Necrozma is held in a vault beneath the canopy, draining the light of the desert towns around Las Vegas — the towns that "went first".
+  - **The Glow's games are skill and logic games,** never betting or chance (new puzzle kinds). The **Glow Arena** is a battle hall with rotating rules.
+  - **The content rule changes:** casinos may appear. Memorials to tragedies, active worship, burial grounds, and sacred Native sites stay excluded.
+
+### Decision 34 — Your ROMs are on your machine (Resolved 2026-10-22 — information, with one design change)
+- **What you supplied:** two files in a folder on your desktop. Their path is never written in the repo; set `TENTH_SPRING_ROM_GBA` and `TENTH_SPRING_ROM_BW` on your machine.
+  - **Emerald:** game code `BPEE`. Its SHA-1 matches the known clean dump that the community's Emerald decompilation project builds byte-for-byte.
+  - **Black:** game code `IRBO`, but a **fan-modified** version (its size and contents don't match a retail dump).
+- **The change:** since Pokémon data now comes from PokéAPI (Decision 32), the Black/White ROM is used **only for the #1–649 sprites**. The importer therefore accepts a modified Black or White ROM **for sprites only**, if the sprite archive passes structural checks (all 649 decode, and the sprite checks of §7). It records the SHA-1 and shows "modified ROM — sprites only". A clean dump is still preferred.
+- **The project's stance is unchanged:** players supply ROMs dumped from cartridges they own, and no agent ever downloads one. Nothing extracted is ever committed; the guard blocks both game codes.
+
+
+### Decision 29 — The phone doesn't track you: "Explore Here" unlocks places (Resolved 2026-10-21 — your directive; supersedes Decisions 3, 5, and 21)
+- **In your words:** "the phone app shouldn't track your location because that can be too much effort. Instead the player can open up the app whenever they are in a new place to see if the game recognizes it as a neighborhood that they haven't explored (big button that is maybe labeled as "Explore Here"). If it is a new neighborhood that is in the game, the app notifies the game that the neighborhood has been unlocked. The app should also notify the player if the city itself has been unlocked when enough neighborhoods are visited. Likewise with the national parks."
+- **What it means** (`design_companion_and_sync.md`, `implementation_plan_explore_here.md`):
+  - **No background location.** The app asks for location only "while using the app", and only when you tap **Explore Here**. It takes one reading, looks it up, and throws the reading away.
+  - **The phone knows the map's areas itself.** A small **places pack** — the boundaries of the 27 cities' neighbourhoods and the 36 parks, built once from the pinned OpenStreetMap snapshot and bundled with the app — answers on the spot, even offline:
+    - "New neighbourhood — <name>!";
+    - "Already explored — 2 of 3 to reveal <city>";
+    - "City revealed — <city>! You can Distort there from home";
+    - "<Park> revealed!";
+    - or "This spot isn't on Tenth Spring's map."
+  - **Only area names ever leave the phone** — never coordinates. Unlocks wait in the phone's outbox, and the PC applies them at the next **Report to PC**, by the same rules (city threshold: Decision 22).
+  - **Home becomes one tap.** "Set home" takes one reading, picks the nearest famous city on the phone, and sends only that city's name. Your home location never leaves the phone, not even fuzzed.
+  - **A session starts where the last one ended** — at home, or on the tile where you quit inside a place. The phone no longer moves you. *(Corrected the same day: "always at home" would let quitting skip the walk back to the Waypost.)* You reach places by Distort, as before.
+  - **Retired:** background capture, visit and route detection, the 8-hour battery soak (Decisions 3 and 5), and "any movement unlocks" (Decision 21, since a tap is now the only trigger). Golden invariant 2 gets stronger: coordinates are never stored or sent at all.
+- **Contracts updated:** `design_companion_and_sync.md`, `design_privacy_and_location.md`, `design_world_generation.md` §1–2, `design_famous_places.md` §3–4, `design_story_and_world.md` §2.6, `design_travel_and_time.md` §4, `master_implementation_plan.md` Phase 0, `README.md`. Built in agent guide Items 26–28.
+
+### Decision 30 — Civilization is gone: fewer houses, broken homes, overgrowth (Resolved 2026-10-21 — your directive; answers Decision 28)
+- **In your words:** "While we want the new pokemon map to simulate the real world, lets take some creative liberties like removing some houses so we don't literally have to walk through fields of homes. We should play into the theme of civilization being gone. Maybe show broken homes or overgrown grass, etc."
+- **What it means** (slice-2 plan §11, agent guide Item 25):
+  - **Each ordinary building gets a fate**, the same for every player: **standing**, **ruined** (a broken roof, boarded windows, rubble beside it), or **gone** (an overgrown lot — tall grass, a tree, a pile of rubble).
+    - Homes far from a Waypost are mostly ruined or gone; the blocks around each Waypost, where survivors camp, are kept tidier.
+    - Large buildings mostly stand.
+    - **Enterable landmarks always stand** — they're the story.
+  - **Streets crack and grow over:** tall grass pushes through side streets in clumps, major roads crack, and parking lots go to seed. Yards fill with trees.
+  - **Decision 28's open question** — how many real buildings must be drawn (32.5% vs 45%) — **is answered by this:** the goal is no longer "draw as many real buildings as possible" but "a town that feels emptied". The new targets measure that (slice-2 plan §11.4).
+- **The options Decision 28 offered** (A accept 32.5%; B a 3 × 3 small house; C let buildings cover minor paths) are superseded. The placement code stays as built; the ruin pass runs after it.
+
+### Decision 28 — Building-placement target (Resolved 2026-10-21 by Decision 30)
+- **Filed in pass 18** (Item 13): placement reached 32.5% against a 45% target. Building tiles at 18.9% and path tiles at 16.6% both met their targets.
+- **Answered by your Decision 30 directive:** you'd rather have *fewer* houses, broken homes, and overgrowth. The 45% placement target is retired; slice-2 plan §11.4's ruin targets replace it.
+
+### Decisions 3 and 5 — Background capture and its battery soak (Superseded 2026-10-21 by Decision 29)
+- **Background capture** (Decision 3: Option B, the custom geolocator source) and **the 8-hour battery soak that would close Phase 0** (Decision 5) are retired. The phone no longer tracks location in the background, so there's nothing to soak-test.
+- **Phase 0's exit is now** "Explore Here works on a real phone" (`master_implementation_plan.md`).
+
+### Decisions 3 and 5 — original text (archived 2026-10-21)
+#### Decision 3: Companion background-geolocation implementation (Phase 0)
 How the phone captures location in the background (significant-location-change + visits) within the <3%/day battery budget.
 - **Option A**: `flutter_background_geolocation` (Transistorsoft) — battle-tested SLC + visit + motion + geofencing + persistence + battery management out of the box. Cost: paid license for Android *release* builds; large dependency.
 - **Option B**: Thin custom platform channels — iOS `CLVisit` + significant-location-change; Android foreground service + FusedLocationProvider (balanced priority) + our own dwell detection. Cost: we own all battery/edge-case tuning; more native code to test.
@@ -47,16 +178,12 @@ How the phone captures location in the background (significant-location-change +
 - **Status correction (July 22, 4th verification pass): CODE-COMPLETE, but NOT gate-verified.** Independent code read confirms the settings, all six Android permissions, both iOS usage strings + `UIBackgroundModes`, and that `main.dart:9` actually wires `OsLocationSource` into the running app (not dead code). **However the device gate — ledger fills while backgrounded, battery < 3%/day over ≥8 h — has never been run** (no physical device available to the verifying agent). D3 cannot be closed on code alone; see **Decision 5** for when to run it. Two follow-ups filed: **F8** (test covers only the host platform's branch) and **F9** (Android background-permission escalation may silently fail).
 - **Accepted deviation:** `nativeVisits()` returns `null` on all platforms (`os_location_source.dart:25`). `geolocator` does not expose iOS `CLVisit`, and the design treats native visit events as an *optional corroborating hint* (`implementation_plan_foundation.md` §A2), not a requirement. Custom-clustering detection covers the need. **Do not re-flag this as a gap** — wiring CLVisit would require a bespoke platform channel and is not currently justified.
 
-### Decision 5: When to run the D3 device gate (blocks closing Phase 0) — **needs your input**
+#### Decision 5: When to run the D3 device gate (blocks closing Phase 0) — **needs your input**
 D3 is code-complete but cannot be closed without a physical-device soak: carry a real phone ≥8 h of normal movement with the app **backgrounded**, then confirm (a) the scout ledger gained entries while backgrounded and (b) app battery attribution is **< 3%/day**. No verifying agent has a device, so this is the one task only you can perform. **Fix F9 first** — otherwise Android background permission may never engage and the soak proves nothing.
 - **Option A — run it next, right after F9 lands.** Closes Phase 0 properly and de-risks the battery budget before more is built on it. Cost: one day of carrying the phone. *Recommended: the battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and you want to learn that early.*
 - **Option B — batch it with the D4 device gate.** One combined session validates background capture *and* the Wireshark ciphertext check together. Cost: Phase 0 stays formally open for weeks; if the battery target fails you discover it after building transport on top.
 - **Option C — defer to the Phase 8 hardening pass.** Cheapest now, riskiest later: a battery failure that late invalidates the capture strategy after everything depends on it.
 - **Your selection (July 22): Option A — run the device soak immediately after F9 lands.** Rationale: the <3%/day battery target is the assumption most likely to force a design change (falling back to Transistorsoft, D3 Option A), and that must be discovered before Phase 1's transport and Phase 2's world generation are built on top of it. F9 must land first or the soak measures a permission that was never granted. **Phase 0 stays formally open until this runs** — see agent guide §1 (baseline) and §10 (roadmap).
-
----
-
-## ✅ Resolved Decisions
 
 ### Decision 27 — Enterable famous buildings, each with a purpose, and abundant side quests (Resolved 2026-10-20 — your directive)
 - **In your words:** "Similar to pokemon, there should be buildings. Famous buildings or famous structures like the new york subway should be enterable. Anything is the enterable should serve a purpose (maybe there is an important trainer in there that you have to beat and receive an item for, or a hidden item on the ground, or a legendary pokemon hiding in the maze of the building). Make sure to have an abundant amount of side quests that help unlock what happened to the world/regions. These side quests should be like similar side quest/puzzles in the actual pokemon games."
@@ -73,7 +200,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - **On the map now** (agent guide Item 22): enterable buildings get a gold roof, a highlighted door, and a name sign. The interiors themselves are built in Phase 7, and the legendary lairs and Wardens in Phase 8.
 - **Contracts updated:** `design_interiors_and_quests.md` (new), `design_expeditions_and_survival.md` §1, `design_famous_places.md` §6 and §9, `design_story_and_world.md` §8–9, `master_implementation_plan.md` Phases 7–8, `README.md`, slice-2 plan §10.8, `implementation_plan_famous_places.md` §1.
 
-### Decision 21 — "Going to" a neighbourhood: any movement counts (Resolved 2026-10-20)
+### Decision 21 — "Going to" a neighbourhood: any movement counts (Resolved 2026-10-20; superseded 2026-10-21 by Decision 29 — a tap of Explore Here is now the only trigger)
 - **Your selection:** "Proceed with Option B."
 - **What it means:** inside a famous city, **any** real movement the phone records in a neighbourhood — a stop *or* passing through — reveals that whole neighbourhood. (Option A would have counted only stops; Option C, stops only with no strips.)
 - **Contracts:** `design_famous_places.md` §3.2, `design_world_generation.md` §1–2, `implementation_plan_famous_places.md` §4.
@@ -960,21 +1087,65 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - Flutter test: 37 passed (2 skipped).
   - Cross-language loopback sync E2E: PASS.
 
+
+**M53 — Pass-18 queue (Items 13–22) verified, with corrections (2026-10-21, pass 19, HEAD `0f84697`).**
+- **Executed this pass:**
+  - companion: `flutter analyze` clean; `flutter test` (under memguard) **37 passed, 2 skipped**;
+  - game battery on the human's Mac with `GODOT_BIN`: **22/22 `PASS`**, `[REAL SAVE CHECK OK]`, the famous-places checker, IP guard, isolation audit, memguard, synthetic PBF, screenshot and atlas tests, vendored SHA-256, static lint;
+  - `tools/sync_e2e.py`: `E2E_SENT rows 14` → `visit_log 14, last_applied_seq 14, map_cell 3, place_node 1`;
+  - CI on `0f84697`: `game_tests` 39726058576, IP guard 39726058569, `sync_e2e` 39726058546 — all green.
+- **Confirmed in source and runs:**
+  - **Item 13 (F51):** the minor-way filter, placement v2, and `measure_synth` — DC placement 32.5%, building tiles 18.9%, path tiles 16.6%. *(The 45% target went to Decision 28, now answered by Decision 30.)*
+  - **Item 14 (F53):** connector rails. **Item 15 (F52):** the worker thread, owning its own SQLite handles.
+  - **Item 16:** `--focus`, `VISIBLE_DOORS`. **Item 17:** `famous_places.json` — 75 places; all 48 legendaries match `design_famous_places.md` §1.2.
+  - **Item 18:** schema v4, `--place`, the whole coastline, and the determinism test. **Item 19:** migration 2 and the reveal engine. **Item 20:** the hub, the Town Map, and `Return home`.
+  - **Item 22:** landmark variant bit 32 and signs. **Item 21:** DC converted, city unlocked, screenshots saved.
+- **Corrections:**
+  - **M48's summary was misworded** — it said "48 distinct Gen 1–4 legendaries … none in cities". The file actually holds all Gen 1–5 legendaries, including the 12 inside cities. The data is right; only the summary was wrong.
+  - **New findings below:** F54 (the Library of Congress isn't drawn; the Lincoln Memorial isn't gilded), F55 (DC's "neighbourhoods" are its 8 political wards), F56 (frame-time "PASS" at 16.67 ms against a 16.6 ms target; the whole-city overview misses its budget), F57 (all four Godot crashes are launch mistakes).
+- **The human's verdict on the screenshots:** they "still don't look like the actual sprites used in the games". As designed, the art is the original placeholder until the human's own Emerald cartridge is imported (Item 12). The agent cannot download ROMs (standing constraint 1).
+- **Two directives in the same message:** Decision 29 (Explore Here) and Decision 30 (a ruined, overgrown world).
+
 ---
+
+**M54 — Pass 20: design for Gen 8, the new legendary places, the Glow, more puzzles, and the long game (2026-10-22, design only — no code changed).**
+- **Research** (sources in `design_rom_asset_pipeline.md` §2a and `design_art_direction.md` §2a):
+  - the Smogon Sprite Project's terms;
+  - PokéAPI's licence;
+  - free, credited 2D art: Kenney's CC0 packs, tiny16 (CC-BY), the Tuxemon tileset (CC-BY-SA, with an open question about originality), and Ninja Adventure (CC0).
+  - **No free landmark art in this style exists,** so landmarks come from Emerald look-alikes first, then original set pieces.
+- **Decisions 32–34 resolved; 35 and 36 open.** The pass-19 guide rewrite (Items 23–28) still lands this pass, with the ROM items now unblocked.
 
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48.*
-- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §9).
+- **F54 (found 2026-10-21, pass 19) — enterable landmarks don't reliably show up.** Synthesizing DC's four landmark cells directly (read-only, the DC place store):
+  - **the Library of Congress:** 2 candidate buildings, **0 placed** — no building at all, only its sign;
+  - **the Lincoln Memorial:** 2 buildings placed, but the door point falls outside both, so **no gold roof**;
+  - the Air and Space Museum (240 gold roof tiles) and the Washington Monument (10) work.
+
+  Item 21's `shot_z2_landmark.png` shows only trees and paths — M52's "showing gold roof, gold-framed walls/doors, and sign" doesn't match the image.
+  - **Causes:** landmarks go through the same rejection rules as ordinary buildings (`tile_synth2.gd`, placement), and the door must lie *exactly* inside the template (`:888-892`).
+  - **Agent guide Item 24.**
+- **F55 — DC's "neighbourhoods" are its 8 political wards.** The neighbourhood rule takes `admin_level` 9 relations first (`implementation_plan_famous_places.md` §3.1a). In DC those are Wards 1–8, so the city has 8 huge "neighbourhoods" rather than its ~130 real ones (Dupont Circle, Georgetown, …), and 2 wards unlock it. **Agent guide Item 26** (the places pack).
+- **F56 (minor) — frame-time reporting.**
+  - Every windowed run reports `FRAME_P95_MS: 16.67` — the 60 Hz vsync interval — and M46/M47 call that a PASS against "≤ 16.6 ms". That's a spec defect: with vsync on, 16.67 *is* a perfect frame.
+  - Item 21's whole-city overview did miss: `FRAME_P95_MS 18.06`, `LOAD_MAX_FRAME_MS 33.33` (targets 16.6 / 33).
+  - **The fix:** targets become "≤ 16.7 ms (no dropped vsync frames)" and "≤ 33.4 ms", and the overview gets an LOD for many cells. Agent guide Item 25.
+- **F57 — every Godot "crash" is a launch mistake by the agent's tools.**
+  - **The evidence:** all four macOS crash reports (`~/Library/Logs/DiagnosticReports/Godot-2026-10-{15,20,20,21}-*.ips`) show the same stack — `Main::start()` → `OS_MacOS::alert()` → `NSAlert runModal` → abort.
+  - **What Godot 4.3's `main.cpp` shows:** `Main::start()` pops that dialog only for "Couldn't detect whether to run the editor, the project manager or a specific project" or "Can't load the script … as it doesn't inherit from SceneTree or MainLoop".
+  - **The launchers:** two came from the agent's editor `language_server`; two from Python. Memguard logs a one-off step `godot` (10-20 16:50Z) and `tile_synth2_test` (10-21 16:16Z), both exiting with signal 6 (abort) — a test file run directly with `--script`, in a window.
+  - **The fix:** a launch wrapper that always passes `--headless` and an absolute `--path` unless a window is asked for, plus `test_runner.py --only <test>`, so nobody runs test files directly. **Agent guide Item 23.**
+- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §14).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
   - **ROM import half:** Open, scheduled for the ROM spike (agent guide Item 10).
-- **F7 (latent, found July 22, 2nd pass) — home-cell size mismatch.**
-  - Companion `fuzzHome` snaps to a 300 m grid; the game treats home as one grid cell (now 256 WM-m, F42).
-  - Reconcile when safehouse designation is wired (Phase 3 onboarding). **Agent guide §9 (Deferred).**
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §9 (Deferred).**
+- **F7 — retired by Decision 29 (2026-10-21).** The 300 m home grid on the phone vs one home cell on the PC no longer matters: no home location reaches the PC at all, only the starter city's id. `fuzz.dart` is deleted in Item 27.
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §14 (Deferred).**
 - **Pending physical-device gates (human action required):**
-  - **D3 device soak (Phase 0 exit):** ≥ 8 h of background carry; the scout ledger fills, and battery use is < 3%/day (Decision 5 = Option A). Can run any time.
+  - ~~D3 device soak~~ — retired with background capture (Decision 29).
+  - **Explore Here on a real phone (Phase 0 exit, after Item 27):** tap Explore Here inside a famous place and outside every one; check the messages, then Report to PC (agent guide §2).
   - **Real-device sync gate (Phase 1 exit):** the five steps in agent guide §2. **Ready now** — F42 and F40, which blocked it, are on `main` (M25, M26).
 
 ---
@@ -1029,4 +1200,9 @@ Founding decisions made with the user during the design brainstorm, recorded her
 24. **Famous places only, and Distort (2026-10-20, Decisions 25–26).** The human narrowed the map from "the whole USA" to 27 famous cities and 36 famous parks and wonders, made home a hub, and added Distort travel — free to the nearest city, then to any place physically visited, and home only from a Waypost. That reverses the "only teleport is your body" pillar. Real-world travel still opens every door: Wardens need all three of a region's cities, and each of the 48 legendaries has its own place and one decisive battle.
 25. **The same map for everyone (2026-10-20, Decision 23).** The human required that two players at the same place see the same map. The rules: one pinned OpenStreetMap snapshot per release, fixed conversion units, the whole coastline kept, and one global map seed. Per-player randomness is confined to gameplay.
 26. **Buildings you can enter, and quests that tell the story (2026-10-20, Decision 27).** As in Pokémon, famous buildings and structures are enterable — each with a purpose (a trainer, hidden items, a legendary's maze, a puzzle, a quest step) — and over 200 side quests in Pokémon's puzzle traditions piece together what happened to each region, through Dr. Ruth Calder's nine logs. Ordinary buildings are searched from the doorway.
+27. **The phone stops tracking (2026-10-21, Decision 29).** The human found passive tracking "too much effort". The phone now does one thing on purpose: when you tap **Explore Here** in a new place, it checks a bundled map of famous neighbourhoods and parks, tells you what you've unlocked on the spot, and later tells the PC — sending area names, never coordinates. This removes background location, battery concerns, and the coordinate path entirely.
+28. **A ruined world, not a census (2026-10-21, Decision 30).** The human asked for creative liberties: fewer houses, broken homes, overgrown streets — the collapse made visible. Every ordinary building gets a deterministic fate (standing, ruined, gone), tidier near the survivors' Wayposts; enterable landmarks always stand.
+29. **Godot stays — pending Decision 31.** The crashes were launch mistakes (F57). A GBA decomp can't hold real-scale cities or a phone link, and would put Nintendo graphics in the repo; the recommended path is Godot plus ROM-hack *design patterns*.
 
+30. **Gen 8 and fan sprites (2026-10-22, Decision 32).** The human widened the roster to 905 species, with the Smogon Sprite Project's Black/White-style fan sprites for #650+. The bring-your-own-content rule extends to them: fan sprites and open data are downloaded onto the player's machine and never committed, because they depict Nintendo's characters.
+31. **A society that kept the lights on (2026-10-22, Decision 33).** Las Vegas's casinos return as the Glow, a working town whose lights hide a stolen legendary. It gives the world its first pocket of order, and its first moral weight.

@@ -1,6 +1,6 @@
 # End-to-End (E2E) Testing Journeys
 
-This document defines the key player journeys and step-by-step manual instructions to test the E2E integrity of the companion→PC pipeline, two-fog reveal, travel economy, stranded/death rules, and colony pressure. Location-dependent journeys require a real phone with mock-location tooling (or a scripted GPX replay harness on the companion — build in Phase 0) plus a paired PC build.
+This document defines the key player journeys and step-by-step manual instructions to test the E2E integrity of the companion→PC pipeline, two-fog reveal, travel economy, stranded/death rules, and colony pressure. Explore Here journeys need a real phone — mock location set to a public point works — or `tools/demo_import.py --points` (Decision 29), plus a paired PC build.
 
 ---
 
@@ -20,11 +20,11 @@ This document defines the key player journeys and step-by-step manual instructio
 ### 📋 Steps to Test:
 1. Fresh install both builds. Launch the **PC game** → tutorial establishes the fantasy and prompts "recruit your scout" with a pairing QR.
 2. Install the **companion**, scan the QR. Verify the phone pins the PC's certificate fingerprint and the PC shows the phone as paired (no secret leaves either device). Pair a second phone from a fresh QR → the first phone's next sync is refused (`unpaired`), and its already-synced history is still on the map.
-3. Companion permission ask: verify the canonical rationale copy (`design_privacy_and_location.md` §3) and that declining "Always" still works ("While Using" + manual "scout here").
-4. Designate the safehouse **on the PC**. Verify the stored home is the fuzzed cell, not the raw point (inspect PC DB) and the fuzz circle is shown.
-5. Carry the phone on a normal errand (or replay a GPX trace with ≥2 dwells ≥120 s). Verify the companion ledger lists the day's visits by **name only** — no map reveal on the phone.
-6. Return to the same network, start a **PC session**. Verify: the sync pulls the visit batch, the **intel ceremony** plays (fog peels, chips stamp, route draws), corridor tiles render `known` grey, visited POIs show name + category + "?" chip, and **inventory is completely unchanged** (cartography, never cargo).
-7. Verify the phone outbox is acked empty and a replayed batch is a no-op.
+3. Tap **Explore Here** for the first time. Verify the canonical rationale (`design_privacy_and_location.md` §3), that only "While Using" is requested, and that the OS settings offer no "Always".
+4. Tap **Set home**. Verify the phone names a starting city and stores nothing else. After the next report, the PC has that city on its Distort list with its Waypost neighbourhood revealed.
+5. Inside a famous place, tap **Explore Here**. Verify the message (`New neighbourhood — …`), and that the explored list shows the place by name only. Tap it again: `Already explored`. Outside every famous place: `This spot isn't on Tenth Spring's map.`
+6. **Report to PC.** Verify the neighbourhood turns `known`, the Town Map lights the city, and **inventory is completely unchanged** (cartography, never cargo).
+7. Verify the phone outbox is acked empty, a replayed batch is a no-op, and neither database holds a coordinate (the phone's has no real-number column; every REAL value in the PC save is NULL).
 
 ## 🌿 Journey 2: First Catch (Known → Explored)
 
@@ -43,13 +43,13 @@ This document defines the key player journeys and step-by-step manual instructio
 3. Throw a Dusk Ball at night → verify the ×3.5 modifier is applied (compare against a Poké Ball on a matching target).
 4. Walk home in the dark with a weakened party. Verify no forced teleport and no healing until home — surviving the trek is the content.
 
-## ✈️ Journey 4: Stranded (Fast Travel = Real Body)
+## ✈️ Journey 4: Stranded (Distort and the Waypost)
 
-**Objective**: Verify phone-anchored relocation and the stranded rule.
-1. With a party of 6 and more Pokémon in the PC box, mock-relocate the **phone** 200+ miles and sync. Start a PC session (e.g. on a laptop on that network).
-2. Verify: the player spawns at the synced `bodyFix` on a minimal revealed circle; banner reads distance-from-home; the PC box cannot be withdrawn from or swapped; the party and bag are exactly what was brought; a newly caught Pokémon still deposits remotely.
-3. Verify the trek-home option prices the full real distance at 15 mph (multi-game-day estimate); mock-relocating the phone home + syncing restores PC access with no penalty.
-4. **Out-of-contact fallback**: start a PC session with the phone unreachable → verify spawn at last synced body position with the "scout out of contact" banner, never blocked or teleported home.
+**Objective**: Verify Distort, the Waypost rule, and the stranded rule.
+1. With a party of 6 and more Pokémon in the PC box, Distort from home to an explored city. Verify you arrive at its Waypost, with the arrival banner.
+2. Walk away from the Waypost. Verify the PC box can't be used, the party and bag are exactly what you brought, and a newly caught Pokémon still deposits remotely.
+3. Quit the game away from the Waypost and relaunch. Verify you resume in that place — never sent home for free.
+4. Walk back to the Waypost and Distort home. Verify PC access returns with no penalty.
 
 ## 🕯️ Journey 5: Blackout & Recovery
 
@@ -65,11 +65,11 @@ This document defines the key player journeys and step-by-step manual instructio
 2. Warp growth ticks: stage-ups expand territory, ghost share and wild levels rise inside it, and the distortion tint deepens.
 3. Let a stage-3 zone's territory reach within 2 cells of home → ghost encounters start on the porch. At stage 4 → the PC box is sealed.
 4. Enter the root site, beat or catch the zone boss → the zone is cleansed, the PC unseals, and territory reverts over 2 game days.
-5. Reveal a lake inside a national park → a legendary is assigned; catch it → it never spawns again in this save.
+5. Explore a park → its legendary waits at its lair behind its challenge; catch or defeat it → it's gone for good in this save (`design_famous_places.md` §6).
 
-## 🔋 Journey 7: Battery & Privacy Audit (Release Gate)
+## 🔒 Journey 7: Privacy Audit (Release Gate)
 
 **Objective**: Verify the pillar-level guarantees across both devices.
-1. 48-hour phone carry with capture on: battery attribution < 3%/day.
-2. Sniff the sync channel: the phone→PC payload is ciphertext (no plaintext coordinates on the wire); precision never exceeds storage-fuzzed (~110 m). Sniff PC traffic: the only map-data traffic is whole-region file downloads the player confirmed; no request contains coordinates or names a cell.
+1. Over a day of normal phone use, the OS shows the companion's location access as "While Using" and never shows a background-location indicator.
+2. Sniff the sync channel: the phone→PC payload is ciphertext. In a development build's decrypted frame log, every row holds only `kind`, `placeId`, `areaKey`, and `tsUtcMs`. Sniff PC traffic: the only map-data traffic is whole-state file downloads the player confirmed; no request contains coordinates or names a cell.
 3. "Export my map" (PC) produces valid GeoJSON; "Erase everything" wipes the phone outbox + pairing **and** the PC world, returning both builds to first-launch state.

@@ -146,19 +146,20 @@ The map view draws buffer row `r` of cell `(cx, cy)` at screen tile row `(−cy 
 | 4 | `WATER` | no | 0 |
 | 5 | `SAND` | yes | 0 |
 | 6 | `MARSH` | yes | 0 |
-| 7 | `PATH` | yes | 0 |
+| 7 | `PATH` | yes | 0; 1 overgrown (§11.2) |
 | 8 | `ROAD` | yes | 0 normal, 1 cracked |
 | 9 | `RAIL` | no | 0 |
 | 10 | `BRIDGE` | yes | 0 |
-| 11 | `PLAZA` | yes | 0 |
-| 12 | `ROOF` | no | roof colour 0–7 |
-| 13 | `WALL` | no | roof colour 0–7, + 8 if the tile has a window |
-| 14 | `DOOR` | yes (interiors, later) | roof colour 0–7 |
+| 11 | `PLAZA` | yes | 0; 1 weeded (§11.2) |
+| 12 | `ROOF` | no | roof colour 0–7; + 16 broken (§11.2); 32 landmark (§10.8) |
+| 13 | `WALL` | no | roof colour 0–7, + 8 if the tile has a window; + 16 broken (§11.2); 32 or 40 landmark (§10.8) |
+| 14 | `DOOR` | yes (interiors, later) | roof colour 0–7; + 16 boarded (§11.2); 32 landmark (§10.8) |
 | 15 | `FENCE` | no | 0 |
 | 16 | `FLOWERS` | yes | 0 |
 | 17 | `GRAVE` | no | 0 |
 | 18 | `SIGN` | no | index into the cell's sign list, 0–15 |
 | 19 | `CROP` | yes | 0 |
+| 20 | `RUBBLE` (§11.2) | no | 0 small pile, 1 large pile |
 
 **Mask byte:** bit 0 = north, bit 1 = east, bit 2 = south, bit 3 = west. A bit is set when that neighbour (in the working grid, so cell edges see their neighbours) belongs to the tile's *family*:
 
@@ -179,7 +180,7 @@ The map view draws buffer row `r` of cell `(cx, cy)` at screen tile row `(−cy 
 **Hashing — portable, never Godot's `hash()`:**
 - `fnv1a32(ints)`: start at `h = 2166136261`; for each int, for each of its 4 little-endian bytes (as int32): `h ^= byte; h = (h * 16777619) & 0xFFFFFFFF`.
 - `u(gx, gy, salt) = fnv1a32([gx, gy, world_seed, salt]) / 4294967296.0`, over *global* tile coordinates: `gx = cx·32 + c`, `gy = cy·32 + (31 − r)` (northing tile index). Global coordinates make decoration seamless across cells. The demo uses `world_seed = 0`.
-- **Salts:** 1 tree scatter · 2 flowers · 3 grass variant · 4 road cracks · 5 house door and roof colour · 6 tree variant · 7 noise lattice · 8 fallback-house skip.
+- **Salts:** 1 tree scatter · 2 flowers · 3 grass variant · 4 road cracks · 5 house door and roof colour · 6 tree variant · 7 noise lattice · 8 fallback-house skip · 9–14 the ruin pass (§11.2).
 - **Value noise** `v(gx, gy)`: lattice spacing 4 tiles; `L(i, j) = fnv1a32([i, j, world_seed, 7]) / 4294967296.0`; `i = floori(gx / 4.0)`, `fx = (posmod(gx, 4) + 0.5) / 4`, and likewise `j`, `fy`; `v` = bilinear interpolation of the four lattice values. Use `floori` and `posmod` everywhere — US longitudes are negative.
 
 ---
@@ -581,3 +582,220 @@ Famous interiors (`design_interiors_and_quests.md` §4) must be recognisable on 
    - A landmark whose door misses every building yields a sign only.
    - The atlas JSON covers the new rows.
 
+
+---
+
+## 11. Pass-19 amendments (2026-10-21) — landmarks that always show, a ruined world, and honest frame targets — agent guide Items 24–25
+
+**What the human asked for** (Decision 30): "lets take some creative liberties like removing some houses so we don't literally have to walk through fields of homes. We should play into the theme of civilization being gone. Maybe show broken homes or overgrown grass, etc."
+
+**What was measured in pass 19:**
+- **F54:** two of DC's four landmarks don't show — the Library of Congress isn't drawn at all, and the Lincoln Memorial isn't gilded.
+- **F56:** the whole-city overview drops frames (`FRAME_P95_MS` 18.06), and the 16.6 ms target was below vsync's own 16.67.
+
+§11.1 fixes F54. §11.2–11.4 are the ruin pass. §11.5 fixes F56. §11.6–11.7 are the proof and the tests.
+
+### 11.1 Landmarks first (F54) — amends §4.2 and §10.8 — Item 24
+1. **Find each landmark's footprint before anything is placed.** For each landmark in the centre cell (at most 4, in `famous_places.json` order), take:
+   - the centre-anchored building candidate (§4.2, A ≥ 60) whose outer ring contains the door point;
+   - else the candidate whose outer ring passes within **2 store units** (32 WM-m, 4 tiles) of the door point — nearest first, ties to the larger A, using point-to-segment distance on the unclipped footprint;
+   - else none. The landmark is then an outdoor structure and gets a sign only (§10.8 step 2, unchanged).
+2. **Place landmark footprints first,** before the descending-area loop:
+   - **What may lie under the template:** §10.2 step 2's list, **plus `PATH`**. At this stage, `PATH` comes only from minor roads (w ≤ 2) and is drawn again around the building by door paths.
+   - **Still rejected:** `WATER`, `ROAD`, `RAIL`, `BRIDGE`, `VOID`, `GRAVE`, `FENCE`, another building's tiles, and reserved tiles. The south-ring check (§10.2 step 3) is unchanged.
+   - **Nudges:** §10.2's 13 offsets, then `(3,0) (−3,0) (0,3) (0,−3) (4,0) (−4,0) (0,4) (0,−4)` — 21 in all.
+   - **Shrink to fit:** if every nudge fails, retry all 21 with `w − 2` and `h − 2` (a `block_l` stops at 6 × 5), then as `house_m` (5 × 4), then as `house_s` (4 × 3).
+   - **Its door** is the template door column nearest the real door point's column.
+   - A placed landmark leaves the ordinary candidate list.
+3. **Gild it at placement time:** `ROOF` 32, `WALL` 32 or 40, `DOOR` 32 — the door-inside-template test is gone. Its sign goes beside its door, as §10.8 says.
+4. **Statistics:** `stats` gains `"landmarks_placed"` and `"landmarks_sign_only"`.
+5. **New `tools/check_landmarks.py --store <a place store> --place <place id>`.**
+   - It runs Godot headless (`res://scenes/check_landmarks.tscn`) under memguard step `check_landmarks`.
+   - It prints one line per interior of the place: `LANDMARK <interior id> placed=<0|1> gold_tiles=<n> sign=<0|1>`. Interior ids are public slugs.
+   - **Acceptance on DC:** the Library of Congress, the Air and Space Museum, the Washington Monument, and the Lincoln Memorial each print `placed=1` and `gold_tiles > 0`.
+   - **Baseline** (pass 19, read-only): the Library of Congress `placed=0`; the Lincoln Memorial `gold_tiles=0`.
+
+### 11.2 The ruin pass (Decision 30) — Item 25
+A new step **5d** runs after landmarks and fallback houses and before door paths. Step **6.5** runs after parks and cemeteries and before scatter. Both are pure functions of the cell, its 3 × 3 neighbourhood, the place's Waypost, and `MAP_SEED`, so every player sees the same ruins.
+
+1. **Input.** `area["waypost_wm"]: Vector2` is the loaded place's Waypost, projected once with `Grid.latlon_to_wm`. The map view and the synthesis worker pass it, and a store with no place (tests, legacy clips) passes none.
+2. **Band.** `d` = the ground distance from the centre cell's centre to the Waypost (`Grid.ground_distance_m`). It's one value per cell, so every building in a cell shares a band:
+
+   | Band | `d` | |
+   |---|---|---|
+   | `camp` | < 600 m | where the survivors live — kept tidy |
+   | `near` | 600 m – 1.5 km | |
+   | `mid` | 1.5 – 3 km | also used when there is no Waypost |
+   | `far` | ≥ 3 km | |
+
+3. **Each ordinary building's fate.**
+   - Every placed real building and fallback house gets `f = u(gx0, gy0, 9)`, where `(gx0, gy0)` is its template's top-left global tile. Landmarks are never ruined.
+   - With the band's `standing / ruined / gone` shares as `s / r / g` (percent, below), the fate is **standing** if `f < s/100`, **ruined** if `f < (s + r)/100`, and **gone** otherwise.
+
+   | Template | `camp` | `near` | `mid` | `far` |
+   |---|---|---|---|---|
+   | `house_s`, `house_m`, fallback houses | 70 / 20 / 10 | 50 / 30 / 20 | 35 / 30 / 35 | 25 / 30 / 45 |
+   | `block_l` | 85 / 15 / 0 | 75 / 20 / 5 | 70 / 22 / 8 | 65 / 25 / 10 |
+
+   - **Fixed fates:**
+     - places of worship (`church`, `chapel`, `cathedral`, `temple`, `mosque`, `synagogue`, `religious`) always **stand**, out of respect (`design_interiors_and_quests.md` content rules);
+     - `hospital` and `clinic` are always **ruined**, never gone, because they root haunted zones and their doors must stay;
+     - subkind `ruins` is always **ruined**.
+4. **Drawing a ruined building:**
+   - every `ROOF`, `WALL`, and `DOOR` tile of its template gets variant bit **16** — a holed roof, boarded windows, a boarded door;
+   - roof tiles where `u(gx, gy, 10) < 0.25` become `RUBBLE` (variant 0): the roof has fallen in there;
+   - one `RUBBLE` (variant 0) on the first `GRASS` tile of the template's east ring column, else its west ring column, scanning top to bottom;
+   - `GRASS` tiles within 1 tile of the template (Chebyshev) become `TALL_GRASS` where `u(gx, gy, 11) < 0.50`;
+   - its door path is still drawn.
+5. **Drawing a gone building:**
+   - every template tile becomes `GRASS`, then `TALL_GRASS` where `u(gx, gy, 11) < 0.60`;
+   - one `RUBBLE` (variant 1) on the template's centre tile, and a `TREE` on its top-left tile where `u(gx0, gy0, 12) < 0.50`;
+   - no door path, and its door leaves `all_doors`, so no flowers grow by it and no sign anchors to it — a POI sign there falls back to §4.4's "any other POI" rule;
+   - its south ring row stays reserved, so the rest of the layout doesn't move.
+6. **Overgrowth on the ground** (step 6.5):
+
+   | Rule | `camp` | `near` | `mid` | `far` |
+   |---|---|---|---|---|
+   | `PATH` → `TALL_GRASS` where `v(gx, gy) >` | never | 0.80 | 0.72 | 0.65 |
+   | other `PATH` → variant 1 (overgrown) where `u(…, 13) <` | 0.10 | 0.25 | 0.40 | 0.55 |
+   | `ROAD` → variant 1 (cracked) where `u(…, 4) <` — replaces §4.1 step 10's flat 0.20 | 0.10 | 0.20 | 0.35 | 0.50 |
+   | `PLAZA` → variant 1 (weeded) where `u(…, 14) <` | 0.10 | 0.50 | 0.50 | 0.50 |
+   | `PLAZA` → `TALL_GRASS` where `v >` | never | never | 0.60 | 0.55 |
+   | tree scatter in residential land — replaces §4.1 step 8's 0.08 | 0.08 | 0.10 | 0.13 | 0.16 |
+
+   - `PATH` here includes minor roads (w ≤ 2), which is where "grass pushing through side streets" belongs.
+   - `TALL_GRASS` stays walkable, so no route is cut.
+   - Major roads (`ROAD`, w ≥ 3) only crack.
+7. **Salts:** 9 building fate · 10 roof collapse · 11 yard and lot grass · 12 lot tree · 13 path overgrowth · 14 plaza weeds.
+8. **Placeholder art** (§5), regenerated byte-identically:
+   - rows `(ROOF, 16–23)`, masked: the roof colour with dark holes showing rafters;
+   - `(WALL, 16–31)`: cracked walls, the window variants boarded with planks;
+   - `(DOOR, 16–23)`: a boarded door;
+   - `RUBBLE` 0–1: broken masonry with grass tufts;
+   - `(PATH, 1)`, masked: path with grass through it;
+   - `(PLAZA, 1)`: a cracked lot with weeds.
+
+   The palette adds rafters `#3a2a20`, planks `#8a6a40`, and rubble `#8a7a6a` / `#5a4a40`, staying at 64 colours or fewer. The rip-trap rule is unchanged.
+
+### 11.3 How the ruins read — the rules behind the numbers
+- **A ruin, not a wasteland.** Even in the `far` band, a quarter of the houses stand and a third are only ruined, so streets stay readable as streets.
+- **Tidier near the Wayposts.** The `camp` band is where survivors live, so the player's first steps out of a Waypost are through kept streets.
+- **Big buildings outlast houses.** Offices, schools, and stations mostly stand, so downtowns keep their shape.
+- **Landmarks always stand** — they're the story.
+
+### 11.4 Targets — the emptied town, measured on DC
+`tools/measure_synth.py` prints a second line:
+`MEASURE_RUIN standing_pct=<x> ruined_pct=<x> gone_pct=<x> building_tile_pct=<x> rubble_tile_pct=<x> tall_grass_pct=<x> landmarks_standing=<n>/<n>`
+
+| Measure (over DC's built-up cells) | Target | Pass 18 |
+|---|---|---|
+| Building tiles (`ROOF + WALL + DOOR`, standing and ruined) | **10–16%** of built-up tiles | 18.9% |
+| Ordinary buildings **gone** | **20–40%** of those placed | 0% |
+| Ordinary buildings **ruined** | **20–35%** | 0% |
+| `TALL_GRASS` tiles | **≥ 8%** of built-up tiles | not measured |
+| Landmarks standing | **all** | — |
+| Path tiles | **≤ 18%** (unchanged) | 16.6% |
+
+The placement target of §10.3 (45%) is retired (Decision 28, answered by Decision 30). **If the rules above, implemented exactly, miss a target, do not tune them silently:** report the numbers, then STOP and file a decision.
+
+### 11.5 Frame-time targets and the overview (F56) — amends §10.5 — Item 25
+1. **Targets:**
+   - steady-state `FRAME_P95_MS` **≤ 16.7 ms**, which means no dropped frame at 60 Hz vsync (16.67 passes);
+   - `LOAD_MAX_FRAME_MS` **≤ 33.4 ms**, at most one dropped frame.
+
+   The harness also prints `VSYNC_MS <x>`, the display interval it measured against.
+2. **Overview chunks.**
+   - At zoom < 1, cell overviews are composed into **8 × 8-cell chunks**: one 256 × 256 `Image` and one `Sprite2D` per chunk, with its origin at `(floori(cx / 8.0)·8, floori(cy / 8.0)·8)`. They replace one sprite per cell.
+   - The main thread `blit_rect`s each finished 32 × 32 cell overview into its chunk's `Image`, and calls `ImageTexture.update()` for at most **4 chunks per frame**.
+3. **Acceptance in the DC demo profile:** at zoom 1/16 (the whole city), `FRAME_P95_MS` ≤ 16.7 (pass 18: 18.06) and `LOAD_MAX_FRAME_MS` ≤ 33.4 (pass 18: 33.33). Zoom 1 still passes both.
+
+### 11.6 Proof v3 — Item 25
+- **New harness focus:** `--focus=far_buildings` — the revealed cell with the most `DOOR` + `RUBBLE` tiles among cells in the `far` band; ties go to the lower `(cy, cx)`.
+- **Screenshots** in the DC demo profile (cleared preview), saved outside the repo:
+
+  | File | Zoom | Focus |
+  |---|---|---|
+  | `shot_ruins_z2_far.png` | 2 | `far_buildings` |
+  | `shot_ruins_z1_far.png` | 1 | `far_buildings` |
+  | `shot_ruins_z2_camp.png` | 2 | `waypost` |
+  | `shot_z2_landmark.png` | 2 | `landmark` (the Library of Congress, now gilded) |
+  | `shot_z0.0625_dc.png` | 1/16 | — |
+
+- **Show all five to the human,** with the §11.4 numbers and the frame times beside their targets. Say plainly that the art is still the placeholder until the Emerald import (Item 12). **PAUSE** for their verdict.
+
+### 11.7 Tests
+- **`tile_synth2_test` (p) — landmarks first:**
+  - **falsifying:** a fixture landmark boxed in by minor-road `PATH` tiles is placed and gilded, where the pass-18 rules reject it;
+  - a landmark whose door point lies 2 tiles outside its footprint is still gilded;
+  - a footprint too big for its gap is placed shrunk.
+- **(q) Ruin fates:** fixture cells at known distances from a fixture Waypost give each building the fate a hand-computed table predicts. That includes a church that stands in the `far` band and a hospital that is ruined, never gone.
+- **(r) Falsifying:** before the ruin pass, no tile is `RUBBLE` and no `ROOF`/`WALL`/`DOOR` variant has bit 16.
+- **(s)** No landmark tile ever carries bit 16.
+- **(t) Determinism:** the same cell twice gives identical bytes. Moving the Waypost changes only fates and overgrowth — never placement.
+- **Atlas:** the JSON covers the new rows, and regeneration is byte-identical.
+- Commit the new golden hashes, and say in the commit why they changed.
+
+---
+
+## 12. Landmark set pieces (2026-10-22) — agent guide Item 30
+**Why:** the human noted that the ROM's art "might not be enough for things like the monuments in real life". A gold roof says *this is enterable*; it doesn't say *Statue of Liberty*. This section gives the famous buildings their own look: original set pieces, or Emerald look-alikes (`design_art_direction.md` §1a).
+
+### 12.1 The register — `game/config/landmark_art.json`
+- **One entry per interior id that gets a set piece:**
+  - `{"source": "original", "stamp": "<stamp id>"}`; or
+  - `{"source": "emerald", "composition": "<composition id>"}`, naming an entry in `emerald_tile_map.json`'s `compositions` (Item 12).
+- **An interior with no entry keeps the gold-roof template** (§10.8).
+- **`tools/check_famous_places.py` also checks the register:** every key is an interior id in `famous_places.json`, and every stamp or composition it names exists.
+
+### 12.2 Original stamps — `tools/gen_landmark_stamps.py`
+- **Built like `gen_placeholder_atlas.py`:** Python stdlib, deterministic, run with `python3 -I`, and regenerated byte-for-byte by a test.
+- **Outputs (committed, original art):**
+  - `game/assets/landmarks/stamps_v1.png` — each stamp drawn on a grid of 16 × 16-pixel tiles and saved at 2×, so a tile is 32 × 32 px, like Emerald's tiles on screen;
+  - `game/assets/landmarks/stamps_v1.json` — `{"stamps": {"<id>": {"index": n, "w": tiles, "h": tiles, "door": [col, row], "origin": [x, y]}}}`.
+- **Drawing rules:**
+  - at most 16 colours per stamp, from `tenth_spring.gpl`, which may grow by up to 8 colours for stone, marble, copper green, and steel, staying at 64 or fewer;
+  - a 1-px ink outline (`#1a1a20`) around the silhouette;
+  - light from the top left — highlights on the top and left edges, shade on the bottom and right;
+  - each stamp must read as its landmark at zoom 1.
+  - **The rip trap applies** (`design_art_direction.md` §2): draw from code, trace nothing.
+- **The 14 stamps** — sizes are tile footprints, width × height:
+
+  | id | Landmark | Size |
+  |---|---|---|
+  | `liberty` | Statue of Liberty, on its pedestal | 3 × 6 |
+  | `arch` | Gateway Arch | 9 × 7 |
+  | `lincoln` | Lincoln Memorial | 7 × 4 |
+  | `obelisk` | Washington Monument | 2 × 7 |
+  | `needle` | Space Needle | 3 × 8 |
+  | `coit` | Coit Tower | 2 × 5 |
+  | `gg_tower` | a Golden Gate tower (the bridge deck is ordinary bridge tiles) | 2 × 7 |
+  | `boston_light` | Boston Light | 2 × 5 |
+  | `hatteras_light` | Cape Hatteras lighthouse, with its spiral stripe | 2 × 6 |
+  | `alcatraz` | Alcatraz cellhouse | 8 × 4 |
+  | `parthenon` | the Parthenon, Nashville | 7 × 4 |
+  | `independence` | Independence Hall and its clock tower | 7 × 5 |
+  | `grand_central` | Grand Central's facade | 9 × 4 |
+  | `neon_signs` | a cluster of the Neon Museum's signs | 6 × 3 |
+
+### 12.3 Placing a set piece — amends §11.1 step 3
+1. **After a landmark's footprint is placed** (§11.1), if the register has an entry for it, try to put the set piece there instead.
+   - The set piece's rectangle is anchored with its door column on the placed template's door column, and its bottom row on the template's bottom row.
+   - It must pass §11.1's landmark rule: no `WATER`, `ROAD`, `RAIL`, `BRIDGE`, `VOID`, `GRAVE`, `FENCE`, another building's tile, or a reserved tile.
+   - Try the same 21 nudges. If none fits, keep the gilded template.
+2. **New tile class 21, `STAMP`:**
+   - the variant byte is the stamp index — 0–127 for original stamps, 128–255 for Emerald compositions;
+   - the mask byte is the tile's index inside the stamp, row-major (0–255);
+   - it is **not walkable**, except the stamp's `door` tile, which is written as `DOOR` with variant 32, so doors stay doors.
+3. **The sign** goes beside the door, as §10.8.
+4. **Emerald compositions** need the Emerald import.
+   - The tile-atlas builder (Item 12's plan) renders each composition into extra atlas rows at import time, on the player's machine.
+   - Until the import exists, an `emerald` entry falls back to the gilded template.
+5. **The renderer** draws class 21 from the stamp atlas (indices 0–127) or from the Emerald composition rows (128–255), through `asset_db.tile_atlas()`.
+
+### 12.4 Tests and proof
+- **`tile_synth2_test` (u):**
+  - **falsifying:** a fixture landmark with a register entry is drawn as its stamp, where today it gets a gold roof;
+  - a stamp that doesn't fit falls back to the gilded template;
+  - the stamp's door tile is `DOOR` 32.
+- **The stamps** regenerate byte-for-byte.
+- **Proof:** in the DC demo profile at zoom 2, `--focus=landmark` on the Lincoln Memorial and on the Washington Monument. Saved outside the repo and shown to the human with the placeholder caveat. **PAUSE.**

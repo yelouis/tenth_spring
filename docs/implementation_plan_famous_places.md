@@ -4,12 +4,14 @@
 >
 > *This file was `implementation_plan_area_unlock.md` (a pass-18 draft); it was renamed and rewritten after the human narrowed the scope to famous places.*
 >
+> **Amended 2026-10-21 (pass 19), §8:** the content revisions to the place list (Item 24), and the neighbourhood rule fix (F55). Since Decision 29 (Explore Here), areas come from the shared **places pack** (Item 26), and unlocking reads explore events, not movement (Item 28) — `implementation_plan_explore_here.md`. §3–§6 below are the record of what Items 18–21 built.
+>
 > Every number, name, and string here is deliberate — implement as written.
 
 **What this means for the player:**
 - The game's world becomes the 27 famous cities and 36 famous parks and wonders.
 - Your home is the safehouse hub. From day one you can Distort to the famous city nearest home, arriving at its Waypost neighbourhood, which is already revealed.
-- Passing through a neighbourhood in real life reveals it; enough neighbourhoods reveal the whole city. Visiting a park reveals all of it.
+- Tapping **Explore Here** in a neighbourhood reveals it; enough neighbourhoods reveal the whole city. Exploring anywhere in a park reveals all of it (Decision 29).
 - Two friends standing in the same place see the identical map.
 
 ---
@@ -166,3 +168,42 @@ Washington DC is a famous city with a small file (21 MB) and nothing private.
 - **`design_game_state_and_models.md`:** `area_reveal`, `distort_list`, `meta('home_cell')`, store schema v4.
 - **`design_privacy_and_location.md`:** reveals are coarser than the fuzzed points. Home never leaves the PC and is used only to pick the starter city.
 - **`master_implementation_plan.md`:** Phase 3 scope.
+
+---
+
+## 8. Pass-19 amendments (2026-10-21)
+
+### 8.1 The place list, revised — `game/config/famous_places.json` (Item 24a)
+The pass-19 content review changed some rows of `design_famous_places.md` §1.2 and `design_interiors_and_quests.md` §4. Bring the file in line, using §1 step 2's lookup rules (public names only, Nominatim at ≥ 1.1 s between requests, development time only):
+
+| Change | In the file |
+|---|---|
+| Uxie, Mesprit, Azelf swap places | `site:walden-pond` → `legendary_dex` 480; `site:niagara-falls` → 481; `site:isle-royale` → 482 |
+| Zapdos moves to the Everglades | **add** `site:everglades` (South Atlantic, `north-america/us/florida`, Waypost: the Ernest F. Coe Visitor Center, `legendary_dex` 145, a visitor-centre interior); **remove** `site:theodore-roosevelt` |
+| Darkrai moves to Katahdin Woods and Waters | **add** `site:katahdin-woods-and-waters` (New England, `north-america/us/maine`, Waypost: the monument's main visitor contact station, else its main entrance; `legendary_dex` 491; a visitor-centre interior); **remove** `site:salem-maritime` |
+| Regirock moves to Cathedral Caverns | **add** `site:cathedral-caverns` (East South Central, `north-america/us/alabama`, Waypost: the park's visitor centre; `legendary_dex` 377; a visitor-centre interior and a `cave` lair interior); **remove** `site:russell-cave` |
+| Las Vegas interiors (Decision 33) | the **six** rows of `design_interiors_and_quests.md` §4.1: Fremont Street — the Glow; the STRAT tower; the House vault (beneath Fremont Street, door at the canopy's centre); the Neon Museum; the Smith Center; and Springs Preserve, each with its public entrance as `door` |
+| **The 30 Generation 6–8 places** (Decision 32) | **add** the 24 sites and 6 spots of `design_famous_places.md` §1.2, with visitor-centre interiors for the sites, and the lair and city interiors of `design_interiors_and_quests.md` §4. Small sites may use `osm_boundary: "w<id>"`. The Churchill Downs interior gains `L P` |
+| Lore requirements | **add** `requires` to all 20 legendaries in `design_famous_places.md` §6's table, in §9's object form |
+
+- Use the place ids above if the file uses that slug style; otherwise keep the file's existing style, and say so in the report.
+- **`tools/check_famous_places.py` changes:**
+  - **105 entries:** 27 cities, 60 sites, and 18 spots;
+  - **78 distinct legendary dex numbers,** with no place holding two;
+  - `requires`, if present, uses only §9's keys, and every dex it names is a legendary in the file;
+  - no `requires` chain is circular;
+  - every legendary named in a `requires` is reachable;
+  - each of the nine regions holds 7 to 9 legendaries.
+- **Report** the new and changed rows (name → relation id → Waypost name) for the human to check at Item 25's pause.
+
+### 8.2 Neighbourhoods come from the places pack (F55) — amends §3 step 1 (Item 26)
+- **The bug:** rule (a) took `admin_level` 9 or 10, lower id first. In DC, admin level 9 is the city's 8 political wards, so DC got 8 huge "neighbourhoods", and two of them unlocked the city.
+- **The rule now,** computed once by `tools/build_places_pack.py` (`implementation_plan_explore_here.md` §1):
+  1. **Polygons:** named `boundary=administrative` areas with `admin_level=10`, and named closed areas tagged `place=neighbourhood|suburb|quarter`, inside the city. A cell takes the **smallest** polygon containing its centre, ties to the lower OSM id. Admin level 9 is never used.
+  2. **Points:** each remaining cell takes the nearest named `place=neighbourhood|suburb|quarter` node inside the city that lies in no rule-1 polygon (WM-m distance, ties to the lower id).
+  3. **Districts:** cells still unassigned form 4 × 4-cell districts, `grid:<city id>:<floor(cx/4)>:<floor(cy/4)>`.
+- **The converter stops computing neighbourhoods.** `--place` copies the place's areas and cells from the bundled pack into the store's `areas` and `area_cells`, so the store, the PC's reveal engine, and the phone all use the same areas. The store schema becomes `'5'` (`import_state('pack_version')` added), and v4 stores are skipped and re-converted.
+- **Expected for DC:** no admin-level-10 areas, so rule 2 applies, with roughly 130 named neighbourhood points — and so `T = 5`. Report the counts, never the names of private places (DC's public neighbourhood names are fine).
+
+### 8.3 Unlocking reads explore events (Item 28)
+`RevealEngine` v2, save migration 3, the starter city by id, and boot are specified in `implementation_plan_explore_here.md` §4–§5. They replace §4 rules 2 and 6 and §5 step 4 above.

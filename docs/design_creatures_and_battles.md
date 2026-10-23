@@ -1,6 +1,13 @@
 # Creatures & Battles
 
-This document defines the Pokémon model and the main-series battle system: stats, types, damage, status, catching, experience, party, PC box, healing, and blacking out. **The roster is all 649 Pokémon of Generations 1–5** (Decision 12). **Formulas follow Generation IV (Diamond/Pearl/Platinum); data comes from Black/White.** Formulas are game rules and live in the repo. Species data, move data, and names come only from the player's Black/White ROM, via `asset_db` (`design_rom_asset_pipeline.md` §2, §10). Gen 5 supplies data, never rules: no Gen 5 battle mechanics (critical captures, the Gen 5 EXP scaling, triple battles) are in scope.
+This document defines the Pokémon model and the main-series battle system: stats, types, damage, status, catching, experience, party, PC box, healing, and blacking out. > **Amended 2026-10-22 (Decision 32):**
+> - **The roster is all 905 Pokémon of Generations 1–8.**
+> - **Battles follow Generation 8 rules** (Sword/Shield), with Mega Evolution (Decision 36, §13a) and without Z-Moves or Dynamax. That includes Gen 8's scaled experience. That brings in the **Fairy type**, the Gen 6+ type chart, the Gen 6+ critical-hit multiplier, and Gen 8 move and ability behaviour.
+> - **Species data, move data, and names** come from the data pack (PokéAPI), via `asset_db` (`design_rom_asset_pipeline.md` §2a).
+> - **The sections below** still describe the Gen IV rules they were written for. The Phase 5 plan rewrites each against Gen 8 — Bulbapedia's Gen VIII mechanics pages and Pokémon Showdown's open-source battle engine are the references. Where Gen 8 differs, Gen 8 wins.
+> - **The long game** (Decision 35, `design_long_game.md`): fixed level-75 Wardens, and weariness (§11a).
+
+*Original scope, superseded:* the roster was all 649 Pokémon of Generations 1–5 (Decision 12). Formulas followed Generation IV (Diamond/Pearl/Platinum), and data came from Black/White. Formulas are game rules and live in the repo. Species data, move data, and names came only from the player's Black/White ROM, via `asset_db`. Gen 5 supplied data, never rules.
 
 Where a value below is marked **verify**, confirm it against Bulbapedia's Generation IV mechanics pages or `pret/pokeplatinum` before shipping — do not substitute a guess.
 
@@ -25,8 +32,14 @@ Where a value below is marked **verify**, confirm it against Bulbapedia's Genera
 
 ## 3. Types
 
-- **17 types** (no Fairy — it did not exist in Gen IV). The full 17×17 chart is repo data at `game/config/type_chart.json`.
-- Gen IV specifics that tests must assert: **Ghost has no effect on Normal**; **Normal and Fighting have no effect on Ghost**; Ghost is super-effective on Ghost and Psychic; Ghost is resisted by Dark **and by Steel** (Steel lost its Ghost/Dark resistance only in Gen VI — keep it). Dual-type effectiveness multiplies: 0, ¼, ½, 1, 2, 4.
+- **18 types, including Fairy** (Decision 32). The full 18×18 Gen 6+ chart is repo data at `game/config/type_chart.json`.
+  - **Fairy:** super-effective on Dragon, Fighting, and Dark; resisted by Fire, Poison, and Steel. Dragon has no effect on it.
+  - *Superseded:* 17 types, with no Fairy, as in Gen IV.
+- **Specifics tests must assert:**
+  - **Ghost has no effect on Normal**, and **Normal and Fighting have no effect on Ghost**;
+  - Ghost is super-effective on Ghost and Psychic, and resisted by Dark;
+  - **Steel no longer resists Ghost or Dark** (the Gen 6 change);
+  - dual-type effectiveness multiplies: 0, ¼, ½, 1, 2, 4.
 - **Physical/special split is per move** (Gen IV introduced it) — read each move's category from move data, never derive it from type.
 
 ## 4. Battle flow (singles)
@@ -96,6 +109,17 @@ four shake checks: each draws uniform 0–65535; all four < b → caught
 - **No Pokémon Centers** — the world collapsed. **Full healing happens only at the home safehouse.** In the field, healing comes from bag items (Potions, Antidotes, Revives — scavenged, `design_resources_and_base.md`). Scarce healing is the survival undertone.
 - **Blacking out** (all party Pokémon fainted): wake at home with the party fully healed. **The bag's contents drop at the tile where you blacked out**, recoverable for `bagCacheDecayGameDays = 3`. Pokémon are **never** lost; the map, Pokédex, and PC always persist.
 
+## 11a. Weariness (Decision 35 — the survival half)
+- **Stamina 0–100** per Pokémon, shown as a small bar under HP.
+- **Costs:** each battle a Pokémon takes part in costs 4; fainting costs 10 more.
+- **Below 40 it is *weary*:** it starts each battle at −1 Speed stage.
+- **At 0 it is *exhausted*:** it can't be sent out.
+- **Recovery:**
+  - full at home;
+  - +50 from a Waypost camp bed, once per game day per place;
+  - +25 from a few rare scavenged items.
+- **Why:** away from home you can't swap in fresh Pokémon (§11, the stranded rule), so long trips need planning and a bench. Values are in `tuning.json`.
+
 ## 12. Opponent behavior
 
 - **Wild:** uniformly random among moves with PP.
@@ -105,10 +129,24 @@ four shake checks: each draws uniform 0–65535; all four < b → caught
 
 Seen/caught per National Dex number. Each caught entry records the **real place category and cell** where it was first caught and the game day. Over a year, the Pokédex becomes a record of where the player actually went. Store categories and cells only — never coordinates.
 
+## 13a. Mega Evolution (Decision 36)
+- **One Mega Evolution per battle** per side, chosen with a move. The Pokémon must hold its Mega Stone, and the player must hold the **Walker's Keystone**. It lasts until the Pokémon faints or the battle ends.
+- **The Keystone** is given by the Archive of the Stillness (Library of Congress) once the player holds five Anchors (`design_interiors_and_quests.md` §5.2).
+- **47 Mega Stones,** every one obtainable:
+  - 18 from the nine Warden rematches (two each);
+  - 27 from the "Old Friends" rematches (one each);
+  - 2 from 49-win streaks in the Glow Arena.
+
+  Mega Rayquaza needs no stone; it must know Dragon Ascent.
+- **Mega forms' data** comes from the data pack (`design_rom_asset_pipeline.md` §2a). The Pokédex counts species, not forms.
+- **Wardens' aces can Mega Evolve.** Wild Pokémon and legendaries never do.
+- **In the story:** a Mega Evolution is a Pokémon's strength made firm by its trust in a Walker — and what is firm, the fog can't copy (`design_story_and_world.md` §3.1).
+- **Not in the game:** Z-Moves, Dynamax, and Primal Reversion.
+
 ## 14. Out of scope for v1 (do not build)
-Double battles · trainer battles (survivor trainers are a later phase) · held items in battle · weather · breeding · trading · online play (see Decision 8).
+Double battles · trainer battles (survivor trainers are a later phase) · held items in battle · weather · breeding · trading · online play (see Decision 8) · **Dynamax, Z-Moves, and Primal Reversion** (never — Decision 36).
 
 ## 15. Files
 * `game/creatures/pokemon.gd` (instance), `game/creatures/stats.gd`, `game/creatures/growth.gd`
 * `game/battle/engine.gd` (turn loop), `game/battle/damage.gd`, `game/battle/status.gd`, `game/battle/effects/*.gd`, `game/battle/abilities.gd`, `game/battle/catch.gd`, `game/battle/ai.gd`
-* `game/config/type_chart.json` — the Gen IV 17×17 chart (mechanics data, repo-safe)
+* `game/config/type_chart.json` — the Gen 6+ 18×18 chart (mechanics data, repo-safe)

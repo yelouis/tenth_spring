@@ -48,7 +48,7 @@ An explorable real-world location.
 * `name` (String), `category` (PlaceCategory — `design_resources_and_base.md` §1).
 * `cellX`, `cellY`, `tileX`, `tileY` (int): position.
 * `revealState` (PlaceRevealState).
-* `visitCount` (int), `lastRealVisitAt` (int) → derived `intelLevel` (IntelLevel).
+* `intelLevel` (IntelLevel) — derived from the number of distinct UTC days with an Explore Here report in the place's area (`design_world_generation.md` §4). *`visitCount` and `lastRealVisitAt` are reset by save migration 3 and no longer used.*
 * `itemState` (ItemState): `untouched | partial | stripped | regrown` — regrowth is driven by haunting proximity, never by real-world visits.
 * `levelTier` (int 0–3): from distance to home (`design_encounters_and_haunted_zones.md` §4).
 * `isLandmark` (bool) and `legendaryDex` (int?): the legendary assigned to this landmark, if any.
@@ -57,7 +57,7 @@ An explorable real-world location.
 ## 4. Player, party, and bag
 
 * File: `game/models/player_profile.gd`
-* `trainerName`, `spriteIndex`, `posTileX/Y` — position overwritten on PC session start by the synced `bodyFix` (fast travel — `design_travel_and_time.md` §4).
+* `trainerName`, `spriteIndex`, `posTileX/Y` — where the player stands. A session resumes here; the phone never moves you (Decision 29, `design_travel_and_time.md` §4).
 * `party`: up to 6 `PokemonInstance` ids, in order.
 * `bag`: `{pocket, itemIndex, qty}` rows (pockets per `design_resources_and_base.md` §2).
 * **Stranded rule:** no code path may read or write `pc_box` for withdrawal or swap while `distanceToHome > baseAccessMeters` (500 m, tunable; distinct from the `homeFuzzMeters` privacy radius). Remote *deposit* of a newly caught Pokémon is always allowed.
@@ -72,21 +72,22 @@ An explorable real-world location.
 
 ## 6. Home, Pokédex, haunted zones, bag cache
 
-* **Home (`BaseState`)** — `homeCellX/Y` (fuzzed; never raw coordinates), `pcSealed` (bool — stage-4 intrusion, `design_encounters_and_haunted_zones.md` §5.4), garden plots `{plotIndex, berryIndex, plantedAtGameDay}` (max 8).
+* **Home (`BaseState`)** — home is a hub, not a map location (Decision 25). `homeCellX/Y` is retired and set to NULL by save migration 3; `pcSealed` (bool — stage-4 intrusion, `design_encounters_and_haunted_zones.md` §5.4), garden plots `{plotIndex, berryIndex, plantedAtGameDay}` (max 8).
 * **Pokédex** — per dex: `seen`, `caught`, `firstCaughtCell`, `firstCaughtCategory`.
 * **Haunted zone (`HauntZone`)** — `id`, `rootPlaceId`, `stage` (0–4), `territoryCells`, `lastGrowthTick`, `bossDex`, `bossDefeated`.
 * **Bag cache (`BagCache`)** — `tileX/Y`, `items`, `droppedAtGameDay`. Expires after `bagCacheDecayGameDays = 3`. At most one exists; blacking out again merges into the newest location.
 
-## 8. Visit Log (`VisitLog`)
+## 8. Visit Log (`VisitLog`) — explore events since Decision 29
 
-Append-only real-world evidence table — the memoir. Rows originate on the phone (already fuzzed to 3 decimals ≈ 110 m), sync one hop to the PC (E2E-encrypted, sequence-numbered — `design_companion_and_sync.md` §3), and are acked off the phone's outbox.
-* `seq` (int): sync sequence number. `placeId?`, `lat/lon` (fuzzed), `startedAt`, `dwellSeconds`, `kind` (`visit | corridor`).
-* Feeds familiarity, the PC-side "intel ceremony" reveal, and the memoir view. Never leaves the paired pair of devices.
+Append-only log of real-world **explore events** (Decision 29). Rows originate on the phone as `explore` or `home` events — **area names only, never coordinates**. They sync one hop to the PC (E2E-encrypted, sequence-numbered — `design_companion_and_sync.md` §3) and are acked off the phone's outbox.
+* `seq` (int): the sync sequence number. `placeId`: the area key (`explore`) or the starter city's id (`home`). `lat`/`lon`: always NULL (save migration 3 cleared older rows). `startedAt`: when the player tapped. `dwellSeconds`: 0. `kind`: `explore | home`.
+* Feeds `RevealEngine` (unlocks), familiarity (distinct explore days per area), and the finale's "most-explored place". Never leaves the paired devices.
 
 ## 9. Famous Places, Reveal Engine & Distort List (Schema v2)
 
 Migration 2 adds tables for famous place and neighbourhood unlocks (`docs/implementation_plan_famous_places.md` §4):
 * **`area_reveal` (`area_key` TEXT PRIMARY KEY, `kind` TEXT NOT NULL, `unlocked_at` INTEGER NOT NULL)**: Tracks unlocked neighbourhoods (`osm:r<id>`, `osm:n<id>`, `grid:...`), cities (`city:<id>`), and sites (`site:<id>`). Unlocked areas reveal all constituent cells in `map_cell` via `upsert_map_cell(cx, cy, 1)`.
 * **`distort_list` (`place_id` TEXT PRIMARY KEY, `unlocked_at` INTEGER NOT NULL, `reason` TEXT NOT NULL)**: The player's fast-travel and Town Map destinations (`reason`: `'starter' | 'visited'`).
-* **`meta('home_cell', '<cx>,<cy>')`**: Set by `RevealEngine.designate_home(db, stores, places, cell)`. Identifies the player's home cell and determines the starter city (the famous city whose Waypost is nearest to home). Home never leaves the PC.
+* **`meta('starter_place', '<place id>')`** (save migration 3, Decision 29): the starter city named by the phone's latest **Set home**. It replaces `meta('home_cell')`, which migration 3 converts and deletes. Home's location never reaches the PC.
+* **`meta('last_place', '<place id>')`:** the place whose map view was open at quit, so a session can resume there. Cleared by **Return home**.
 * **Map Store Schema v4**: Places are packaged into `.db` files with tables `areas` and `area_cells` alongside features, with deterministic spatial partitioning and fixed canonical dumps.

@@ -6,6 +6,8 @@ This document is a build-ready specification for the foundation of Tenth Spring:
 
 **Stack (Decision 1).** PC = Godot 4 (GDScript). Companion = Flutter (Dart). Storage = SQLite both sides (Drift on Flutter; the vendored `godot-sqlite` v4.4 GDExtension on Godot — Decision 7). Sync = LAN-only TLS with a pinned self-signed certificate (Decision 11). D3 (geolocation plugin) is code-complete pending its device soak; D4 is superseded by Decision 11.
 
+> **Amended by Decision 29 (2026-10-21) — Explore Here.** Part A's background capture is retired, and the companion's job is now `implementation_plan_explore_here.md` §3. Part B's pairing, TLS, and frames stand. The batch rows, `bodyFix`, relocation, and the visit log's coordinates change as marked below. Golden invariant 2 gets stronger: **coordinates are never stored or sent at all.**
+
 **Golden invariants (enforce in code review on every foundation PR).**
 1. **Cartography, never cargo** — the sync ingest (§B4.5) may write only `map_cell`, `place_node`, `visit_log`, and the transient `bodyFix`. It must have *no* path to `inventory_item` / `base_state` — or, after the Pokémon pivot (2026-10-07), to the bag, party, PC box, or Pokémon tables. Assert this with a test (§B6).
 2. **Raw coordinates never persist and never transit** — full-precision fixes exist only in volatile memory inside the capture pipeline; everything written to disk or sent over the wire is fuzzed (§A4).
@@ -15,6 +17,8 @@ This document is a build-ready specification for the foundation of Tenth Spring:
 ---
 
 # Part A — Companion: Location Capture (Phase 0)
+
+> **Retired by Decision 29 (2026-10-21).** A1–A8 are the record of what Phase 0 built. Agent guide Item 27 deletes the capture pipeline, the fuzzing file, GPX replay, and the background permissions.
 
 Goal: carrying the phone through a normal day produces a correct, fuzzed visit/corridor log at < 3%/day battery, with a GPX replay path for testing. No map reveal happens on the phone.
 
@@ -298,6 +302,8 @@ Each attempt has a **3 s** connect timeout. If all fail, the phone shows a "can'
 - **Idle timeout: 30 s** without a complete frame, then close.
 
 ### B4.3 Frames and messages (plaintext shapes, inside TLS)
+> **Protocol v3 (Decision 29):** `HELLO` adds `packVersion`. `BATCH` rows are `explore` and `home` events with no coordinates and no `bodyFix`. There are two new errors, `pack_mismatch` and `bad_row` — `implementation_plan_explore_here.md` §3.6 and §4.1.
+
 **Frame:**
 - A 4-byte big-endian unsigned length **N**, then **N** bytes of UTF-8 JSON (one object with a `type` field).
 - **1 ≤ N ≤ 1,048,576.** Anything else is a protocol error, and the connection closes.
@@ -328,6 +334,8 @@ On `BATCH`, inside one DB transaction:
 Phone: on ACK, delete outbox rows with `seq <= lastAppliedSeq`. If the connection drops before ACK, nothing is deleted and nothing is half-applied (the transaction either commits fully or not); the phone resends from `last_acked` and the PC re-applies safely because rows `<= last_applied_seq` are skipped.
 
 ### B4.5 Applying a visit/corridor row → map reveal (**map tables only**)
+> **Superseded by Decision 29:** ingest writes only `visit_log`, and `RevealEngine` v2 turns explore events into reveals (`implementation_plan_explore_here.md` §4.1, §4.3).
+
 For each row (ingest has write access to `map_cell`, `place_node`, `visit_log` only):
 - Append the canonical `visit_log` row (`peer_id, seq, ...`).
 - Reveal the `map_cell(s)` containing the point → `reveal_state = known` if currently `unknown`; stamp `first_revealed_at`. Cells come from the Web-Mercator grid in `game/world/grid.gd` (`design_game_state_and_models.md` §2, F42) — never a local formula.
@@ -335,6 +343,8 @@ For each row (ingest has write access to `map_cell`, `place_node`, `visit_log` o
 - `corridor` rows: reveal cells within `corridorRevealMeters` of the point as `known` terrain.
 
 ### B4.6 bodyFix & relocation handoff
+> **Retired by Decision 29.** The phone never reports a position.
+
 `bodyFix` is retained on `sync_peer` for the session-start relocation in §B5. It is the phone's current fuzzed position — the anchor for fast travel.
 
 Validation B4:
@@ -344,6 +354,8 @@ Validation B4:
 - Isolation (unit, guards invariant 1): a BATCH whose handler is (in a fault-injection test) pointed at `inventory_item` fails a static capability check — the ingest module must not import/reference inventory tables at all.
 
 ## B5. Relocation on session start (fast travel = the phone)
+> **Retired by Decision 29.** A session resumes where the last one ended (`design_travel_and_time.md` §4; `implementation_plan_explore_here.md` §4.4).
+
 
 On PC game launch:
 1. `SyncServer` attempts discovery + a fresh sync. On success, use the just-synced `bodyFix`; on failure, use `sync_peer.last_body_*` and show the "scout out of contact" banner (`design_travel_and_time.md` §4).
@@ -353,6 +365,8 @@ On PC game launch:
 Validation B5: with a seeded map + a synced bodyFix, the survivor spawns on the expected tile; with the peer unreachable, spawn uses the last body position + banner; a bodyFix far from home sets stranded and blocks stash reads (assert the stash query refuses).
 
 ## B6. Migration framework (both DBs)
+> **Amended by Decision 29:** save migration 3 removes every coordinate from `visit_log` and `sync_peer`, converting coordinate rows to explore events first. It's the one sanctioned rewrite. Rows are never dropped, and unlock state must survive (`implementation_plan_explore_here.md` §4.2).
+
 
 `meta.schema_version`; on startup run ordered, idempotent migration steps when `version < current`. Each migration ships with a fixture DB at the prior version and a test asserting a lossless upgrade — **`visit_log` and `map_cell` are never dropped or rewritten destructively** (location history is unrecoverable). Add a capability/lint test that fails if the sync-ingest module gains a reference to `inventory_item`/`base_state` (invariant 1, permanent guard).
 

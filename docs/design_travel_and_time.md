@@ -1,6 +1,6 @@
 # Travel, Time & Fast Travel
 
-This document defines the world clock, the 15 mph travel economy, day/night, physical-presence fast travel, and the stranded rule. The pillar: **in-game distance is expensive; the only teleporter is your real body.**
+This document defines the world clock, the 15 mph travel economy, day/night, physical-presence fast travel, and the stranded rule. The pillar: **in-game distance is expensive; Distort goes only where you've really been.**
 
 ## 1. The World Clock
 
@@ -28,24 +28,21 @@ This document defines the world clock, the 15 mph travel economy, day/night, phy
 
 The map contains only famous places (`design_famous_places.md`), so there's nothing to walk across between them. Your real body still decides where you can go; the Distortion carries you there.
 
-- **From home,** Distort for free to any famous place you've physically visited (any recorded movement inside it), plus your **starter city** — the famous city nearest your fuzzed home. You arrive at the place's **Waypost**: city hall for cities, the main visitor centre for parks and wonders.
+- **From home,** Distort for free to any famous place you've explored in real life (an **Explore Here** report from inside it — Decision 29), plus your **starter city** — the famous city nearest home, picked on the phone by **Set home** (`design_companion_and_sync.md` §1). You arrive at the place's **Waypost**: city hall for cities, the main visitor centre for parks and wonders.
 - **Back home: only from that place's Waypost** — or by blacking out.
 - **Between places:** go through home.
 - **Distort costs no game time** and is never blocked by night. The world clock pauses at home, as when the game is closed.
-- **Session start:** the game syncs with the companion for a `bodyFix` (`design_companion_and_sync.md` §3).
-  - If the fix lies inside a famous place, you start there, snapped to the nearest revealed traversable tile, and that place unlocks.
-  - Otherwise you start at home.
-  - If the phone is unreachable, you start where the last session ended, with a "scout out of contact" banner.
-- **This replaces "your real body is the only teleport."** Distort is the one teleport. It goes only where your body has been, and only from home.
+- **Session start: where the last session ended** (Decision 29, 2026-10-21). In a place, you're back on the tile where you quit; otherwise you're at home. The phone no longer moves you, and quitting is never a free trip home — the walk back to the Waypost stays part of the game. At launch the game asks the companion for new reports and applies them, but never waits for one.
+- **This replaces "your real body is the only teleport."** Distort is the one teleport. It goes only where you've explored for real, and only from home.
 
 ## 5. The Stranded Rule
 
 - **The PC box and full healing are at home only.** In any famous place you fight with the party and bag you brought (newly caught Pokémon still deposit remotely).
 - **Getting home** means walking back to the place's Waypost — honest 15 mph, 30 by bicycle — before your party or the daylight runs out, or blacking out and losing your bag where you fell.
-- **The session-start banner states it plainly:** *"You are in <place>. The Waypost is 38 min on foot. You have what you carry."*
+- **The arrival banner states it plainly:** *"You are in <place>. You have what you carry. The way home is this Waypost."* When a session resumes away from home: *"You are in <place>. The Waypost is 38 min on foot."*
 
 ## 6. Files (PC game)
 * `game/systems/world_clock` — tick, bands, daylight budget helpers.
 * `game/systems/travel` — route timing, terrain factors, encounter pressure.
-* `game/systems/relocation` — session-start `bodyFix` spawn + stranded banner.
+* `game/systems/relocation` — session resume (last position) + the arrival and resume banners.
 * `game/systems/distort` — the Distort list, Waypost arrival and departure, the home hub.
