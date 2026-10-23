@@ -53,6 +53,9 @@
    - Mapping tables reference ROM data **by number** only.
 2. **Activate the commit hook in your clone before your first commit:** `git config core.hooksPath .githooks`. The local battery fails without it.
 3. **Never force-push `main`.** Work on a branch per item, get all workflows green, then fast-forward `main`.
+   - **Then delete the item's branch,** locally (`git branch -d <branch>`) and on GitHub (`git push origin --delete <branch>`). Only `main` stays.
+   - `git branch -d` refuses a branch that isn't fully merged. If it does, stop and find out why — never force it with `-D`.
+   - *(Added 2026-10-22: 29 merged item branches had piled up because nothing deleted them.)*
 4. **Tests never write to the player's real state:**
    - the save `user://tenth_spring.db`, plus its `-wal`, `-shm`, `.tmp`, and `.jsonbak` siblings;
    - the identity folder `user://sync_identity/`;
@@ -747,7 +750,8 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
             STOP. File in ongoing_general_errors.md with options.
 6 RECORD    Move the item's findings to Resolved with what-was-solved; update any design doc whose
             behavior changed — in the same commit.
-7 COMMIT    One Conventional Commit per item, WHY in the body.
+7 COMMIT    One Conventional Commit per item, WHY in the body. Fast-forward main, then delete the
+            item's branch locally and on GitHub (standing constraint 3).
 ```
 
 ## Definition of Done (this build)
