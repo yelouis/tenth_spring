@@ -741,7 +741,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **HUMAN: Decisions 29–36 answered** (2026-10-21 and 2026-10-22).
 - [x] **Item 23 (F57)** — `tools/godot.py`; every launcher switched; `test_runner --only`; the falsifying refusal passes (verified pass 21, M56).
 - [x] **Item 24 (F54)** — landmarks first, plus §11.1a (the `building:part` rule and 3 × 3 matching); all four DC landmarks `placed=1`, `gold_tiles > 0`.
-- [ ] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended; rows reported.
+- [x] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended; rows reported.
 - [ ] **Item 25** — the ruin pass; every §11.4 measure reported beside its target; frame targets met with `VSYNC_MS`; five screenshots **shown; paused.**
 - [ ] **Item 12** — Emerald verify markers resolved; `emerald_tile_map.json` with the ruin tiles, compositions, and gaps; contact sheets and preview shown; `implementation_plan_rom_tiles.md`; **paused.**
 - [ ] **Item 30** — the register, 14 stamps, class 21; DC proof **shown; paused.**

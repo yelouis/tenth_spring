@@ -70,5 +70,64 @@ class TestFamousPlacesValidation(unittest.TestCase):
             if os.path.exists(tmp_name):
                 os.remove(tmp_name)
 
+    def test_falsifying_requires_non_legendary_dex(self):
+        """Falsification test: A requires naming a non-legendary dex must fail."""
+        mutated = copy.deepcopy(self.valid_data)
+        for p in mutated:
+            if p.get("legendary_dex") is not None:
+                p["requires"] = {"dex_all": [25]}
+                break
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
+            json.dump(mutated, tf)
+            tmp_name = tf.name
+
+        try:
+            with self.assertRaises(ValueError) as ctx:
+                validate_famous_places(tmp_name)
+            self.assertIn("non-legendary dex", str(ctx.exception))
+        finally:
+            if os.path.exists(tmp_name):
+                os.remove(tmp_name)
+
+    def test_falsifying_region_six_legendaries(self):
+        """Falsification test: A region with 6 legendaries must fail."""
+        mutated = copy.deepcopy(self.valid_data)
+        wnc_legs = [p for p in mutated if p.get("region") == "West North Central" and p.get("legendary_dex") is not None]
+        if wnc_legs:
+            wnc_legs[0]["region"] = "Pacific"
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
+            json.dump(mutated, tf)
+            tmp_name = tf.name
+
+        try:
+            with self.assertRaises(ValueError) as ctx:
+                validate_famous_places(tmp_name)
+            self.assertIn("expected 7–9", str(ctx.exception))
+        finally:
+            if os.path.exists(tmp_name):
+                os.remove(tmp_name)
+
+    def test_falsifying_unknown_requires_key(self):
+        """Falsification test: An unknown requires key must fail."""
+        mutated = copy.deepcopy(self.valid_data)
+        for p in mutated:
+            if p.get("legendary_dex") is not None:
+                p["requires"] = {"badges": 8}
+                break
+
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as tf:
+            json.dump(mutated, tf)
+            tmp_name = tf.name
+
+        try:
+            with self.assertRaises(ValueError) as ctx:
+                validate_famous_places(tmp_name)
+            self.assertIn("unknown requires key", str(ctx.exception))
+        finally:
+            if os.path.exists(tmp_name):
+                os.remove(tmp_name)
+
 if __name__ == "__main__":
     unittest.main()

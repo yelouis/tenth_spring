@@ -173,7 +173,7 @@ Washington DC is a famous city with a small file (21 MB) and nothing private.
 
 ## 8. Pass-19 amendments (2026-10-21)
 
-### 8.1 The place list, revised — `game/config/famous_places.json` (Item 24a)
+### 8.1 The place list, revised — `game/config/famous_places.json` (Item 24a — built)
 The pass-19 content review changed some rows of `design_famous_places.md` §1.2 and `design_interiors_and_quests.md` §4. Bring the file in line, using §1 step 2's lookup rules (public names only, Nominatim at ≥ 1.1 s between requests, development time only):
 
 | Change | In the file |

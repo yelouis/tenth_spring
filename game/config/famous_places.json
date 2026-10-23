@@ -40,6 +40,26 @@
           "lat": 42.3494,
           "lon": -71.0784
         }
+      },
+      {
+        "id": "boston:fenway-park",
+        "name": "Fenway Park",
+        "family": "arena",
+        "purposes": "T H",
+        "door": {
+          "lat": 42.3465,
+          "lon": -71.0971
+        }
+      },
+      {
+        "id": "boston:arnold-arboretum",
+        "name": "Arnold Arboretum",
+        "family": "garden",
+        "purposes": "L P",
+        "door": {
+          "lat": 42.2993,
+          "lon": -71.1226
+        }
       }
     ]
   },
@@ -74,6 +94,16 @@
         "door": {
           "lat": 41.821,
           "lon": -71.414
+        }
+      },
+      {
+        "id": "providence:athenaeum",
+        "name": "Providence Athenaeum",
+        "family": "hall",
+        "purposes": "P H Q",
+        "door": {
+          "lat": 41.8258,
+          "lon": -71.4063
         }
       }
     ]
@@ -174,6 +204,26 @@
           "lat": 40.7813,
           "lon": -73.974
         }
+      },
+      {
+        "id": "new-york:statue-of-liberty",
+        "name": "Statue of Liberty",
+        "family": "structure",
+        "purposes": "L P",
+        "door": {
+          "lat": 40.6892,
+          "lon": -74.0445
+        }
+      },
+      {
+        "id": "new-york:coney-island",
+        "name": "Coney Island",
+        "family": "structure",
+        "purposes": "L P",
+        "door": {
+          "lat": 40.5755,
+          "lon": -73.9785
+        }
       }
     ]
   },
@@ -218,6 +268,16 @@
         "door": {
           "lat": 39.9533,
           "lon": -75.159
+        }
+      },
+      {
+        "id": "philadelphia:franklin-institute",
+        "name": "The Franklin Institute",
+        "family": "museum",
+        "purposes": "L P Q",
+        "door": {
+          "lat": 39.9582,
+          "lon": -75.1731
         }
       }
     ]
@@ -335,7 +395,7 @@
       "lon": -84.387982
     },
     "warden": {
-      "name": "Luc\u00eda Reyes",
+      "name": "Lucía Reyes",
       "type": "Grass",
       "landmark": {
         "name": "Atlanta Botanical Garden",
@@ -517,7 +577,7 @@
         "id": "louisville:churchill-downs",
         "name": "Churchill Downs",
         "family": "arena",
-        "purposes": "T Q",
+        "purposes": "T Q L P",
         "door": {
           "lat": 38.203,
           "lon": -85.7699
@@ -800,6 +860,16 @@
           "lat": 41.4981,
           "lon": -81.6942
         }
+      },
+      {
+        "id": "cleveland:the-flats",
+        "name": "The Flats",
+        "family": "industrial",
+        "purposes": "L P",
+        "door": {
+          "lat": 41.4994,
+          "lon": -81.7048
+        }
       }
     ]
   },
@@ -950,23 +1020,63 @@
     },
     "interiors": [
       {
+        "id": "las-vegas:fremont-glow",
+        "name": "Fremont Street — the Glow",
+        "family": "market",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 36.1707,
+          "lon": -115.1439
+        }
+      },
+      {
         "id": "las-vegas:strat",
         "name": "The STRAT tower",
         "family": "tower",
         "purposes": "P T",
         "door": {
-          "lat": 36.1472,
+          "lat": 36.1474,
           "lon": -115.1555
         }
       },
       {
-        "id": "las-vegas:fremont-arcade",
-        "name": "Fremont Street arcade",
-        "family": "market",
-        "purposes": "H Q",
+        "id": "las-vegas:house-vault",
+        "name": "The House vault (beneath Fremont Street)",
+        "family": "underground",
+        "purposes": "L P",
         "door": {
-          "lat": 36.1699,
-          "lon": -115.142
+          "lat": 36.1705,
+          "lon": -115.1435
+        }
+      },
+      {
+        "id": "las-vegas:neon-museum",
+        "name": "The Neon Museum (the Boneyard)",
+        "family": "museum",
+        "purposes": "W Q P",
+        "door": {
+          "lat": 36.1769,
+          "lon": -115.1353
+        }
+      },
+      {
+        "id": "las-vegas:smith-center",
+        "name": "The Smith Center",
+        "family": "arena",
+        "purposes": "T P",
+        "door": {
+          "lat": 36.1688,
+          "lon": -115.1518
+        }
+      },
+      {
+        "id": "las-vegas:springs-preserve",
+        "name": "Springs Preserve",
+        "family": "garden",
+        "purposes": "Q H",
+        "door": {
+          "lat": 36.1714,
+          "lon": -115.1886
         }
       }
     ]
@@ -1176,102 +1286,6 @@
     ]
   },
   {
-    "id": "spot:hot-metal-bridge",
-    "kind": "spot",
-    "name": "Hot Metal Bridge, Pittsburgh",
-    "city": "city:pittsburgh",
-    "legendary_dex": 379,
-    "region": "Middle Atlantic"
-  },
-  {
-    "id": "spot:statue-of-liberty",
-    "kind": "spot",
-    "name": "Statue of Liberty, New York",
-    "city": "city:new-york",
-    "legendary_dex": 385,
-    "region": "Middle Atlantic"
-  },
-  {
-    "id": "spot:independence-hall",
-    "kind": "spot",
-    "name": "Independence Hall, Philadelphia",
-    "city": "city:philadelphia",
-    "legendary_dex": 494,
-    "region": "Middle Atlantic"
-  },
-  {
-    "id": "spot:lincoln-memorial",
-    "kind": "spot",
-    "name": "Lincoln Memorial, Washington DC",
-    "city": "city:washington-dc",
-    "legendary_dex": 638,
-    "region": "South Atlantic"
-  },
-  {
-    "id": "spot:waterfront-park",
-    "kind": "spot",
-    "name": "Waterfront Park, Louisville",
-    "city": "city:louisville",
-    "legendary_dex": 243,
-    "region": "East South Central"
-  },
-  {
-    "id": "spot:ryman-auditorium",
-    "kind": "spot",
-    "name": "Ryman Auditorium, Nashville",
-    "city": "city:nashville",
-    "legendary_dex": 648,
-    "region": "East South Central"
-  },
-  {
-    "id": "spot:space-center-houston",
-    "kind": "spot",
-    "name": "Space Center Houston",
-    "city": "city:houston",
-    "legendary_dex": 386,
-    "region": "West South Central"
-  },
-  {
-    "id": "spot:northerly-island",
-    "kind": "spot",
-    "name": "Northerly Island lakefront, Chicago",
-    "city": "city:chicago",
-    "legendary_dex": 641,
-    "region": "East North Central"
-  },
-  {
-    "id": "spot:michigan-central",
-    "kind": "spot",
-    "name": "Michigan Central Station, Detroit",
-    "city": "city:detroit",
-    "legendary_dex": 649,
-    "region": "East North Central"
-  },
-  {
-    "id": "spot:bde-maka-ska",
-    "kind": "spot",
-    "name": "Bde Maka Ska, Minneapolis",
-    "city": "city:minneapolis",
-    "legendary_dex": 380,
-    "region": "West North Central"
-  },
-  {
-    "id": "spot:gateway-arch",
-    "kind": "spot",
-    "name": "Gateway Arch, St. Louis",
-    "city": "city:st-louis",
-    "legendary_dex": 493,
-    "region": "West North Central"
-  },
-  {
-    "id": "spot:alcatraz",
-    "kind": "spot",
-    "name": "Alcatraz Island, San Francisco",
-    "city": "city:san-francisco",
-    "legendary_dex": 150,
-    "region": "Pacific"
-  },
-  {
     "id": "site:acadia",
     "kind": "site",
     "name": "Acadia National Park (ME)",
@@ -1320,6 +1334,16 @@
           "lat": 44.2705,
           "lon": -71.3033
         }
+      },
+      {
+        "id": "mount-washington:weather-station",
+        "name": "Mount Washington Summit Weather Station",
+        "family": "structure",
+        "purposes": "L P",
+        "door": {
+          "lat": 44.2706,
+          "lon": -71.3032
+        }
       }
     ]
   },
@@ -1335,7 +1359,7 @@
       "lat": 42.4385,
       "lon": -71.34
     },
-    "legendary_dex": 481,
+    "legendary_dex": 480,
     "interiors": [
       {
         "id": "walden-pond:visitor-centre",
@@ -1376,42 +1400,6 @@
     ]
   },
   {
-    "id": "site:salem-maritime",
-    "kind": "site",
-    "name": "Salem Maritime National Historical Park (MA)",
-    "region": "New England",
-    "geofabrik": "north-america/us/massachusetts",
-    "osm_boundary": "r1257502",
-    "waypost": {
-      "name": "Salem Maritime Visitor Center",
-      "lat": 42.5204,
-      "lon": -70.8875
-    },
-    "legendary_dex": 491,
-    "interiors": [
-      {
-        "id": "salem-maritime:visitor-centre",
-        "name": "Salem Maritime Visitor Center",
-        "family": "hall",
-        "purposes": "T Q H",
-        "door": {
-          "lat": 42.5204,
-          "lon": -70.8875
-        }
-      },
-      {
-        "id": "salem-maritime:custom-house",
-        "name": "Custom House",
-        "family": "hall",
-        "purposes": "L P",
-        "door": {
-          "lat": 42.52,
-          "lon": -70.887
-        }
-      }
-    ]
-  },
-  {
     "id": "site:niagara-falls",
     "kind": "site",
     "name": "Niagara Falls State Park (NY)",
@@ -1423,7 +1411,7 @@
       "lat": 43.0828,
       "lon": -79.0644
     },
-    "legendary_dex": 482,
+    "legendary_dex": 481,
     "interiors": [
       {
         "id": "niagara-falls:visitor-centre",
@@ -1543,7 +1531,14 @@
           "lon": -75.5287
         }
       }
-    ]
+    ],
+    "requires": {
+      "dex_all": [
+        144,
+        145,
+        146
+      ]
+    }
   },
   {
     "id": "site:wright-brothers",
@@ -1579,7 +1574,13 @@
           "lon": -75.6695
         }
       }
-    ]
+    ],
+    "requires": {
+      "dex_all": [
+        382,
+        383
+      ]
+    }
   },
   {
     "id": "site:biscayne",
@@ -1603,42 +1604,6 @@
         "door": {
           "lat": 25.4642,
           "lon": -80.334
-        }
-      }
-    ]
-  },
-  {
-    "id": "site:russell-cave",
-    "kind": "site",
-    "name": "Russell Cave National Monument (AL)",
-    "region": "East South Central",
-    "geofabrik": "north-america/us/alabama",
-    "osm_boundary": "r1257495",
-    "waypost": {
-      "name": "Russell Cave Visitor Center",
-      "lat": 34.9753,
-      "lon": -85.815
-    },
-    "legendary_dex": 377,
-    "interiors": [
-      {
-        "id": "russell-cave:visitor-centre",
-        "name": "Russell Cave Visitor Center",
-        "family": "hall",
-        "purposes": "T Q H",
-        "door": {
-          "lat": 34.9753,
-          "lon": -85.815
-        }
-      },
-      {
-        "id": "russell-cave:cave-lair",
-        "name": "Russell Cave Shelter",
-        "family": "cave",
-        "purposes": "L P",
-        "door": {
-          "lat": 34.976,
-          "lon": -85.814
         }
       }
     ]
@@ -1847,7 +1812,7 @@
       "lat": 48.1464,
       "lon": -88.4839
     },
-    "legendary_dex": 480,
+    "legendary_dex": 482,
     "interiors": [
       {
         "id": "isle-royale:visitor-centre",
@@ -1885,7 +1850,14 @@
           "lon": -86.06
         }
       }
-    ]
+    ],
+    "requires": {
+      "dex_all": [
+        377,
+        378,
+        379
+      ]
+    }
   },
   {
     "id": "site:theodore-roosevelt",
@@ -1899,7 +1871,7 @@
       "lat": 46.9242,
       "lon": -103.5283
     },
-    "legendary_dex": 145,
+    "legendary_dex": 717,
     "interiors": [
       {
         "id": "theodore-roosevelt:visitor-centre",
@@ -2015,7 +1987,14 @@
           "lon": -110.7011
         }
       }
-    ]
+    ],
+    "requires": {
+      "dex_all": [
+        243,
+        244,
+        245
+      ]
+    }
   },
   {
     "id": "site:grand-canyon",
@@ -2103,7 +2082,13 @@
           "lon": -104.4445
         }
       }
-    ]
+    ],
+    "requires": {
+      "dex_all": [
+        483,
+        484
+      ]
+    }
   },
   {
     "id": "site:craters-of-the-moon",
@@ -2127,6 +2112,16 @@
         "door": {
           "lat": 43.4619,
           "lon": -113.5614
+        }
+      },
+      {
+        "id": "craters-of-the-moon:lava-tubes",
+        "name": "Indian Tunnel Lava Tube",
+        "family": "cave",
+        "purposes": "L P",
+        "door": {
+          "lat": 43.4385,
+          "lon": -113.5358
         }
       }
     ]
@@ -2186,12 +2181,12 @@
   {
     "id": "site:hawaii-volcanoes",
     "kind": "site",
-    "name": "Hawai\u02bbi Volcanoes National Park (HI)",
+    "name": "Hawaiʻi Volcanoes National Park (HI)",
     "region": "Pacific",
     "geofabrik": "north-america/us/hawaii",
     "osm_boundary": "r1257514",
     "waypost": {
-      "name": "K\u012blauea Visitor Center",
+      "name": "Kīlauea Visitor Center",
       "lat": 19.4297,
       "lon": -155.2575
     },
@@ -2199,12 +2194,22 @@
     "interiors": [
       {
         "id": "hawaii-volcanoes:visitor-centre",
-        "name": "K\u012blauea Visitor Center",
+        "name": "Kīlauea Visitor Center",
         "family": "hall",
         "purposes": "T Q H",
         "door": {
           "lat": 19.4297,
           "lon": -155.2575
+        }
+      },
+      {
+        "id": "hawaii-volcanoes:lava-tube",
+        "name": "Nāhuku Lava Tube",
+        "family": "cave",
+        "purposes": "L P",
+        "door": {
+          "lat": 19.4139,
+          "lon": -155.2392
         }
       }
     ]
@@ -2233,7 +2238,10 @@
           "lon": -121.735
         }
       }
-    ]
+    ],
+    "requires": {
+      "flag": "garden_harvested"
+    }
   },
   {
     "id": "site:glacier-bay",
@@ -2259,7 +2267,13 @@
           "lon": -135.8856
         }
       }
-    ]
+    ],
+    "requires": {
+      "dex_all": [
+        643,
+        644
+      ]
+    }
   },
   {
     "id": "site:yosemite",
@@ -2285,6 +2299,973 @@
           "lon": -119.5872
         }
       }
+    ],
+    "requires": {
+      "dex_all": [
+        638,
+        639,
+        640
+      ]
+    }
+  },
+  {
+    "id": "site:katahdin-woods-and-waters",
+    "kind": "site",
+    "name": "Katahdin Woods and Waters National Monument (ME)",
+    "region": "New England",
+    "geofabrik_id": "north-america/us/maine",
+    "osm_boundary": "r6535934",
+    "waypost": {
+      "name": "Katahdin Loop Road Overlook Waypost",
+      "lat": 45.9766,
+      "lon": -68.7335
+    },
+    "legendary_dex": 491,
+    "interiors": [
+      {
+        "id": "katahdin-woods-and-waters:visitor-centre",
+        "name": "Katahdin Woods and Waters Visitor Contact Station",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 45.9766,
+          "lon": -68.7335
+        }
+      }
+    ],
+    "requires": {
+      "dex_all": [
+        488
+      ],
+      "item": "moon_feather"
+    }
+  },
+  {
+    "id": "site:everglades",
+    "kind": "site",
+    "name": "Everglades National Park (FL)",
+    "region": "South Atlantic",
+    "geofabrik_id": "north-america/us/florida",
+    "osm_boundary": "r2163707",
+    "waypost": {
+      "name": "Ernest F. Coe Visitor Center Waypost",
+      "lat": 25.3951,
+      "lon": -80.5835
+    },
+    "legendary_dex": 145,
+    "interiors": [
+      {
+        "id": "everglades:visitor-centre",
+        "name": "Ernest F. Coe Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 25.3951,
+          "lon": -80.5835
+        }
+      }
     ]
+  },
+  {
+    "id": "site:cathedral-caverns",
+    "kind": "site",
+    "name": "Cathedral Caverns State Park (AL)",
+    "region": "East South Central",
+    "geofabrik_id": "north-america/us/alabama",
+    "osm_boundary": "w488269847",
+    "waypost": {
+      "name": "Cathedral Caverns Welcome Center Waypost",
+      "lat": 34.5729,
+      "lon": -86.2272
+    },
+    "legendary_dex": 377,
+    "interiors": [
+      {
+        "id": "cathedral-caverns:visitor-centre",
+        "name": "Cathedral Caverns Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 34.5729,
+          "lon": -86.2272
+        }
+      },
+      {
+        "id": "cathedral-caverns:cave-lair",
+        "name": "Cathedral Caverns (Beneath Goliath)",
+        "family": "cave",
+        "purposes": "L P",
+        "door": {
+          "lat": 34.5734,
+          "lon": -86.2266
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:boston-harbor-islands",
+    "kind": "site",
+    "name": "Boston Harbor Islands National Recreation Area (MA)",
+    "region": "New England",
+    "geofabrik_id": "north-america/us/massachusetts",
+    "osm_boundary": "r10944613",
+    "waypost": {
+      "name": "Georges Island Pier Waypost",
+      "lat": 42.3204,
+      "lon": -70.9288
+    },
+    "legendary_dex": 788,
+    "interiors": [
+      {
+        "id": "boston-harbor-islands:visitor-centre",
+        "name": "Georges Island Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 42.3204,
+          "lon": -70.9288
+        }
+      },
+      {
+        "id": "boston-harbor-islands:boston-light",
+        "name": "Boston Light (Little Brewster Island)",
+        "family": "lighthouse",
+        "purposes": "L P",
+        "door": {
+          "lat": 42.3277,
+          "lon": -70.8901
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:monadnock",
+    "kind": "site",
+    "name": "Monadnock State Park (NH)",
+    "region": "New England",
+    "geofabrik_id": "north-america/us/new-hampshire",
+    "osm_boundary": "r19293994",
+    "waypost": {
+      "name": "Monadnock Headquarters Waypost",
+      "lat": 42.8458,
+      "lon": -72.0881
+    },
+    "legendary_dex": 891,
+    "interiors": [
+      {
+        "id": "monadnock:visitor-centre",
+        "name": "Monadnock State Park Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 42.8458,
+          "lon": -72.0881
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:marsh-billings-rockefeller",
+    "kind": "site",
+    "name": "Marsh-Billings-Rockefeller National Historical Park (VT)",
+    "region": "New England",
+    "geofabrik_id": "north-america/us/vermont",
+    "osm_boundary": "w548863428",
+    "waypost": {
+      "name": "Carriage Barn Waypost",
+      "lat": 43.6318,
+      "lon": -72.5236
+    },
+    "legendary_dex": 898,
+    "interiors": [
+      {
+        "id": "marsh-billings-rockefeller:visitor-centre",
+        "name": "Carriage Barn Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 43.6318,
+          "lon": -72.5236
+        }
+      }
+    ],
+    "requires": {
+      "dex_any": [
+        896,
+        897
+      ],
+      "flag": "garden_harvested"
+    }
+  },
+  {
+    "id": "site:cherry-springs",
+    "kind": "site",
+    "name": "Cherry Springs State Park (PA)",
+    "region": "Middle Atlantic",
+    "geofabrik_id": "north-america/us/pennsylvania",
+    "osm_boundary": "r1551544",
+    "waypost": {
+      "name": "Astronomy Field Waypost",
+      "lat": 41.6628,
+      "lon": -77.8222
+    },
+    "legendary_dex": 792,
+    "interiors": [
+      {
+        "id": "cherry-springs:visitor-centre",
+        "name": "Cherry Springs Park Pavilion Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 41.6628,
+          "lon": -77.8222
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:adirondack",
+    "kind": "site",
+    "name": "Adirondack Park — Mount Van Hoevenberg (NY)",
+    "region": "Middle Atlantic",
+    "geofabrik_id": "north-america/us/new-york",
+    "osm_boundary": "r1695394",
+    "waypost": {
+      "name": "Mount Van Hoevenberg Lodge Waypost",
+      "lat": 44.2198,
+      "lon": -73.9219
+    },
+    "legendary_dex": 896,
+    "interiors": [
+      {
+        "id": "adirondack:visitor-centre",
+        "name": "Mount Van Hoevenberg Mountain Pass Lodge Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 44.2198,
+          "lon": -73.9219
+        }
+      }
+    ],
+    "requires": {
+      "flag": "frost_root"
+    }
+  },
+  {
+    "id": "site:dry-tortugas",
+    "kind": "site",
+    "name": "Dry Tortugas National Park (FL)",
+    "region": "South Atlantic",
+    "geofabrik_id": "north-america/us/florida",
+    "osm_boundary": "r4437721",
+    "waypost": {
+      "name": "Garden Key Dock Waypost",
+      "lat": 24.6285,
+      "lon": -82.8732
+    },
+    "legendary_dex": 785,
+    "interiors": [
+      {
+        "id": "dry-tortugas:visitor-centre",
+        "name": "Fort Jefferson Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 24.6285,
+          "lon": -82.8732
+        }
+      },
+      {
+        "id": "dry-tortugas:fort-jefferson",
+        "name": "Fort Jefferson Parapets",
+        "family": "structure",
+        "purposes": "L P",
+        "door": {
+          "lat": 24.6288,
+          "lon": -82.873
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:kennedy-space-center",
+    "kind": "site",
+    "name": "Kennedy Space Center (FL)",
+    "region": "South Atlantic",
+    "geofabrik_id": "north-america/us/florida",
+    "osm_boundary": "w166133965",
+    "waypost": {
+      "name": "Rocket Garden Waypost",
+      "lat": 28.5243,
+      "lon": -80.6819
+    },
+    "legendary_dex": 791,
+    "interiors": [
+      {
+        "id": "kennedy-space-center:visitor-centre",
+        "name": "Kennedy Space Center Visitor Complex",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 28.5243,
+          "lon": -80.6819
+        }
+      },
+      {
+        "id": "kennedy-space-center:launch-gantry",
+        "name": "Launch Complex 39A Gantry",
+        "family": "tower",
+        "purposes": "L P",
+        "door": {
+          "lat": 28.6084,
+          "lon": -80.6041
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:congaree",
+    "kind": "site",
+    "name": "Congaree National Park (SC)",
+    "region": "South Atlantic",
+    "geofabrik_id": "north-america/us/south-carolina",
+    "osm_boundary": "r12627729",
+    "waypost": {
+      "name": "Harry Hampton Trailhead Waypost",
+      "lat": 33.8299,
+      "lon": -80.8242
+    },
+    "legendary_dex": 893,
+    "interiors": [
+      {
+        "id": "congaree:visitor-centre",
+        "name": "Harry Hampton Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 33.8299,
+          "lon": -80.8242
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:gulf-islands",
+    "kind": "site",
+    "name": "Gulf Islands National Seashore (MS)",
+    "region": "East South Central",
+    "geofabrik_id": "north-america/us/mississippi",
+    "osm_boundary": "r6068104",
+    "waypost": {
+      "name": "Davis Bayou Waypost",
+      "lat": 30.3951,
+      "lon": -88.7905
+    },
+    "legendary_dex": 786,
+    "interiors": [
+      {
+        "id": "gulf-islands:visitor-centre",
+        "name": "William M. Colmer Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 30.3951,
+          "lon": -88.7905
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:ruby-falls",
+    "kind": "site",
+    "name": "Ruby Falls — Lookout Mountain (TN)",
+    "region": "East South Central",
+    "geofabrik_id": "north-america/us/tennessee",
+    "osm_boundary": "w84563650",
+    "waypost": {
+      "name": "Cavern Castle Waypost",
+      "lat": 35.0186,
+      "lon": -85.339
+    },
+    "legendary_dex": 894,
+    "interiors": [
+      {
+        "id": "ruby-falls:visitor-centre",
+        "name": "Ruby Falls Cavern Castle Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 35.0186,
+          "lon": -85.339
+        }
+      },
+      {
+        "id": "ruby-falls:cavern-lair",
+        "name": "Ruby Falls Cavern",
+        "family": "cave",
+        "purposes": "L P",
+        "door": {
+          "lat": 35.0188,
+          "lon": -85.3392
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:red-river-gorge",
+    "kind": "site",
+    "name": "Red River Gorge Geological Area (KY)",
+    "region": "East South Central",
+    "geofabrik_id": "north-america/us/kentucky",
+    "osm_boundary": "r14569929",
+    "waypost": {
+      "name": "Gladie Learning Center Waypost",
+      "lat": 37.8351,
+      "lon": -83.6094
+    },
+    "legendary_dex": 895,
+    "interiors": [
+      {
+        "id": "red-river-gorge:visitor-centre",
+        "name": "Gladie Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 37.8351,
+          "lon": -83.6094
+        }
+      },
+      {
+        "id": "red-river-gorge:arch-chamber",
+        "name": "Sealed Chamber Behind the Arch",
+        "family": "cave",
+        "purposes": "L P",
+        "door": {
+          "lat": 37.8386,
+          "lon": -83.5797
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:barataria-preserve",
+    "kind": "site",
+    "name": "Jean Lafitte NHP — Barataria Preserve (LA)",
+    "region": "West South Central",
+    "geofabrik_id": "north-america/us/louisiana",
+    "osm_boundary": "r7875213",
+    "waypost": {
+      "name": "Barataria Boardwalk Waypost",
+      "lat": 29.7845,
+      "lon": -90.1141
+    },
+    "legendary_dex": 718,
+    "interiors": [
+      {
+        "id": "barataria-preserve:visitor-centre",
+        "name": "Barataria Preserve Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 29.7845,
+          "lon": -90.1141
+        }
+      }
+    ],
+    "requires": {
+      "cells": 50
+    }
+  },
+  {
+    "id": "site:crater-of-diamonds",
+    "kind": "site",
+    "name": "Crater of Diamonds State Park (AR)",
+    "region": "West South Central",
+    "geofabrik_id": "north-america/us/arkansas",
+    "osm_boundary": "w478150601",
+    "waypost": {
+      "name": "Diamond Discovery Center Waypost",
+      "lat": 34.0325,
+      "lon": -93.674
+    },
+    "legendary_dex": 719,
+    "interiors": [
+      {
+        "id": "crater-of-diamonds:visitor-centre",
+        "name": "Crater of Diamonds Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 34.0325,
+          "lon": -93.674
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:mcdonald-observatory",
+    "kind": "site",
+    "name": "McDonald Observatory (TX)",
+    "region": "West South Central",
+    "geofabrik_id": "north-america/us/texas",
+    "osm_boundary": "w139744075",
+    "waypost": {
+      "name": "Frank N. Bash Center Waypost",
+      "lat": 30.6758,
+      "lon": -104.0206
+    },
+    "legendary_dex": 789,
+    "interiors": [
+      {
+        "id": "mcdonald-observatory:visitor-centre",
+        "name": "Frank N. Bash Visitors Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 30.6758,
+          "lon": -104.0206
+        }
+      },
+      {
+        "id": "mcdonald-observatory:telescope-dome",
+        "name": "Hobby-Eberly Telescope Dome",
+        "family": "structure",
+        "purposes": "L P",
+        "door": {
+          "lat": 30.6814,
+          "lon": -104.0147
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:caddo-lake",
+    "kind": "site",
+    "name": "Caddo Lake State Park (TX)",
+    "region": "West South Central",
+    "geofabrik_id": "north-america/us/texas",
+    "osm_boundary": "r16948617",
+    "waypost": {
+      "name": "Saw Mill Pond Waypost",
+      "lat": 32.6892,
+      "lon": -94.1889
+    },
+    "legendary_dex": 802,
+    "interiors": [
+      {
+        "id": "caddo-lake:visitor-centre",
+        "name": "Caddo Lake Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 32.6892,
+          "lon": -94.1889
+        }
+      }
+    ],
+    "requires": {
+      "hollow_wins": 3
+    }
+  },
+  {
+    "id": "site:apostle-islands",
+    "kind": "site",
+    "name": "Apostle Islands National Lakeshore (WI)",
+    "region": "East North Central",
+    "geofabrik_id": "north-america/us/wisconsin",
+    "osm_boundary": "r6135991",
+    "waypost": {
+      "name": "Bayfield Headquarters Waypost",
+      "lat": 46.8126,
+      "lon": -90.8184
+    },
+    "legendary_dex": 787,
+    "interiors": [
+      {
+        "id": "apostle-islands:visitor-centre",
+        "name": "Bayfield Headquarters Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 46.8126,
+          "lon": -90.8184
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:porcupine-mountains",
+    "kind": "site",
+    "name": "Porcupine Mountains Wilderness State Park (MI)",
+    "region": "East North Central",
+    "geofabrik_id": "north-america/us/michigan",
+    "osm_boundary": "r2199937",
+    "waypost": {
+      "name": "Lake of the Clouds Trailhead Waypost",
+      "lat": 46.7745,
+      "lon": -89.6486
+    },
+    "legendary_dex": 888,
+    "interiors": [
+      {
+        "id": "porcupine-mountains:visitor-centre",
+        "name": "Porcupine Mountains Wilderness Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 46.7745,
+          "lon": -89.6486
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:pictured-rocks",
+    "kind": "site",
+    "name": "Pictured Rocks National Lakeshore (MI)",
+    "region": "East North Central",
+    "geofabrik_id": "north-america/us/michigan",
+    "osm_boundary": "r14042910",
+    "waypost": {
+      "name": "Munising Falls Waypost",
+      "lat": 46.4258,
+      "lon": -86.6251
+    },
+    "legendary_dex": 889,
+    "interiors": [
+      {
+        "id": "pictured-rocks:visitor-centre",
+        "name": "Munising Falls Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 46.4258,
+          "lon": -86.6251
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:minuteman-missile",
+    "kind": "site",
+    "name": "Minuteman Missile National Historic Site (SD)",
+    "region": "West North Central",
+    "geofabrik_id": "north-america/us/south-dakota",
+    "osm_boundary": "r5742897",
+    "waypost": {
+      "name": "Delta-09 Silo Waypost",
+      "lat": 43.8778,
+      "lon": -101.9607
+    },
+    "legendary_dex": 772,
+    "interiors": [
+      {
+        "id": "minuteman-missile:visitor-centre",
+        "name": "Minuteman Missile Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 43.8778,
+          "lon": -101.9607
+        }
+      },
+      {
+        "id": "minuteman-missile:silo-lair",
+        "name": "Delta-01 Launch Control & Silo",
+        "family": "underground",
+        "purposes": "L P",
+        "door": {
+          "lat": 43.9242,
+          "lon": -102.1642
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:bonneville-salt-flats",
+    "kind": "site",
+    "name": "Bonneville Salt Flats (UT)",
+    "region": "Mountain",
+    "geofabrik_id": "north-america/us/utah",
+    "osm_boundary": "w10170989",
+    "waypost": {
+      "name": "Salt Flats Rest Area Waypost",
+      "lat": 40.7448,
+      "lon": -114.0237
+    },
+    "legendary_dex": 807,
+    "interiors": [
+      {
+        "id": "bonneville-salt-flats:visitor-centre",
+        "name": "Salt Flats Ranger Station Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 40.7448,
+          "lon": -114.0237
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:meteor-crater",
+    "kind": "site",
+    "name": "Meteor Crater (AZ)",
+    "region": "Mountain",
+    "geofabrik_id": "north-america/us/arizona",
+    "osm_boundary": "r9586720",
+    "waypost": {
+      "name": "Crater Rim Waypost",
+      "lat": 35.0271,
+      "lon": -111.0184
+    },
+    "legendary_dex": 890,
+    "interiors": [
+      {
+        "id": "meteor-crater:visitor-centre",
+        "name": "Meteor Crater Discovery Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 35.0298,
+          "lon": -111.0222
+        }
+      },
+      {
+        "id": "meteor-crater:crater-cavern",
+        "name": "Cavern Under the Crater Floor",
+        "family": "cave",
+        "purposes": "L P",
+        "door": {
+          "lat": 35.0271,
+          "lon": -111.0184
+        }
+      }
+    ],
+    "requires": {
+      "dex_all": [
+        888,
+        889
+      ]
+    }
+  },
+  {
+    "id": "site:sequoia",
+    "kind": "site",
+    "name": "Sequoia National Park (CA)",
+    "region": "Pacific",
+    "geofabrik_id": "north-america/us/california",
+    "osm_boundary": "r175060",
+    "waypost": {
+      "name": "Giant Forest Museum Waypost",
+      "lat": 36.565,
+      "lon": -118.7731
+    },
+    "legendary_dex": 716,
+    "interiors": [
+      {
+        "id": "sequoia:visitor-centre",
+        "name": "Foothills Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 36.4958,
+          "lon": -118.826
+        }
+      }
+    ]
+  },
+  {
+    "id": "site:lassen-volcanic",
+    "kind": "site",
+    "name": "Lassen Volcanic National Park (CA)",
+    "region": "Pacific",
+    "geofabrik_id": "north-america/us/california",
+    "osm_boundary": "r6207158",
+    "waypost": {
+      "name": "Kohm Yah-mah-nee Waypost",
+      "lat": 40.4368,
+      "lon": -121.5335
+    },
+    "legendary_dex": 721,
+    "interiors": [
+      {
+        "id": "lassen-volcanic:visitor-centre",
+        "name": "Kohm Yah-mah-nee Visitor Center",
+        "family": "hall",
+        "purposes": "T Q H",
+        "door": {
+          "lat": 40.4368,
+          "lon": -121.5335
+        }
+      }
+    ],
+    "requires": {
+      "zones_cleansed": 1
+    }
+  },
+  {
+    "id": "spot:hot-metal-bridge",
+    "kind": "spot",
+    "name": "Hot Metal Bridge, Pittsburgh",
+    "city": "city:pittsburgh",
+    "legendary_dex": 379,
+    "region": "Middle Atlantic"
+  },
+  {
+    "id": "spot:statue-of-liberty",
+    "kind": "spot",
+    "name": "Statue of Liberty, New York",
+    "city": "city:new-york",
+    "legendary_dex": 385,
+    "region": "Middle Atlantic"
+  },
+  {
+    "id": "spot:independence-hall",
+    "kind": "spot",
+    "name": "Independence Hall, Philadelphia",
+    "city": "city:philadelphia",
+    "legendary_dex": 494,
+    "region": "Middle Atlantic"
+  },
+  {
+    "id": "spot:lincoln-memorial",
+    "kind": "spot",
+    "name": "Lincoln Memorial, Washington DC",
+    "city": "city:washington-dc",
+    "legendary_dex": 638,
+    "region": "South Atlantic"
+  },
+  {
+    "id": "spot:waterfront-park",
+    "kind": "spot",
+    "name": "Waterfront Park, Louisville",
+    "city": "city:louisville",
+    "legendary_dex": 243,
+    "region": "East South Central"
+  },
+  {
+    "id": "spot:ryman-auditorium",
+    "kind": "spot",
+    "name": "Ryman Auditorium, Nashville",
+    "city": "city:nashville",
+    "legendary_dex": 648,
+    "region": "East South Central"
+  },
+  {
+    "id": "spot:space-center-houston",
+    "kind": "spot",
+    "name": "Space Center Houston",
+    "city": "city:houston",
+    "legendary_dex": 386,
+    "region": "West South Central"
+  },
+  {
+    "id": "spot:northerly-island",
+    "kind": "spot",
+    "name": "Northerly Island lakefront, Chicago",
+    "city": "city:chicago",
+    "legendary_dex": 641,
+    "region": "East North Central"
+  },
+  {
+    "id": "spot:michigan-central",
+    "kind": "spot",
+    "name": "Michigan Central Station, Detroit",
+    "city": "city:detroit",
+    "legendary_dex": 649,
+    "region": "East North Central"
+  },
+  {
+    "id": "spot:bde-maka-ska",
+    "kind": "spot",
+    "name": "Bde Maka Ska, Minneapolis",
+    "city": "city:minneapolis",
+    "legendary_dex": 380,
+    "region": "West North Central"
+  },
+  {
+    "id": "spot:gateway-arch",
+    "kind": "spot",
+    "name": "Gateway Arch, St. Louis",
+    "city": "city:st-louis",
+    "legendary_dex": 493,
+    "region": "West North Central",
+    "requires": {
+      "anchors": 9
+    }
+  },
+  {
+    "id": "spot:alcatraz",
+    "kind": "spot",
+    "name": "Alcatraz Island, San Francisco",
+    "city": "city:san-francisco",
+    "legendary_dex": 150,
+    "region": "Pacific"
+  },
+  {
+    "id": "spot:arnold-arboretum",
+    "kind": "spot",
+    "name": "Arnold Arboretum, Boston",
+    "city": "city:boston",
+    "legendary_dex": 905,
+    "region": "New England",
+    "requires": {
+      "dex_all": [
+        641,
+        642,
+        645
+      ]
+    }
+  },
+  {
+    "id": "spot:coney-island",
+    "kind": "spot",
+    "name": "Coney Island, New York",
+    "city": "city:new-york",
+    "legendary_dex": 720,
+    "region": "Middle Atlantic"
+  },
+  {
+    "id": "spot:franklin-institute",
+    "kind": "spot",
+    "name": "The Franklin Institute, Philadelphia",
+    "city": "city:philadelphia",
+    "legendary_dex": 801,
+    "region": "Middle Atlantic",
+    "requires": {
+      "gears": 4
+    }
+  },
+  {
+    "id": "spot:churchill-downs",
+    "kind": "spot",
+    "name": "Churchill Downs, Louisville",
+    "city": "city:louisville",
+    "legendary_dex": 897,
+    "region": "East South Central",
+    "requires": {
+      "flag": "shade_root"
+    }
+  },
+  {
+    "id": "spot:the-flats",
+    "kind": "spot",
+    "name": "The Flats, Cleveland",
+    "city": "city:cleveland",
+    "legendary_dex": 808,
+    "region": "East North Central"
+  },
+  {
+    "id": "spot:house-vault",
+    "kind": "spot",
+    "name": "The House vault (beneath Fremont Street), Las Vegas",
+    "city": "city:las-vegas",
+    "legendary_dex": 800,
+    "region": "Mountain",
+    "requires": {
+      "quest": "the_light_bill"
+    }
   }
 ]

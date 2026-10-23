@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 tools/check_famous_places.py — Validate game/config/famous_places.json
-Contract: docs/implementation_plan_famous_places.md §1 & docs/agent_execution_guide.md §7.1
+Contract: docs/implementation_plan_famous_places.md §1 & §8.1, docs/design_famous_places.md §6 & §9
 """
 
 import json
@@ -29,6 +29,19 @@ US_LON_MAX = -65.0
 KEY_PURPOSES = {"T", "W", "L", "Q"}
 VALID_PURPOSES = {"T", "W", "L", "H", "P", "Q", "R", "M"}
 
+VALID_REQUIRES_KEYS = {
+    "dex_all",
+    "dex_any",
+    "item",
+    "flag",
+    "quest",
+    "cells",
+    "gears",
+    "anchors",
+    "hollow_wins",
+    "zones_cleansed",
+}
+
 def check_coords(lat, lon, label):
     if not (US_LAT_MIN <= lat <= US_LAT_MAX):
         raise ValueError(f"{label} lat {lat} out of US bounds [{US_LAT_MIN}, {US_LAT_MAX}]")
@@ -45,15 +58,17 @@ def validate_famous_places(config_path):
     if not isinstance(places, list):
         raise ValueError("Root element must be a list of places")
 
-    if len(places) != 75:
-        raise ValueError(f"Expected exactly 75 entries, got {len(places)}")
+    if len(places) != 105:
+        raise ValueError(f"Expected exactly 105 entries, got {len(places)}")
 
     cities_by_region = {r: [] for r in REGIONS}
+    legendaries_by_region = {r: [] for r in REGIONS}
     city_ids = set()
     site_ids = set()
     spot_ids = set()
     legendary_dex_set = set()
     wardens_by_region = {r: [] for r in REGIONS}
+    requires_by_dex = {}
 
     for p in places:
         pid = p.get("id", "")
@@ -120,7 +135,7 @@ def validate_famous_places(config_path):
         elif kind == "site":
             site_ids.add(pid)
             b = p.get("osm_boundary", "")
-            if not re.match(r"^r\d+$", str(b)):
+            if not re.match(r"^[rw]\d+$", str(b)):
                 raise ValueError(f"Site {pid} invalid osm_boundary: {b}")
 
             wp = p.get("waypost", {})
@@ -135,6 +150,9 @@ def validate_famous_places(config_path):
             if dex in legendary_dex_set:
                 raise ValueError(f"Duplicate legendary dex {dex} on site {pid}")
             legendary_dex_set.add(dex)
+            legendaries_by_region[region].append(dex)
+            if "requires" in p:
+                requires_by_dex[dex] = (pid, p["requires"])
 
             # Visitor centre interior
             interiors = p.get("interiors", [])
@@ -158,6 +176,8 @@ def validate_famous_places(config_path):
                     raise ValueError(f"Interior {iid} has < 2 purposes: {purp}")
                 if not (purp_tokens & KEY_PURPOSES):
                     raise ValueError(f"Interior {iid} lacks key purpose (T, W, L, Q): {purp}")
+                if not purp_tokens.issubset(VALID_PURPOSES):
+                    raise ValueError(f"Interior {iid} has unknown purpose: {purp_tokens - VALID_PURPOSES}")
 
         elif kind == "spot":
             spot_ids.add(pid)
@@ -171,6 +191,9 @@ def validate_famous_places(config_path):
             if dex in legendary_dex_set:
                 raise ValueError(f"Duplicate legendary dex {dex} on spot {pid}")
             legendary_dex_set.add(dex)
+            legendaries_by_region[region].append(dex)
+            if "requires" in p:
+                requires_by_dex[dex] = (pid, p["requires"])
         else:
             raise ValueError(f"Unknown kind '{kind}' for place {pid}")
 
@@ -181,15 +204,18 @@ def validate_famous_places(config_path):
     if len(city_ids) != 27:
         raise ValueError(f"Expected 27 cities, got {len(city_ids)}")
 
-    # Validate site count (36) and spot count (12)
-    if len(site_ids) != 36:
-        raise ValueError(f"Expected 36 sites, got {len(site_ids)}")
-    if len(spot_ids) != 12:
-        raise ValueError(f"Expected 12 spots, got {len(spot_ids)}")
+    # Validate site count (60) and spot count (18)
+    if len(site_ids) != 60:
+        raise ValueError(f"Expected 60 sites, got {len(site_ids)}")
+    if len(spot_ids) != 18:
+        raise ValueError(f"Expected 18 spots, got {len(spot_ids)}")
 
-    # Validate legendary count (48)
-    if len(legendary_dex_set) != 48:
-        raise ValueError(f"Expected 48 distinct legendaries, got {len(legendary_dex_set)}")
+    # Validate legendary count (78) and 7–9 per region
+    if len(legendary_dex_set) != 78:
+        raise ValueError(f"Expected 78 distinct legendaries, got {len(legendary_dex_set)}")
+    for r, llist in legendaries_by_region.items():
+        if not (7 <= len(llist) <= 9):
+            raise ValueError(f"Region '{r}' has {len(llist)} legendaries (expected 7–9)")
 
     # Validate spots name an existing city
     for p in places:
@@ -203,6 +229,56 @@ def validate_famous_places(config_path):
         if len(wlist) != 1:
             raise ValueError(f"Region '{r}' has {len(wlist)} Wardens (expected 1)")
 
+    # Validate requires clauses (every key is one of §9's keys, every referenced dex is in the file, and no circular chains)
+    for dex, (pid, req) in requires_by_dex.items():
+        if not isinstance(req, dict) or not req:
+            raise ValueError(f"Place {pid} has invalid requires object: {req}")
+        for k, v in req.items():
+            if k not in VALID_REQUIRES_KEYS:
+                raise ValueError(f"Place {pid} has unknown requires key '{k}'")
+            if k in ("dex_all", "dex_any"):
+                if not isinstance(v, list) or not v:
+                    raise ValueError(f"Place {pid} requires '{k}' must be a non-empty list")
+                for ref_dex in v:
+                    if not isinstance(ref_dex, int) or ref_dex not in legendary_dex_set:
+                        raise ValueError(f"Place {pid} requires non-legendary dex {ref_dex}")
+            elif k in ("item", "flag", "quest"):
+                if not isinstance(v, str) or not v:
+                    raise ValueError(f"Place {pid} requires '{k}' must be a non-empty string")
+            elif k in ("cells", "gears", "anchors", "hollow_wins", "zones_cleansed"):
+                if not isinstance(v, int) or v <= 0:
+                    raise ValueError(f"Place {pid} requires '{k}' must be a positive int")
+
+    # Check reachability / no circular dependency chains among legendary dex requirements
+    reachable = set()
+    for dex in legendary_dex_set:
+        if dex not in requires_by_dex:
+            reachable.add(dex)
+        else:
+            _, req = requires_by_dex[dex]
+            if "dex_all" not in req and "dex_any" not in req:
+                reachable.add(dex)
+
+    changed = True
+    while changed:
+        changed = False
+        for dex, (pid, req) in requires_by_dex.items():
+            if dex in reachable:
+                continue
+            ok_all = True
+            if "dex_all" in req:
+                ok_all = all(d in reachable for d in req["dex_all"])
+            ok_any = True
+            if "dex_any" in req:
+                ok_any = any(d in reachable for d in req["dex_any"])
+            if ok_all and ok_any:
+                reachable.add(dex)
+                changed = True
+
+    if len(reachable) != len(legendary_dex_set):
+        unreachable = sorted(legendary_dex_set - reachable)
+        raise ValueError(f"Circular or unreachable legendary dex chain: {unreachable}")
+
     return True
 
 def main():
@@ -214,7 +290,7 @@ def main():
 
     try:
         validate_famous_places(config_path)
-        print(f"[CHECK FAMOUS PLACES OK] Validated {config_path}: 27 cities, 36 sites, 12 spots, 48 legendaries, 9 wardens.")
+        print(f"[CHECK FAMOUS PLACES OK] Validated {config_path}: 27 cities, 60 sites, 18 spots, 78 legendaries, 9 wardens.")
         sys.exit(0)
     except Exception as e:
         print(f"[FAIL] {e}", file=sys.stderr)
