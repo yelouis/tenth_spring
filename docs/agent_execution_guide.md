@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-22, pass 21; Decisions 29–36 answered)
+# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-23, pass 22; Decisions 29–37 answered)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
@@ -15,9 +15,12 @@
 - **No commerce:** no Steam, no sales.
 
 **Where things stand.**
-- **Pass 21 (2026-10-22, M56):**
-  - **Item 23 is verified** — the launch wrapper and `test_runner --only`, on `main`.
-  - **Item 24 stopped, correctly,** on the Lincoln Memorial. Pass 21 confirmed both causes and wrote the fix into the plan (slice-2 §11.1a). **Item 24 continues from its uncommitted work**, below.
+- **Pass 22 (2026-10-23, M58)** — four items landed:
+  - **Items 24 and 24a are verified.** All four DC landmarks are drawn; the place list has 105 entries and 78 legendaries.
+  - **Item 25 (the ruin pass) is built and measures right,** but its proof is incomplete. **The whole-city view never finishes loading in the screenshot harness (F61),** so its zoom-1/16 frame times (F56) and two screenshots are missing.
+  - **Item 12's Emerald spike and plan are delivered,** but its mapping draws the wrong pieces (F60) and uses Nintendo names (F59).
+  - **Items 25b and 12b fix those first.**
+- **Pass 21 (2026-10-22, M56):** Item 23 verified; Item 24's stop on the Lincoln Memorial was diagnosed and fixed in the plan (slice-2 §11.1a).
 - **Pass 19 verified the whole pass-18 queue** (Items 13–22; M53) and found four problems: F54–F57 (`ongoing_general_errors.md`, *Verification Findings*).
   - **F54:** two of DC's four enterable landmarks don't show.
   - **F55:** DC's "neighbourhoods" are its 8 political wards.
@@ -34,16 +37,16 @@
   - The human gives you the file paths in chat. **Never write them in the repo.**
 - **The pass-20 content** — the 30 new legendary places, the Glow, new puzzles and quests — is in the design docs already. This queue builds the parts that belong to Phases 2–3.
 
-**What is approved for build right now:** Items **24 (continued), 24a, 25, 12, 30, 26, 27, 28, 10, and 29**, in §2's order.
-- **They pause at** Items 25, 12, 30, 28, and 29, for the human's verdict.
+**What is approved for build right now:** Items **25b, 12b, 30, 26, 27, 28, 10, and 29**, in §2's order.
+- **They pause at** Items 25b, 12b, 30, 28, and 29, for the human's verdict.
 - **Items 27 and 28 land together** (§2).
 
 **What NOT to touch:**
-- §15 — already delivered;
-- §16 — accepted equivalents;
-- §17 — intentional decisions.
+- §13 — already delivered;
+- §14 — accepted equivalents;
+- §15 — intentional decisions.
 
-§14 is the phase roadmap — scope, not an approved queue.
+§12 is the phase roadmap — scope, not an approved queue.
 
 **Specs are decisions, not suggestions.** Every number, constant, file name, message shape, and literal string here and in the docs it points to is deliberate. Implement as written; do not substitute your own values.
 - **If a value is genuinely impossible:** keep the *intent*, deviate minimally, and note it in the commit body.
@@ -80,8 +83,7 @@
    - **Never run a test file with `--script`** — use `test_runner.py --only <test>`.
    - **Turn off any editor feature that starts Godot by itself** (a Godot extension's language server): two of the four crashes came from one (F57).
 8. **Download nothing** except what an item names:
-   - **Items 24, 25, 26, and 30:** the pinned Washington DC snapshot — `https://download.geofabrik.de/north-america/us/district-of-columbia-261001.osm.pbf` and its `.md5` — into a scratch folder outside the repo.
-   - **Item 24a:** public place-name lookups on `https://nominatim.openstreetmap.org/search`, ≥ 1.1 s apart, with the plan's `User-Agent`. Public names only.
+   - **Items 25b, 26, and 30:** the pinned Washington DC snapshot, only if the scratch copy is gone — `https://download.geofabrik.de/north-america/us/district-of-columbia-261001.osm.pbf` and its `.md5` — into a scratch folder outside the repo.
    - **Item 26:** Overpass queries at the pinned date, exactly as `implementation_plan_explore_here.md` §1.2 writes them, ≥ 5 s apart.
    - **Item 29:**
      - PokéAPI's CSV files at one pinned commit;
@@ -91,7 +93,7 @@
    Never commit a download. Never fetch `-latest` for game data.
 9. **Every change leaves the §1 battery and all CI workflows green** — that is the regression bar. **The one sanctioned exception:** `sync_e2e` between Item 27 and Item 28 (§2).
 10. **Anything touching the companion's location access or cross-device sync needs a real-device check** before it's declared done (§2, HUMAN actions).
-11. **The golden invariants (§17) stay green, always.**
+11. **The golden invariants (§15) stay green, always.**
 12. **Detailed behaviour lives in `docs/design_*.md` (contracts) and `docs/implementation_plan_*.md` (build steps).** This guide tells you how to build and prove each item; where it quotes a contract, the contract wins.
 13. **One item = one Conventional Commit**, WHY in the body. Record the resolution in `ongoing_general_errors.md` as part of the item.
 14. **Say what actually ran.** "Source-verified," "statically checked," and "executed" are three different claims. Name the machine (Linux CI, macOS CI, the human's Mac). Game-side claims count as executed only when a run printed the `PASS` lines.
@@ -101,22 +103,21 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-22 in this session, pass 21 — `main` at `fced8ac`)
+## 1. Verified baseline (run 2026-10-23 in this session, pass 22 — `main` at `efc64df`)
 
 | Battery | Where | Result |
 |---|---|---|
 | `cd companion && flutter analyze` | Mac, local | **No issues found** |
-| `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** (`sync_e2e_test`, `demo_import_test` — run only through their tools) |
-| `tools/godot.py --import`, then `python3 game/tests/test_runner.py`, on a **clean checkout of `main`** | Mac, local | **Executed.** **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK — including Item 23's no-direct-launch rule |
-| `python3 game/tests/test_runner.py --only grid_test` | Mac, local | `PASS grid_test` + the real-save check, exit 0 |
-| **F57 falsifier:** `python3 -I tools/godot.py --script res://tests/tile_synth2_test.gd` | Mac, local | **exit 2**, refused with the message; no Godot window |
+| `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** |
+| `python3 game/tests/test_runner.py` | Mac, local | **Executed.** **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK, `[CHECK FAMOUS PLACES OK] … 27 cities, 60 sites, 18 spots, 78 legendaries, 9 wardens`, placeholder-atlas tests OK |
 | `python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green** — `[OK] Cross-language loopback sync succeeded!` |
-| CI on `fced8ac` | `game_tests` 39888089603, IP guard 39888089510, `sync_e2e` 39888089403 | **All green** on the item branch and on `main` |
-| **DC landmarks** — Item 24's uncommitted work, `check_landmarks.py` (pass 21, reproduced) | Mac | Library of Congress `placed=1 gold_tiles=308` · Air and Space `288` · Washington Monument `20` · **Lincoln Memorial `placed=0 gold_tiles=0`** |
-| **DC placement** (pass 18, Item 13) | Mac | 136,325 candidates → **32.5% placed**; building tiles **18.9%**; path tiles **16.6%** |
-| **Frame times** (pass 18, Items 15, 21) | Mac, windowed | zoom 1: `FRAME_P95_MS` 16.67; whole-city zoom 1/16: **18.06** and `LOAD_MAX_FRAME_MS` **33.33** — F56 |
-| **DC neighbourhoods** (pass 18, Item 18) | Mac | **9 areas** — DC plus Wards 1–8 — F55 |
-| **The human's ROMs** (pass 20, header read only) | Mac | Emerald `BPEE`, SHA-1 `f3ae0881…07b7` (the clean dump); Black `IRBO`, **modified** (not a retail dump) |
+| `python3 -I tools/rom_spike/emerald/test_rom_spike.py` (with `TENTH_SPRING_ROM_GBA`) | Mac, local | **7/7 OK** |
+| CI on `10e2ed8`, `83949c7`, `b5984d6`, `efc64df` | GitHub | **All green** — `game_tests`, IP guard, `sync_e2e`, on each item branch and on `main` |
+| **DC landmarks** — `check_landmarks.py` | Mac | Library of Congress `placed=1 gold_tiles=308` · Air and Space `288` · Washington Monument `20` · **Lincoln Memorial `placed=1 gold_tiles=54`** |
+| **DC ruin pass** — `measure_synth.py` | Mac | `placement_pct=32.5%`; `building_tile_pct=11.1%`; `path_tile_pct=12.8%`; `standing 27.3% · ruined 29.7% · gone 42.9%` (target 20–45%, Decision 37); `rubble 1.7%`; `tall_grass 14.0%`; `landmarks_standing=4/4` |
+| **Frame times, windowed, DC, zoom 1** (`--focus waypost`) | Mac | `FRAME_P95_MS 16.67` (≤ 16.7 ✅), `LOAD_MAX_FRAME_MS 20.55` (≤ 33.4 ✅), `VSYNC_MS 16.67` |
+| **Frame times, zoom 1/16** | Mac | ❌ **Couldn't run** — the capture never finished in 15 minutes (F61) |
+| **The human's ROMs** (header read only) | Mac | Emerald `BPEE`, SHA-1 `f3ae0881…07b7` (the clean dump); Black `IRBO`, **modified** |
 | Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. At Item 28's pause. |
 
 ---
@@ -125,11 +126,9 @@
 
 | # | Item | Why this position |
 |---|---|---|
-| 24 | **Landmarks first — F54, continued** (slice-2 plan §11.1 + **§11.1a**) — finish the uncommitted work on `item-24-landmarks-first` | Synthesis change. The ruin pass (25) must never hide a landmark, and DC's proof must show all four. |
-| 24a | **The place list, revised:** the pass-19 swaps, the 30 Gen 6–8 places, the Glow's six interiors, and `requires` (`implementation_plan_famous_places.md` §8.1) | Data only. Items 25 and 30 render interiors from this list. The human reviews the new rows at Item 25's pause. |
-| 25 | **The ruin pass + frame targets + overview chunks + DC proof v3 → PAUSE** (slice-2 plan §11.2–11.7; F56) | Needs 24. Adds the tile vocabulary that Item 12's mapping table must cover. |
-| 12 | **Emerald tile spike + mapping table + tile-importer plan → PAUSE** (Decision 19; ROM supplied) | **This is what makes the map look like real Pokémon.** Its mapping must include Item 25's new tiles, and the look-alike compositions Item 30 needs. |
-| 30 | **Landmark set pieces → PAUSE** (slice-2 plan §12) | Needs 24's placement, 24a's interiors, and 12's compositions. |
+| 25b | **The whole-city view finishes loading (F61); frame times at zoom 1/16 (F56); the complete proof v3 → PAUSE** | Item 25 can't be judged without its proof, and every later screenshot at overview zoom hangs until this is fixed. |
+| 12b | **Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE** (this is the human's Item 12 review) | **The real Pokémon look.** Item 30's look-alikes come from this mapping. |
+| 30 | **Landmark set pieces → PAUSE** (slice-2 plan §12) | Needs Item 24's placement and 24a's interiors (both delivered), and 12b's corrected compositions. |
 | 26 | **The places pack — F55** (`implementation_plan_explore_here.md` §1–2; famous-places plan §8.2) | Items 27 and 28 both read the pack. |
 | 27 | **Companion: Explore Here** (explore plan §3) | Needs 26. **Shares a branch with 28** — see below. |
 | 28 | **PC: explore ingest, migration 3, RevealEngine v2, boot, demo, e2e → PAUSE + real-phone check** (explore plan §4–6) | Needs 26 and 27. |
@@ -159,186 +158,93 @@
   This closes Phases 0 and 1.
 - **At Item 29's pause:** the sprite preview and the importer plan.
 
-Deferred (trigger-gated, **do not start**): §13.
+Deferred (trigger-gated, **do not start**): §11.
 
 ---
 
-## 3. Item 24 — Landmarks first (F54) — continue from the uncommitted work
+## 3. Item 25b — The whole-city view finishes loading; honest frame times; the complete proof v3 → PAUSE (F61, F56)
 
-**What this means for the user:** every enterable landmark shows on the map, gilded, with its sign — including the Lincoln Memorial, whose real outline the converter has been throwing away.
-
-### Where it stands
-- **Built and uncommitted** on local branch `item-24-landmarks-first`, in the human's working tree. **Keep it — don't start over:**
-  - slice-2 plan §11.1 in `game/world/tile_synth/tile_synth2.gd`: landmarks first, `PATH` allowed underneath, 21 nudges, shrink-to-fit, gilding at placement, and the `landmarks_placed` / `landmarks_sign_only` stats;
-  - `tools/check_landmarks.py`, with `game/scenes/check_landmarks.gd` and `.tscn` (memguard step `check_landmarks`, budget 0.5 GiB, measured peak 0.195 GiB);
-  - `tile_synth2_test` (p.1)–(p.3), all passing.
-- **Measured** (pass 21, reproduced): the Library of Congress `placed=1 gold_tiles=308`, Air and Space `288`, the Washington Monument `20` — and **the Lincoln Memorial `placed=0`**.
+**What this means for the user:** the whole-city view of a famous city loads and stays smooth. And they finally see the full set of ruined-city screenshots, with real numbers, to judge the look.
 
 ### The gap
-1. **The converter drops the memorial's outline.** `game/world/region_import/region_converter.gd:1768-1769` drops every way with a `building:part` key. The memorial's outline (OpenStreetMap way 398769543) is `building=yes` plus `building:part=no` — "the whole building".
-2. **The door and the footprint sit in different cells.** The landmarks-first block reads only `area[Vector2i.ZERO]["landmarks"]` and matches only centre-anchored candidates (the `raw_landmarks` line of the "5a-0. Landmarks First" block). The memorial's door is one cell north of the cell its footprint is anchored in, so neither cell can pair them.
+- **The capture never finishes at overview zoom.** `python3 -I tools/demo_screenshot.py --out-dir <outside the repo> --demo-dir user://demo_dc --zoom 0.0625 --focus waypost` ran over 15 minutes in pass 22 with no screenshot, and had to be killed. `--zoom 1` finishes in seconds.
+  - The implementing agent's own run before the Item 25 commit ended `failed:120` (memguard log, 2026-10-24T00:08Z).
+  - The map view saves only once `pending_cell_count() == 0` (`game/world/map_view.gd:1420-1437`, checked at `:1509`). That count includes `_dirty_overview_chunks.size()`.
+  - Every overview blit re-marks its chunk dirty (`:1142`), and `_flush_overview_chunks()` drains at most 4 per call (`:1089`).
+- **The harness has no timeout,** so a stall hangs forever instead of failing.
+- **Item 25 recorded no frame times and no M-record,** and only 3 of its 5 screenshots exist.
 
 ### Implementation
-Exactly **slice-2 plan §11.1a**:
-1. **the tag rule:** keep `building=*` unless `building:part` has a value other than `no`;
-2. **3 × 3 matching:**
-   - landmarks from all nine offsets;
-   - footprints from all nine cells, shifted into the centre cell's frame;
-   - each cell places only footprints anchored in itself;
-   - a sign-only fallback only when no footprint is found anywhere;
-3. **`stats.landmark_ids_placed`,** with `check_landmarks.py` synthesizing the door's cell and its 8 neighbours;
-4. **the three tag cases** added to the synthetic PBF (`tools/generate_synthetic_pbf.py`). Regenerate it, and say in the commit why the golden hashes change;
-5. **re-convert** `user://measure_dc` and `user://demo_dc` from the pinned DC snapshot.
+1. **Diagnose.** At zoom 1/16, print the two parts of `pending_cell_count()` — unrendered visible cells, and dirty chunks — every 60 frames. Find the part that never reaches zero, fix the cause, and remove the print.
+2. **Add a harness timeout.** If no screenshot is saved within **120 s** of launch, print `[FAIL] screenshot harness: <n> cells and <m> chunks still pending after 120 s` and quit with exit code **3**.
+3. **New `map_view_test` case.** At zoom 1/16, on a fixture whose view extends past the store's coverage, `pending_cell_count()` reaches 0 within 600 frames. **Run it against the old code first: it must fail.**
+4. **Capture all five slice-2 §11.6 screenshots** in `user://demo_dc` — `shot_ruins_z2_far`, `shot_ruins_z1_far`, `shot_ruins_z2_camp`, `shot_z2_landmark`, and `shot_z0.0625_dc` — outside the repo, and tell the human the paths.
+5. **Record Item 25** in `ongoing_general_errors.md` (a new M-number):
+   - the §11.4 numbers of the §1 baseline;
+   - the frame times at zoom 1 **and 1/16** beside 16.7 / 33.4, with `VSYNC_MS`.
+6. **Show the five screenshots to the human,** with the placeholder caveat. **PAUSE** for their verdict on the ruined look.
 
 ### Validation
-- **Falsifying — run against the old code first:**
-  - `region_import_test`: the `building=yes` + `building:part=no` way is stored. The `building:part=yes` ways are not.
-  - `tile_synth2_test` (p.4): a landmark straddling a cell edge is gilded in its anchor cell, and its door cell places **no** sign-only fallback.
-- (p.1)–(p.3) still pass.
-- **Acceptance on DC:** all four interiors print `placed=1` and `gold_tiles > 0`. Report every line.
-- **`measure_synth` on DC:** report placement, building tiles, and path tiles beside pass 18's (32.5%, 18.9%, 16.6%). A few more buildings are expected.
+- The new test passes, and failed on the old code.
+- Zoom 1/16 finishes with `FRAME_P95_MS` ≤ 16.7 and `LOAD_MAX_FRAME_MS` ≤ 33.4. **Report every number beside its target.**
+- A deliberately stalled run (for example, a store path that doesn't exist) fails with exit 3 and the message, instead of hanging.
 - The full §1 battery, then every workflow.
 
 ### Blast radius (same commit)
-- `region_converter.gd`;
-- `tools/generate_synthetic_pbf.py`, its fixture, and `region_import_test.gd` with its golden hashes;
-- `tile_synth2.gd` and its test;
-- `tools/check_landmarks.py` and its scene, and `tools/memguard_budgets.json`;
-- slice-2 plan §11.1 and §11.1a ("built");
-- `ongoing_general_errors.md` (F54 → Resolved).
+`map_view.gd` · `map_view_test.gd` · `tools/demo_screenshot.py` (exit 3 handling) · `ongoing_general_errors.md` (F61 and F56 → Resolved) · slice-2 plan §11.5 ("built").
 
 ---
 
-## 4. Item 24a — The place list, revised
+## 4. Item 12b — Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE (the human's Item 12 review)
 
-**What this means for the user:** the 30 new legendary places of Generations 6–8, the lake trio in their right homes, Las Vegas's Glow, and every lore requirement become real data the game can use.
+**What this means for the user:** the real Pokémon Emerald look — lawns that are plain grass, ponds with shorelines, tall grass that reads as tall grass — instead of a field of stray objects and striped water.
 
 ### The gap
-`game/config/famous_places.json` still has:
-- 75 entries;
-- the old lake-trio placement;
-- Theodore Roosevelt NP holding Zapdos;
-- Salem Maritime and Russell Cave;
-- no Gen 6–8 places;
-- no `requires`;
-- pass 18's Las Vegas interiors.
+The evidence is `~/.tenth_spring_rom_spike/emerald/preview.png` (the fixture cells in Emerald tiles) and `game/config/emerald_tile_map.json`:
+- **`GRASS`** variants 1 and 2 → metatiles 2 and 3, which draw a small grey object and red marks across every lawn;
+- **`WATER`**: every mask → 44 or 52, which draws as vertical stripes with no shoreline;
+- **`TALL_GRASS`** → 13 and 37, and parts of tall-grass areas draw as round bushes;
+- **`GRAVE` and `SIGN`** share 33;
+- **`MARSH`** reuses the sand tile (76);
+- **`RAIL`** → a road tile (290), although `gaps` lists rail;
+- **all eight roof colours** → one roof (521);
+- **the spike's checks covered only metatiles 1, 13, and 44;**
+- **Nintendo place and facility names as identifiers:** the tileset keys (`petalburg` … `battle_frontier`) and the composition ids (`game_corner`, `contest_hall`, `battle_tower`, `trick_house`, …) (F59).
 
 ### Implementation
-Exactly `implementation_plan_famous_places.md` §8.1. The rows are `design_famous_places.md` §1.2 and §9, and the interiors `design_interiors_and_quests.md` §4.1–§4.2.
-- **Look up** each new boundary relation (or closed way), Waypost, and interior door with Nominatim — public names only, ≥ 1.1 s apart.
-- **The Glow's vault door** is the centre of the Fremont Street canopy.
-- **Churchill Downs** gains `L P`.
-- **Update `tools/check_famous_places.py`** as §8.1 lists:
-  - 105 entries, and 78 distinct legendaries;
-  - region counts 7–9;
-  - `requires` keys from §9 only, and no circular chain.
+1. **Labelled contact sheets.** Draw each metatile's index under it, in original pixel digits, so every choice can be checked by eye. Save them outside the repo.
+2. **Choose each class's metatiles by evidence, never by guess.** Use any of these, and record the method in `design_rom_asset_pipeline.md` §4:
+   - **the metatile attribute table (behaviour byte)** — tall grass only from tall-grass behaviours, water only from water behaviours;
+   - **pixel tests** — a plain-grass variant draws ≥ 90% of its pixels from the base grass metatile's colours;
+   - **the ROM's own map layouts, read as statistics only:** count which metatiles border the water interior on each side to find shoreline pieces per mask, and likewise for path edges and tree borders. Nothing from a layout is stored except metatile numbers.
+3. **No stand-ins that draw a different object.** A class with no honest Emerald piece goes in `gaps` and keeps its placeholder tile: rail, marsh, snow, and graves if the chosen tilesets have none. Different classes never share a metatile unless the table lists the share as intentional.
+4. **Roof colours:** map at least four distinct Emerald roof colourways, if the tilesets have them. If not, record the reason in `gaps`.
+5. **Neutral names (F59):**
+   - tilesets keyed by index (`"sec05"`);
+   - compositions named by function (`casino_hall`, `theatre_hall`, `tall_tower`, `maze_house`, `pyramid_hall`, `dome_centre`, `museum_hall`, `maritime_hall`, `grand_hall`, `stadium`, `elevated_road`, `observatory`, `power_station`, `dept_store`);
+   - the spike's comments neutral as well;
+   - rename `design_art_direction.md` §1a's table to match. Commit messages and docs describe Emerald by function only.
+6. **Falsifying checks** in `tools/rom_spike/emerald/test_rom_spike.py` (ROM-gated) — **run them against today's table first; they must fail:**
+   - every `GRASS` variant passes the 90% grass-colour test;
+   - every `WATER` mask-15 metatile is ≥ 95% water colours, and a mask with a 0 bit shows shore pixels on that side;
+   - every `TALL_GRASS` metatile has the tall-grass behaviour;
+   - no unlisted shared metatiles;
+   - no `tile_map` entry for a class in `gaps`.
+7. **Re-render** the preview of the same fixture cells, plus the labelled contact sheets.
+8. **Update `docs/implementation_plan_rom_tiles.md` §3** so these checks are also the importer's validation.
+9. **Show the preview and the contact sheets to the human. PAUSE** — this is the Item 12 review.
 
 ### Validation
-- The checker passes on the new file.
-- **Falsifying unit tests** (`tools/test_check_famous_places.py`):
-  - a `requires` naming a non-legendary dex fails;
-  - a duplicated legendary fails;
-  - a region with 6 legendaries fails;
-  - an unknown `requires` key fails.
-- **Report** the new and changed rows as a table (name → relation or way id → Waypost name), for the human at Item 25's pause.
+- Every new check passes, and failed on the pass-22 table.
+- The new preview shows plain lawns, shorelines, and tall grass. Describe what changed, region by region, when you show it.
+- `git status` shows only the spike's code, `emerald_tile_map.json`, and doc changes. The guard exits 0.
 
 ### Blast radius (same commit)
-`game/config/famous_places.json` · `tools/check_famous_places.py` and its tests · famous-places plan §8.1 ("built").
+`game/config/emerald_tile_map.json` · `tools/rom_spike/emerald/*.py` · `docs/design_rom_asset_pipeline.md` §4 · `docs/design_art_direction.md` §1a · `docs/implementation_plan_rom_tiles.md` §3 · `ongoing_general_errors.md` (F60, F59 → Resolved; Decision 19 status).
 
 ---
 
-## 5. Item 25 — The ruin pass, honest frame targets, overview chunks, and proof v3 → PAUSE
-
-**What this means for the user:** the cities look emptied — houses fallen in or gone to grass, side streets overgrown, tidy blocks around the survivors' camps — instead of a census of every house. And the whole-city view stops stuttering.
-
-### The gap
-- **No building ever ruins or disappears:** every placed building is drawn whole (`tile_synth2.gd`, §4.2 painting).
-- **There is no `RUBBLE` class,** no broken variants, and no overgrowth by distance.
-- **The whole-city overview** keeps one `Sprite2D` per cell (`game/world/map_view.gd:1022-1030`, `:1044-1052`) — 4,469 for DC — and measured `FRAME_P95_MS` 18.06.
-- **The frame target of 16.6 ms** is below the 60 Hz vsync interval (16.67).
-
-### Implementation
-Exactly **slice-2 plan §11.2–11.6**:
-- the band from the Waypost (`area["waypost_wm"]`, passed by the map view and the worker);
-- building fates, fixed fates, and the ruined and gone drawing;
-- the overgrowth table;
-- salts 9–14;
-- class 20 `RUBBLE`, variant bit 16, and `PATH`/`PLAZA` variant 1;
-- the atlas rows, regenerated byte-identically;
-- `MEASURE_RUIN`;
-- the new frame targets and `VSYNC_MS`;
-- 8 × 8-cell overview chunks;
-- `--focus=far_buildings`;
-- the five proof screenshots in `user://demo_dc`.
-
-### Validation
-- **`tile_synth2_test` (q)–(t)**, including the falsifying (r) against the old code. The atlas regenerates byte-identically.
-- **`measure_synth` on DC:** report every §11.4 measure beside its target, including building tiles 10–16%, gone 20–45% (Decision 37 = A), ruined 20–35%, tall grass ≥ 8%, and landmarks all standing.
-  - **A miss means STOP:** file it with the numbers, and don't tune.
-- **Frame times on the human's Mac,** in the DC profile:
-  - zoom 1 and zoom 1/16;
-  - `FRAME_P95_MS` ≤ 16.7 and `LOAD_MAX_FRAME_MS` ≤ 33.4;
-  - plus `VSYNC_MS`.
-  - Report all of them beside their targets. 1/16 was 18.06 before.
-- **Show the five screenshots and Item 24a's rows to the human.** Say plainly that the art is still the placeholder until the Emerald import. **PAUSE.**
-
-### Blast radius (same commit)
-- `tile_synth2.gd` and its test, with golden hashes;
-- `tools/gen_placeholder_atlas.py`, `placeholder_v1.png`/`.json`, and `assets/palette/tenth_spring.gpl`;
-- `map_view.gd`, `synth_worker.gd`, `tools/demo_screenshot.py`, `tools/measure_synth.py`, and `screenshot_args_test.gd`;
-- slice-2 plan §11 ("built");
-- `ongoing_general_errors.md` (F56 → Resolved; Decision 30 built).
-
----
-
-## 6. Item 12 — Emerald tile spike, mapping table, and tile-importer plan → PAUSE
-
-**What this means for the user:** the moment the map stops looking like placeholder art and starts looking like a real Pokémon game. It's the change they've asked for since pass 17.
-
-### The gap
-- Every Emerald format rule in `design_rom_asset_pipeline.md` §4 is still **verify**.
-- No mapping exists from the slice-2 tile vocabulary — now including `RUBBLE`, bit 16, the overgrown variants, and class 21 `STAMP` — to Emerald metatiles.
-- No look-alike compositions exist for the landmarks (`design_art_direction.md` §1a).
-
-### Implementation
-1. **Preconditions.** `TENTH_SPRING_ROM_GBA` is set, the file exists, and its real path is **not** inside the repo. Its header is `BPEE` and its SHA-1 is `f3ae088181bf583e55daf962a92bb46f4f1d07b7`. If any check fails, STOP and report. **Never download, search for, or link to a ROM.**
-2. **Write the spike in Python 3 stdlib** under `tools/rom_spike/emerald/`, run with `python3 -I` under `memguard run rom_spike_gba` (measure the budget on the first run).
-   - Output goes to `~/.tenth_spring_rom_spike/emerald/`, outside the repo.
-   - **The code embeds no bytes, images, or tables taken from the ROM** — only offsets, sizes, and metatile numbers.
-3. **Find the tilesets** through the ROM's own pointer tables: the primary tileset and the secondary tilesets. Record every offset and structure size, and how you found it.
-   - Cite documentation, such as the community decompilation project's source *as a reference*.
-   - Never use a downloaded ROM or extracted asset.
-4. **Decode** the tile graphics (LZ77 type `0x10`), palettes, metatiles, and attributes. Replace each Emerald **verify** in `design_rom_asset_pipeline.md` §4 with the confirmed rule.
-5. **Contact sheets for the human:** the primary tileset's metatiles at 2×, plus the secondary tilesets for 4–6 differently themed towns. They include the buildings named in `design_art_direction.md` §1a: the pyramid hall, the space centre, the battle tower, the museums, the contest hall, the department store, the game corner, the weather institute, the power plant, the league hall, the stadium, the cycling road, and the trick house. Saved to the spike folder; tell the human the paths. **Never commit them.**
-6. **Draft `game/config/emerald_tile_map.json`** — numbers only:
-   - **for every `(class, variant, mask)`** the synthesizer emits — including `RUBBLE` 0–1, the bit-16 broken `ROOF`/`WALL`/`DOOR`, and `PATH`/`PLAZA` variant 1 — the metatile to use;
-   - **the building compositions** for `house_s`, `house_m`, and `block_l`, and each roof colour;
-   - **`compositions`:** one look-alike per row of `design_art_direction.md` §1a, as `{"<id>": {"w", "h", "metatiles": [...], "door": [col, row]}}`;
-   - **`gaps`:** everything Emerald lacks — snow, for example.
-7. **Preview from synthetic data only:**
-   - a test helper dumps the fixture cells' slice-2 buffers to `user://test/fixture_cells.bin`;
-   - the spike renders them in Emerald tiles to `~/.tenth_spring_rom_spike/emerald/preview.png`, including a ruined house, a gone lot, and an overgrown street;
-   - show it to the human, and never commit it.
-8. **If the templates don't fit** Emerald's buildings, write the smallest amendment to slice-2 plan §4.2 that does, and include it in the review. Don't change the synthesizer yet.
-9. **Write `docs/implementation_plan_rom_tiles.md`** at foundation depth. Cover:
-   - `gba_rom.gd`, `gen3_tiles.gd`, and `tile_atlas_builder.gd`, which also renders `compositions` into atlas rows for class 21 (slice-2 plan §12.3);
-   - `asset_db.tile_atlas()`;
-   - the resumable cache write;
-   - `design_rom_asset_pipeline.md` §7's tile checks;
-   - the test strategy — ROM tests run only when `TENTH_SPRING_ROM_GBA` is set, and are skipped with an explicit message otherwise.
-10. **PAUSE for human review.**
-
-### Validation
-- **Decode check:** every decoded tile uses ≤ 16 colours from its palette. The grass, tall-grass, and water metatiles pass a pixel-variance threshold that a wrong decompression or palette fails — prove it by running the check against a deliberately wrong palette.
-- **Coverage:** the mapping table covers every `(class, variant)` in the placeholder JSON, or lists it under `gaps`. Every §1a row has a composition, or a `gaps` entry.
-- **Nothing leaked:** `git status` shows only `tools/rom_spike/emerald/*.py`, `game/config/emerald_tile_map.json`, and doc changes. The guard exits 0.
-
-### Blast radius (same commit)
-`tools/rom_spike/emerald/` · `game/config/emerald_tile_map.json` · `docs/design_rom_asset_pipeline.md` §4 · new `docs/implementation_plan_rom_tiles.md` · the slice-2 plan amendment (if any) · Decision 19 status.
-
----
-
-## 7. Item 30 — Landmark set pieces → PAUSE
+## 5. Item 30 — Landmark set pieces → PAUSE
 
 **What this means for the user:** the Statue of Liberty looks like the Statue of Liberty, and the Lincoln Memorial like the Lincoln Memorial — not a gold-roofed box.
 
@@ -352,10 +258,10 @@ Exactly **slice-2 plan §12**:
 - `tools/gen_landmark_stamps.py` and the 14 stamps (`stamps_v1.png`/`.json`), with up to 8 new palette colours;
 - the placement rule, with fallback to the gilded template;
 - class 21 `STAMP`, with the door as `DOOR` 32;
-- the renderer drawing class 21 from the stamp atlas, or from Emerald composition rows once Item 12's builder exists.
+- the renderer drawing class 21 from the stamp atlas, or from Emerald composition rows once Item 12b's corrected mapping and the tile builder exist.
 - **The register's first entries:**
   - every §12.2 stamp, on its interior;
-  - an Emerald composition for every §1a look-alike that Item 12 drafted.
+  - an Emerald composition for every §1a look-alike in Item 12b's corrected mapping.
 
 ### Validation
 - **`tile_synth2_test` (u),** including the falsifying case. The stamps regenerate byte-for-byte.
@@ -367,7 +273,7 @@ Exactly **slice-2 plan §12**:
 
 ---
 
-## 8. Item 26 — The places pack (F55)
+## 6. Item 26 — The places pack (F55)
 
 **What this means for the user:** the phone and the game agree, cell for cell, on every neighbourhood and park. And DC's ~130 real neighbourhoods replace its 8 wards, so revealing the city takes real exploring.
 
@@ -407,7 +313,7 @@ Exactly **`implementation_plan_explore_here.md` §1–§2** and famous-places pl
 
 ---
 
-## 9. Item 27 — Companion: Explore Here (shares a branch with Item 28)
+## 7. Item 27 — Companion: Explore Here (shares a branch with Item 28)
 
 **What this means for the user:** the phone stops tracking them. They tap one big button when they're somewhere new, and it tells them on the spot what they've unlocked.
 
@@ -438,7 +344,7 @@ Exactly **`implementation_plan_explore_here.md` §3**:
 
 ---
 
-## 10. Item 28 — PC: explore ingest, migration 3, RevealEngine v2, boot, demo, e2e → PAUSE + real-phone check
+## 8. Item 28 — PC: explore ingest, migration 3, RevealEngine v2, boot, demo, e2e → PAUSE + real-phone check
 
 **What this means for the user:** what the phone discovered appears on the PC by the same rules. No coordinate is stored anywhere. And quitting the game never sends them home for free.
 
@@ -479,7 +385,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 11. Item 10 — Black/White sprite spike (sprites only — Decision 34)
+## 9. Item 10 — Black/White sprite spike (sprites only — Decision 34)
 
 **What this means for the user:** the first real Pokémon on screen — the battle sprites for #1–649, read from their own cartridge's dump.
 
@@ -514,7 +420,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 12. Item 29 — Gen 8 data pack and fan sprites spike, then the importer plan → PAUSE
+## 10. Item 29 — Gen 8 data pack and fan sprites spike, then the importer plan → PAUSE
 
 **What this means for the user:** all 905 Pokémon — Galar's included — with real stats, the Fairy type, Mega forms, and the Smogon artists credited.
 
@@ -561,7 +467,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 13. Deferred — trigger-gated, do NOT start
+## 11. Deferred — trigger-gated, do NOT start
 - **The Phase 2 production importer** — the GDScript modules and the first-run download. **Trigger:** the human approves `implementation_plan_rom_importer.md` at Item 29's pause, and `implementation_plan_rom_tiles.md` at Item 12's.
 - **Distort gameplay with a walking avatar** — the real Waypost rule, the hub's Rest, PC Box, and Garden, the arrival and resume banners, and weariness's Waypost beds (`design_travel_and_time.md` §4–5; `design_long_game.md` §4.4). **Trigger:** Phase 4.
 - **The battle engine with Gen 8 rules, Mega Evolution, weariness, and fixed-level trainers** (`design_creatures_and_battles.md`; `design_long_game.md`). **Trigger:** Phase 5, after Phase 2 lands. Write its plan first.
@@ -579,7 +485,7 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 
 ---
 
-## 14. Phase roadmap — scope, not an approved queue
+## 12. Phase roadmap — scope, not an approved queue
 
 Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`**. Order:
 
@@ -589,7 +495,12 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ---
 
-## 15. Already delivered — do NOT rework
+## 13. Already delivered — do NOT rework
+- **Pass 21–22 builds, verified in pass 22 (M57, M58):**
+  - **Item 24** — landmarks first, the `building:part` rule, 3 × 3 matching, `check_landmarks.py`; all four DC landmarks drawn;
+  - **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries, with the extended checker;
+  - **Item 25** — the ruin pass, class 20, bit 16, the overgrowth table, `MEASURE_RUIN`, 8 × 8 overview chunks, `VSYNC_MS`, `--focus=far_buildings` (Item 25b finishes its proof);
+  - **Item 12** — the Emerald spike, its tests, contact sheets, `implementation_plan_rom_tiles.md`, and the first draft of `emerald_tile_map.json` (Item 12b corrects the mapping).
 - **Pass 20 build, verified in pass 21 (M55, M56):** **Item 23** — `tools/godot.py` (headless by default, an absolute `--path`, refusal of non-`SceneTree` scripts, `--memguard-step`), all nine launch sites switched, `test_runner.py --only`, and the no-direct-launch lint.
 - **Phase 0 capture pipeline:** the `LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart`, the Drift outbox, `GpxReplaySource`, and the scout-ledger UI. **Item 27 deletes these by design** (Decision 29) — that's not rework.
 - **Early fixes:** F1, F2, F3, F5, F6, F8, F9, F11, F13, F17, F18, F21, F22.
@@ -619,7 +530,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
   **Items 24, 25, 26, and 28 *change* parts of these by plan** — landmark placement, synthesis, neighbourhood assignment, and the reveal engine. They don't rewrite them.
 
-## 16. Accepted equivalents — do NOT "fix" these back
+## 14. Accepted equivalents — do NOT "fix" these back
 - **`get_blob_head()` default mode** falls back from `HEAD:path` to the index (`:path`), so staged-but-uncommitted files are still checked.
 - **The IP guard's path rule** also blocks any `roms/` path component — broader than the spec; keep it.
 - **`test_f22_save_isolation.py`** stays as a fast static pre-check; the proof is the runner-level snapshot.
@@ -639,7 +550,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Item 6's commit message lists template sizes `3×3` and `7×6`;** the code uses the plan's `4×3`, `5×4`, and footprint-sized `block_l`. The code is right.
 - **Until Items 27 and 28 delete them:** `relocation_manager.gd`'s minimal-circle snap; `nativeVisits()` returning `null`; `_triggerManualScout` clearing SnackBars; and `buildBatchPayload`'s `"bodyFix": ?bodyFix`.
 
-## 17. Intentional decisions — do NOT change
+## 15. Intentional decisions — do NOT change
 - **No Nintendo content in the repo, ever.**
   - Species, moves, and items are referenced by number. Names, stats, and sprites come from the player's caches through `asset_db` only.
   - The Smogon fan sprites and PokéAPI data are downloaded on the player's machine, never committed. Only manifests and credits are (Decision 32).
@@ -676,13 +587,14 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
   - **a session resumes where the last one ended** — the phone never moves you;
   - healing only at home; blackout drops the bag, never Pokémon; the map and Pokédex always persist.
 - **The same map for everyone** (Decision 23): `MAP_SNAPSHOT` pinned, fixed conversion units, the whole coastline kept, and `MAP_SEED` global — **including the ruin pass and stamps.**
+- **The ruin target** (Decision 37): 20–45% of ordinary buildings gone over a city's built-up cells; DC measures 42.9%.
 - **The ruined world** (Decision 30): building fates come from `MAP_SEED` and the distance to the Waypost. **Landmarks always stand; places of worship always stand; hospitals are ruined, never gone.**
 - **Anything enterable has a purpose** (Decision 27), and every puzzle has an in-world reason. Ordinary buildings are searched from the doorway. **Casinos may appear, but nothing simulates betting** (Decision 33).
 - **Legendaries get one decisive battle,** at their own place behind a challenge. Every lore requirement is "caught or defeated", so no choice can lock a player out. Wardens appear only once their region's three cities are unlocked.
 - **Minor ways are never drawn.** Buildings come before footpaths, and roads before buildings. **Landmarks come before every other building** (after Item 24). Synthesis never runs on the main thread.
 - **Stack:** Godot 4.3 (PC; Decision 31 = A) + Flutter (companion). No Steam, no monetization.
 
-## 18. Where the contracts live
+## 16. Where the contracts live
 | Need | Doc |
 |---|---|
 | Pillars, stack, setup | `README.md` |
@@ -719,7 +631,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 2 PLAN      Building a phase or slice with no approved implementation_plan_*.md? Write one FIRST
             and PAUSE for human review. (Items 24–30 implement approved plans: slice-2 §11–§12,
             famous-places §8, explore-here §1–§4. Items 10, 12, and 29 are spikes that end in plans.)
-3 IMPLEMENT Exactly as written, on a branch. Honor §17 and the standing constraints — above all:
+3 IMPLEMENT Exactly as written, on a branch. Honor §15 and the standing constraints — above all:
             no Nintendo content or fan sprites in the repo; none of the human's places or ROM paths;
             no test touches the real save, identity, or demo profile; Godot only through
             tools/godot.py; never force-push main.
@@ -738,12 +650,14 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ```
 
 ## Definition of Done (this build)
-- [x] **HUMAN: Decisions 29–36 answered** (2026-10-21 and 2026-10-22).
+- [x] **HUMAN: Decisions 29–37 answered** (2026-10-21 to 2026-10-23).
 - [x] **Item 23 (F57)** — `tools/godot.py`; every launcher switched; `test_runner --only`; the falsifying refusal passes (verified pass 21, M56).
-- [x] **Item 24 (F54)** — landmarks first, plus §11.1a (the `building:part` rule and 3 × 3 matching); all four DC landmarks `placed=1`, `gold_tiles > 0`.
-- [x] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended; rows reported.
-- [ ] **Item 25** — the ruin pass; every §11.4 measure reported beside its target; frame targets met with `VSYNC_MS`; five screenshots **shown; paused.**
-- [ ] **Item 12** — Emerald verify markers resolved; `emerald_tile_map.json` with the ruin tiles, compositions, and gaps; contact sheets and preview shown; `implementation_plan_rom_tiles.md`; **paused.**
+- [x] **Item 24 (F54)** — landmarks first, plus §11.1a; all four DC landmarks `placed=1`, `gold_tiles > 0` (verified pass 22, M58).
+- [x] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended (verified pass 22, M58).
+- [x] **Item 25** — the ruin pass built and measured (M58). Its proof is finished in 25b.
+- [ ] **Item 25b (F61, F56)** — the whole-city view loads; the harness times out instead of hanging; frame times at zoom 1 and 1/16 beside their targets; five screenshots **shown; paused.**
+- [x] **Item 12** — the Emerald spike, verify markers resolved, the plan written (M58). Its mapping is corrected in 12b.
+- [ ] **Item 12b (F60, F59)** — evidence-based mapping, honest gaps, neutral names, falsifying checks; the new preview and labelled contact sheets **shown; paused** (the human's Item 12 review).
 - [ ] **Item 30** — the register, 14 stamps, class 21; DC proof **shown; paused.**
 - [ ] **Item 26 (F55)** — the places pack built, bundled twice, and hash-checked; DC re-converted with real neighbourhoods; `T` reported.
 - [ ] **Item 27** — Explore Here on the companion; no background permission anywhere; no real-number column.
@@ -757,7 +671,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - a new item in `ongoing_general_errors.md` with a filled `Your selection:`;
 - the human's verdict at a pause;
 - the §1 battery or any CI workflow regressing;
-- a §13 trigger firing;
+- a §11 trigger firing;
 - the human assigning something.
 
 Otherwise report that the queue is complete and stop.

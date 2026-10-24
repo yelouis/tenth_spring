@@ -7,6 +7,32 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 
 ## 🟠 Open Decisions
 
+> **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, was answered on 2026-10-09 (Option B). **Decision 13** (map data) was answered the same day: fully offline (Option C). Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
+>
+> **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.
+>
+> **2026-10-19 (pass 17) — Decisions 16–19 were asked and answered the same day.** 16 (USA only) came as your directive; you filled in 17, 18, and 19, and the follow-up questions on 18 and 19 were asked and answered in chat. All four are under Resolved. The new backstory you asked for is `docs/design_story_and_world.md`.
+>
+> **2026-10-20 — Decision 27** (enterable famous buildings and side quests) came as your directive; it's under Resolved.
+>
+> **2026-10-20 (pass 18) — Decisions 21–26 were asked and answered the same day.** You filled in 21, 22, and 24; 23 came with a question (is the map the same for two friends?), answered in chat. You also narrowed the map to famous places, and the follow-ups were answered in chat as Decisions 25 and 26. All six are under Resolved. The new contract is `docs/design_famous_places.md`.
+>
+> **2026-10-21 (pass 19) — one new decision needs you: 31** (stay with Godot, or rebuild as an Emerald ROM hack). You also gave two directives, now Decisions 29 and 30 under Resolved: **Explore Here** replaces background tracking, and the map shows **a ruined, overgrown world** rather than every real house. Decision 30 also answers the open Decision 28 (the building-placement target). Decisions 3 and 5 (background capture and its 8-hour battery soak) are retired by Decision 29.
+>
+> **2026-10-22 (pass 20) — three directives and two new questions.**
+> - **Directives, now under Resolved:**
+>   - **Decision 32:** Pokémon through Generation 8, using the Smogon Sprite Project's fan sprites.
+>   - **Decision 33:** Las Vegas casinos are back, as a working society with a dark secret.
+>   - **Decision 34:** your ROMs are on your machine. The Emerald file is a clean dump; the Black file is a modified version, which works only for sprites.
+> - **Answered in chat the same day:**
+>   - **Decision 31 = A** — stay with Godot.
+>   - **Decision 35** — survival plus fixed level-75 Wardens.
+>   - **Decision 36 = B** — Mega Evolution only.
+>
+>   All three are under Resolved. No decision is open.
+>
+> **2026-10-23 (pass 22) — you answered Decision 37** (accept 43% of houses gone; the target widens to 20–45%), and it's under Resolved. No decision is open. Pass 22 filed **F59** (Nintendo names in committed data, minor), **F60** (the Emerald mapping draws the wrong pieces — fixed before your Item 12 review), and **F61** (the whole-city view never finishes loading in the screenshot harness).
+
 ## ✅ Resolved Decisions
 
 ### Decision 37 — Ruin pass city-wide "gone" building percentage target (Resolved 2026-10-23: Option A)
@@ -36,32 +62,6 @@ Because DC spans ~15 km, over 85% of placed buildings fall in the `far` band (�
   E.g. expand `mid` to 1.5–4.5 km and `far` to ≥ 4.5 km, shifting more cells into lower gone-rate bands.
 
 - **Your selection: Option A — Keep it as is (accept 43% gone). Widened §11.4 target to 20–45%.**
-
-> **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, was answered on 2026-10-09 (Option B). **Decision 13** (map data) was answered the same day: fully offline (Option C). Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
->
-> **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.
->
-> **2026-10-19 (pass 17) — Decisions 16–19 were asked and answered the same day.** 16 (USA only) came as your directive; you filled in 17, 18, and 19, and the follow-up questions on 18 and 19 were asked and answered in chat. All four are under Resolved. The new backstory you asked for is `docs/design_story_and_world.md`.
->
-> **2026-10-20 — Decision 27** (enterable famous buildings and side quests) came as your directive; it's under Resolved.
->
-> **2026-10-20 (pass 18) — Decisions 21–26 were asked and answered the same day.** You filled in 21, 22, and 24; 23 came with a question (is the map the same for two friends?), answered in chat. You also narrowed the map to famous places, and the follow-ups were answered in chat as Decisions 25 and 26. All six are under Resolved. The new contract is `docs/design_famous_places.md`.
->
-> **2026-10-21 (pass 19) — one new decision needs you: 31** (stay with Godot, or rebuild as an Emerald ROM hack). You also gave two directives, now Decisions 29 and 30 under Resolved: **Explore Here** replaces background tracking, and the map shows **a ruined, overgrown world** rather than every real house. Decision 30 also answers the open Decision 28 (the building-placement target). Decisions 3 and 5 (background capture and its 8-hour battery soak) are retired by Decision 29.
->
-> **2026-10-22 (pass 20) — three directives and two new questions.**
-> - **Directives, now under Resolved:**
->   - **Decision 32:** Pokémon through Generation 8, using the Smogon Sprite Project's fan sprites.
->   - **Decision 33:** Las Vegas casinos are back, as a working society with a dark secret.
->   - **Decision 34:** your ROMs are on your machine. The Emerald file is a clean dump; the Black file is a modified version, which works only for sprites.
-> - **Answered in chat the same day:**
->   - **Decision 31 = A** — stay with Godot.
->   - **Decision 35** — survival plus fixed level-75 Wardens.
->   - **Decision 36 = B** — Mega Evolution only.
->
->   All three are under Resolved. No decision is open.
-
-## ✅ Resolved Decisions
 
 ### Decision 31 — Stay with Godot (Resolved 2026-10-22: Option A)
 **What this is about.** Tenth Spring is built in **Godot**, a general-purpose game engine. You asked whether Godot is still right, because it crashed during the last build, and whether ROM hacks have a better design. Most serious Pokémon ROM hacks of Emerald are built on the community's rebuilt source code of the original game (the "decomp"). You edit the real game's code and maps, compile a new Game Boy Advance ROM, and share it as a patch players apply to their own copy of the original game.
@@ -1187,26 +1187,85 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
     - Added the three `building:part` tag cases to `tools/generate_synthetic_pbf.py` and falsifying assertions to `region_import_test.gd` and `tile_synth2_test.gd` `(p.1)`–`(p.4)`.
     - Re-converted DC stores (`user://demo_dc` and `user://measure_dc`): all four DC interiors now pass (`dc:library-of-congress placed=1 gold_tiles=308 sign=1`, `dc:air-and-space placed=1 gold_tiles=288 sign=1`, `dc:washington-monument placed=1 gold_tiles=20 sign=1`, `dc:lincoln-memorial placed=1 gold_tiles=54 sign=1`), and `measure_synth` reports `cells=3706 candidates=136333 placed=44259 placement_pct=32.5% building_tile_pct=18.9% path_tile_pct=16.6% road_tile_pct=6.7%`.
 
+**M58 — Pass 22: Items 24 and 24a verified; Item 25 built but its proof is incomplete; Item 12's mapping needs a correction pass (2026-10-23, `main` at `efc64df`).**
+- **Executed this pass** (the human's Mac, on `main`):
+  - the game runner: **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK, and `[CHECK FAMOUS PLACES OK] … 27 cities, 60 sites, 18 spots, 78 legendaries, 9 wardens`;
+  - `sync_e2e`: `[OK]`;
+  - `flutter analyze` clean, and `flutter test` **37 passed, 2 skipped**;
+  - the Emerald spike's own tests: **7/7 OK**;
+  - CI: green on all four commits (`10e2ed8`, `83949c7`, `b5984d6`, `efc64df`), both on their item branches and on `main`. Each item branch was deleted after merging, per the guide's rule.
+- **Item 24 (F54) — verified.** `check_landmarks.py` on the DC store: Library of Congress `placed=1 gold_tiles=308`, Air and Space `288`, Washington Monument `20`, and **Lincoln Memorial `placed=1 gold_tiles=54`**. The converter's `building:part` rule and the 3 × 3 matching are in source, with falsifying tests (p.1)–(p.4).
+- **Item 24a — verified.**
+  - `famous_places.json` holds 105 entries and 78 distinct legendaries.
+  - Spot-checks match the design: the lake trio, Everglades/Zapdos, Katahdin/Darkrai (its `requires` adds Cresselia to the Moon Feather, which is consistent), Cathedral Caverns (a way boundary), all 20 `requires`, and Las Vegas's six Glow interiors. Salem Maritime and Russell Cave are gone.
+  - *Accepted:* Katahdin's Waypost is the Loop Road overlook — the monument has no full visitor centre.
+- **Item 25 — the ruin pass is built and measures as recorded, but its proof and its frame times are missing.**
+  - **Reproduced:** `MEASURE_RUIN standing_pct=27.3% ruined_pct=29.7% gone_pct=42.9% building_tile_pct=11.1% rubble_tile_pct=1.7% tall_grass_pct=14.0% landmarks_standing=4/4`, all within §11.4 after Decision 37.
+  - **In source, per §11.2:** the bands, the fate shares, the fixed fates, salts 9–14, class 20, bit 16, and the overgrowth table.
+  - **Overview chunks:** 8 × 8, with at most 4 updates per frame.
+  - **Zoom 1 passes the new targets:** `FRAME_P95_MS 16.67` (≤ 16.7), `LOAD_MAX_FRAME_MS 20.55` (≤ 33.4), `VSYNC_MS 16.67`.
+  - **Missing:**
+    - Item 25 left no record in this doc and no frame times;
+    - only 3 of its 5 screenshots exist (`shot_ruins_z2_far`, `_z1_far`, `_z2_camp`, in the implementing agent's own scratch folder);
+    - **the whole-city zoom-1/16 capture never finishes** (F61).
+- **Item 12 — the spike and the plan are delivered; the mapping is not ready for your review (F60).**
+  - **Clean of Nintendo data:** `emerald_tile_map.json` holds only numbers (no colours, no blobs). The spike embeds only offsets and the public SHA-1, and writes outside the repo.
+  - **But its preview shows the wrong pieces all over the map,** and it uses Nintendo place names as identifiers (F59).
+- **The empty `item-30-landmark-setpieces` branch was deleted.** It had no commits, and Item 30 waits on Item 12's corrected mapping. Only `main` remains.
+- **Doc repair:** Decision 37 had been written under a second "Resolved Decisions" heading above the header notes. It's now under the real one.
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24).*
-- **F54 — RESOLVED (2026-10-22, Item 24, M57).** `region_converter.gd` now keeps `building=*` ways unless `building:part` has a value other than `no`, and `tile_synth2.gd` matches landmarks and footprints across the 3 × 3 neighbourhood, placing landmarks before ordinary buildings with `PATH` allowed underneath, 21 nudges, and shrink-to-fit. All four DC landmarks now print `placed=1`, `gold_tiles > 0`, and `sign=1` in `tools/check_landmarks.py`.
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58.*
+- **F61 (found 2026-10-23, pass 22) — the whole-city overview never finishes loading in the screenshot harness.**
+  - **Repro:** `python3 -I tools/demo_screenshot.py --out-dir <outside the repo> --demo-dir user://demo_dc --zoom 0.0625 --focus waypost` runs for over 15 minutes with no screenshot and no frame lines, and had to be killed. The same command at `--zoom 1` finishes in seconds.
+  - **The implementing agent hit it too:** its last screenshot run, minutes before the Item 25 commit, ended `failed:120` (memguard log, 2026-10-24T00:08Z). Item 25 was then committed without frame times.
+  - **Where to look:**
+    - the harness saves only once `pending_cell_count() == 0` (`game/world/map_view.gd:1420-1437`, checked at `:1509`);
+    - that count includes `_dirty_overview_chunks.size()`;
+    - every overview blit re-marks its chunk dirty (`:1142`), and `_flush_overview_chunks()` drains at most 4 per call (`:1089`).
+
+    Something in that loop never reaches zero at overview zoom.
+  - **The harness also has no timeout,** so a stall hangs forever instead of failing.
+  - **Agent guide Item 25b.**
+- **F60 (found 2026-10-23, pass 22) — the Emerald mapping draws the wrong pieces.** This shows in Item 12's own preview of the fixture cells (`~/.tenth_spring_rom_spike/emerald/preview.png`):
+  - **grass:** `GRASS` variants 1 and 2 map to metatiles 2 and 3, which draw a small grey object and red marks, so every lawn is littered with them. The spike's checks covered only metatiles 1, 13, and 44;
+  - **water:** `WATER` maps every mask to 44 or 52, which draws as vertical stripes with no shoreline;
+  - **tall grass:** `TALL_GRASS` uses 13 and 37, and parts of tall-grass areas draw as round bushes. Tall grass is the most important tile in the game;
+  - **shared or stand-in pieces:**
+    - `GRAVE` and `SIGN` share metatile 33;
+    - `MARSH` reuses the sand tile (76);
+    - `RAIL` maps to a road tile (290), although `gaps` lists rail;
+    - all eight roof colours map to one roof (521).
+  - **Why it matters:** the human's review at Item 12's pause would only see a broken preview.
+  - **The fix:** choose by evidence (behaviour bytes, pixel tests, and the ROM's own layouts as adjacency statistics — numbers only), put true gaps in `gaps`, label the contact sheets with indices, and add falsifying checks. **Agent guide Item 12b.**
+- **F59 (minor, found 2026-10-23, pass 22) — Nintendo place and facility names in committed files.**
+  - **Where:**
+    - `game/config/emerald_tile_map.json` keys its tilesets as `petalburg`, `rustboro`, `slateport`, `mauville`, `lilycove`, `mossdeep`, and `battle_frontier`;
+    - its compositions are named `game_corner`, `contest_hall`, `battle_tower`, `trick_house`, and so on;
+    - the spike's comments name more.
+  - The repo's rule is no Nintendo names, and the IP risk is small but needless.
+  - **The fix:** neutral ids, with tilesets by index and compositions by function (`casino_hall`, `theatre_hall`, `tall_tower`, …) — `design_art_direction.md` §1a is renamed to match. **Folded into Item 12b.**
 - **F58 (minor, found 2026-10-22, pass 21) — a fresh checkout fails the battery until Godot imports the project.**
   - In a new clone or git worktree, `game/.godot/` (ignored by git) doesn't exist yet. Scripts that use `class_name` then fail to parse, so `test_runner.py` prints `[TEST RUNNER FAIL] Godot exited with code 0` or `1`, and `sync_e2e` times out on `Parse error`.
   - CI avoids it by running `python3 -I tools/godot.py --memguard-step godot_import --import` first.
   - **Fixed in docs this pass:** README → *Launching Godot*, and the agent guide's standing constraint 7.
-  - **Not a code defect,** but the runner could do the import itself when `game/.godot/` is missing. That's deferred, with a trigger (guide §13).
+  - **Not a code defect,** but the runner could do the import itself when `game/.godot/` is missing. That's deferred, with a trigger (guide §11).
 - **F55 — DC's "neighbourhoods" are its 8 political wards.** The neighbourhood rule takes `admin_level` 9 relations first (`implementation_plan_famous_places.md` §3.1a). In DC those are Wards 1–8, so the city has 8 huge "neighbourhoods" rather than its ~130 real ones (Dupont Circle, Georgetown, …), and 2 wards unlock it. **Agent guide Item 26** (the places pack).
 - **F56 (minor) — frame-time reporting.**
   - Every windowed run reports `FRAME_P95_MS: 16.67` — the 60 Hz vsync interval — and M46/M47 call that a PASS against "≤ 16.6 ms". That's a spec defect: with vsync on, 16.67 *is* a perfect frame.
   - Item 21's whole-city overview did miss: `FRAME_P95_MS 18.06`, `LOAD_MAX_FRAME_MS 33.33` (targets 16.6 / 33).
   - **The fix:** targets become "≤ 16.7 ms (no dropped vsync frames)" and "≤ 33.4 ms", and the overview gets an LOD for many cells. Agent guide Item 25.
-- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §13).
+  - **Pass 22:**
+    - Item 25 built the targets, `VSYNC_MS`, and 8 × 8 overview chunks.
+    - **Zoom 1 now passes** (16.67 / 20.55 against 16.7 / 33.4).
+    - **Zoom 1/16 can't be measured until F61 is fixed,** so F56 stays open for Item 25b.
+- **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §11).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).
   - **ROM import half:** Open, scheduled for the ROM spike (agent guide Item 10).
 - **F7 — retired by Decision 29 (2026-10-21).** The 300 m home grid on the phone vs one home cell on the PC no longer matters: no home location reaches the PC at all, only the starter city's id. `fuzz.dart` is deleted in Item 27.
-- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §13 (Deferred).**
+- **F27(d) (deferred) — mDNS auto-discovery on LAN.** v1 connects by remembered IP + QR re-scan. **Agent guide §11 (Deferred).**
 - **Pending physical-device gates (human action required):**
   - ~~D3 device soak~~ — retired with background capture (Decision 29).
   - **Explore Here on a real phone (Phase 0 exit, after Item 27):** tap Explore Here inside a famous place and outside every one; check the messages, then Report to PC (agent guide §2).
