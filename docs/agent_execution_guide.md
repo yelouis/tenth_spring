@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-23, pass 22; Decisions 29–37 answered)
+# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-23, pass 23; Decisions 29–37 answered)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
@@ -15,6 +15,7 @@
 - **No commerce:** no Steam, no sales.
 
 **Where things stand.**
+- **Pass 23 (2026-10-23, M59):** no item finished. **Item 12b is in progress** on `item-12-mapping-fix` — uncommitted, with the spike refactored and labelled contact sheets rendered. **Finish it first, then Item 25b.**
 - **Pass 22 (2026-10-23, M58)** — four items landed:
   - **Items 24 and 24a are verified.** All four DC landmarks are drawn; the place list has 105 entries and 78 legendaries.
   - **Item 25 (the ruin pass) is built and measures right,** but its proof is incomplete. **The whole-city view never finishes loading in the screenshot harness (F61),** so its zoom-1/16 frame times (F56) and two screenshots are missing.
@@ -37,8 +38,8 @@
   - The human gives you the file paths in chat. **Never write them in the repo.**
 - **The pass-20 content** — the 30 new legendary places, the Glow, new puzzles and quests — is in the design docs already. This queue builds the parts that belong to Phases 2–3.
 
-**What is approved for build right now:** Items **25b, 12b, 30, 26, 27, 28, 10, and 29**, in §2's order.
-- **They pause at** Items 25b, 12b, 30, 28, and 29, for the human's verdict.
+**What is approved for build right now:** Items **12b (in progress), 25b, 30, 26, 27, 28, 10, and 29**, in §2's order.
+- **They pause at** Items 12b, 25b, 30, 28, and 29, for the human's verdict.
 - **Items 27 and 28 land together** (§2).
 
 **What NOT to touch:**
@@ -103,7 +104,7 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-23 in this session, pass 22 — `main` at `efc64df`)
+## 1. Verified baseline (run 2026-10-23 in this session, pass 23 — `main` at `6330289`)
 
 | Battery | Where | Result |
 |---|---|---|
@@ -111,8 +112,8 @@
 | `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** |
 | `python3 game/tests/test_runner.py` | Mac, local | **Executed.** **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK, `[CHECK FAMOUS PLACES OK] … 27 cities, 60 sites, 18 spots, 78 legendaries, 9 wardens`, placeholder-atlas tests OK |
 | `python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green** — `[OK] Cross-language loopback sync succeeded!` |
-| `python3 -I tools/rom_spike/emerald/test_rom_spike.py` (with `TENTH_SPRING_ROM_GBA`) | Mac, local | **7/7 OK** |
-| CI on `10e2ed8`, `83949c7`, `b5984d6`, `efc64df` | GitHub | **All green** — `game_tests`, IP guard, `sync_e2e`, on each item branch and on `main` |
+| `python3 -I tools/rom_spike/emerald/test_rom_spike.py` (with `TENTH_SPRING_ROM_GBA`) | Mac, local | **7/7 OK on `main`** (pass 22). On Item 12b's uncommitted work it fails with `ImportError: cannot import name 'FEATURED_SECONDARY_TILESETS'` — the refactor renamed it, and 12b rewrites these tests |
+| CI on `10e2ed8`, `83949c7`, `b5984d6`, `efc64df`, `6330289` | GitHub | **All green** — `game_tests`, IP guard, `sync_e2e` |
 | **DC landmarks** — `check_landmarks.py` | Mac | Library of Congress `placed=1 gold_tiles=308` · Air and Space `288` · Washington Monument `20` · **Lincoln Memorial `placed=1 gold_tiles=54`** |
 | **DC ruin pass** — `measure_synth.py` | Mac | `placement_pct=32.5%`; `building_tile_pct=11.1%`; `path_tile_pct=12.8%`; `standing 27.3% · ruined 29.7% · gone 42.9%` (target 20–45%, Decision 37); `rubble 1.7%`; `tall_grass 14.0%`; `landmarks_standing=4/4` |
 | **Frame times, windowed, DC, zoom 1** (`--focus waypost`) | Mac | `FRAME_P95_MS 16.67` (≤ 16.7 ✅), `LOAD_MAX_FRAME_MS 20.55` (≤ 33.4 ✅), `VSYNC_MS 16.67` |
@@ -126,8 +127,8 @@
 
 | # | Item | Why this position |
 |---|---|---|
-| 25b | **The whole-city view finishes loading (F61); frame times at zoom 1/16 (F56); the complete proof v3 → PAUSE** | Item 25 can't be judged without its proof, and every later screenshot at overview zoom hangs until this is fixed. |
-| 12b | **Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE** (this is the human's Item 12 review) | **The real Pokémon look.** Item 30's look-alikes come from this mapping. |
+| 12b | **Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE** (this is the human's Item 12 review) — **in progress on `item-12-mapping-fix`; keep that work** | **The real Pokémon look.** Item 30's look-alikes come from this mapping. Already started, so it finishes first. |
+| 25b | **The whole-city view finishes loading (F61); frame times at zoom 1/16 (F56); the complete proof v3 → PAUSE** | Item 25 can't be judged without its proof, and every later screenshot at overview zoom hangs until this is fixed. Doesn't depend on 12b. |
 | 30 | **Landmark set pieces → PAUSE** (slice-2 plan §12) | Needs Item 24's placement and 24a's interiors (both delivered), and 12b's corrected compositions. |
 | 26 | **The places pack — F55** (`implementation_plan_explore_here.md` §1–2; famous-places plan §8.2) | Items 27 and 28 both read the pack. |
 | 27 | **Companion: Explore Here** (explore plan §3) | Needs 26. **Shares a branch with 28** — see below. |
@@ -162,7 +163,68 @@ Deferred (trigger-gated, **do not start**): §11.
 
 ---
 
-## 3. Item 25b — The whole-city view finishes loading; honest frame times; the complete proof v3 → PAUSE (F61, F56)
+## 3. Item 12b — Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE (the human's Item 12 review)
+
+**What this means for the user:** the real Pokémon Emerald look — lawns that are plain grass, ponds with shorelines, tall grass that reads as tall grass — instead of a field of stray objects and striped water.
+
+### Where it stands (pass 23)
+- **Uncommitted** on `item-12-mapping-fix`. **Keep this work — don't start over:**
+  - `tools/rom_spike/emerald/rom_spike.py` has neutral tileset keys (`sec%02d`) and writes **labelled contact sheets** for the primary and 7 secondary tilesets (`~/.tenth_spring_rom_spike/emerald/*_labelled.png`, indices legible).
+- **Not yet done:**
+  - `test_rom_spike.py` still imports the old `FEATURED_SECONDARY_TILESETS` and fails with `ImportError`;
+  - `build_mapping.py` and the corrected `emerald_tile_map.json`;
+  - neutral composition ids;
+  - the falsifying checks (step 6);
+  - the re-rendered preview;
+  - the doc updates;
+  - the spike's docstring cites the guide's "§4 (Item 12b)" — it's §3 now.
+
+### The gap
+The evidence is `~/.tenth_spring_rom_spike/emerald/preview.png` (the fixture cells in Emerald tiles) and `game/config/emerald_tile_map.json`:
+- **`GRASS`** variants 1 and 2 → metatiles 2 and 3, which draw a small grey object and red marks across every lawn;
+- **`WATER`**: every mask → 44 or 52, which draws as vertical stripes with no shoreline;
+- **`TALL_GRASS`** → 13 and 37, and parts of tall-grass areas draw as round bushes;
+- **`GRAVE` and `SIGN`** share 33;
+- **`MARSH`** reuses the sand tile (76);
+- **`RAIL`** → a road tile (290), although `gaps` lists rail;
+- **all eight roof colours** → one roof (521);
+- **the spike's checks covered only metatiles 1, 13, and 44;**
+- **Nintendo place and facility names as identifiers:** the tileset keys (`petalburg` … `battle_frontier`) and the composition ids (`game_corner`, `contest_hall`, `battle_tower`, `trick_house`, …) (F59).
+
+### Implementation
+1. **Labelled contact sheets** — ✅ done in the work in progress. Keep them current if the spike changes.
+2. **Choose each class's metatiles by evidence, never by guess.** Use any of these, and record the method in `design_rom_asset_pipeline.md` §4:
+   - **the metatile attribute table (behaviour byte)** — tall grass only from tall-grass behaviours, water only from water behaviours;
+   - **pixel tests** — a plain-grass variant draws ≥ 90% of its pixels from the base grass metatile's colours;
+   - **the ROM's own map layouts, read as statistics only:** count which metatiles border the water interior on each side to find shoreline pieces per mask, and likewise for path edges and tree borders. Nothing from a layout is stored except metatile numbers.
+3. **No stand-ins that draw a different object.** A class with no honest Emerald piece goes in `gaps` and keeps its placeholder tile: rail, marsh, snow, and graves if the chosen tilesets have none. Different classes never share a metatile unless the table lists the share as intentional.
+4. **Roof colours:** map at least four distinct Emerald roof colourways, if the tilesets have them. If not, record the reason in `gaps`.
+5. **Neutral names (F59):**
+   - tilesets keyed by index (`"sec05"`);
+   - compositions named by function (`casino_hall`, `theatre_hall`, `tall_tower`, `maze_house`, `pyramid_hall`, `dome_centre`, `museum_hall`, `maritime_hall`, `grand_hall`, `stadium`, `elevated_road`, `observatory`, `power_station`, `dept_store`);
+   - the spike's comments neutral as well;
+   - rename `design_art_direction.md` §1a's table to match. Commit messages and docs describe Emerald by function only.
+6. **Falsifying checks** in `tools/rom_spike/emerald/test_rom_spike.py` (ROM-gated) — **run them against today's table first; they must fail:**
+   - every `GRASS` variant passes the 90% grass-colour test;
+   - every `WATER` mask-15 metatile is ≥ 95% water colours, and a mask with a 0 bit shows shore pixels on that side;
+   - every `TALL_GRASS` metatile has the tall-grass behaviour;
+   - no unlisted shared metatiles;
+   - no `tile_map` entry for a class in `gaps`.
+7. **Re-render** the preview of the same fixture cells, plus the labelled contact sheets.
+8. **Update `docs/implementation_plan_rom_tiles.md` §3** so these checks are also the importer's validation.
+9. **Show the preview and the contact sheets to the human. PAUSE** — this is the Item 12 review.
+
+### Validation
+- Every new check passes, and failed on the pass-22 table.
+- The new preview shows plain lawns, shorelines, and tall grass. Describe what changed, region by region, when you show it.
+- `git status` shows only the spike's code, `emerald_tile_map.json`, and doc changes. The guard exits 0.
+
+### Blast radius (same commit)
+`game/config/emerald_tile_map.json` · `tools/rom_spike/emerald/*.py` · `docs/design_rom_asset_pipeline.md` §4 · `docs/design_art_direction.md` §1a · `docs/implementation_plan_rom_tiles.md` §3 · `ongoing_general_errors.md` (F60, F59 → Resolved; Decision 19 status).
+
+---
+
+## 4. Item 25b — The whole-city view finishes loading; honest frame times; the complete proof v3 → PAUSE (F61, F56)
 
 **What this means for the user:** the whole-city view of a famous city loads and stays smooth. And they finally see the full set of ruined-city screenshots, with real numbers, to judge the look.
 
@@ -192,55 +254,6 @@ Deferred (trigger-gated, **do not start**): §11.
 
 ### Blast radius (same commit)
 `map_view.gd` · `map_view_test.gd` · `tools/demo_screenshot.py` (exit 3 handling) · `ongoing_general_errors.md` (F61 and F56 → Resolved) · slice-2 plan §11.5 ("built").
-
----
-
-## 4. Item 12b — Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE (the human's Item 12 review)
-
-**What this means for the user:** the real Pokémon Emerald look — lawns that are plain grass, ponds with shorelines, tall grass that reads as tall grass — instead of a field of stray objects and striped water.
-
-### The gap
-The evidence is `~/.tenth_spring_rom_spike/emerald/preview.png` (the fixture cells in Emerald tiles) and `game/config/emerald_tile_map.json`:
-- **`GRASS`** variants 1 and 2 → metatiles 2 and 3, which draw a small grey object and red marks across every lawn;
-- **`WATER`**: every mask → 44 or 52, which draws as vertical stripes with no shoreline;
-- **`TALL_GRASS`** → 13 and 37, and parts of tall-grass areas draw as round bushes;
-- **`GRAVE` and `SIGN`** share 33;
-- **`MARSH`** reuses the sand tile (76);
-- **`RAIL`** → a road tile (290), although `gaps` lists rail;
-- **all eight roof colours** → one roof (521);
-- **the spike's checks covered only metatiles 1, 13, and 44;**
-- **Nintendo place and facility names as identifiers:** the tileset keys (`petalburg` … `battle_frontier`) and the composition ids (`game_corner`, `contest_hall`, `battle_tower`, `trick_house`, …) (F59).
-
-### Implementation
-1. **Labelled contact sheets.** Draw each metatile's index under it, in original pixel digits, so every choice can be checked by eye. Save them outside the repo.
-2. **Choose each class's metatiles by evidence, never by guess.** Use any of these, and record the method in `design_rom_asset_pipeline.md` §4:
-   - **the metatile attribute table (behaviour byte)** — tall grass only from tall-grass behaviours, water only from water behaviours;
-   - **pixel tests** — a plain-grass variant draws ≥ 90% of its pixels from the base grass metatile's colours;
-   - **the ROM's own map layouts, read as statistics only:** count which metatiles border the water interior on each side to find shoreline pieces per mask, and likewise for path edges and tree borders. Nothing from a layout is stored except metatile numbers.
-3. **No stand-ins that draw a different object.** A class with no honest Emerald piece goes in `gaps` and keeps its placeholder tile: rail, marsh, snow, and graves if the chosen tilesets have none. Different classes never share a metatile unless the table lists the share as intentional.
-4. **Roof colours:** map at least four distinct Emerald roof colourways, if the tilesets have them. If not, record the reason in `gaps`.
-5. **Neutral names (F59):**
-   - tilesets keyed by index (`"sec05"`);
-   - compositions named by function (`casino_hall`, `theatre_hall`, `tall_tower`, `maze_house`, `pyramid_hall`, `dome_centre`, `museum_hall`, `maritime_hall`, `grand_hall`, `stadium`, `elevated_road`, `observatory`, `power_station`, `dept_store`);
-   - the spike's comments neutral as well;
-   - rename `design_art_direction.md` §1a's table to match. Commit messages and docs describe Emerald by function only.
-6. **Falsifying checks** in `tools/rom_spike/emerald/test_rom_spike.py` (ROM-gated) — **run them against today's table first; they must fail:**
-   - every `GRASS` variant passes the 90% grass-colour test;
-   - every `WATER` mask-15 metatile is ≥ 95% water colours, and a mask with a 0 bit shows shore pixels on that side;
-   - every `TALL_GRASS` metatile has the tall-grass behaviour;
-   - no unlisted shared metatiles;
-   - no `tile_map` entry for a class in `gaps`.
-7. **Re-render** the preview of the same fixture cells, plus the labelled contact sheets.
-8. **Update `docs/implementation_plan_rom_tiles.md` §3** so these checks are also the importer's validation.
-9. **Show the preview and the contact sheets to the human. PAUSE** — this is the Item 12 review.
-
-### Validation
-- Every new check passes, and failed on the pass-22 table.
-- The new preview shows plain lawns, shorelines, and tall grass. Describe what changed, region by region, when you show it.
-- `git status` shows only the spike's code, `emerald_tile_map.json`, and doc changes. The guard exits 0.
-
-### Blast radius (same commit)
-`game/config/emerald_tile_map.json` · `tools/rom_spike/emerald/*.py` · `docs/design_rom_asset_pipeline.md` §4 · `docs/design_art_direction.md` §1a · `docs/implementation_plan_rom_tiles.md` §3 · `ongoing_general_errors.md` (F60, F59 → Resolved; Decision 19 status).
 
 ---
 
@@ -655,9 +668,9 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - [x] **Item 24 (F54)** — landmarks first, plus §11.1a; all four DC landmarks `placed=1`, `gold_tiles > 0` (verified pass 22, M58).
 - [x] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended (verified pass 22, M58).
 - [x] **Item 25** — the ruin pass built and measured (M58). Its proof is finished in 25b.
-- [ ] **Item 25b (F61, F56)** — the whole-city view loads; the harness times out instead of hanging; frame times at zoom 1 and 1/16 beside their targets; five screenshots **shown; paused.**
 - [x] **Item 12** — the Emerald spike, verify markers resolved, the plan written (M58). Its mapping is corrected in 12b.
-- [ ] **Item 12b (F60, F59)** — evidence-based mapping, honest gaps, neutral names, falsifying checks; the new preview and labelled contact sheets **shown; paused** (the human's Item 12 review).
+- [ ] **Item 12b (F60, F59)** — *in progress*; — evidence-based mapping, honest gaps, neutral names, falsifying checks; the new preview and labelled contact sheets **shown; paused** (the human's Item 12 review).
+- [ ] **Item 25b (F61, F56)** — the whole-city view loads; the harness times out instead of hanging; frame times at zoom 1 and 1/16 beside their targets; five screenshots **shown; paused.**
 - [ ] **Item 30** — the register, 14 stamps, class 21; DC proof **shown; paused.**
 - [ ] **Item 26 (F55)** — the places pack built, bundled twice, and hash-checked; DC re-converted with real neighbourhoods; `T` reported.
 - [ ] **Item 27** — Explore Here on the companion; no background permission anywhere; no real-number column.

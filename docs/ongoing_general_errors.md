@@ -32,6 +32,8 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 >   All three are under Resolved. No decision is open.
 >
 > **2026-10-23 (pass 22) — you answered Decision 37** (accept 43% of houses gone; the target widens to 20–45%), and it's under Resolved. No decision is open. Pass 22 filed **F59** (Nintendo names in committed data, minor), **F60** (the Emerald mapping draws the wrong pieces — fixed before your Item 12 review), and **F61** (the whole-city view never finishes loading in the screenshot harness).
+>
+> **2026-10-23 (pass 23) — nothing new needs you.** No item was finished since pass 22. Item 12b is in progress (see M59).
 
 ## ✅ Resolved Decisions
 
@@ -1214,6 +1216,25 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **The empty `item-30-landmark-setpieces` branch was deleted.** It had no commits, and Item 30 waits on Item 12's corrected mapping. Only `main` remains.
 - **Doc repair:** Decision 37 had been written under a second "Resolved Decisions" heading above the header notes. It's now under the real one.
 
+**M59 — Pass 23: no item finished; Item 12b is in progress, Item 25b not started (2026-10-23, `main` at `6330289`).**
+- **Executed** (the human's Mac):
+  - the game runner: **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK, `[CHECK FAMOUS PLACES OK]`;
+  - `sync_e2e` `[OK]`;
+  - `flutter analyze` clean, and `flutter test` **37 passed, 2 skipped**.
+- **`main` is unchanged since pass 22.** The implementing agent started **Item 12b** before Item 25b. That's acceptable — 12b doesn't need overview screenshots — and the guide now finishes 12b first, so the work in progress isn't abandoned.
+- **Item 12b's uncommitted work,** on `item-12-mapping-fix`, is in `tools/rom_spike/emerald/rom_spike.py` only:
+  - **done and checked:**
+    - neutral tileset keys (`sec%02d`, F59) replace the Nintendo place names;
+    - **labelled contact sheets** for the primary and 7 secondary tilesets (`~/.tenth_spring_rom_spike/emerald/*_labelled.png`). The indices are legible. They confirm metatile 3 is a grey sign object, 13 is tall grass, and 37 is a tree top — the F60 evidence;
+  - **not yet done:**
+    - the spike's tests still import the old name (`ImportError: cannot import name 'FEATURED_SECONDARY_TILESETS'`) — expected mid-refactor;
+    - `build_mapping.py` and the corrected `emerald_tile_map.json`;
+    - neutral composition ids;
+    - the falsifying checks;
+    - the re-rendered preview;
+    - the doc updates.
+- **Branches:** only `main` and the in-progress `item-12-mapping-fix`, which has no commits — its work is uncommitted — so there was nothing to merge.
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58.*
@@ -1239,6 +1260,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
     - all eight roof colours map to one roof (521).
   - **Why it matters:** the human's review at Item 12's pause would only see a broken preview.
   - **The fix:** choose by evidence (behaviour bytes, pixel tests, and the ROM's own layouts as adjacency statistics — numbers only), put true gaps in `gaps`, label the contact sheets with indices, and add falsifying checks. **Agent guide Item 12b.**
+  - **Pass 23:** the labelled contact sheets now exist (part of 12b's work in progress). They confirm metatile 3 is a sign object, and 37 a tree top.
 - **F59 (minor, found 2026-10-23, pass 22) — Nintendo place and facility names in committed files.**
   - **Where:**
     - `game/config/emerald_tile_map.json` keys its tilesets as `petalburg`, `rustboro`, `slateport`, `mauville`, `lilycove`, `mossdeep`, and `battle_frontier`;
