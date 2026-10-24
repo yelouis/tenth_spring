@@ -918,6 +918,14 @@ func run_test() -> bool:
 	ctx.update(combined)
 	var current_hash := ctx.finish().hex_encode()
 
+	# Item 12 helper: dump fixture cells slice-2 buffers to user://test/fixture_cells.bin
+	var dump_f := FileAccess.open("user://test/fixture_cells.bin", FileAccess.WRITE)
+	if dump_f != null:
+		for c in all_cells:
+			var res_c: Dictionary = cell_results[c]
+			dump_f.store_buffer(res_c["tiles"])
+		dump_f.close()
+
 	if GOLDEN_HASH.is_empty():
 		print("FINAL SYNTH GOLDEN HASH: %s" % current_hash)
 	elif current_hash != GOLDEN_HASH:

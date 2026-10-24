@@ -117,10 +117,19 @@ The Black/White ROM and the Emerald ROM are imported separately (§2), each with
 - **Data records:** personal (base stats etc.), learnset, evolution, and move entries are fixed-layout records. **Verify** each record size and field offset against Project Pokémon's raw database and an open-source editor's source code before relying on them.
 - **Text banks:** UTF-16 code units, encrypted per string with a 16-bit key that is advanced after each character — **verify** the exact key schedule and record it here.
 
-**Emerald (Game Boy Advance)** — every rule here is **verify** until the Emerald tile spike (agent guide Item 12) confirms it:
-- **GBA header:** 12-byte title at `0xA0`, 4-byte game code at `0xAC`. The ROM is read directly — there is no file system. Data is located through pointer tables inside the ROM; record every offset the spike confirms, with its source.
-- **Tilesets:** a *primary* tileset (shared terrain: grass, trees, water, paths, ledges, fences, signs) plus per-area *secondary* tilesets (buildings and local scenery). Each has 8×8-pixel 4bpp tile graphics (often LZ77-compressed, type `0x10`), 16-colour BGR555 palettes, a **metatile** table (each 16×16 metatile = 8 tile references across a bottom and a top layer, with palette and flip bits), and per-metatile **attributes** (behaviour and layer type).
-- **Rendering:** a metatile is drawn bottom layer, then top layer. Slice 2 has no player, so both layers composite into one 16×16 image, shown at 2× as a 32×32 tile. The avatar slice must keep the top layer separate (tree tops and roof edges draw over the player).
+**Emerald (Game Boy Advance)** — confirmed by Emerald tile spike (Item 12):
+- **GBA header:** 12-byte title at `0xA0` (`POKEMON EMER`), 4-byte game code at `0xAC` (`BPEE`). SHA-1: `f3ae088181bf583e55daf962a92bb46f4f1d07b7`. Data located through ROM pointer tables; map bank pointer table at `0x486578`.
+- **Tileset struct (`struct Tileset`):** 24 bytes (`0x18`) at `0x3DF704` (Primary `gTileset_General`) and array of 57 secondary tilesets contiguous from `0x3DF71C` to `0x3DFC5C`:
+  - `isCompressed` (u8) at `+0x00`: 1 if LZ77 type `0x10`, 0 if raw 4bpp.
+  - `isSecondary` (u8) at `+0x01`: 0 for primary, 1 for secondary.
+  - `padding` (u16) at `+0x02`.
+  - `tiles` (u32 pointer) at `+0x04`: GBA pointer (`0x08xxxxxx` -> ROM offset `0xxxxxxx`). Primary `tiles` at `0xDD5010` decompresses to 16,384 bytes (512 8×8 4bpp tiles).
+  - `palettes` (u32 pointer) at `+0x08`: 512 bytes (16 BGR555 palettes × 16 colors). Primary `palettes` at `0xDD4E10`. Secondary palettes mirror palettes 0–5 and provide area colors in palettes 6–12.
+  - `metatiles` (u32 pointer) at `+0x0C`: Primary at `0x3960F0` (512 metatiles × 16 bytes = 8,192 bytes). Secondary metatiles start at local index 0 (global 512).
+  - `attributes` (u32 pointer) at `+0x10`: Primary at `0x3980F0` (512 u16 entries = 1,024 bytes). Lower 9 bits behavior byte (`MB_*`), upper 7 bits layer type.
+  - `callback` (u32 pointer) at `+0x14`: animation function pointer (e.g. `0x080A0B21`).
+- **Metatile layout:** each 16×16 metatile has 8 u16 entries (4 bottom layer, 4 top layer: TL, TR, BL, BR). Each u16: bits 0–9 tile index (0..511 from primary tiles, 512..1023 from secondary tiles), bit 10 xflip, bit 11 yflip, bits 12–15 palette index (0..15).
+- **Rendering:** bottom layer 4 tiles drawn first, then top layer 4 tiles composited on top (palette color 0 transparent). Rendered at 2× integer scale (32×32 px) for the Tenth Spring overworld.
 
 **Reference sources** (documentation only — never sources of ROMs):
 - Project Pokémon's raw database pages for Black (`projectpokemon.org/rawdb/black/`).

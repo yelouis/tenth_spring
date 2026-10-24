@@ -340,7 +340,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - **This amends Decision 10's "one cartridge"** — Black/White still supplies every Pokémon.
   - **The code-drawn placeholder atlas is still built** — it is the no-ROM look and the only atlas tests and agents ever see.
   - **The IP guard gains a GBA rule:** Gen 3 game codes at header offset `0xAC` (agent guide Item 11; guard built — M36).
-  - **The Emerald tile spike** (agent guide Item 12) waits on your dump.
+  - **The Emerald tile spike** (agent guide Item 12): spike executed, mapping table drafted (`game/config/emerald_tile_map.json`), and implementation plan written (`docs/implementation_plan_rom_tiles.md`). Awaiting human review at Item 12 PAUSE.
 - **Contracts updated:** `design_rom_asset_pipeline.md` §1, §2, §3, §4, §5, §6, §7, §8, and §10; `design_art_direction.md` §1, §2, and §5; slice-2 plan status and §6; `README.md`; `master_implementation_plan.md` Phase 2; `e2e_testing_journeys.md` Journey 0.
 
 ### Decision 16 — World scope: the USA only (Resolved 2026-10-19 — your directive)
