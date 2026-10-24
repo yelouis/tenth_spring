@@ -56,9 +56,24 @@ var _store_paths_changed: bool = false
 var _worker_stores: Array[MapStore] = []
 var _store_cache: LruCache = null
 var _worker_landmarks_by_cell: Dictionary = {}
+var _worker_waypost_wm: Variant = null
 
 func set_landmarks(lms: Dictionary) -> void:
+	_modal_set_landmarks(lms)
+
+func _modal_set_landmarks(lms: Dictionary) -> void:
+	if _mutex != null:
+		_mutex.lock()
 	_worker_landmarks_by_cell = lms.duplicate()
+	if _mutex != null:
+		_mutex.unlock()
+
+func set_waypost_wm(wp_wm: Variant) -> void:
+	if _mutex != null:
+		_mutex.lock()
+	_worker_waypost_wm = wp_wm
+	if _mutex != null:
+		_mutex.unlock()
 
 # Queues
 # Request items: Dictionary {cell: Vector2i, priority_dist: float, needs_overview: bool, reveal_state: int, preview_cleared: bool}
@@ -89,6 +104,7 @@ const MAP_COLORS := {
 	17: Color("#a0a0a8"), # GRAVE
 	18: Color("#b07840"), # SIGN
 	19: Color("#a8c060"), # CROP
+	20: Color("#8a7a6a"), # RUBBLE
 }
 
 const ROOF_BASE_COLORS := [
@@ -330,6 +346,8 @@ func _process_request(req: Dictionary) -> Dictionary:
 
 	# Assemble 3x3 neighbourhood area for TileSynth2
 	var area: Dictionary = {}
+	if _worker_waypost_wm != null and _worker_waypost_wm is Vector2:
+		area["waypost_wm"] = _worker_waypost_wm
 	var has_map_data := false
 	var is_covered_by_store := false
 

@@ -7,6 +7,36 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 
 ## 🟠 Open Decisions
 
+## ✅ Resolved Decisions
+
+### Decision 37 — Ruin pass city-wide "gone" building percentage target (Resolved 2026-10-23: Option A)
+**What this is about.**
+In Item 25 (the ruin pass, `implementation_plan_world_generation_slice2.md` §11), buildings receive deterministic fates based on distance bands from the Waypost (`camp` < 600m, `near` 600m–1.5km, `mid` 1.5–3km, `far` ≥ 3km).
+On Washington DC (`city:washington-dc.db`, 3,706 built-up cells, ~15 km across), measuring with `tools/measure_synth.py` gives:
+```
+MEASURE cells=3706 candidates=136333 placed=44260 placement_pct=32.5% building_tile_pct=11.1% path_tile_pct=12.8% road_tile_pct=6.7%
+MEASURE_RUIN standing_pct=27.3% ruined_pct=29.7% gone_pct=42.9% building_tile_pct=11.1% rubble_tile_pct=1.7% tall_grass_pct=14.0% landmarks_standing=4/4
+```
+All targets from §11.4 are met except `gone_pct` (42.9% vs previous target 20–40%):
+- Building tiles: **11.1%** (target 10–16%) — PASS
+- Ruined buildings: **29.7%** (target 20–35%) — PASS
+- Tall grass: **14.0%** (target ≥ 8%) — PASS
+- Landmarks standing: **4/4** (target all) — PASS
+- Path tiles: **12.8%** (target ≤ 18%) — PASS
+- Ordinary buildings gone: **42.9%** (target 20–40%) — +2.9% above 40%.
+
+**Why this happened with the exact rules:**
+Because DC spans ~15 km, over 85% of placed buildings fall in the `far` band (≥ 3 km from the Waypost). For the dominant small/medium houses (`house_s` / `house_m`, which represent ~97% of placed structures), §11.2 step 3 prescribes fate probabilities of `25 / 30 / 45` (45% gone) in the `far` band. The city-wide weighted average across DC is thus naturally dominated by the 45% `far` band share, arriving at 42.9% gone.
+
+- **Option A — Accept 42.9% and widen the §11.4 target to 20–45%** *(recommended)*.
+  The visual goal was an emptied, overgrown world where landmarks stand, downtown structures outlast houses, and survivor camps are kept tidy. 42.9% gone leaves 27.3% standing and 29.7% ruined, keeping suburban roads and neighbourhoods completely readable while hitting every tile-percentage target. No code changes needed.
+- **Option B — Adjust `far`-band house fate shares to `30 / 32 / 38` (or `30 / 35 / 35`).**
+  Reduces the `gone` fate in the `far` band so that the city-wide average drops from 42.9% into the 35–38% range, safely inside 20–40%.
+- **Option C — Widen the distance band thresholds.**
+  E.g. expand `mid` to 1.5–4.5 km and `far` to ≥ 4.5 km, shifting more cells into lower gone-rate bands.
+
+- **Your selection: Option A — Keep it as is (accept 43% gone). Widened §11.4 target to 20–45%.**
+
 > **2026-10-08 — you answered Decisions 7, 8, and 9.** Two follow-ups were asked and answered in chat the same day: **Decision 11** (sync encryption) and **Decision 12** (which Pokémon). One follow-up, **Decision 10**, was answered on 2026-10-09 (Option B). **Decision 13** (map data) was answered the same day: fully offline (Option C). Decisions 4, 6, 7, 8, 9, 11, and 12 are now under Resolved. Decisions 3 and 5 stay here only because the D3 device soak hasn't run yet.
 >
 > **2026-10-10 (pass 16) — Decision 14 (build the neighborhood map preview) was asked and answered the same day: Option A.** It is under Resolved.

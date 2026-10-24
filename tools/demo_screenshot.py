@@ -51,9 +51,9 @@ def parse_args():
     )
     parser.add_argument(
         "--focus",
-        choices=["most_visited", "most_buildings", "waypost", "landmark"],
+        choices=["most_visited", "most_buildings", "far_buildings", "waypost", "landmark"],
         default=None,
-        help="Focus cell selection mode (most_visited, most_buildings, waypost, landmark, default: most_visited)."
+        help="Focus cell selection mode (most_visited, most_buildings, far_buildings, waypost, landmark, default: most_visited)."
     )
     parser.add_argument(
         "--filename",
@@ -117,6 +117,8 @@ def main():
             focus_tag = ""
             if args.focus == "most_buildings":
                 focus_tag = "_mb"
+            elif args.focus == "far_buildings":
+                focus_tag = "_far"
             elif args.focus == "waypost":
                 focus_tag = "_waypost"
             elif args.focus == "landmark":

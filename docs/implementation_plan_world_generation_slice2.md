@@ -731,7 +731,7 @@ A new step **5d** runs after landmarks and fallback houses and before door paths
 | Measure (over DC's built-up cells) | Target | Pass 18 |
 |---|---|---|
 | Building tiles (`ROOF + WALL + DOOR`, standing and ruined) | **10–16%** of built-up tiles | 18.9% |
-| Ordinary buildings **gone** | **20–40%** of those placed | 0% |
+| Ordinary buildings **gone** | **20–45%** of those placed (Decision 37 = A) | 0% |
 | Ordinary buildings **ruined** | **20–35%** | 0% |
 | `TALL_GRASS` tiles | **≥ 8%** of built-up tiles | not measured |
 | Landmarks standing | **all** | — |

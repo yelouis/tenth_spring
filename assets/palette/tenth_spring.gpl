@@ -62,4 +62,7 @@ Columns: 8
  13  17  25	fog
  26  26  32	ink outline
 216 168  56	gold roof base
-160 120  32	gold roof shade
+ 58  42  32	rafters
+138 106  64	planks
+138 122 106	rubble
+ 90  74  64	rubble shade

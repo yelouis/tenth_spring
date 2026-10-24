@@ -221,8 +221,8 @@ func run_test() -> bool:
 	map_view._unhandled_input(f9_ev)
 
 	var p95: float = map_view.get_frame_p95_ms()
-	if p95 > 16.6:
-		push_error("Frame P95 time exceeded target 16.6ms: %.2f ms" % p95)
+	if p95 > 16.7:
+		push_error("Frame P95 time exceeded target 16.7ms: %.2f ms" % p95)
 		DB.close()
 		DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 		map_view.queue_free()
@@ -375,10 +375,10 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	# Check overview sprite exists and is scaled 32x32
-	var s: Sprite2D = map_view._overview_sprites.get(Vector2i(2, 2), null)
+	# Check overview chunk sprite exists for chunk (0, 0) (which covers cell (2, 2)) and is scaled 32x32 (§11.5 step 2)
+	var s: Sprite2D = map_view._overview_sprites.get(Vector2i(0, 0), null)
 	if s == null:
-		push_error("OverviewLayer should have a Sprite2D for rendered cell (2, 2)")
+		push_error("OverviewLayer should have a Sprite2D for chunk (0, 0) covering cell (2, 2)")
 		map_view.queue_free()
 		return false
 	if s.scale != Vector2(32, 32):

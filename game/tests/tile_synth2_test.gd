@@ -12,7 +12,7 @@ const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
 # Final Golden hash (§8 a, §10.7) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "c82cac4e1b0bce8a2c1c40cc1f16a7f6feee4d936877074ccf5e917388eea8df"
+const GOLDEN_HASH: String = "62a1c3a078ad14ecdca0da68481c86f8d4d89884f5efb0865a049032cb702ccc"
 
 func run_test() -> bool:
 	_cleanup()
@@ -337,10 +337,10 @@ func run_test() -> bool:
 	for r in range(8, 15):
 		for c in range(2, 11):
 			var cls: int = tiles_4_4[(r * 32 + c) * 3]
-			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_WALL:
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_RUBBLE:
 				fallback_building_tiles += 1
-	if fallback_building_tiles == 0:
-		push_error("(i) Residential polygon with no footprints produced 0 fallback building tiles in cell (4, 4)")
+	if fallback_building_tiles == 0 or int(synth_4_4.get("stats", {}).get("fallback_placed", 0)) < 1:
+		push_error("(i) Residential polygon with no footprints produced 0 fallback houses in cell (4, 4)")
 		store.close()
 		_cleanup()
 		return false
@@ -405,7 +405,7 @@ func run_test() -> bool:
 		for c in range(19, 29):
 			var idx: int = (r * 32 + c) * 3
 			var cls: int = tiles_4_4[idx]
-			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR:
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_RUBBLE:
 				shop_roof_tiles += 1
 			elif cls == TileSynth2.TILE_PLAZA:
 				parking_plaza_tiles += 1
@@ -790,6 +790,104 @@ func run_test() -> bool:
 		return false
 	if p4_south_ids != ["fixture:straddling-memorial"] or not p4_north_ids.is_empty():
 		push_error("(p.4) [falsifier] Expected landmark_ids_placed once in south cell only, got south=%s north=%s" % [str(p4_south_ids), str(p4_north_ids)])
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (q)-(t) Ruin Pass, Fixed Fates,RUBBLE, Bit 16 & Determinism (§11.2, §11.7)
+	# -------------------------------------------------------------
+	# (r) Falsifying: verify that in a cell with multiple houses in the far band,
+	# at least one tile is RUBBLE (class 20) and at least one ROOF/WALL/DOOR tile has variant bit 16.
+	var r_area := _build_empty_area()
+	var r_polys: Array = []
+	for h_i in 6:
+		var bx: float = 1.0 + float(h_i % 3) * 5.0
+		var by: float = 2.0 + float(h_i / 3) * 6.0
+		var h_ring := PackedVector2Array([
+			Vector2(bx, by), Vector2(bx + 2.0, by), Vector2(bx + 2.0, by + 1.5), Vector2(bx, by + 1.5)
+		])
+		r_polys.append({"kind": "building", "subkind": "house", "geom_rings": [h_ring], "name": ""})
+	r_area[Vector2i.ZERO]["polys"] = r_polys
+	# Put Waypost 5 km away (far band >= 3 km)
+	r_area["waypost_wm"] = Vector2(float(4 * 256) + 5000.0, float(4 * 256))
+	var r_res := TileSynth2.synthesize_cell(4, 4, r_area, 0)
+	var r_tiles: PackedByteArray = r_res["tiles"]
+	var r_rubble_count := 0
+	var r_bit16_count := 0
+	for i in range(0, r_tiles.size(), 3):
+		var cls: int = r_tiles[i]
+		var v: int = r_tiles[i + 1]
+		if cls == 20: # TILE_RUBBLE
+			r_rubble_count += 1
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 16) != 0:
+			r_bit16_count += 1
+	if r_rubble_count == 0 or r_bit16_count == 0:
+		push_error("(r) [falsifier] Expected RUBBLE tiles and bit-16 building tiles after ruin pass, got rubble=%d bit16=%d" % [r_rubble_count, r_bit16_count])
+		store.close()
+		_cleanup()
+		return false
+
+	# (q) Ruin fates: church stands in far band, hospital is ruined (never gone), ruins subkind is ruined,
+	# and ordinary houses follow hand-computed u(gx0, gy0, 9) against band thresholds.
+	var q_area := _build_empty_area()
+	var church_ring := PackedVector2Array([
+		Vector2(1.0, 12.0), Vector2(3.0, 12.0), Vector2(3.0, 13.5), Vector2(1.0, 13.5)
+	])
+	var hosp_ring := PackedVector2Array([
+		Vector2(6.0, 12.0), Vector2(8.0, 12.0), Vector2(8.0, 13.5), Vector2(6.0, 13.5)
+	])
+	var ruins_ring := PackedVector2Array([
+		Vector2(11.0, 12.0), Vector2(13.0, 12.0), Vector2(13.0, 13.5), Vector2(11.0, 13.5)
+	])
+	q_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "church", "geom_rings": [church_ring], "name": "St. Mary"},
+		{"kind": "building", "subkind": "hospital", "geom_rings": [hosp_ring], "name": "Old Clinic"},
+		{"kind": "building", "subkind": "ruins", "geom_rings": [ruins_ring], "name": "Old Ruins"}
+	]
+	q_area["waypost_wm"] = Vector2(float(4 * 256) + 5000.0, float(4 * 256)) # far band
+	var q_res := TileSynth2.synthesize_cell(4, 4, q_area, 0)
+	var q_stats: Dictionary = q_res.get("stats", {})
+	if int(q_stats.get("ordinary_standing", 0)) != 1 or int(q_stats.get("ordinary_ruined", 0)) != 2 or int(q_stats.get("ordinary_gone", 0)) != 0:
+		push_error("(q) Fixed fates mismatch: expected 1 standing (church), 2 ruined (hospital+ruins), 0 gone; got %s" % str(q_stats))
+		store.close()
+		_cleanup()
+		return false
+
+	# (s) No landmark tile ever carries bit 16
+	var s_area := _build_empty_area()
+	var s_ring := PackedVector2Array([
+		Vector2(4.0, 4.0), Vector2(12.0, 4.0), Vector2(12.0, 10.0), Vector2(4.0, 10.0)
+	])
+	s_area[Vector2i.ZERO]["polys"] = [{"kind": "building", "subkind": "public", "geom_rings": [s_ring], "name": "Grand Hall"}]
+	var s_door_wm := Vector2(float(4 * 256) + 8.0 * 16.0, float(4 * 256) + 4.5 * 16.0)
+	s_area[Vector2i.ZERO]["landmarks"] = [{"id": "fixture:grand-hall", "name": "Grand Hall", "door_wm": s_door_wm}]
+	s_area["waypost_wm"] = Vector2(float(4 * 256) + 5000.0, float(4 * 256))
+	var s_res := TileSynth2.synthesize_cell(4, 4, s_area, 0)
+	var s_tiles: PackedByteArray = s_res["tiles"]
+	for i in range(0, s_tiles.size(), 3):
+		var cls: int = s_tiles[i]
+		var v: int = s_tiles[i + 1]
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0:
+			if (v & 16) != 0:
+				push_error("(s) Landmark tile carried bit 16: cls=%d v=%d" % [cls, v])
+				store.close()
+				_cleanup()
+				return false
+
+	# (t) Determinism: same cell twice gives identical bytes; moving Waypost changes only fates and overgrowth — never placement
+	var t_res_a := TileSynth2.synthesize_cell(4, 4, r_area, 0)
+	var t_res_b := TileSynth2.synthesize_cell(4, 4, r_area, 0)
+	if t_res_a["tiles"] != t_res_b["tiles"]:
+		push_error("(t) Determinism failed: identical inputs produced different tile buffers")
+		store.close()
+		_cleanup()
+		return false
+	var r_area_camp := r_area.duplicate(true)
+	r_area_camp["waypost_wm"] = Vector2(float(4 * 256) + 100.0, float(4 * 256) + 100.0) # camp band
+	var t_res_camp := TileSynth2.synthesize_cell(4, 4, r_area_camp, 0)
+	if t_res_a["stats"]["buildings_placed"] != t_res_camp["stats"]["buildings_placed"] or t_res_a["stats"]["building_candidates"] != t_res_camp["stats"]["building_candidates"]:
+		push_error("(t) Moving Waypost changed building placement counts!")
 		store.close()
 		_cleanup()
 		return false

@@ -5,6 +5,8 @@ extends Node
 
 const MapStore := preload("res://world/region_import/map_store.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
+const RevealEngine := preload("res://world/reveal_engine.gd")
+const Grid := preload("res://world/grid.gd")
 
 class LruCache:
 	var capacity: int = 512
@@ -62,6 +64,44 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 
+	# Resolve place_id, waypost_wm, and landmarks for this store (§11.2, §11.4)
+	var place_id: String = store.get_state("place_id", "")
+	if place_id.is_empty():
+		var fname := store_path.get_file().trim_suffix(".db")
+		if fname.begins_with("city:") or fname.begins_with("site:"):
+			place_id = fname
+		elif "district-of-columbia" in fname:
+			place_id = "city:washington-dc"
+
+	var has_waypost := false
+	var waypost_wm := Vector2.ZERO
+	var landmarks_by_cell: Dictionary = {}
+	var expected_landmarks := 0
+	var places: Array = RevealEngine.load_places()
+	for p in places:
+		var p_id := str(p.get("id", ""))
+		if p_id == place_id or place_id.is_empty():
+			if p_id == place_id and p.has("waypost"):
+				var wp: Dictionary = p["waypost"]
+				waypost_wm = Grid.latlon_to_wm(float(wp.get("lat", 0.0)), float(wp.get("lon", 0.0)))
+				has_waypost = true
+			var interiors: Array = p.get("interiors", [])
+			for interior in interiors:
+				var i_id := str(interior.get("id", ""))
+				var i_name := str(interior.get("name", ""))
+				var door: Dictionary = interior.get("door", {})
+				var wm: Vector2 = Grid.latlon_to_wm(float(door.get("lat", 0.0)), float(door.get("lon", 0.0)))
+				var cell: Vector2i = Grid.wm_to_cell(wm.x, wm.y)
+				if not landmarks_by_cell.has(cell):
+					landmarks_by_cell[cell] = []
+				landmarks_by_cell[cell].append({
+					"id": i_id,
+					"name": i_name,
+					"door_wm": wm
+				})
+				if p_id == place_id:
+					expected_landmarks += 1
+
 	# Query candidate cells that contain at least one building polygon
 	var building_cells := store._rows(
 		"SELECT DISTINCT cell_x, cell_y FROM features_poly WHERE kind = 'building' ORDER BY cell_y, cell_x;"
@@ -102,24 +142,39 @@ func _ready() -> void:
 	var total_building_tiles: int = 0
 	var total_path_tiles: int = 0
 	var total_road_tiles: int = 0
+	var total_rubble_tiles: int = 0
+	var total_tall_grass_tiles: int = 0
+	var total_ordinary_standing: int = 0
+	var total_ordinary_ruined: int = 0
+	var total_ordinary_gone: int = 0
+	var placed_landmark_ids: Dictionary = {}
 
 	for cell in built_up_cells:
 		var cx := cell.x
 		var cy := cell.y
 
 		var area: Dictionary = {}
+		if has_waypost:
+			area["waypost_wm"] = waypost_wm
 		for dy in range(-1, 2):
 			for dx in range(-1, 2):
 				var offset := Vector2i(dx, dy)
 				var nx := cx + dx
 				var ny := cy + dy
-				area[offset] = _get_cell_raw(store, nx, ny)
+				var cell_raw := _get_cell_raw(store, nx, ny).duplicate()
+				cell_raw["landmarks"] = landmarks_by_cell.get(Vector2i(nx, ny), [])
+				area[offset] = cell_raw
 
 		var synth_res := TileSynth2.synthesize_cell(cx, cy, area)
 		var stats: Dictionary = synth_res.get("stats", {})
 		total_candidates += int(stats.get("building_candidates", 0))
 		total_placed += int(stats.get("buildings_placed", 0))
 		total_fallback += int(stats.get("fallback_placed", 0))
+		total_ordinary_standing += int(stats.get("ordinary_standing", 0))
+		total_ordinary_ruined += int(stats.get("ordinary_ruined", 0))
+		total_ordinary_gone += int(stats.get("ordinary_gone", 0))
+		for lm_id in stats.get("landmark_ids_placed", []):
+			placed_landmark_ids[str(lm_id)] = true
 
 		var tiles: PackedByteArray = synth_res.get("tiles", PackedByteArray())
 		var t_size := tiles.size()
@@ -131,6 +186,10 @@ func _ready() -> void:
 				total_path_tiles += 1
 			elif cls == TileSynth2.TILE_ROAD:
 				total_road_tiles += 1
+			elif cls == TileSynth2.TILE_RUBBLE:
+				total_rubble_tiles += 1
+			elif cls == TileSynth2.TILE_TALL_GRASS:
+				total_tall_grass_tiles += 1
 
 	store.close()
 
@@ -139,6 +198,13 @@ func _ready() -> void:
 	var building_tile_pct: float = (float(total_building_tiles) / float(total_tiles) * 100.0) if total_tiles > 0 else 0.0
 	var path_tile_pct: float = (float(total_path_tiles) / float(total_tiles) * 100.0) if total_tiles > 0 else 0.0
 	var road_tile_pct: float = (float(total_road_tiles) / float(total_tiles) * 100.0) if total_tiles > 0 else 0.0
+	var rubble_tile_pct: float = (float(total_rubble_tiles) / float(total_tiles) * 100.0) if total_tiles > 0 else 0.0
+	var tall_grass_pct: float = (float(total_tall_grass_tiles) / float(total_tiles) * 100.0) if total_tiles > 0 else 0.0
+
+	var total_ordinary: int = total_ordinary_standing + total_ordinary_ruined + total_ordinary_gone
+	var standing_pct: float = (float(total_ordinary_standing) / float(total_ordinary) * 100.0) if total_ordinary > 0 else 0.0
+	var ruined_pct: float = (float(total_ordinary_ruined) / float(total_ordinary) * 100.0) if total_ordinary > 0 else 0.0
+	var gone_pct: float = (float(total_ordinary_gone) / float(total_ordinary) * 100.0) if total_ordinary > 0 else 0.0
 
 	print("MEASURE cells=%d candidates=%d placed=%d placement_pct=%.1f%% building_tile_pct=%.1f%% path_tile_pct=%.1f%% road_tile_pct=%.1f%%" % [
 		built_up_cells.size(),
@@ -148,6 +214,16 @@ func _ready() -> void:
 		building_tile_pct,
 		path_tile_pct,
 		road_tile_pct
+	])
+	print("MEASURE_RUIN standing_pct=%.1f%% ruined_pct=%.1f%% gone_pct=%.1f%% building_tile_pct=%.1f%% rubble_tile_pct=%.1f%% tall_grass_pct=%.1f%% landmarks_standing=%d/%d" % [
+		standing_pct,
+		ruined_pct,
+		gone_pct,
+		building_tile_pct,
+		rubble_tile_pct,
+		tall_grass_pct,
+		placed_landmark_ids.size(),
+		expected_landmarks
 	])
 
 	get_tree().quit(0)

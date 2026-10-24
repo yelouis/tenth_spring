@@ -11,7 +11,7 @@ const ERR_UNSUPPORTED_SCREEN: String = "[FAIL] unsupported screen %s"
 const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 1, 2, 3]
-const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "waypost", "landmark"]
+const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark"]
 const SUPPORTED_SCREENS: Array = ["map", "town_map"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:

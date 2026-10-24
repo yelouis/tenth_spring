@@ -44,6 +44,7 @@ const MAP_COLORS := {
 	17: Color("#a0a0a8"), # GRAVE
 	18: Color("#b07840"), # SIGN
 	19: Color("#a8c060"), # CROP
+	20: Color("#8a7a6a"), # RUBBLE
 }
 
 const ROOF_BASE_COLORS := [
@@ -109,7 +110,10 @@ var _world_known: TileMapLayer = null
 var _world_cleared: TileMapLayer = null
 var _fog_layer: TileMapLayer = null
 var _overview_layer: Node2D = null
-var _overview_sprites: Dictionary = {} # Vector2i -> Sprite2D
+var _overview_sprites: Dictionary = {} # chunk_key (Vector2i) -> Sprite2D
+var _overview_chunks: Dictionary = {} # chunk_key (Vector2i) -> Dictionary {image: Image, tex: ImageTexture, sprite: Sprite2D}
+var _dirty_overview_chunks: Dictionary = {} # chunk_key (Vector2i) -> bool
+var _unknown_overview_img: Image = null
 
 var _demo_badge: Label = null
 var _attribution_label: Label = null
@@ -124,6 +128,7 @@ var _sign_tooltip: Label = null
 var _return_home_button: Button = null
 var _active_place_id: String = ""
 var _active_waypost_cell: Vector2i = Vector2i.ZERO
+var _active_waypost_wm: Vector2 = Vector2.ZERO
 var _has_active_waypost: bool = false
 
 var _map_fetcher = MapFetcher.new()
@@ -216,6 +221,8 @@ func _ready() -> void:
 	_set_zoom_step(1.0)
 	if _focus_mode == "most_buildings":
 		_focus_most_buildings()
+	elif _focus_mode == "far_buildings":
+		_focus_far_buildings()
 	elif _focus_mode == "waypost":
 		_focus_waypost()
 	elif _focus_mode == "landmark":
@@ -309,8 +316,11 @@ func _clear_rendered_layers() -> void:
 	if _fog_layer != null:
 		_fog_layer.clear()
 	for s in _overview_sprites.values():
-		s.queue_free()
+		if is_instance_valid(s):
+			s.queue_free()
 	_overview_sprites.clear()
+	_overview_chunks.clear()
+	_dirty_overview_chunks.clear()
 	_rendered_cells.clear()
 	_pending_blit_cells.clear()
 	_requested_cells.clear()
@@ -443,6 +453,10 @@ func _load_map_stores() -> void:
 					else:
 						_map_stores.append(store)
 						store_paths.append(p)
+						var s_place_id := store.get_state("place_id", "")
+						if not s_place_id.is_empty() and _active_place_id.is_empty():
+							_active_place_id = s_place_id
+	_resolve_active_waypost()
 	if _synth_worker == null:
 		_synth_worker = SynthWorker.new()
 		_synth_worker.start(store_paths)
@@ -450,6 +464,21 @@ func _load_map_stores() -> void:
 		_synth_worker.set_store_paths(store_paths)
 	if _synth_worker != null:
 		_synth_worker.set_landmarks(_landmarks_by_cell)
+		_synth_worker.set_waypost_wm(_active_waypost_wm if _has_active_waypost else null)
+
+func _resolve_active_waypost() -> void:
+	if _active_place_id.is_empty():
+		return
+	var places: Array = RevealEngine.load_places()
+	for p in places:
+		if str(p.get("id", "")) == _active_place_id:
+			var wp: Dictionary = p.get("waypost", {})
+			var w_lat := float(wp.get("lat", 0.0))
+			var w_lon := float(wp.get("lon", 0.0))
+			_active_waypost_cell = Grid.latlon_to_cell(w_lat, w_lon)
+			_active_waypost_wm = Grid.latlon_to_wm(w_lat, w_lon)
+			_has_active_waypost = true
+			return
 
 func _get_db() -> Node:
 	return get_node_or_null("/root/DB")
@@ -499,7 +528,10 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 			var w_lat := float(wp.get("lat", 0.0))
 			var w_lon := float(wp.get("lon", 0.0))
 			_active_waypost_cell = Grid.latlon_to_cell(w_lat, w_lon)
+			_active_waypost_wm = Grid.latlon_to_wm(w_lat, w_lon)
 			_has_active_waypost = true
+			if _synth_worker != null:
+				_synth_worker.set_waypost_wm(_active_waypost_wm)
 			if center_waypost:
 				focus_on_cell(_active_waypost_cell.x, _active_waypost_cell.y)
 			_update_return_home_visibility()
@@ -595,6 +627,98 @@ func _focus_most_buildings() -> void:
 		focus_on_cell(best_cell.x, best_cell.y)
 	else:
 		_focus_initial_cell()
+
+func _focus_far_buildings() -> void:
+	if _camera == null:
+		return
+	var db = _get_db()
+	if db == null or not db.is_open():
+		_focus_initial_cell()
+		return
+
+	var cell_rows = db.query_rows("SELECT cell_x, cell_y, reveal_state FROM map_cell WHERE reveal_state > 0;")
+	if cell_rows.is_empty():
+		_focus_initial_cell()
+		return
+
+	var wp_ll := Vector2.ZERO
+	var has_wp := _has_active_waypost
+	if has_wp:
+		wp_ll = Grid.wm_to_latlon(_active_waypost_wm)
+	else:
+		var places: Array = RevealEngine.load_places()
+		for p in places:
+			if str(p.get("id", "")) == _active_place_id or _active_place_id.is_empty():
+				var wp: Dictionary = p.get("waypost", {})
+				wp_ll = Vector2(float(wp.get("lat", 0.0)), float(wp.get("lon", 0.0)))
+				_active_waypost_wm = Grid.latlon_to_wm(wp_ll.x, wp_ll.y)
+				_active_waypost_cell = Grid.latlon_to_cell(wp_ll.x, wp_ll.y)
+				_has_active_waypost = true
+				has_wp = true
+				if _synth_worker != null:
+					_synth_worker.set_waypost_wm(_active_waypost_wm)
+				break
+
+	var best_cell: Variant = null
+	var max_score: int = -1
+
+	for row in cell_rows:
+		var cx := int(row["cell_x"])
+		var cy := int(row["cell_y"])
+		var cell := Vector2i(cx, cy)
+		var reveal_state := int(row["reveal_state"])
+
+		if has_wp:
+			var c_ll := Grid.cell_center_latlon(cell)
+			var d_m := Grid.ground_distance_m(c_ll.x, c_ll.y, wp_ll.x, wp_ll.y)
+			if d_m < 3000.0:
+				continue
+
+		var buf: PackedByteArray
+		if _synth_cache.has(cell):
+			buf = _synth_cache.get_item(cell).get("buf", PackedByteArray())
+		elif _synth_worker != null and _synth_worker.is_running():
+			var res: Dictionary = _synth_worker.request_cell_sync(cell, false, reveal_state, _preview_cleared)
+			var item := {
+				"buf": res["tiles"],
+				"signs": res["signs"],
+				"has_data": res["has_data"],
+				"image": res.get("image", null),
+				"thread_id": res.get("thread_id", 0),
+				"reveal_state": reveal_state
+			}
+			_synth_cache.put(cell, item)
+			buf = res.get("tiles", PackedByteArray())
+		else:
+			var area: Dictionary = {}
+			if _has_active_waypost:
+				area["waypost_wm"] = _active_waypost_wm
+			for dy in range(-1, 2):
+				for dx in range(-1, 2):
+					area[Vector2i(dx, dy)] = _get_cell_features(cx + dx, cy + dy)
+			var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
+			buf = synth_res.get("tiles", PackedByteArray())
+
+		var score := 0
+		for ty in 32:
+			for tx in 32:
+				var idx := (ty * 32 + tx) * 3
+				if idx < buf.size():
+					var cls: int = buf[idx]
+					if cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_RUBBLE:
+						score += 1
+
+		if score > max_score:
+			max_score = score
+			best_cell = cell
+		elif score == max_score:
+			if best_cell == null or cy < best_cell.y or (cy == best_cell.y and cx < best_cell.x):
+				best_cell = cell
+
+	if best_cell != null:
+		focus_on_cell(best_cell.x, best_cell.y)
+	else:
+		_focus_most_buildings()
 
 func _focus_waypost() -> void:
 	if _has_active_waypost:
@@ -802,11 +926,16 @@ func _step_zoom(direction: int) -> void:
 	_set_zoom_step(float(ZOOM_STEPS[next_idx]))
 
 func _set_zoom_step(zoom_val: float) -> void:
+	var was_overview := (_current_zoom_step < 1.0)
 	_current_zoom_step = zoom_val
 	if _camera != null:
 		_camera.zoom = Vector2(zoom_val, zoom_val)
 
 	var show_overview := (_current_zoom_step < 1.0)
+	if was_overview != show_overview:
+		_rendered_cells.clear()
+		_pending_blit_cells.clear()
+		_requested_cells.clear()
 	if _overview_layer != null:
 		_overview_layer.visible = show_overview
 	if _world_known != null:
@@ -941,7 +1070,7 @@ func _drain_worker_results() -> void:
 func _blit_pending_cells() -> void:
 	var blits_this_frame := 0
 	var is_overview := (_current_zoom_step < 1.0)
-	var max_blits := 8 if is_overview else 2
+	var max_blits := 64 if is_overview else 2
 
 	while not _pending_blit_cells.is_empty() and blits_this_frame < max_blits:
 		var cell: Vector2i = _pending_blit_cells.pop_front()
@@ -955,80 +1084,126 @@ func _blit_pending_cells() -> void:
 	if not is_overview:
 		_max_blits_observed = maxi(_max_blits_observed, blits_this_frame)
 
+	_flush_overview_chunks()
+
+func _flush_overview_chunks() -> void:
+	if _dirty_overview_chunks.is_empty():
+		return
+	var updated := 0
+	var keys := _dirty_overview_chunks.keys()
+	for chunk_key in keys:
+		if updated >= 4:
+			break
+		_dirty_overview_chunks.erase(chunk_key)
+		if _overview_chunks.has(chunk_key):
+			var c_data: Dictionary = _overview_chunks[chunk_key]
+			var tex: ImageTexture = c_data.get("tex", null)
+			var img: Image = c_data.get("image", null)
+			if tex != null and img != null:
+				tex.update(img)
+				updated += 1
+
+func _blit_cell_to_overview_chunk(cx: int, cy: int, cell_img: Image) -> void:
+	if _overview_layer == null:
+		return
+	var chunk_cx: int = floori(float(cx) / 8.0) * 8
+	var chunk_cy: int = floori(float(cy) / 8.0) * 8
+	var chunk_key := Vector2i(chunk_cx, chunk_cy)
+
+	var c_data: Dictionary
+	if _overview_chunks.has(chunk_key):
+		c_data = _overview_chunks[chunk_key]
+	else:
+		var chunk_img := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+		chunk_img.fill(Color("#0d1119"))
+		var chunk_tex := ImageTexture.create_from_image(chunk_img)
+		var sprite := Sprite2D.new()
+		sprite.centered = false
+		# North-up: chunk covers cells cy in [chunk_cy .. chunk_cy + 7], so its top screen edge is at (-chunk_cy - 8) * CELL_SIZE_PX
+		sprite.position = Vector2(float(chunk_cx) * CELL_SIZE_PX, float(-chunk_cy - 8) * CELL_SIZE_PX)
+		sprite.scale = Vector2(32, 32)
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sprite.texture = chunk_tex
+		_overview_layer.add_child(sprite)
+		c_data = {
+			"image": chunk_img,
+			"tex": chunk_tex,
+			"sprite": sprite
+		}
+		_overview_chunks[chunk_key] = c_data
+		_overview_sprites[chunk_key] = sprite
+
+	var local_cx: int = cx - chunk_cx
+	var local_cy: int = cy - chunk_cy
+	var dst_x: int = local_cx * 32
+	var dst_y: int = (7 - local_cy) * 32
+	var chunk_img_ref: Image = c_data["image"]
+	chunk_img_ref.blit_rect(cell_img, Rect2i(0, 0, 32, 32), Vector2i(dst_x, dst_y))
+	_dirty_overview_chunks[chunk_key] = true
+
 func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 	var cell := Vector2i(cx, cy)
 	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
 	var reveal_state: int = item.get("reveal_state", 1)
 	var has_map_data: bool = item.get("has_data", false)
+	var is_overview := (_current_zoom_step < 1.0)
 
-	if reveal_state == 0:
-		_render_solid_fog(cx, cy)
-	else:
-		var target_layer: TileMapLayer = _world_cleared if (_preview_cleared or reveal_state >= 2) else _world_known
-		var other_layer: TileMapLayer = _world_known if target_layer == _world_cleared else _world_cleared
+	if not is_overview:
+		if reveal_state == 0:
+			_render_solid_fog(cx, cy)
+		else:
+			var target_layer: TileMapLayer = _world_cleared if (_preview_cleared or reveal_state >= 2) else _world_known
+			var other_layer: TileMapLayer = _world_known if target_layer == _world_cleared else _world_cleared
 
-		for ty in 32:
-			for tx in 32:
-				var idx := (ty * 32 + tx) * 3
-				var cls: int = tile_buf[idx]
-				var v: int = tile_buf[idx + 1]
-				var mask: int = tile_buf[idx + 2]
-				var st := _screen_tile(cx, cy, tx, ty)
-				target_layer.set_cell(st, 0, get_atlas_coords(cls, v, mask))
-				other_layer.erase_cell(st)
+			for ty in 32:
+				for tx in 32:
+					var idx := (ty * 32 + tx) * 3
+					var cls: int = tile_buf[idx]
+					var v: int = tile_buf[idx + 1]
+					var mask: int = tile_buf[idx + 2]
+					var st := _screen_tile(cx, cy, tx, ty)
+					target_layer.set_cell(st, 0, get_atlas_coords(cls, v, mask))
+					other_layer.erase_cell(st)
 
-		# Inward feathering on FogLayer (§6)
-		var n_hidden := _is_cell_hidden(cx, cy + 1)
-		var e_hidden := _is_cell_hidden(cx + 1, cy)
-		var s_hidden := _is_cell_hidden(cx, cy - 1)
-		var w_hidden := _is_cell_hidden(cx - 1, cy)
+			# Inward feathering on FogLayer (§6)
+			var n_hidden := _is_cell_hidden(cx, cy + 1)
+			var e_hidden := _is_cell_hidden(cx + 1, cy)
+			var s_hidden := _is_cell_hidden(cx, cy - 1)
+			var w_hidden := _is_cell_hidden(cx - 1, cy)
 
-		var fog_d75: int = _fog_rows.get("d75", 55)
-		var fog_d50: int = _fog_rows.get("d50", 56)
-		var fog_d25: int = _fog_rows.get("d25", 57)
+			var fog_d75: int = _fog_rows.get("d75", 55)
+			var fog_d50: int = _fog_rows.get("d50", 56)
+			var fog_d25: int = _fog_rows.get("d25", 57)
 
-		for ty in 32:
-			for tx in 32:
-				var st := _screen_tile(cx, cy, tx, ty)
-				var min_dist := 999
-				if n_hidden:
-					min_dist = mini(min_dist, ty)
-				if s_hidden:
-					min_dist = mini(min_dist, 31 - ty)
-				if w_hidden:
-					min_dist = mini(min_dist, tx)
-				if e_hidden:
-					min_dist = mini(min_dist, 31 - tx)
+			for ty in 32:
+				for tx in 32:
+					var st := _screen_tile(cx, cy, tx, ty)
+					var min_dist := 999
+					if n_hidden:
+						min_dist = mini(min_dist, ty)
+					if s_hidden:
+						min_dist = mini(min_dist, 31 - ty)
+					if w_hidden:
+						min_dist = mini(min_dist, tx)
+					if e_hidden:
+						min_dist = mini(min_dist, 31 - tx)
 
-				if min_dist == 0:
-					_fog_layer.set_cell(st, 0, Vector2i(0, fog_d75))
-				elif min_dist == 1:
-					_fog_layer.set_cell(st, 0, Vector2i(0, fog_d50))
-				elif min_dist == 2:
-					_fog_layer.set_cell(st, 0, Vector2i(0, fog_d25))
-				else:
-					_fog_layer.erase_cell(st)
+					if min_dist == 0:
+						_fog_layer.set_cell(st, 0, Vector2i(0, fog_d75))
+					elif min_dist == 1:
+						_fog_layer.set_cell(st, 0, Vector2i(0, fog_d50))
+					elif min_dist == 2:
+						_fog_layer.set_cell(st, 0, Vector2i(0, fog_d25))
+					else:
+						_fog_layer.erase_cell(st)
 
-	# Overview sprite in OverviewLayer
+	# Overview chunk in OverviewLayer (§11.5 step 2)
 	if _overview_layer != null:
-		var tex: ImageTexture = item.get("tex", null)
-		if tex == null:
-			var img: Image = item.get("image", null)
-			if img == null:
-				img = _build_overview_image(tile_buf, reveal_state)
-			tex = ImageTexture.create_from_image(img)
-			item["tex"] = tex
-
-		var sprite: Sprite2D = _overview_sprites.get(cell, null)
-		if sprite == null:
-			sprite = Sprite2D.new()
-			sprite.centered = false
-			sprite.position = Vector2(cx * CELL_SIZE_PX, (-cy - 1) * CELL_SIZE_PX)
-			sprite.scale = Vector2(32, 32)
-			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			_overview_layer.add_child(sprite)
-			_overview_sprites[cell] = sprite
-		sprite.texture = tex
+		var img: Image = item.get("image", null)
+		if img == null:
+			img = _build_overview_image(tile_buf, reveal_state)
+			item["image"] = img
+		_blit_cell_to_overview_chunk(cx, cy, img)
 
 	var is_unmapped := (reveal_state > 0 and not has_map_data)
 	if is_unmapped:
@@ -1037,26 +1212,20 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 		_unmapped_revealed_cells.erase(cell)
 
 func _render_unknown_cell(cx: int, cy: int) -> void:
-	var cell := Vector2i(cx, cy)
 	if _current_zoom_step >= 1.0:
 		_render_solid_fog(cx, cy)
 	if _overview_layer != null:
-		var sprite: Sprite2D = _overview_sprites.get(cell, null)
-		if sprite == null:
-			sprite = Sprite2D.new()
-			sprite.centered = false
-			sprite.position = Vector2(cx * CELL_SIZE_PX, (-cy - 1) * CELL_SIZE_PX)
-			sprite.scale = Vector2(32, 32)
-			sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			_overview_layer.add_child(sprite)
-			_overview_sprites[cell] = sprite
-		sprite.texture = _get_unknown_overview_texture()
+		_blit_cell_to_overview_chunk(cx, cy, _get_unknown_overview_image())
+
+func _get_unknown_overview_image() -> Image:
+	if _unknown_overview_img == null:
+		_unknown_overview_img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		_unknown_overview_img.fill(Color("#0d1119"))
+	return _unknown_overview_img
 
 func _get_unknown_overview_texture() -> ImageTexture:
 	if _unknown_overview_tex == null:
-		var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-		img.fill(Color("#0d1119"))
-		_unknown_overview_tex = ImageTexture.create_from_image(img)
+		_unknown_overview_tex = ImageTexture.create_from_image(_get_unknown_overview_image())
 	return _unknown_overview_tex
 
 func _build_overview_image(tile_buf: PackedByteArray, reveal_state: int) -> Image:
@@ -1161,6 +1330,8 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 		_synth_cache.put(cell, item)
 	else:
 		var area: Dictionary = {}
+		if _has_active_waypost:
+			area["waypost_wm"] = _active_waypost_wm
 		var has_map_data := false
 		var is_covered_by_store := false
 		for dy in range(-1, 2):
@@ -1183,6 +1354,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 		_synth_cache.put(cell, item)
 
 	_blit_cell(cx, cy, item)
+	_flush_overview_chunks()
 	_rendered_cells[cell] = true
 	var is_unmapped: bool = (reveal_state > 0 and not item.get("has_data", false))
 	return is_unmapped
@@ -1229,12 +1401,6 @@ func _unrender_cell(cx: int, cy: int) -> void:
 			if _fog_layer != null:
 				_fog_layer.erase_cell(coord)
 
-	if _overview_sprites.has(cell):
-		var s: Sprite2D = _overview_sprites[cell]
-		_overview_sprites.erase(cell)
-		if is_instance_valid(s):
-			s.queue_free()
-
 func get_lru_cache() -> LruCache:
 	return _synth_cache
 
@@ -1264,7 +1430,7 @@ func pending_cell_count() -> int:
 	var r1 := int(floor((vis_rect.position.y + vis_rect.size.y) / CELL_SIZE_PX))
 	var min_cy := -r1 - 1
 	var max_cy := -r0 - 1
-	var pending := 0
+	var pending := _dirty_overview_chunks.size()
 	for cy in range(min_cy, max_cy + 1):
 		for cx in range(min_cx, max_cx + 1):
 			var cell := Vector2i(cx, cy)
@@ -1316,6 +1482,8 @@ func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String
 	_set_zoom_step(zoom_step)
 	if _focus_mode == "most_buildings":
 		_focus_most_buildings()
+	elif _focus_mode == "far_buildings":
+		_focus_far_buildings()
 	elif _focus_mode == "waypost":
 		_focus_waypost()
 	elif _focus_mode == "landmark":
@@ -1360,6 +1528,11 @@ func _on_frame_post_draw() -> void:
 
 	if _screenshot_saved and _steady_frames_count >= 120:
 		var p95 := get_steady_frame_p95_ms()
+		var refresh_rate := DisplayServer.screen_get_refresh_rate()
+		if refresh_rate <= 0.0:
+			refresh_rate = 60.0
+		var vsync_ms := 1000.0 / refresh_rate
+		print("VSYNC_MS: %.2f" % vsync_ms)
 		print("FRAME_P95_MS: %.2f" % p95)
 		get_tree().quit(0)
 

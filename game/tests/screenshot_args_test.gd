@@ -106,6 +106,11 @@ func run_test() -> bool:
 		push_error("landmark config test failed: %s" % str(r_landmark))
 		return false
 
+	var r_far_buildings: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--focus=far_buildings"], false, repo_root)
+	if not r_far_buildings.get("ok", false) or r_far_buildings.get("focus", "") != "far_buildings":
+		push_error("far_buildings config test failed: %s" % str(r_far_buildings))
+		return false
+
 	var r_town_map: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--screen=town_map"], false, repo_root)
 	if not r_town_map.get("ok", false) or r_town_map.get("screen", "") != "town_map":
 		push_error("town_map config test failed: %s" % str(r_town_map))

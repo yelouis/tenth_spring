@@ -88,23 +88,27 @@ class TestGenPlaceholderAtlas(unittest.TestCase):
         expected_pairs.append((4, 0))  # WATER
         expected_pairs.append((5, 0))  # SAND
         expected_pairs.append((6, 0))  # MARSH
-        expected_pairs.append((7, 0))  # PATH
+        for v in range(2): expected_pairs.append((7, v))  # PATH 0..1
         for v in range(2): expected_pairs.append((8, v))  # ROAD 0..1
         expected_pairs.append((9, 0))  # RAIL
         expected_pairs.append((10, 0))  # BRIDGE
-        expected_pairs.append((11, 0))  # PLAZA
+        for v in range(2): expected_pairs.append((11, v))  # PLAZA 0..1
         for v in range(8): expected_pairs.append((12, v))  # ROOF 0..7
+        for v in range(8): expected_pairs.append((12, 16 + v))  # ROOF 16..23 (broken)
         expected_pairs.append((12, 32))  # ROOF 32 (landmark gold)
         for v in range(16): expected_pairs.append((13, v))  # WALL 0..15
+        for v in range(16): expected_pairs.append((13, 16 + v))  # WALL 16..31 (broken)
         expected_pairs.append((13, 32))  # WALL 32 (landmark plain)
         expected_pairs.append((13, 40))  # WALL 40 (landmark window)
         for v in range(8): expected_pairs.append((14, v))  # DOOR 0..7
+        for v in range(8): expected_pairs.append((14, 16 + v))  # DOOR 16..23 (broken/boarded)
         expected_pairs.append((14, 32))  # DOOR 32 (landmark gold framed)
         expected_pairs.append((15, 0))  # FENCE
         expected_pairs.append((16, 0))  # FLOWERS
         expected_pairs.append((17, 0))  # GRAVE
         for v in range(16): expected_pairs.append((18, v))  # SIGN 0..15
         expected_pairs.append((19, 0))  # CROP
+        for v in range(2): expected_pairs.append((20, v))  # RUBBLE 0..1
 
         for c, v in expected_pairs:
             if c in any_variant_classes:

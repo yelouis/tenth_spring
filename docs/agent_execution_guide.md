@@ -273,7 +273,7 @@ Exactly **slice-2 plan §11.2–11.6**:
 
 ### Validation
 - **`tile_synth2_test` (q)–(t)**, including the falsifying (r) against the old code. The atlas regenerates byte-identically.
-- **`measure_synth` on DC:** report every §11.4 measure beside its target, including building tiles 10–16%, gone 20–40%, ruined 20–35%, tall grass ≥ 8%, and landmarks all standing.
+- **`measure_synth` on DC:** report every §11.4 measure beside its target, including building tiles 10–16%, gone 20–45% (Decision 37 = A), ruined 20–35%, tall grass ≥ 8%, and landmarks all standing.
   - **A miss means STOP:** file it with the numbers, and don't tune.
 - **Frame times on the human's Mac,** in the DC profile:
   - zoom 1 and zoom 1/16;

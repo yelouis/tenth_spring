@@ -93,7 +93,12 @@ PALETTE = {
     "fog": (13, 17, 25, 255),              # #0d1119
     "ink_outline": (26, 26, 32, 255),      # #1a1a20
     "gold_roof_base": (216, 168, 56, 255),  # #d8a838
-    "gold_roof_shade": (160, 120, 32, 255), # #a07820
+    "gold_roof_shade": (160, 90, 32, 255),  # #a05a20 (shared with roof5_shade to stay <= 64 colours)
+    # Ruin pass (§11.2 step 8)
+    "rafters": (58, 42, 32, 255),           # #3a2a20
+    "planks": (138, 106, 64, 255),          # #8a6a40
+    "rubble": (138, 122, 106, 255),         # #8a7a6a
+    "rubble_shade": (90, 74, 64, 255),      # #5a4a40
     "transparent": (0, 0, 0, 0),
 }
 
@@ -360,7 +365,7 @@ class AtlasBuilder:
             self.set_pixel(col, row, rx, ry, PALETTE["tall_blades"])
             self.set_pixel(col, row, rx, ry - 1, PALETTE["tall_tips"])
 
-    def draw_path(self, row: int, col: int, mask: int):
+    def draw_path(self, row: int, col: int, variant: int, mask: int):
         self.fill_tile(col, row, PALETTE["path"])
         speckles = [(6, 8), (18, 14), (10, 22), (24, 26), (14, 4), (26, 8)]
         for sx, sy in speckles:
@@ -377,6 +382,15 @@ class AtlasBuilder:
                 if (not n_conn and y < 2) or (not s_conn and y >= 30) or \
                    (not w_conn and x < 2) or (not e_conn and x >= 30):
                     self.set_pixel(col, row, x, y, edge_color)
+
+        if variant == 1:
+            # Overgrown path: grass tufts pushing through (§11.2 step 8)
+            tufts = [(7, 7), (15, 11), (22, 16), (9, 20), (19, 25), (25, 10)]
+            for tx, ty in tufts:
+                self.set_pixel(col, row, tx, ty, PALETTE["grass"])
+                self.set_pixel(col, row, tx + 1, ty, PALETTE["grass"])
+                self.set_pixel(col, row, tx, ty - 1, PALETTE["tall_tips"])
+                self.set_pixel(col, row, tx + 1, ty + 1, PALETTE["tall_blades"])
 
     def draw_road(self, row: int, col: int, variant: int, mask: int):
         self.fill_tile(col, row, PALETTE["road"])
@@ -570,15 +584,26 @@ class AtlasBuilder:
                    (not w_conn and x < 3) or (not e_conn and x >= 29):
                     self.set_pixel(col, row, x, y, rail_color)
 
-    def draw_plaza(self, row: int, col: int):
+    def draw_plaza(self, row: int, col: int, variant: int = 0):
         self.fill_tile(col, row, PALETTE["plaza"])
         joint_color = PALETTE["plaza_joint"]
         for y in range(TILE_SIZE):
             for x in range(TILE_SIZE):
                 if x % 8 == 0 or y % 8 == 0:
                     self.set_pixel(col, row, x, y, joint_color)
+        if variant == 1:
+            # Cracked lot with weeds (§11.2 step 8)
+            cracks = [(6, 6), (7, 7), (8, 7), (9, 8), (19, 15), (20, 16), (21, 16), (22, 17)]
+            for cx, cy in cracks:
+                self.set_pixel(col, row, cx, cy, PALETTE["road_crack"])
+            weeds = [(8, 8), (16, 16), (24, 8), (8, 24), (20, 17)]
+            for wx, wy in weeds:
+                self.set_pixel(col, row, wx, wy, PALETTE["tall_grass"])
+                self.set_pixel(col, row, wx + 1, wy, PALETTE["tall_blades"])
+                self.set_pixel(col, row, wx, wy - 1, PALETTE["tall_tips"])
 
     def draw_roof(self, row: int, col: int, variant: int, mask: int):
+        is_broken = (variant & 16) != 0 and variant != 32
         if variant == 32:
             colors = {"base": PALETTE["gold_roof_base"], "shade": PALETTE["gold_roof_shade"]}
         else:
@@ -617,11 +642,28 @@ class AtlasBuilder:
                 self.set_pixel(col, row, 30, y, PALETTE["ink_outline"])
                 self.set_pixel(col, row, 31, y, PALETTE["ink_outline"])
 
+        if is_broken:
+            # Dark holes showing rafters (#3a2a20) (§11.2 step 8)
+            for hy in range(8, 17):
+                for hx in range(9, 20):
+                    if (hx - 14) * (hx - 14) + (hy - 12) * (hy - 12) <= 22:
+                        if hx % 3 == 0:
+                            self.set_pixel(col, row, hx, hy, PALETTE["rafters"])
+                        else:
+                            self.set_pixel(col, row, hx, hy, PALETTE["ink_outline"])
+            for hy in range(20, 26):
+                for hx in range(18, 25):
+                    if hy % 2 == 0:
+                        self.set_pixel(col, row, hx, hy, PALETTE["rafters"])
+                    else:
+                        self.set_pixel(col, row, hx, hy, PALETTE["ink_outline"])
+
     def draw_wall(self, row: int, col: int, variant: int, mask: int):
         self.fill_tile(col, row, PALETTE["wall"])
         roof_idx = variant % 8
-        has_window = (variant >= 8 and variant != 32)
         is_gold = (variant in (32, 40))
+        is_broken = (variant & 16) != 0 and not is_gold
+        has_window = (variant == 40) or (not is_gold and ((variant & 8) != 0))
 
         # Base / foundation trim in roof color (or gold)
         trim_color = PALETTE["gold_roof_base"] if is_gold else ROOF_COLORS[roof_idx]["base"]
@@ -650,6 +692,12 @@ class AtlasBuilder:
             for x in range(TILE_SIZE):
                 self.set_pixel(col, row, x, 0, outline_color)
 
+        if is_broken:
+            # Cracked walls (§11.2 step 8)
+            cracks = [(5, 6), (6, 7), (6, 8), (7, 9), (7, 10), (24, 18), (25, 19), (25, 20), (26, 21)]
+            for cx, cy in cracks:
+                self.set_pixel(col, row, cx, cy, PALETTE["rubble_shade"])
+
         if has_window:
             # 10 x 8 px window centered: x in 11..20, y in 10..17
             for wy in range(10, 18):
@@ -658,11 +706,17 @@ class AtlasBuilder:
                     if wx in (11, 20) or wy in (10, 17) or wx == 15 or wy == 13:
                         self.set_pixel(col, row, wx, wy, PALETTE["window_frame"])
                     else:
-                        self.set_pixel(col, row, wx, wy, PALETTE["window"])
+                        self.set_pixel(col, row, wx, wy, PALETTE["ink_outline"] if is_broken else PALETTE["window"])
+            if is_broken:
+                # Boarded with planks (#8a6a40) (§11.2 step 8)
+                for py in (11, 12, 15, 16):
+                    for px in range(10, 22):
+                        self.set_pixel(col, row, px, py, PALETTE["planks"])
 
     def draw_door(self, row: int, col: int, variant: int):
         self.fill_tile(col, row, PALETTE["wall"])
         is_gold = (variant == 32)
+        is_broken = (variant & 16) != 0 and not is_gold
         frame_color = PALETTE["gold_roof_base"] if is_gold else PALETTE["door_frame"]
         # 14 x 20 px door: x in 9..22, y in 10..29
         for dy in range(10, 30):
@@ -673,6 +727,11 @@ class AtlasBuilder:
                     self.set_pixel(col, row, dx, dy, PALETTE["bridge_rail"])
         # Handle at (20, 20)
         self.set_pixel(col, row, 20, 20, PALETTE["path"])
+        if is_broken:
+            # Boarded door with planks (#8a6a40) (§11.2 step 8)
+            for py in (13, 14, 19, 20, 25, 26):
+                for px in range(8, 24):
+                    self.set_pixel(col, row, px, py, PALETTE["planks"])
         # 2-px mat at bottom x in 8..23, y in 30..31
         mat_color = PALETTE["gold_roof_base"] if is_gold else ROOF_COLORS[variant % 8]["base"]
         for my in range(30, 32):
@@ -768,6 +827,34 @@ class AtlasBuilder:
             for x in range(2, TILE_SIZE, 4):
                 self.set_pixel(col, row, x, y, PALETTE["tall_tips"])
 
+    def draw_rubble(self, row: int, col: int, variant: int):
+        self.fill_tile(col, row, PALETTE["grass"])
+        # Broken masonry with grass tufts (§11.2 step 8)
+        stones = [
+            (7, 15, 7, 5),
+            (15, 13, 8, 6),
+            (10, 20, 9, 5),
+            (19, 19, 6, 5),
+        ]
+        if variant == 1:
+            # Larger pile for gone building lot centre
+            stones.extend([
+                (5, 11, 6, 5),
+                (12, 9, 8, 5),
+                (21, 12, 6, 5),
+                (6, 22, 7, 5),
+            ])
+        for sx, sy, sw, sh in stones:
+            for y in range(sy, sy + sh):
+                for x in range(sx, sx + sw):
+                    is_edge = (x == sx or x == sx + sw - 1 or y == sy or y == sy + sh - 1)
+                    self.set_pixel(col, row, x, y, PALETTE["rubble_shade"] if is_edge else PALETTE["rubble"])
+        tufts = [(6, 14), (17, 12), (9, 25), (23, 23)] if variant == 0 else [(4, 15), (14, 8), (25, 17), (11, 26), (22, 24)]
+        for tx, ty in tufts:
+            self.set_pixel(col, row, tx, ty, PALETTE["tall_grass"])
+            self.set_pixel(col, row, tx + 1, ty, PALETTE["tall_blades"])
+            self.set_pixel(col, row, tx, ty - 1, PALETTE["tall_tips"])
+
     def draw_fog(self, row: int, coverage_pct: int):
         # Draw across all columns
         threshold_map = {
@@ -858,6 +945,13 @@ def build_atlas():
     r_grave = add_row(17, 0, False)
     r_sign = add_row(18, 0, False, any_variant=True)
     r_crop = add_row(19, 0, False)
+    # Ruin pass rows (§11.2 step 8)
+    r_path_overgrown = add_row(7, 1, True)
+    r_plaza_weeded = add_row(11, 1, False)
+    r_roof_broken = [add_row(12, 16 + v, True) for v in range(8)]
+    r_wall_broken = [add_row(13, 16 + v, True) for v in range(16)]
+    r_door_broken = [add_row(14, 16 + v, False) for v in range(8)]
+    r_rubble = [add_row(20, v, False) for v in range(2)]
 
     # Fog rows (§5.2)
     fog_solid = current_row; current_row += 1
@@ -896,7 +990,9 @@ def build_atlas():
 
     # Render PATH
     for mask in range(NUM_COLS):
-        builder.draw_path(r_path, mask, mask)
+        builder.draw_path(r_path, mask, 0, mask)
+    for mask in range(NUM_COLS):
+        builder.draw_path(r_path_overgrown, mask, 1, mask)
 
     # Render ROAD variants
     for v in range(2):
@@ -912,12 +1008,16 @@ def build_atlas():
         builder.draw_bridge(r_bridge, mask, mask)
 
     # Render PLAZA
-    builder.draw_plaza(r_plaza, 0)
+    builder.draw_plaza(r_plaza, 0, 0)
+    builder.draw_plaza(r_plaza_weeded, 0, 1)
 
     # Render ROOF variants
     for v in range(8):
         for mask in range(NUM_COLS):
             builder.draw_roof(r_roof[v], mask, v, mask)
+    for v in range(8):
+        for mask in range(NUM_COLS):
+            builder.draw_roof(r_roof_broken[v], mask, 16 + v, mask)
     for mask in range(NUM_COLS):
         builder.draw_roof(r_roof_landmark, mask, 32, mask)
 
@@ -925,6 +1025,9 @@ def build_atlas():
     for v in range(16):
         for mask in range(NUM_COLS):
             builder.draw_wall(r_wall[v], mask, v, mask)
+    for v in range(16):
+        for mask in range(NUM_COLS):
+            builder.draw_wall(r_wall_broken[v], mask, 16 + v, mask)
     for mask in range(NUM_COLS):
         builder.draw_wall(r_wall_landmark, mask, 32, mask)
     for mask in range(NUM_COLS):
@@ -933,6 +1036,8 @@ def build_atlas():
     # Render DOOR variants
     for v in range(8):
         builder.draw_door(r_door[v], 0, v)
+    for v in range(8):
+        builder.draw_door(r_door_broken[v], 0, 16 + v)
     builder.draw_door(r_door_landmark, 0, 32)
 
     # Render FENCE
@@ -950,6 +1055,10 @@ def build_atlas():
 
     # Render CROP
     builder.draw_crop(r_crop, 0)
+
+    # Render RUBBLE
+    for v in range(2):
+        builder.draw_rubble(r_rubble[v], 0, v)
 
     # Render FOG rows
     builder.draw_fog(fog_solid, 100)

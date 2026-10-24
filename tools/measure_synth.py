@@ -63,15 +63,19 @@ def main():
             print(proc.stdout, file=sys.stderr, end="")
         sys.exit(proc.returncode)
 
-    # Print only the MEASURE line
+    # Print the MEASURE and MEASURE_RUIN lines
     measure_line = None
+    measure_ruin_line = None
     for line in proc.stdout.splitlines():
         if line.startswith("MEASURE "):
             measure_line = line
-            break
+        elif line.startswith("MEASURE_RUIN "):
+            measure_ruin_line = line
 
     if measure_line:
         print(measure_line)
+        if measure_ruin_line:
+            print(measure_ruin_line)
     else:
         print(f"[FAIL] No MEASURE line produced by measure_synth. Output:\n{proc.stdout}", file=sys.stderr)
         sys.exit(1)

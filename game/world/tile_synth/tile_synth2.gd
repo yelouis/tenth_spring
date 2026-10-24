@@ -29,6 +29,7 @@ const TILE_FLOWERS := 16
 const TILE_GRAVE := 17
 const TILE_SIGN := 18
 const TILE_CROP := 19
+const TILE_RUBBLE := 20
 
 # Grid Dimensions
 const CELL_TILES := 32
@@ -38,7 +39,7 @@ const WORK_CELL_START := 4
 const WORK_CELL_END := 36 # exclusive
 const OUTPUT_BUFFER_SIZE := 32 * 32 * 3 # 3072 bytes
 
-# Salts (§3)
+# Salts (§3, §11.2 step 7)
 const SALT_TREE_SCATTER := 1
 const SALT_FLOWERS := 2
 const SALT_GRASS_VARIANT := 3
@@ -47,6 +48,12 @@ const SALT_DOOR_ROOF := 5
 const SALT_TREE_VARIANT := 6
 const SALT_NOISE_LATTICE := 7
 const SALT_FALLBACK_SKIP := 8
+const SALT_BUILDING_FATE := 9
+const SALT_ROOF_COLLAPSE := 10
+const SALT_YARD_LOT_GRASS := 11
+const SALT_LOT_TREE := 12
+const SALT_PATH_OVERGROWTH := 13
+const SALT_PLAZA_WEEDS := 14
 
 # Forbidden building placement tile classes (§4.2, §10.2, §11.1)
 const FORBIDDEN_BUILDING_TILES: Array[int] = [
@@ -1146,7 +1153,10 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			"row0": chosen_row0,
 			"w": w,
 			"h": h,
-			"door_cols": b["door_cols"]
+			"door_cols": b["door_cols"],
+			"template": b["template"],
+			"subkind": b["subkind"],
+			"is_landmark": false
 		})
 
 	# 5b. Fallback Houses (§4.3, §10.2 step 5)
@@ -1240,8 +1250,191 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						"w": 4,
 						"h": 3,
 						"door_cols": [door_col],
+						"template": "house_s",
+						"subkind": p_kind,
 						"is_landmark": false
 					})
+
+	# -------------------------------------------------------------
+	# 5d. The Ruin Pass (§11.2, Decision 30, Item 25)
+	# -------------------------------------------------------------
+	var band := "mid"
+	if area.has("waypost_wm") and area["waypost_wm"] is Vector2:
+		var wp_wm: Vector2 = area["waypost_wm"]
+		var cell_center_ll := Grid.cell_center_latlon(Vector2i(cx, cy))
+		var wp_ll := Grid.wm_to_latlon(wp_wm)
+		var dist_m: float = Grid.ground_distance_m(cell_center_ll.x, cell_center_ll.y, wp_ll.x, wp_ll.y)
+		if dist_m < 600.0:
+			band = "camp"
+		elif dist_m < 1500.0:
+			band = "near"
+		elif dist_m < 3000.0:
+			band = "mid"
+		else:
+			band = "far"
+
+	var ordinary_standing := 0
+	var ordinary_ruined := 0
+	var ordinary_gone := 0
+	var surviving_buildings: Array[Dictionary] = []
+
+	for b in placed_buildings:
+		if b.get("is_landmark", false):
+			surviving_buildings.append(b)
+			continue
+
+		var b_col0: int = b["col0"]
+		var b_row0: int = b["row0"]
+		var b_w: int = b["w"]
+		var b_h: int = b["h"]
+		var b_t: String = b.get("template", "house_s")
+		var b_sub: String = b.get("subkind", "")
+		var gx0: int = cx * 32 + (b_col0 - 4)
+		var gy0: int = cy * 32 + (35 - b_row0)
+
+		var fate := "standing"
+		if b_sub in ["church", "chapel", "cathedral", "temple", "mosque", "synagogue", "religious"]:
+			fate = "standing"
+		elif b_sub in ["hospital", "clinic"] or b_sub == "ruins":
+			fate = "ruined"
+		else:
+			var s_share := 35.0
+			var r_share := 30.0
+			if b_t == "block_l":
+				match band:
+					"camp":
+						s_share = 85.0
+						r_share = 15.0
+					"near":
+						s_share = 75.0
+						r_share = 20.0
+					"mid":
+						s_share = 70.0
+						r_share = 22.0
+					"far":
+						s_share = 65.0
+						r_share = 25.0
+			else:
+				match band:
+					"camp":
+						s_share = 70.0
+						r_share = 20.0
+					"near":
+						s_share = 50.0
+						r_share = 30.0
+					"mid":
+						s_share = 35.0
+						r_share = 30.0
+					"far":
+						s_share = 25.0
+						r_share = 30.0
+
+			var f_val: float = u_rand(gx0, gy0, world_seed, SALT_BUILDING_FATE)
+			if f_val < s_share / 100.0:
+				fate = "standing"
+			elif f_val < (s_share + r_share) / 100.0:
+				fate = "ruined"
+			else:
+				fate = "gone"
+
+		b["fate"] = fate
+		if fate == "standing":
+			ordinary_standing += 1
+			surviving_buildings.append(b)
+		elif fate == "ruined":
+			ordinary_ruined += 1
+			surviving_buildings.append(b)
+			# Drawing a ruined building (§11.2 step 4):
+			# 1. Every ROOF, WALL, and DOOR tile gets variant bit 16;
+			# 2. Roof tiles where u(gx, gy, 10) < 0.25 become RUBBLE (variant 0)
+			for tr in b_h:
+				var r: int = b_row0 + tr
+				for tc in b_w:
+					var c: int = b_col0 + tc
+					var idx: int = r * WORK_SIZE + c
+					var gx: int = cx * 32 + (c - 4)
+					var gy: int = cy * 32 + (35 - r)
+					if grid_class[idx] == TILE_ROOF:
+						if u_rand(gx, gy, world_seed, SALT_ROOF_COLLAPSE) < 0.25:
+							grid_class[idx] = TILE_RUBBLE
+							grid_variant[idx] = 0
+						else:
+							grid_variant[idx] = grid_variant[idx] | 16
+					elif grid_class[idx] == TILE_WALL or grid_class[idx] == TILE_DOOR:
+						grid_variant[idx] = grid_variant[idx] | 16
+
+			# 3. One RUBBLE (variant 0) on the first GRASS tile of the template's east ring column,
+			# else its west ring column, scanning top to bottom
+			var rubble_ring_placed := false
+			var east_c: int = b_col0 + b_w
+			if east_c >= 0 and east_c < WORK_SIZE:
+				for r in range(b_row0, b_row0 + b_h):
+					if r >= 0 and r < WORK_SIZE:
+						var e_idx: int = r * WORK_SIZE + east_c
+						if grid_class[e_idx] == TILE_GRASS:
+							grid_class[e_idx] = TILE_RUBBLE
+							grid_variant[e_idx] = 0
+							rubble_ring_placed = true
+							break
+			if not rubble_ring_placed:
+				var west_c: int = b_col0 - 1
+				if west_c >= 0 and west_c < WORK_SIZE:
+					for r in range(b_row0, b_row0 + b_h):
+						if r >= 0 and r < WORK_SIZE:
+							var w_idx: int = r * WORK_SIZE + west_c
+							if grid_class[w_idx] == TILE_GRASS:
+								grid_class[w_idx] = TILE_RUBBLE
+								grid_variant[w_idx] = 0
+								break
+
+			# 4. GRASS tiles within 1 tile of the template (Chebyshev) become TALL_GRASS where u(gx, gy, 11) < 0.50
+			for r in range(b_row0 - 1, b_row0 + b_h + 1):
+				if r < 0 or r >= WORK_SIZE:
+					continue
+				for c in range(b_col0 - 1, b_col0 + b_w + 1):
+					if c < 0 or c >= WORK_SIZE:
+						continue
+					var idx: int = r * WORK_SIZE + c
+					if grid_class[idx] == TILE_GRASS:
+						var gx: int = cx * 32 + (c - 4)
+						var gy: int = cy * 32 + (35 - r)
+						if u_rand(gx, gy, world_seed, SALT_YARD_LOT_GRASS) < 0.50:
+							grid_class[idx] = TILE_TALL_GRASS
+							grid_variant[idx] = 0
+		else:
+			ordinary_gone += 1
+			# Drawing a gone building (§11.2 step 5):
+			# 1. Remove its doors from all_doors
+			for d_col in b["door_cols"]:
+				var d_pos := Vector2i(b_col0 + d_col, b_row0 + b_h - 1)
+				all_doors.erase(d_pos)
+			# 2. Every template tile becomes GRASS, then TALL_GRASS where u(gx, gy, 11) < 0.60
+			for tr in b_h:
+				var r: int = b_row0 + tr
+				for tc in b_w:
+					var c: int = b_col0 + tc
+					var idx: int = r * WORK_SIZE + c
+					var gx: int = cx * 32 + (c - 4)
+					var gy: int = cy * 32 + (35 - r)
+					if u_rand(gx, gy, world_seed, SALT_YARD_LOT_GRASS) < 0.60:
+						grid_class[idx] = TILE_TALL_GRASS
+						grid_variant[idx] = 0
+					else:
+						grid_class[idx] = TILE_GRASS
+						grid_variant[idx] = 0
+			# 3. One RUBBLE (variant 1) on the template's centre tile, and a TREE on its top-left tile where u(gx0, gy0, 12) < 0.50
+			var center_c: int = b_col0 + b_w / 2
+			var center_r: int = b_row0 + b_h / 2
+			var center_idx: int = center_r * WORK_SIZE + center_c
+			grid_class[center_idx] = TILE_RUBBLE
+			grid_variant[center_idx] = 1
+			if u_rand(gx0, gy0, world_seed, SALT_LOT_TREE) < 0.50:
+				var tl_idx: int = b_row0 * WORK_SIZE + b_col0
+				grid_class[tl_idx] = TILE_TREE
+				grid_variant[tl_idx] = 0
+
+	# Only standing and ruined buildings keep their template for door paths and POI signs (§11.2 step 5)
+	placed_buildings = surviving_buildings
 
 	# -------------------------------------------------------------
 	# 4b. Paths after buildings (§10.2 step 1)
@@ -1276,8 +1469,8 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						var idx := br * WORK_SIZE + bc
 						var current_class: int = grid_class[idx]
 
-						# A path tile never overwrites ROOF, WALL, or DOOR; it simply skips those tiles.
-						if current_class in [TILE_ROOF, TILE_WALL, TILE_DOOR]:
+						# A path tile never overwrites ROOF, WALL, DOOR, or RUBBLE; it simply skips those tiles.
+						if current_class in [TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_RUBBLE]:
 							continue
 
 						if current_class == TILE_WATER or current_class == TILE_BRIDGE:
@@ -1306,7 +1499,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				if cur_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA]:
 					reached_connector = true
 					break
-				if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
+				if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_RUBBLE, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
 					break
 				walk_path.append(Vector2i(wc, wr))
 			if reached_connector:
@@ -1432,7 +1625,65 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			grid_class[idx] = TILE_FENCE
 
 	# -------------------------------------------------------------
-	# 8. Scatter (§4.1 step 8)
+	# 6.5. Overgrowth on the ground (§11.2 step 6)
+	# -------------------------------------------------------------
+	var path_tg_thresh := 2.0 # never in camp
+	var path_v1_thresh := 0.10
+	var road_v1_thresh := 0.10
+	var plaza_v1_thresh := 0.10
+	var plaza_tg_thresh := 2.0 # never in camp/near
+	var res_tree_thresh := 0.08
+	match band:
+		"camp":
+			path_tg_thresh = 2.0
+			path_v1_thresh = 0.10
+			road_v1_thresh = 0.10
+			plaza_v1_thresh = 0.10
+			plaza_tg_thresh = 2.0
+			res_tree_thresh = 0.08
+		"near":
+			path_tg_thresh = 0.80
+			path_v1_thresh = 0.25
+			road_v1_thresh = 0.20
+			plaza_v1_thresh = 0.50
+			plaza_tg_thresh = 2.0
+			res_tree_thresh = 0.10
+		"mid":
+			path_tg_thresh = 0.72
+			path_v1_thresh = 0.40
+			road_v1_thresh = 0.35
+			plaza_v1_thresh = 0.50
+			plaza_tg_thresh = 0.60
+			res_tree_thresh = 0.13
+		"far":
+			path_tg_thresh = 0.65
+			path_v1_thresh = 0.55
+			road_v1_thresh = 0.50
+			plaza_v1_thresh = 0.50
+			plaza_tg_thresh = 0.55
+			res_tree_thresh = 0.16
+
+	for r in WORK_SIZE:
+		for c in WORK_SIZE:
+			var idx := r * WORK_SIZE + c
+			var cls: int = grid_class[idx]
+			var gx := cx * 32 + (c - 4)
+			var gy := cy * 32 + (35 - r)
+			if cls == TILE_PATH:
+				if path_tg_thresh <= 1.0 and value_noise(gx, gy, world_seed) > path_tg_thresh:
+					grid_class[idx] = TILE_TALL_GRASS
+					grid_variant[idx] = 0
+				elif u_rand(gx, gy, world_seed, SALT_PATH_OVERGROWTH) < path_v1_thresh:
+					grid_variant[idx] = 1
+			elif cls == TILE_PLAZA:
+				if plaza_tg_thresh <= 1.0 and value_noise(gx, gy, world_seed) > plaza_tg_thresh:
+					grid_class[idx] = TILE_TALL_GRASS
+					grid_variant[idx] = 0
+				elif u_rand(gx, gy, world_seed, SALT_PLAZA_WEEDS) < plaza_v1_thresh:
+					grid_variant[idx] = 1
+
+	# -------------------------------------------------------------
+	# 8. Scatter (§4.1 step 8, §11.2 step 6)
 	# -------------------------------------------------------------
 	for r in WORK_SIZE:
 		for c in WORK_SIZE:
@@ -1453,7 +1704,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					continue
 
 				# 8a. TREE scatter
-				var threshold: float = 0.08 if is_residential[idx] == 1 else 0.05
+				var threshold: float = res_tree_thresh if is_residential[idx] == 1 else 0.05
 				if u_rand(gx, gy, world_seed, SALT_TREE_SCATTER) < threshold:
 					# Check 8-neighbourhood for forbidden classes
 					var blocked := false
@@ -1465,7 +1716,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 							var nr: int = r + dr
 							if nc >= 0 and nc < WORK_SIZE and nr >= 0 and nr < WORK_SIZE:
 								var n_cls: int = grid_class[nr * WORK_SIZE + nc]
-								if n_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA, TILE_DOOR, TILE_WALL, TILE_ROOF, TILE_FENCE, TILE_SIGN]:
+								if n_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA, TILE_DOOR, TILE_WALL, TILE_ROOF, TILE_RUBBLE, TILE_FENCE, TILE_SIGN]:
 									blocked = true
 									break
 						if blocked:
@@ -1713,10 +1964,10 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				TILE_GRASS:
 					variant = floori(u_rand(gx, gy, world_seed, SALT_GRASS_VARIANT) * 4.0)
 				TILE_ROAD:
-					variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < 0.20 else 0
+					variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < road_v1_thresh else 0
 				TILE_TREE:
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_TREE_VARIANT) < 0.30 else 0
-				TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN:
+				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE:
 					variant = grid_variant[idx]
 				_:
 					variant = 0
@@ -1724,29 +1975,45 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			# Mask byte
 			var mask := 0
 			if cls == TILE_ROOF:
-				var my_color: int = grid_variant[idx]
-				if grid_class[(r - 1) * WORK_SIZE + c] == TILE_ROOF and grid_variant[(r - 1) * WORK_SIZE + c] == my_color:
-					mask |= 1
-				if grid_class[r * WORK_SIZE + (c + 1)] == TILE_ROOF and grid_variant[r * WORK_SIZE + (c + 1)] == my_color:
-					mask |= 2
-				if grid_class[(r + 1) * WORK_SIZE + c] == TILE_ROOF and grid_variant[(r + 1) * WORK_SIZE + c] == my_color:
-					mask |= 4
-				if grid_class[r * WORK_SIZE + (c - 1)] == TILE_ROOF and grid_variant[r * WORK_SIZE + (c - 1)] == my_color:
-					mask |= 8
+				var my_color: int = 32 if (grid_variant[idx] & 32) != 0 else (grid_variant[idx] % 8)
+				if grid_class[(r - 1) * WORK_SIZE + c] == TILE_ROOF:
+					var n_col: int = 32 if (grid_variant[(r - 1) * WORK_SIZE + c] & 32) != 0 else (grid_variant[(r - 1) * WORK_SIZE + c] % 8)
+					if n_col == my_color:
+						mask |= 1
+				if grid_class[r * WORK_SIZE + (c + 1)] == TILE_ROOF:
+					var e_col: int = 32 if (grid_variant[r * WORK_SIZE + (c + 1)] & 32) != 0 else (grid_variant[r * WORK_SIZE + (c + 1)] % 8)
+					if e_col == my_color:
+						mask |= 2
+				if grid_class[(r + 1) * WORK_SIZE + c] == TILE_ROOF:
+					var s_col: int = 32 if (grid_variant[(r + 1) * WORK_SIZE + c] & 32) != 0 else (grid_variant[(r + 1) * WORK_SIZE + c] % 8)
+					if s_col == my_color:
+						mask |= 4
+				if grid_class[r * WORK_SIZE + (c - 1)] == TILE_ROOF:
+					var w_col: int = 32 if (grid_variant[r * WORK_SIZE + (c - 1)] & 32) != 0 else (grid_variant[r * WORK_SIZE + (c - 1)] % 8)
+					if w_col == my_color:
+						mask |= 8
 			elif cls == TILE_WALL:
-				var my_color: int = grid_variant[idx] % 8
+				var my_color: int = 32 if (grid_variant[idx] & 32) != 0 else (grid_variant[idx] % 8)
 				var n_n: int = grid_class[(r - 1) * WORK_SIZE + c]
-				if (n_n == TILE_WALL or n_n == TILE_DOOR) and (grid_variant[(r - 1) * WORK_SIZE + c] % 8 == my_color):
-					mask |= 1
+				if n_n == TILE_WALL or n_n == TILE_DOOR:
+					var n_col: int = 32 if (grid_variant[(r - 1) * WORK_SIZE + c] & 32) != 0 else (grid_variant[(r - 1) * WORK_SIZE + c] % 8)
+					if n_col == my_color:
+						mask |= 1
 				var n_e: int = grid_class[r * WORK_SIZE + (c + 1)]
-				if (n_e == TILE_WALL or n_e == TILE_DOOR) and (grid_variant[r * WORK_SIZE + (c + 1)] % 8 == my_color):
-					mask |= 2
+				if n_e == TILE_WALL or n_e == TILE_DOOR:
+					var e_col: int = 32 if (grid_variant[r * WORK_SIZE + (c + 1)] & 32) != 0 else (grid_variant[r * WORK_SIZE + (c + 1)] % 8)
+					if e_col == my_color:
+						mask |= 2
 				var n_s: int = grid_class[(r + 1) * WORK_SIZE + c]
-				if (n_s == TILE_WALL or n_s == TILE_DOOR) and (grid_variant[(r + 1) * WORK_SIZE + c] % 8 == my_color):
-					mask |= 4
+				if n_s == TILE_WALL or n_s == TILE_DOOR:
+					var s_col: int = 32 if (grid_variant[(r + 1) * WORK_SIZE + c] & 32) != 0 else (grid_variant[(r + 1) * WORK_SIZE + c] % 8)
+					if s_col == my_color:
+						mask |= 4
 				var n_w: int = grid_class[r * WORK_SIZE + (c - 1)]
-				if (n_w == TILE_WALL or n_w == TILE_DOOR) and (grid_variant[r * WORK_SIZE + (c - 1)] % 8 == my_color):
-					mask |= 8
+				if n_w == TILE_WALL or n_w == TILE_DOOR:
+					var w_col: int = 32 if (grid_variant[r * WORK_SIZE + (c - 1)] & 32) != 0 else (grid_variant[r * WORK_SIZE + (c - 1)] % 8)
+					if w_col == my_color:
+						mask |= 8
 			else:
 				var family: Array = _get_mask_family(cls)
 				if not family.is_empty():
@@ -1777,7 +2044,10 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			"fallback_placed": fallback_placed_count,
 			"landmarks_placed": landmarks_placed_count,
 			"landmarks_sign_only": landmarks_sign_only_count,
-			"landmark_ids_placed": landmark_ids_placed
+			"landmark_ids_placed": landmark_ids_placed,
+			"ordinary_standing": ordinary_standing,
+			"ordinary_ruined": ordinary_ruined,
+			"ordinary_gone": ordinary_gone
 		}
 	}
 
