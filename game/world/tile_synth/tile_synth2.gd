@@ -241,7 +241,7 @@ static func get_road_width(subkind: String) -> int:
 		"tertiary", "residential", "unclassified", "living_street", "road":
 			return 2
 		"service":
-			return 1
+			return 2 # §13: Emerald has no one-tile street
 		_:
 			if base.ends_with("_link"):
 				return 2
@@ -256,9 +256,9 @@ static func get_waterway_width(subkind: String) -> int:
 		"canal":
 			return 2
 		"stream", "ditch", "drain":
-			return 1
+			return 2 # §13: Emerald has no one-tile pond or stream
 		_:
-			return 1
+			return 2
 
 ## Check whether building template fits at (col0, row0) (§10.2 steps 2-3, §11.1 step 2)
 static func _can_place_template(col0: int, row0: int, w: int, h: int, grid_class: PackedByteArray, reserved_grid: PackedByteArray, allow_path: bool = false) -> bool:
@@ -709,16 +709,16 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 
 		var subk: String = poly.get("subkind", "")
 		var w := 4
-		var h := 3
+		var h := 4
 		var roof_rows := 2
-		var wall_rows := 1
+		var wall_rows := 2
 		var template_name := "house_s"
 
 		if A < 400.0:
 			w = 4
-			h = 3
+			h = 4 # §13: 2 roof rows over 2 wall rows, like Emerald's houses
 			roof_rows = 2
-			wall_rows = 1
+			wall_rows = 2
 			template_name = "house_s"
 		elif A < 2000.0 or subk in ["apartments", "dormitory"]:
 			w = 5
@@ -960,7 +960,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		var rc: float = lb["rc"]
 
 		# Build shrink sequence (§11.1 step 2):
-		# original -> (w-2, h-2) down to 6x5 for block_l -> house_m (5x4) -> house_s (4x3)
+		# original -> (w-2, h-2) down to 6x5 for block_l -> house_m (5x4) -> house_s (4x4)
 		var size_attempts: Array[Dictionary] = []
 		size_attempts.append({
 			"w": orig_w,
@@ -985,9 +985,9 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					"template": "block_l"
 				})
 			size_attempts.append({"w": 5, "h": 4, "roof_rows": 2, "template": "house_m"})
-			size_attempts.append({"w": 4, "h": 3, "roof_rows": 2, "template": "house_s"})
+			size_attempts.append({"w": 4, "h": 4, "roof_rows": 2, "template": "house_s"})
 		elif orig_t == "house_m":
-			size_attempts.append({"w": 4, "h": 3, "roof_rows": 2, "template": "house_s"})
+			size_attempts.append({"w": 4, "h": 4, "roof_rows": 2, "template": "house_s"})
 
 		var lm_placed := false
 		var chosen_col0 := 0
@@ -1191,9 +1191,9 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				var gy: int = cy * 32 + (35 - r)
 				if posmod(gx, 7) == 0 and posmod(gy, 6) == 0:
 					var base_col0: int = clampi(c, 5, 31)
-					var base_row0: int = clampi(r, 5, 32)
-					# Template centre tile in store units (house_s is 4x3 -> col0 + 2, row0 + 1)
-					var tc_su := Vector2((float(base_col0 + 2) + 0.5 - 4.0) * 0.5, (36.0 - (float(base_row0 + 1) + 0.5)) * 0.5)
+					var base_row0: int = clampi(r, 5, 31)
+					# Template centre tile in store units (house_s is 4x4 -> col0 + 2, row0 + 2)
+					var tc_su := Vector2((float(base_col0 + 2) + 0.5 - 4.0) * 0.5, (36.0 - (float(base_row0 + 2) + 0.5)) * 0.5)
 					if not _point_in_rings(tc_su, f_rings):
 						continue
 					if u_rand(gx, gy, world_seed, SALT_FALLBACK_SKIP) >= 0.70:
@@ -1205,8 +1205,8 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 
 					for nudge in NUDGE_OFFSETS:
 						var test_col: int = clampi(base_col0 + nudge.x, 5, 31)
-						var test_row: int = clampi(base_row0 + nudge.y, 5, 32)
-						if _can_place_template(test_col, test_row, 4, 3, grid_class, reserved_grid):
+						var test_row: int = clampi(base_row0 + nudge.y, 5, 31)
+						if _can_place_template(test_col, test_row, 4, 4, grid_class, reserved_grid):
 							chosen_col0 = test_col
 							chosen_row0 = test_row
 							f_placed = true
@@ -1222,7 +1222,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					var roof_color: int = 4 if p_kind == "commercial" else floori(u_rand(gx0, gy0, world_seed, SALT_DOOR_ROOF) * 4.0)
 					var door_col: int = 1 if u_rand(gx0, gy0, world_seed, SALT_DOOR_ROOF) < 0.5 else 2
 
-					for tr in 3:
+					for tr in 4:
 						var cur_r: int = chosen_row0 + tr
 						for tc in 4:
 							var cur_c: int = chosen_col0 + tc
@@ -1231,7 +1231,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 								grid_class[idx] = TILE_ROOF
 								grid_variant[idx] = roof_color
 							else:
-								if tc == door_col:
+								if tr == 3 and tc == door_col:
 									grid_class[idx] = TILE_DOOR
 									grid_variant[idx] = roof_color
 									all_doors.append(Vector2i(cur_c, cur_r))
@@ -1241,14 +1241,14 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 									grid_variant[idx] = roof_color + (8 if has_window else 0)
 
 					for tc in 4:
-						var s_idx: int = (chosen_row0 + 3) * WORK_SIZE + (chosen_col0 + tc)
+						var s_idx: int = (chosen_row0 + 4) * WORK_SIZE + (chosen_col0 + tc)
 						reserved_grid[s_idx] = 1
 
 					placed_buildings.append({
 						"col0": chosen_col0,
 						"row0": chosen_row0,
 						"w": 4,
-						"h": 3,
+						"h": 4,
 						"door_cols": [door_col],
 						"template": "house_s",
 						"subkind": p_kind,
@@ -1444,7 +1444,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		var subkind: String = item["subkind"]
 		var pts: PackedVector2Array = item["pts"]
 		var is_bridge: bool = subkind.ends_with(":bridge")
-		var width := 1
+		var width := 2 # §13: footways are two tiles wide
 		var target_class := TILE_PATH
 
 		var lo: int = (width - 1) / 2
@@ -1507,6 +1507,12 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					var p_idx: int = pt.y * WORK_SIZE + pt.x
 					grid_class[p_idx] = TILE_PATH
 					grid_variant[p_idx] = 0
+					# §13: two tiles wide: the tile east of the door column too, where only open ground lies
+					if pt.x + 1 < WORK_SIZE:
+						var e_idx: int = p_idx + 1
+						if grid_class[e_idx] in [TILE_GRASS, TILE_TALL_GRASS, TILE_FLOWERS, TILE_SAND, TILE_MARSH]:
+							grid_class[e_idx] = TILE_PATH
+							grid_variant[e_idx] = 0
 
 	# -------------------------------------------------------------
 	# 6. Parks & Forests (§4.1 step 6)

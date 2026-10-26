@@ -40,7 +40,7 @@ Contracts this plan extends: `design_world_generation.md` §3, `design_art_direc
 - **`Grid.TILE_WM = 8.0`** (was 16). A cell stays 256 WM-m, so a cell is **32 × 32 tiles**. `Grid.latlon_to_tile` becomes `floor(x / 8)`, `floor(y / 8)`.
 - **On the ground** a tile is 8·cos(latitude) m: ≈ 6.3 m at 38° N, 5.4 m at 48° N, 7.1 m at 26° N.
 - **Why 8:**
-  - A Pokémon house (4 × 3 tiles) then covers about 25 × 19 m — roughly one suburban lot — so buildings land near their real spots.
+  - A Pokémon house (4 × 4 tiles since §13; 4 × 3 before) then covers about 25 × 25 m — roughly one suburban lot — so buildings land near their real spots.
   - Streets come out 2–4 tiles wide, like Pokémon paths.
   - Crossing a 5 km town on foot takes about 3.5 minutes of play.
 - **Pixels:** 32 × 32 px per tile (`design_art_direction.md` §3). One cell is 1024 × 1024 world pixels.
@@ -96,10 +96,10 @@ CREATE TABLE cell_flags (
 
 | kind | subkind | Width (tiles) | OSM tags |
 |---|---|---|---|
-| `road` | the `highway` value | motorway 4, trunk 4, primary 3, secondary 3, tertiary 2, residential / unclassified / living_street / road 2, any `*_link` 2, service 1 | `highway=` one of those |
-| `path` | the `highway` value | 1 | `highway=footway\|path\|cycleway\|pedestrian\|track\|steps\|bridleway` |
+| `road` | the `highway` value | motorway 4, trunk 4, primary 3, secondary 3, tertiary 2, residential / unclassified / living_street / road 2, any `*_link` 2, service 2 (§13; it was 1) | `highway=` one of those |
+| `path` | the `highway` value | 2 (§13; it was 1) | `highway=footway\|path\|cycleway\|pedestrian\|track\|steps\|bridleway` |
 | `rail` | the `railway` value | 2 | `railway=rail\|light_rail\|narrow_gauge\|tram` |
-| `waterway` | the `waterway` value | river 3, canal 2, stream / ditch / drain 1 | `waterway=river\|canal\|stream\|ditch\|drain` |
+| `waterway` | the `waterway` value | river 3, canal 2, stream / ditch / drain 2 (§13; it was 1) | `waterway=river\|canal\|stream\|ditch\|drain` |
 | `coastline` | — | — | `natural=coastline` |
 
 - **Bridges:** if the way has `bridge=*` (any value except `no`), append `:bridge` to the subkind, e.g. `primary:bridge`.
@@ -250,7 +250,7 @@ Only buildings **anchored in the centre cell** are placed. Their unclipped footp
 
 | Template | When | Size (cols × rows) | Roof rows | Wall rows | Doors (bottom row, column offsets) |
 |---|---|---|---|---|---|
-| `house_s` | A < 400 | 4 × 3 | 2 | 1 | column 1 if `u(col0, row0, 5) < 0.5`, else column 2 |
+| `house_s` | A < 400 | 4 × 4 (§13; it was 4 × 3) | 2 | 2 | column 1 if `u(col0, row0, 5) < 0.5`, else column 2 |
 | `house_m` | 400 ≤ A < 2000, or subkind `apartments` / `dormitory` with A < 2000 | 5 × 4 | 2 | 2 | column 2 |
 | `block_l` | A ≥ 2000 | w = clamp(round(w_t), 6, 24), h = clamp(round(h_t), 5, 14) | h − 2 | 2 | columns 2, 10, 18 (those < w − 1) |
 
@@ -488,7 +488,7 @@ The converter must therefore keep the `footway`, `cycleway`, `service`, and `ind
 4. **Nudge before giving up.** If the snapped position is rejected, try these `(column, row)` offsets in order and take the first that passes, still clamped to `[5, 35 − w]` × `[5, 35 − h]`: `(0,0) (1,0) (−1,0) (0,1) (0,−1) (1,1) (−1,1) (1,−1) (−1,−1) (2,0) (−2,0) (0,2) (0,−2)`.
 5. **The same rules apply to fallback houses** (§4.3), which are still placed after all real buildings.
 6. **Statistics.** `synthesize_cell` also returns `"stats": {"building_candidates": n, "buildings_placed": m}`. Candidates are centre-anchored footprints with A ≥ 60; fallback houses are counted separately as `"fallback_placed"`.
-7. **Template sizes are unchanged** (`house_s` 4 × 3, `house_m` 5 × 4, footprint-sized `block_l`).
+7. **Template sizes are unchanged** (`house_s` 4 × 3, `house_m` 5 × 4, footprint-sized `block_l`) — *amended by §13: `house_s` is 4 × 4.*
 
 ### 10.3 Targets — measured on Washington DC
 *Changed 2026-10-20:* the human's own area is no longer a famous place (Decision 25). The canonical measurement city is **Washington DC** — a famous city, a 21 MB file, public, and nothing private to keep out of the repo.
@@ -604,7 +604,7 @@ Famous interiors (`design_interiors_and_quests.md` §4) must be recognisable on 
    - **What may lie under the template:** §10.2 step 2's list, **plus `PATH`**. At this stage, `PATH` comes only from minor roads (w ≤ 2) and is drawn again around the building by door paths.
    - **Still rejected:** `WATER`, `ROAD`, `RAIL`, `BRIDGE`, `VOID`, `GRAVE`, `FENCE`, another building's tiles, and reserved tiles. The south-ring check (§10.2 step 3) is unchanged.
    - **Nudges:** §10.2's 13 offsets, then `(3,0) (−3,0) (0,3) (0,−3) (4,0) (−4,0) (0,4) (0,−4)` — 21 in all.
-   - **Shrink to fit:** if every nudge fails, retry all 21 with `w − 2` and `h − 2` (a `block_l` stops at 6 × 5), then as `house_m` (5 × 4), then as `house_s` (4 × 3).
+   - **Shrink to fit:** if every nudge fails, retry all 21 with `w − 2` and `h − 2` (a `block_l` stops at 6 × 5), then as `house_m` (5 × 4), then as `house_s` (4 × 4, §13).
    - **Its door** is the template door column nearest the real door point's column.
    - A placed landmark leaves the ordinary candidate list.
 3. **Gild it at placement time:** `ROOF` 32, `WALL` 32 or 40, `DOOR` 32 — the door-inside-template test is gone. Its sign goes beside its door, as §10.8 says.
@@ -844,9 +844,9 @@ The placement target of §10.3 (45%) is retired (Decision 28, answered by Decisi
 
 ---
 
-## 13. Two-tile minimum widths and the 4 × 4 house (2026-10-26) — agent guide Item 12d (**proposal: awaits the human's approval before any code**)
+## 13. Two-tile minimum widths and the 4 × 4 house (2026-10-26) — agent guide Item 12d (**built**, approved by the human 2026-10-26)
 
-**Why.** At the Item 12 pause the human saw that Emerald has no piece for a one-tile-wide pond, footpath, street, or bridge (every Emerald one is at least two tiles wide), and that its houses have two wall rows where `house_s` has one. They answered **"Widen to 2 tiles"** and **"Houses 4 tall"**. Both change the world generator, so they follow THE LOOP: this plan first, then a pause, then code. Nothing in this section is built.
+**Why.** At the Item 12 pause the human saw that Emerald has no piece for a one-tile-wide pond, footpath, street, or bridge (every Emerald one is at least two tiles wide), and that its houses have two wall rows where `house_s` has one. They answered **"Widen to 2 tiles"** and **"Houses 4 tall"**. Both change the world generator, so they follow THE LOOP: this plan first, then the human's approval, then code. The human approved it, and Item 12d built it.
 
 ### 13.1 What changes, exactly
 
@@ -857,6 +857,7 @@ The placement target of §10.3 (45%) is retired (Decision 28, answered by Decisi
 | 3 | §2.2 and `get_waterway_width` | `stream`, `ditch`, `drain` 1 (and any other value 1) | **2** (`canal` 2 and `river` 3 are unchanged) |
 | 4 | §4.2 template table, the fallback house's lattice (§4.3), §10.2 item 7 ("template sizes are unchanged"), and the §11.1 shrink sequence | `house_s` 4 × 3, 2 roof rows, 1 wall row, door in column 1 or 2 of the bottom row | `house_s` **4 × 4**, 2 roof rows, **2 wall rows**, the door in the bottom row (row 3), column 1 or 2 by the same hash; windows on odd columns of both wall rows |
 | 5 | `tools/rom_spike/emerald/mapping_checks.py` `TEMPLATES`, `design_art_direction.md` | `house_s` 4 × 3, door `[1, 2]` | 4 × 4, door `[1, 3]`; the derived `buildings` block is rebuilt |
+| 6 | §10.2 step 8 door paths (`walk_path` from a door to the nearest connector) — **added while building; the plan had missed them** | one tile wide, in the door's column | **two tiles wide**: the door's column and the tile east of it, where only open ground (`GRASS`, `TALL_GRASS`, `FLOWERS`, `SAND`, `MARSH`) lies |
 
 - **Brush.** The painting formula is unchanged (`lo = (w − 1) / 2`, `hi = w − 1 − lo`), so a width-2 brush covers the centreline tile and the one to its east and south.
 - **Class.** A width-2 road is `PATH`, as before (`ROAD` needs w ≥ 3); a 2-wide `service` road therefore becomes `PATH`, as `tertiary` and `residential` already are.

@@ -12,7 +12,7 @@ const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
 # Final Golden hash (§8 a, §10.7) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "62a1c3a078ad14ecdca0da68481c86f8d4d89884f5efb0865a049032cb702ccc"
+const GOLDEN_HASH: String = "69c9934357cca8a202b1a13f9a63ea7bc39e078401fc28468d28ce55d3a4bbb8"
 
 func run_test() -> bool:
 	_cleanup()
@@ -390,8 +390,11 @@ func run_test() -> bool:
 			var idx: int = (r * 32 + c) * 3
 			if tiles_4_5[idx] == TileSynth2.TILE_DOOR:
 				three_houses_doors += 1
-	if three_houses_doors < 2:
-		push_error("(k) Falsifying: expected at least 2 of 3 houses placed, got %d" % three_houses_doors)
+	# Placement is read from the generator's own count: the ruin pass (§11.2) can turn a placed house into
+	# rubble, so a standing DOOR is a poor proxy for "placed" (§13 moved a house's row, and with it its fate).
+	var placed_houses: int = int(synth_4_5.get("stats", {}).get("buildings_placed", 0))
+	if three_houses_doors < 2 and placed_houses < 2:
+		push_error("(k) Falsifying: expected at least 2 of 3 houses placed, got %d (doors) and %d (stats)" % [three_houses_doors, int(synth_4_5.get("stats", {}).get("buildings_placed", 0))])
 		store.close()
 		_cleanup()
 		return false
@@ -893,6 +896,65 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
+	# -------------------------------------------------------------
+	# (u) Two-tile minimum widths and the 4 x 4 house (§13, Item 12d)
+	# A service road, a footway, a stream, and a door path were one tile wide; now none is, and a small
+	# house has two roof rows and two wall rows. FALSIFYING: this fails on the pre-§13 code.
+	# Store units are 2 tiles: cell col = 2x, cell row = 32 - 2y (north-first).
+	# -------------------------------------------------------------
+	var u_area := _build_empty_area()
+	u_area[Vector2i.ZERO]["lines"] = [
+		{"kind": "road", "subkind": "service", "geom_pts": PackedVector2Array([Vector2(1.0, 3.5), Vector2(15.0, 3.5)])},
+		{"kind": "path", "subkind": "footway", "geom_pts": PackedVector2Array([Vector2(4.0, 12.0), Vector2(15.0, 12.0)])},
+		{"kind": "waterway", "subkind": "stream", "geom_pts": PackedVector2Array([Vector2(2.0, 9.5), Vector2(2.0, 15.5)])},
+	]
+	u_area[Vector2i.ZERO]["polys"] = [{
+		"kind": "building",
+		"subkind": "house",
+		"name": "",
+		"geom_rings": [PackedVector2Array([Vector2(6.0, 6.0), Vector2(7.0, 6.0), Vector2(7.0, 7.0), Vector2(6.0, 7.0)])] # 16x16 m: house_s
+	}]
+	var u_tiles: PackedByteArray = TileSynth2.synthesize_cell(4, 4, u_area, 0)["tiles"]
+	# Overgrowth (§11.2) turns some path tiles into tall grass, so measure the best column along each line.
+	var service_w := _thickness(u_tiles, 20, 30, 19, 31, false, [TileSynth2.TILE_PATH, TileSynth2.TILE_ROAD])
+	var footway_w := _thickness(u_tiles, 20, 30, 0, 14, false, [TileSynth2.TILE_PATH, TileSynth2.TILE_ROAD])
+	var stream_w := _thickness(u_tiles, 2, 12, 0, 7, true, [TileSynth2.TILE_WATER])
+	if service_w < 2 or footway_w < 2 or stream_w < 2:
+		push_error("(u) Widths: service %d, footway %d, stream %d tiles (each must be >= 2)" % [service_w, footway_w, stream_w])
+		store.close()
+		_cleanup()
+		return false
+
+	var u_roof_rows := {}
+	var u_wall_rows := {}
+	var u_door := Vector2i(-1, -1)
+	var u_doors := 0
+	for r in 32:
+		for c in 32:
+			var cls: int = u_tiles[(r * 32 + c) * 3]
+			if cls == TileSynth2.TILE_ROOF:
+				u_roof_rows[r] = true
+			elif cls == TileSynth2.TILE_WALL:
+				u_wall_rows[r] = true
+			elif cls == TileSynth2.TILE_DOOR:
+				u_doors += 1
+				u_door = Vector2i(c, r)
+	# The door sits in the bottom wall row, so with two wall rows the wall rows above it hold only WALL tiles
+	# and the door row itself holds the DOOR: 2 roof rows, 1 WALL-only row, and the door row.
+	if u_doors != 1 or u_roof_rows.size() != 2 or u_wall_rows.size() != 2:
+		push_error("(u) House: %d door(s), %d roof row(s), %d WALL row(s) (expected 1, 2, and 2: the door row also holds WALL tiles beside the door)" % [u_doors, u_roof_rows.size(), u_wall_rows.size()])
+		store.close()
+		_cleanup()
+		return false
+	# The door path below the door is two tiles wide where it exists.
+	var below: int = (u_door.y + 1) * 32 + u_door.x
+	if u_tiles[below * 3] == TileSynth2.TILE_PATH and u_tiles[(below + 1) * 3] != TileSynth2.TILE_PATH:
+		push_error("(u) Door path below the door is one tile wide")
+		store.close()
+		_cleanup()
+		return false
+
+
 	# (a) Final Golden Hash Verification over cells (4,4), (4,5), (5,4), (5,5)
 	# -------------------------------------------------------------
 	var all_cells = [
@@ -937,6 +999,23 @@ func run_test() -> bool:
 	store.close()
 	_cleanup()
 	return true
+
+## The thickness of a line: the best (longest) run of tiles of the given classes across it, over all the
+## positions along it. For a horizontal line (across_rows false): positions are columns along_lo..along_hi,
+## and the run scans rows scan_lo..scan_hi. For a vertical line (across_rows true): positions are rows
+## along_lo..along_hi and the run scans columns scan_lo..scan_hi.
+func _thickness(tiles: PackedByteArray, along_lo: int, along_hi: int, scan_lo: int, scan_hi: int, across_rows: bool, classes: Array) -> int:
+	var best := 0
+	for pos in range(along_lo, along_hi + 1):
+		var run := 0
+		for i in range(scan_lo, scan_hi + 1):
+			var idx: int = (pos * 32 + i) if across_rows else (i * 32 + pos)
+			if (tiles[idx * 3] as int) in classes:
+				run += 1
+				best = maxi(best, run)
+			else:
+				run = 0
+	return best
 
 func _build_area(store: MapStore, cx: int, cy: int) -> Dictionary:
 	var area: Dictionary = {}

@@ -1282,6 +1282,27 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Two-tile minimum widths and the 4 × 4 house** change the world generator (slice 2), so they follow `THE LOOP`: the plan amendment is written (`implementation_plan_world_generation_slice2.md` §13, proposed as Item 12d before 25b) and **awaits your approval**; it moves golden hashes and the §11.4 targets (path tiles ≤ 18% is the one most at risk).
 - **Measured and run (the human's Mac):** `build_mapping.py` PASS for all 16 checks; the spike tests with the ROM and the ROM-free half; the game runner; see the commit.
 
+**M62 — Item 12d built: two-tile minimum widths and the 4 × 4 house (2026-10-26, branch `item-12d-widths-house`; plan: slice-2 §13, approved by the human the same day).**
+- **What changed (`tile_synth2.gd`):** `service` roads, `path` lines (footways and the like), and `stream`, `ditch`, and `drain` waterways are 2 tiles wide, where they were 1; `house_s` is 4 × 4 (2 roof rows over 2 wall rows, the door in the bottom row), where it was 4 × 3, in the ordinary templates, the fallback houses, and the landmark shrink sequence. **One addition the plan had missed:** door paths (the walk from a door to the nearest road or path) were also one tile wide, and are now two (the door's column and the one east of it, over open ground only); §13.1 row 6 records it.
+- **Falsifying test first, on the old code:** `tile_synth2_test` (u) printed `(u) Widths: service 1, footway 1, stream 1 tiles (each must be >= 2)`. On the new code it passes; it also checks a small house has 2 roof rows, 2 wall rows, and one door, and that the door path is two tiles wide.
+- **Measured on Washington DC** (`measure_synth.py`, the human's Mac), against the §11.4 targets (pass 22 in brackets):
+
+  | Measure | Target | Measured |
+  |---|---|---|
+  | Path tiles | ≤ 18% | **14.8%** [12.8%] |
+  | Building tiles | 10–16% | **11.7%** [11.1%] |
+  | Ordinary buildings gone | 20–45% | **43.1%** [42.9%] |
+  | Ordinary buildings ruined | 20–35% | **29.3%** [29.7%] |
+  | Ordinary buildings standing | (no target) | 27.6% [27.3%] |
+  | `TALL_GRASS` tiles | ≥ 8% | **14.2%** [14.0%] |
+  | Landmarks standing | all | **4/4** |
+  | Placement (retired target, for the record) | — | 27.9% [32.5%]: bigger houses fit in fewer spots |
+
+- **Tests changed, and why:** the golden hash of `tile_synth2_test` is now `69c99343…` (it was `62a1c3a0…`), because the synthesised cells changed; CI re-proves it on Linux and macOS. Test (k) counted standing DOOR tiles as a proxy for "houses placed", but a 4 × 4 house changes its row and so the hash input of its ruin-pass fate, and the fixture's first house came out ruined; (k) now also accepts the generator's own `buildings_placed` count (2 of the fixture's 3 houses are placed, as before).
+- **Emerald table:** `TEMPLATES` in `mapping_checks.py` is `house_s` 4 × 4, door `[1, 3]`, and the derived `buildings` block is rebuilt (8 roof colours); all 16 checks and the tests pass.
+- **Proof** (the game's screenshot harness, DC, zoom 2, placeholder art until the Emerald import): `shot_12d_z2_waypost.png` and `shot_12d_z2_most_buildings.png`, saved outside the repo; `FRAME_P95_MS 16.67` (≤ 16.7), `LOAD_MAX_FRAME_MS` 17.46 and 17.43 (≤ 33.4).
+- **Known limits (reported, not hidden):** bridge decks of primary and larger roads are 3–4 tiles wide, and the ROM's plank deck is 2, so their inside columns still show the placeholder; ruined and overgrown art is the open art-source question (overlays and library previews are with the human).
+
 ## 🔎 Verification Findings — open, for the next agent
 
 *F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58. F59 and F60 resolved in M60 (Item 12b), awaiting your review of the preview.*

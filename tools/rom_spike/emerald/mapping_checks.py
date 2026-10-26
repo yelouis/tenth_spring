@@ -292,10 +292,10 @@ def check_bridge(tilesets, mapping):
     return problems
 
 
-# The building templates the synthesiser places (slice-2 plan §11.1): footprint, roof rows, and the
+# The building templates the synthesiser places (slice-2 plan §4.2 and §13): footprint, roof rows, and the
 # door's offset in the bottom row. block_l is drawn at its 6 x 5 minimum.
 TEMPLATES = {
-    "house_s": {"w": 4, "h": 3, "roof_rows": 2, "door": [1, 2]},
+    "house_s": {"w": 4, "h": 4, "roof_rows": 2, "door": [1, 3]},
     "house_m": {"w": 5, "h": 4, "roof_rows": 2, "door": [2, 3]},
     "block_l": {"w": 6, "h": 5, "roof_rows": 3, "door": [2, 4]},
 }
