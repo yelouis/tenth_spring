@@ -29,7 +29,7 @@ TALL_GRASS_VARIANCE_MIN = 500.0 # per-channel variance of a tall-grass piece
 ROOF_COLOURWAYS_MIN = 4         # distinct roof hues among variants 0-7
 BRIDGE_BEHAVIOURS = (0x2B,)     # the ROM's bridge-over-water behaviour byte
 SAND_BEHAVIOURS = (0x21,)       # the ROM's sand behaviour byte
-SOIL_BEHAVIOURS = (0xA0,)       # the ROM's plantable-soil behaviour byte (carried only by bare soil patches)
+CROP_LAWN_SHARE_MAX = 0.10      # a field piece draws almost no lawn colour (it is soil)
 DOOR_BEHAVIOURS = (0x60, 0x69)  # the door bytes the ROM's house, hall and tower doors carry
 ROOF_BEHAVIOURS = (0x00,)
 WALL_BEHAVIOURS = (0x00, 0x01)
@@ -403,21 +403,30 @@ def check_palettes(tilesets):
 
 
 def check_ground_behaviours(tilesets, mapping):
-    """The SAND piece carries the ROM's sand behaviour byte, and the CROP piece its plantable-soil byte."""
+    """The SAND piece carries the ROM's sand behaviour byte. The CROP piece is a field: a blank top
+    layer and almost none of the lawn's colours (it is soil, not a lawn with an object on it)."""
     problems = []
-    wanted = {5: ("SAND", SAND_BEHAVIOURS), 19: ("CROP", SOIL_BEHAVIOURS)}
+    lawn = None
+    base = rs.lookup_entry(mapping.get("tile_map", {}), 1, 0, 0)
+    if base is not None and _loaded(tilesets, base.get("tileset", "primary")):
+        lawn = rs.colour_set(_render(tilesets, base))
     for cls, var, mask, entry in iter_entries(mapping):
-        if cls not in wanted:
+        if cls not in (5, 19):
             continue
-        name, allowed = wanted[cls]
         key = entry.get("tileset", "primary")
         if not _loaded(tilesets, key):
-            problems.append("%s names an unknown tileset" % name)
+            problems.append("class %d names an unknown tileset" % cls)
             continue
-        beh = rs.behaviour_at(tilesets, entry["metatile"], key)
-        if beh not in allowed:
-            problems.append("%s has behaviour %s, not the %s behaviour" % (
-                _label(cls, var, mask, entry), None if beh is None else "0x%02X" % beh, name.lower()))
+        label = _label(cls, var, mask, entry)
+        if cls == 5:
+            beh = rs.behaviour_at(tilesets, entry["metatile"], key)
+            if beh not in SAND_BEHAVIOURS:
+                problems.append("%s has behaviour %s, not the sand behaviour" % (label, None if beh is None else "0x%02X" % beh))
+        else:
+            if not rs.top_layer_blank(tilesets, entry["metatile"], key):
+                problems.append("%s paints an object over the field" % label)
+            if lawn is not None and rs.colour_share(_render(tilesets, entry), lawn) > CROP_LAWN_SHARE_MAX:
+                problems.append("%s draws more than %.0f%% lawn colours, so it is not a field" % (label, CROP_LAWN_SHARE_MAX * 100))
     return problems
 
 

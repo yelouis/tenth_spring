@@ -34,9 +34,9 @@ RULES = [
     (5, [0], [0], 292, P),
     # FLOWERS: the ROM's own flower-on-lawn piece (560 uses).
     (16, [0], [0], 4, P),
-    # CROP: the ROM's plantable-soil behaviour (0xA0) is carried only by bare soil patches; 268 is
-    # the full-tile soil with a blank top layer, the centre of the ROM's dirt patch on lawn.
-    (19, [0], [0], 268, P),
+    # CROP: the interior of the ROM's ploughed field, a 3 x 3 block of furrowed soil in sec07 (the
+    # ROM places 657 only inside that block, beside its edge pieces and its planted twin 667).
+    (19, [0], [0], 657, "sec07"),
 
     # --- footpaths and streets ----------------------------------------------------------
     # PATH: the 3 x 3 footpath block (the ROM's route paths). Every ROM path is at least two
@@ -299,7 +299,7 @@ GAPS = [
 
 # Look-alike buildings lifted from the ROM's own outdoor layouts as rectangles of metatile
 # numbers (row-major, w x h), named by function. door is [x, y] of the door piece, or [] for none.
-# Block corners can hold scenery cells (trees, a sign, shore); the ids are the layout's own.
+# The ids are the layout's own, except the scenery cells listed in TIDY below.
 COMPOSITIONS = {
     "pyramid_hall": {
         "w": 15, "h": 11, "tileset": "sec15", "door": [7, 9],
@@ -490,3 +490,32 @@ COMPOSITIONS = {
         ],
     },
 }
+
+
+# Scenery cells at the corners of a lifted rectangle (shore or deep water, a rock cliff, trees, a
+# sign) are not part of the building. They are replaced here with plain lawn (primary metatile 1),
+# or with the sand the pyramid stands on (289), so the look-alike can be placed on lawn. Everything
+# else stays exactly as the layout has it: the yards, fence posts, and paving that belong to a
+# building, and the deep water under the raised road. {composition id: {(x, y): metatile}}.
+TIDY = {
+    "pyramid_hall": {(11, 10): 289},
+    "museum_hall": {(0, 0): 1, (8, 0): 1, (9, 0): 1, (0, 1): 1, (1, 1): 1, (8, 1): 1, (9, 1): 1},
+    "observatory": {(0, 0): 1, (10, 0): 1, (0, 6): 1, (0, 7): 1, (1, 7): 1, (8, 7): 1},
+    "power_station": dict([((x, 0), 1) for x in (0, 1, 2, 3, 4, 10, 11, 12, 13, 14)] + [((0, 1), 1), ((14, 1), 1)]),
+    "maze_house": {(0, 0): 1, (4, 0): 1},
+}
+
+
+def _tidied(compositions):
+    out = {}
+    for cid, comp in compositions.items():
+        comp = dict(comp)
+        cells = list(comp["metatiles"])
+        for (x, y), metatile in TIDY.get(cid, {}).items():
+            cells[y * comp["w"] + x] = metatile
+        comp["metatiles"] = cells
+        out[cid] = comp
+    return out
+
+
+COMPOSITIONS = _tidied(COMPOSITIONS)

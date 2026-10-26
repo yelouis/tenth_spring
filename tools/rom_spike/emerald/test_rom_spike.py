@@ -499,6 +499,19 @@ class TestMappingRules(EmeraldRomTestCase):
             checked += 1
         self.assertGreaterEqual(checked, 6, "the evidence check covered too few water edge pieces")
 
+    def test_layout_evidence_for_the_crop_field(self):
+        """The ROM places the field interior only inside its own field block: its neighbours in the layouts
+        are pieces of that block (edges, other interior, the planted twin)."""
+        metatile, key = self.entry_of(19, 0, 0)
+        index = int(key[3:])
+        layouts = list(rs.iter_map_layouts(self.rom_data))
+        block = {(index, m) for m in (648, 649, 650, 656, 657, 658, 664, 665, 666, 667)}
+        counts = rs.neighbour_counts(layouts, {(index, metatile)}).get((index, metatile), {})
+        total = sum(n for side in counts.values() for n in side.values())
+        inside = sum(n for side in counts.values() for k, n in side.items() if k in block)
+        self.assertGreater(total, 0, "the field piece occurs in the layouts")
+        self.assertGreaterEqual(inside / float(total), 0.8, "the ROM puts the field piece beside its own block")
+
     def test_spike_outputs_exist_outside_repo(self):
         """The spike's images exist in ~/.tenth_spring_rom_spike/emerald/ (never in the repo)."""
         expected = ["primary_labelled.png", "preview.png", "table_ground.png", "table_buildings.png",
@@ -604,7 +617,8 @@ class TestRulesRejectWrongTables(EmeraldRomTestCase):
     def test_sand_and_crop_reject_a_piece_without_their_behaviour(self):
         lawn, lkey = self.entry_of(1, 0, 0)
         self.assertTrue(named(mc.check_ground_behaviours(self.tilesets, self.wrong(5, 0, 0, lawn, lkey)), "class 5", "sand behaviour"))
-        self.assertTrue(named(mc.check_ground_behaviours(self.tilesets, self.wrong(19, 0, 0, lawn, lkey)), "class 19", "crop behaviour"))
+        self.assertTrue(named(mc.check_ground_behaviours(self.tilesets, self.wrong(19, 0, 0, lawn, lkey)), "class 19", "not a field"))
+        self.assertTrue(named(mc.check_ground_behaviours(self.tilesets, self.wrong(19, 0, 0, 667, "sec07")), "class 19", "paints an object"))
 
     def test_bridge_rejects_a_road_or_lawn_piece(self):
         lawn, lkey = self.entry_of(1, 0, 0)
