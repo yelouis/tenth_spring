@@ -34,6 +34,8 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 > **2026-10-23 (pass 22) — you answered Decision 37** (accept 43% of houses gone; the target widens to 20–45%), and it's under Resolved. No decision is open. Pass 22 filed **F59** (Nintendo names in committed data, minor), **F60** (the Emerald mapping draws the wrong pieces — fixed before your Item 12 review), and **F61** (the whole-city view never finishes loading in the screenshot harness).
 >
 > **2026-10-23 (pass 23) — nothing new needs you.** No item was finished since pass 22. Item 12b is in progress (see M59).
+>
+> **2026-10-24 (Item 12b built) — F59 and F60 are resolved (M60).** No decision is open. At the Item 12 pause you review the Emerald preview and sheets, and M60 lists what Emerald lacks, with options for you.
 
 ## ✅ Resolved Decisions
 
@@ -342,7 +344,7 @@ D3 is code-complete but cannot be closed without a physical-device soak: carry a
   - **This amends Decision 10's "one cartridge"** — Black/White still supplies every Pokémon.
   - **The code-drawn placeholder atlas is still built** — it is the no-ROM look and the only atlas tests and agents ever see.
   - **The IP guard gains a GBA rule:** Gen 3 game codes at header offset `0xAC` (agent guide Item 11; guard built — M36).
-  - **The Emerald tile spike** (agent guide Item 12): spike executed, mapping table drafted (`game/config/emerald_tile_map.json`), and implementation plan written (`docs/implementation_plan_rom_tiles.md`). Awaiting human review at Item 12 PAUSE.
+  - **The Emerald tile spike** (agent guide Items 12 and 12b): spike executed, the mapping table **corrected by evidence** (`game/config/emerald_tile_map.json`, version 2 — M60), and the implementation plan written (`docs/implementation_plan_rom_tiles.md`). Awaiting your review of the preview and sheets at the Item 12 pause.
 - **Contracts updated:** `design_rom_asset_pipeline.md` §1, §2, §3, §4, §5, §6, §7, §8, and §10; `design_art_direction.md` §1, §2, and §5; slice-2 plan status and §6; `README.md`; `master_implementation_plan.md` Phase 2; `e2e_testing_journeys.md` Journey 0.
 
 ### Decision 16 — World scope: the USA only (Resolved 2026-10-19 — your directive)
@@ -1235,9 +1237,44 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
     - the doc updates.
 - **Branches:** only `main` and the in-progress `item-12-mapping-fix`, which has no commits — its work is uncommitted — so there was nothing to merge.
 
+**M60 — Item 12b built: the Emerald mapping chosen by evidence, with neutral names (F60, F59 → Resolved) (2026-10-24, branch `item-12-mapping-fix` from `bb1646d`).**
+- **What was wrong (F60):** pass 22 guessed. Lawn variants were a sign object and a red-marked piece, water used an edge piece as its interior and one plain piece for every edge, tall grass included a tree-over-grass piece, grave and sign shared one piece, rail used a road piece, and all eight roofs were one roof. Its compositions also keyed the resort-island buildings to a sea-floor tileset.
+- **What was fixed:** every entry now rests on a behaviour byte, a pixel test, or the ROM's own map layouts counted as statistics (`design_rom_asset_pipeline.md` §4, "Choosing the metatiles"). Nothing from a layout is kept except metatile numbers (and the 14 composition rectangles).
+  - `tools/rom_spike/emerald/`: `rom_spike.py` (evidence helpers, labelled sheets, table sheets, composition and building sheets, the preview), `mapping_checks.py` (the 12 rules of `implementation_plan_rom_tiles.md` §3, 16 check functions), `mapping_data.py` (the chosen numbers), `build_mapping.py` (expands them, derives the building templates, refuses a table that fails a rule), `test_rom_spike.py`.
+  - `emerald_tile_map.json` is now **version 2**: 360 entries over 18 classes and 70 variants, 13 tilesets (the primary and 12 secondaries, keyed `secNN`), 14 compositions named by function, 3 derived building templates in 8 roof colours each, 1 listed share, and 20 gap rules. It is 181 lines (it was 4,782).
+- **Falsifying checks, run against the pass-22 table first, on the human's Mac:** 9 of the 10 rule tests failed (the tenth, coverage, passed because pass 22 did map every tile). First failures: lawn variant 1 drew **88%** of its pixels from the lawn's colours against ≥ 90%, and variant 2 drew 0%; the water interior (metatile 44) was **76%** water-coloured against ≥ 95%, and the edge piece (52) showed no shore on any open side; metatile 37 as tall grass paints an object over the grass; metatiles 33, 76, 288, 289, 290, and 568 were each shared by two or more classes with no listing; all eight roofs were one hue; every tileset key was a town name.
+- **Review, and what it changed.** Two independent reviews read the checks adversarially and found holes, all closed here: a stray tileset key hid a shared piece; pixel-identical twins under two numbers (footpath ground and sand) evaded the share rule; a corner wedge passed as lawn; waterfall, sea, and corner-notch pieces passed as pond water; arbitrary pieces passed as roofs; compositions needed no door; and some 25 thresholds could be loosened with the suite still green. The rules are stricter (behaviour sets, a lawn patch limit, water colour containment, centre and corner squares, pixel-aware shares, building piece behaviours, derived `buildings`, tile-existence, forbidden place words kept as hashes), and every numeric threshold now has a test that fails when it is loosened.
+- **Measured against the targets, on the new table:**
+
+  | Rule | Target | Measured |
+  |---|---|---|
+  | Lawn variants 0–3, share of pixels in the base lawn's colours | ≥ 90% | 100%, 100%, 100%, 100% (no non-lawn patch) |
+  | Water interior (mask 15), water-coloured | ≥ 95% | 100% |
+  | Water 0-bit side, non-water (shore) share of its band | ≥ 25% | min 31.2% (mean 41.6%) |
+  | Water 1-bit side, water share of its band | ≥ 90% | min 100% |
+  | Water in the interior's own colours; centre 8 × 8 water | ≥ 99%; ≥ 90% | 100%; 100% |
+  | Tall grass (piece 13), per-channel variance | > 500 | 2008 / 2392 / 4917; behaviour `0x02`; blank top layer |
+  | Distinct roof hues among variants 0–7 | ≥ 4 | 7 (brown and orange share one 30° bucket) |
+  | Unlisted shared pieces (by number and by pixels), entries for a gap, metatiles or tiles past the end | 0 | 0 |
+
+- **Executed (the human's Mac, `darwin arm64`):** `build_mapping.py` printed `PASS` for all 16 checks and wrote the table; the spike tests with the ROM, `Ran 78 tests … OK`; without the ROM the ROM-free half runs in `game/tests/test_runner.py` (`[EMERALD TABLE TESTS OK]`); the full game runner printed `[ALL GAME TESTS PASS] All 22 expected tests passed`; the spike wrote the sheets, `table_ground.png`, `table_buildings.png`, `compositions.png`, `buildings.png`, and `preview.png` into `~/.tenth_spring_rom_spike/emerald/` (never in the repo). The preview's 4,096 fixture tiles are Emerald tiles except those the gaps leave to the placeholder.
+- **Neutral names (F59):** tilesets are keyed by index and compositions by function (`pyramid_hall`, `dome_centre`, `tall_tower`, `museum_hall`, `maritime_hall`, `theatre_hall`, `dept_store`, `casino_hall`, `observatory`, `power_station`, `grand_hall`, `stadium`, `elevated_road`, `maze_house`). `design_art_direction.md` §1a is renamed to match. A hashed list of forbidden place words is checked in CI.
+- **What Emerald lacks — these keep the code-drawn placeholder tile (the `gaps`), with options for you.** Independent searches (all 57 secondary tilesets, about 14,000 pieces viewed) found no honest piece for the following, with one exception (cropland, below):
+  - **Ruined and overgrown art.** No tileset has a cracked road, an overgrown path, a weeded plaza, a ruined or boarded roof, wall, or door, or a large rubble pile on lawn. In the preview they show as placeholder tiles, which have their own brighter lawn colour and read as squares. *Options:* (A) keep the placeholder (honest, but the ruined city looks patchy until Phase 9 art); (B) let each ruined variant draw the intact Emerald piece (a consistent look that loses the ruin cues, and a stand-in the guide forbids unless you approve it); (C) commission Emerald-style ruined pieces later; (D) recolour the placeholders' backgrounds to the Emerald lawn and pond colours when the atlas is active (a small Phase 2 change that hides the squares).
+  - **One-tile-wide water, paths, roads, and bridges.** Every Emerald pond, footpath, street lane, and bridge is at least two tiles wide, so masks 0, 1, 2, 4, 5, 8, and 10 of water, path, and road (and the one-tile bridge masks) have no piece; the generator makes streams and service roads one tile wide. The ROM's plank bridge is exactly two tiles wide, so a wider deck's inside (mask 15) is also a gap: it cannot tell a north-south deck from an east-west one. *Options:* (A) accept the placeholder; (B) change the synthesiser to draw water, paths, and roads at least two tiles wide (a slice-2 change that needs your approval); (C) for one-tile bridges only, the verifier found one-tile-wide floating-log walkways in one tileset (sec12), but over sea-coloured water, as logs rather than planks, so I did not adopt them: your art call.
+  - **Marsh, gravestones, and rail track** have no honest piece anywhere in the ROM (the ROM's one wetland is plain pale lawn dotted with ponds). **Cropland** uses the ROM's plantable-soil piece (a bare soil patch, behaviour `0xA0`), found by the ground-gap verifier. *Option:* the ploughed, furrowed fields in sec07 (657, planted 667) look more like a field but sit on a pink-dirt ground.
+  - **Pointed trees** exist only as a 2 × 2 block, so single pointed trees are placeholders; a lone round tree draws as a canopy only (the ROM's small tree is a canopy over a trunk).
+  - **Fence junctions** (T and cross) have no piece, and the fence's right-hand corners (masks 9 and 12) show a gap about one post wide, because the ROM's fence family is left-aligned.
+  - **The 4 × 3 house** has one wall row, while Emerald draws two (a door-top above the door), so its windows are half height. *Option:* make `house_s` 4 × 4.
+  - **Not in the tile vocabulary at all:** snow terrain, high-speed rail, modern asphalt highways, glass skyscraper facades, street lamps and traffic signals, and cars and buses (`design_art_direction.md` §2a's modern props).
+  - **`power_station`** is a look-alike (the ROM has no generator), and `maritime_hall` is identified from its interior and seaside look.
+  - **Compositions are exact lifts from the ROM's layouts,** so 11 of the 14 carry a few non-building cells in their corners (shore or deep water, a rock cliff, trees, a sign, fence ends, or lawn). They are kept as the layouts have them. *Option:* replace those cells with the lawn piece (or crop to the building) when Item 30 places them, which I'd do at that item unless you say otherwise.
+- **Roofs (guide step 4):** all eight roof variants have an honest colourway (red tile, brown shingle, green bamboo, purple lattice, blue slate, orange corrugated, pink striped, grey stone), plus a gold flat roof for the gilded landmark look (variant 32; the gilded walls and door, variants 32 and 40, reuse the brown colourway's wall set, so only the roof is gold); the placeholder's teal has no Emerald match, so variant 1 is brown.
+- **Scope notes:** `game/tests/test_runner.py` gained one stanza (the ROM-free table tests), a small addition beyond the guide's blast radius, so the table's numbers-only guarantee is checked in CI as well as locally. The guide's own §3 still quotes the pass-22 names; the F59 entry is removed here, and the guide's line is left for the next verification pass.
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58.*
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58. F59 and F60 resolved in M60 (Item 12b), awaiting your review of the preview.*
 - **F61 (found 2026-10-23, pass 22) — the whole-city overview never finishes loading in the screenshot harness.**
   - **Repro:** `python3 -I tools/demo_screenshot.py --out-dir <outside the repo> --demo-dir user://demo_dc --zoom 0.0625 --focus waypost` runs for over 15 minutes with no screenshot and no frame lines, and had to be killed. The same command at `--zoom 1` finishes in seconds.
   - **The implementing agent hit it too:** its last screenshot run, minutes before the Item 25 commit, ended `failed:120` (memguard log, 2026-10-24T00:08Z). Item 25 was then committed without frame times.
@@ -1249,25 +1286,6 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
     Something in that loop never reaches zero at overview zoom.
   - **The harness also has no timeout,** so a stall hangs forever instead of failing.
   - **Agent guide Item 25b.**
-- **F60 (found 2026-10-23, pass 22) — the Emerald mapping draws the wrong pieces.** This shows in Item 12's own preview of the fixture cells (`~/.tenth_spring_rom_spike/emerald/preview.png`):
-  - **grass:** `GRASS` variants 1 and 2 map to metatiles 2 and 3, which draw a small grey object and red marks, so every lawn is littered with them. The spike's checks covered only metatiles 1, 13, and 44;
-  - **water:** `WATER` maps every mask to 44 or 52, which draws as vertical stripes with no shoreline;
-  - **tall grass:** `TALL_GRASS` uses 13 and 37, and parts of tall-grass areas draw as round bushes. Tall grass is the most important tile in the game;
-  - **shared or stand-in pieces:**
-    - `GRAVE` and `SIGN` share metatile 33;
-    - `MARSH` reuses the sand tile (76);
-    - `RAIL` maps to a road tile (290), although `gaps` lists rail;
-    - all eight roof colours map to one roof (521).
-  - **Why it matters:** the human's review at Item 12's pause would only see a broken preview.
-  - **The fix:** choose by evidence (behaviour bytes, pixel tests, and the ROM's own layouts as adjacency statistics — numbers only), put true gaps in `gaps`, label the contact sheets with indices, and add falsifying checks. **Agent guide Item 12b.**
-  - **Pass 23:** the labelled contact sheets now exist (part of 12b's work in progress). They confirm metatile 3 is a sign object, and 37 a tree top.
-- **F59 (minor, found 2026-10-23, pass 22) — Nintendo place and facility names in committed files.**
-  - **Where:**
-    - `game/config/emerald_tile_map.json` keys its tilesets as `petalburg`, `rustboro`, `slateport`, `mauville`, `lilycove`, `mossdeep`, and `battle_frontier`;
-    - its compositions are named `game_corner`, `contest_hall`, `battle_tower`, `trick_house`, and so on;
-    - the spike's comments name more.
-  - The repo's rule is no Nintendo names, and the IP risk is small but needless.
-  - **The fix:** neutral ids, with tilesets by index and compositions by function (`casino_hall`, `theatre_hall`, `tall_tower`, …) — `design_art_direction.md` §1a is renamed to match. **Folded into Item 12b.**
 - **F58 (minor, found 2026-10-22, pass 21) — a fresh checkout fails the battery until Godot imports the project.**
   - In a new clone or git worktree, `game/.godot/` (ignored by git) doesn't exist yet. Scripts that use `class_name` then fail to parse, so `test_runner.py` prints `[TEST RUNNER FAIL] Godot exited with code 0` or `1`, and `sync_e2e` times out on `Parse error`.
   - CI avoids it by running `python3 -I tools/godot.py --memguard-step godot_import --import` first.

@@ -30,22 +30,24 @@ The human noted that "the art from the ROMs might not be enough for things like 
 
 1. **An Emerald look-alike,** composed from the player's ROM through the mapping table (numbers only, never pixels — `design_rom_asset_pipeline.md` §5):
 
-   | Emerald building (by function) | Stands in for |
-   |---|---|
-   | the pyramid-shaped battle hall | The Pyramid (Memphis) |
-   | the space centre's dome | Space Center Houston, Kennedy Space Center |
-   | the tall battle tower | Empire State Building, Willis Tower, Renaissance Center, Terminal Tower, Freedom Tower, Cathedral of Learning, the STRAT |
-   | the art museum | Philadelphia Museum of Art, Nelson-Atkins, Boston Public Library, Library of Congress |
-   | the maritime museum | Georgia Aquarium, American Museum of Natural History, Field Museum, the natural-science museums |
-   | the contest hall | the Fox Theatres, Ryman Auditorium, the Smith Center, Preservation Hall, TCL Chinese Theatre |
-   | the department store | Reading Terminal, Pike Place, French Market, and West Side Market halls |
-   | the game corner | the Glow's casinos on Fremont Street |
-   | the weather institute | Griffith Observatory, McDonald Observatory |
-   | the power plant | Michigan Central Station, the Edison laboratory, the Flats |
-   | the league's grand hall | the state capitols (Rhode Island, Texas, Colorado, Arizona) |
-   | the battle dome and the stadium | Fenway Park, the Astrodome, Churchill Downs |
-   | the elevated cycling road | the "L", the Stone Arch Bridge, the Hot Metal Bridge |
-   | the trick house | City Museum (St. Louis) |
+   Compositions are named by function, never by the Emerald place or facility they come from (F59). The ids below are the keys of `compositions` in `game/config/emerald_tile_map.json`:
+
+   | Composition id | Emerald building (by function) | Stands in for |
+   |---|---|---|
+   | `pyramid_hall` | the pyramid-shaped hall | The Pyramid (Memphis) |
+   | `dome_centre` | the dome building | Space Center Houston, Kennedy Space Center |
+   | `tall_tower` | the tall tower | Empire State Building, Willis Tower, Renaissance Center, Terminal Tower, Freedom Tower, Cathedral of Learning, the STRAT |
+   | `museum_hall` | the gallery hall | Philadelphia Museum of Art, Nelson-Atkins, Boston Public Library, Library of Congress |
+   | `maritime_hall` | the seaside exhibition hall | Georgia Aquarium, American Museum of Natural History, Field Museum, the natural-science museums |
+   | `theatre_hall` | the performance hall | the Fox Theatres, Ryman Auditorium, the Smith Center, Preservation Hall, TCL Chinese Theatre |
+   | `dept_store` | the department store | Reading Terminal, Pike Place, French Market, and West Side Market halls |
+   | `casino_hall` | the arcade hall | the Glow's casinos on Fremont Street |
+   | `observatory` | the research observatory | Griffith Observatory, McDonald Observatory |
+   | `power_station` | the power station | Michigan Central Station, the Edison laboratory, the Flats |
+   | `grand_hall` | the grand hall | the state capitols (Rhode Island, Texas, Colorado, Arizona) |
+   | `stadium` | the dome stadium | Fenway Park, the Astrodome, Churchill Downs |
+   | `elevated_road` | the raised roadway | the "L", the Stone Arch Bridge, the Hot Metal Bridge |
+   | `maze_house` | the maze house | City Museum (St. Louis) |
 
 2. **A free, credited library piece** (§2a) — mainly modern props, not landmarks.
 3. **An original set piece** — a multi-tile stamp drawn in the Emerald style: 16-colour palettes, a 1-px dark outline, light from the top left. Needed first for the icons nothing else can stand in for:

@@ -101,7 +101,7 @@ Confirmed ROM offsets:
 
 ### 1.3 `tile_atlas_builder.gd` — Atlas Builder
 
-Reads `game/config/emerald_tile_map.json`:
+Reads `game/config/emerald_tile_map.json` (schema: `design_rom_asset_pipeline.md` §4):
 1. **Vocabulary Rows:**
    For each row in `game/assets/tiles/placeholder_v1.json` `(class, variant)`:
    - If unmasked: metatile mapped to column 0.
@@ -109,8 +109,9 @@ Reads `game/config/emerald_tile_map.json`:
 2. **Modular Buildings:**
    Renders template rows for `house_s`, `house_m`, and `block_l` for roof colors 0–7.
 3. **Class 21 Landmark Compositions (slice-2 plan §12.3):**
-   Renders look-alike compositions from `emerald_tile_map.json` into dedicated atlas rows for the 14 landmarks defined in `design_art_direction.md` §1a:
-   - `pyramid_hall`, `space_center`, `battle_tower`, `art_museum`, `maritime_museum`, `contest_hall`, `dept_store`, `game_corner`, `weather_institute`, `power_plant`, `league_hall`, `stadium`, `cycling_road`, `trick_house`.
+   Renders look-alike compositions from `emerald_tile_map.json` into dedicated atlas rows for the 14 landmarks defined in `design_art_direction.md` §1a. They are named by function, never by the Emerald place or facility they come from (F59):
+   - `pyramid_hall`, `dome_centre`, `tall_tower`, `museum_hall`, `maritime_hall`, `theatre_hall`, `dept_store`, `casino_hall`, `observatory`, `power_station`, `grand_hall`, `stadium`, `elevated_road`, `maze_house`.
+4. **Gaps keep the placeholder.** Every `(class, variant, mask)` the table lists under `gaps` gets its row or column copied from `placeholder_v1`, so the atlas always has a tile for everything the synthesiser can emit. Tilesets are keyed by index (`primary`, `sec05`, …), never by name.
 
 ---
 
@@ -154,14 +155,22 @@ To ensure robust crash recovery:
 
 ## 3. Spot-Checks & Validation (`design_rom_asset_pipeline.md` §7)
 
-The builder must fail and reject cache generation if any of these conditions occur:
-1. **Schema Coverage:** Every `(class, variant)` from `placeholder_v1.json` has an atlas row or is documented in `gaps`.
-2. **Palette Color Count:** Every decoded tile uses $\le 16$ colors from its palette.
-3. **Color Dominance & Variance Thresholds:**
-   - **Grass (Metatile 1):** Green channel dominant ($G > R$ and $G > B$).
-   - **Tall Grass (Metatile 13):** Green channel dominant and pixel variance $\sigma^2 > 500$ on all three channels.
-   - **Water (Metatile 44):** Blue channel dominant ($B > R$ and $B > G$).
-4. **Metatile Boundary Check:** Rejects mapping table entries referencing metatile index $\ge$ tileset metatile count.
+The builder must fail and reject cache generation if any of these conditions occur. The spike implements these rules as `tools/rom_spike/emerald/mapping_checks.py` (one function per rule, run together by `run_all`), and its tests run them on the committed table (Item 12b); the importer repeats them on the player's machine. Thresholds are fixed numbers, not tuning knobs:
+
+1. **Schema coverage.** Every `(class, variant, mask)` the synthesiser can emit (`placeholder_v1.json`: 16 masks for a masked class, mask 0 otherwise, 16 `SIGN` variants) has an entry or is covered by a `gaps` rule (classes, with optional variants and masks).
+2. **Palettes.** Every palette of every tileset has exactly 16 colours, each channel 0–255, so a 4-bpp tile cannot use more than 16 colours from it (`check_palettes`).
+3. **Lawn.** The base lawn (`GRASS` variant 0) is green-dominant ($G > R$ and $G > B$). Every `GRASS` variant has the ordinary behaviour `0x00` and a blank top layer, draws $\ge 90\%$ of its pixels from the base lawn's colours, and has no compact patch of other colours larger than 3 pixels (a corner of another object).
+4. **Water.** Every mapped `WATER` piece has a standing-water behaviour byte (`0x10`, `0x11`, `0x12`, `0x15`, `0x16`, `0x17`; not the waterfall `0x13`) and is $\ge 90\%$ water in its central 8 × 8. Every water pixel is drawn in a colour the mask-15 piece uses ($\ge 99\%$), so a shore never sits as a seam beside the lake. The mask-15 piece is $\ge 95\%$ water-coloured (blue is the strongest channel) with each 4 × 4 corner $\ge 90\%$ water. For every mask, 15 included, the band along a side (4 px deep, the middle 8 px of the side) is $\ge 25\%$ non-water where the mask bit is 0 (a shore) and $\ge 90\%$ water where it is 1.
+5. **Tall grass, sand, and bridge.** Every `TALL_GRASS` piece has a tall-grass behaviour (`0x02` or `0x03`), a blank top layer (no tree or bush painted over it), a green-dominant mean colour, and per-channel variance $> 500$ (a wrong decompression or palette cannot pass). The `SAND` piece has the sand behaviour `0x21`, and the `CROP` piece the plantable-soil behaviour `0xA0`. Every `BRIDGE` piece has the bridge-over-water behaviour `0x2B`, and the pieces of a north-south deck (masks 7, 13, 6, 12, 3, 9) are never the pieces of an east-west deck (masks 14, 11).
+6. **No stand-ins.** Two classes never share a metatile unless `shared` lists that share as intentional. With the ROM, metatiles that draw identical pixels count as one piece, so a twin under a second number is still a share (footpath ground and plain sand are the one such share). A primary-range id (below 512) is a primary piece whatever tileset key its entry carries. A `shared` entry whose classes do not match the pieces' real users is itself an error.
+7. **Gaps are gaps.** No `tile_map` entry exists for anything `gaps` lists. Each gap has a unique snake_case `id`, a `reason` of at least 12 characters, a non-empty list of class numbers 0–20, and, when given, a non-empty list of masks 0–15 and of variants 0–63.
+8. **Metatile boundary.** Rejects an entry whose metatile index is negative, is $\ge 512$ in the primary tileset, or is $\ge 512 +$ the named secondary's metatile count; whose tileset key is not `primary` or `secNN` with NN from 1 to 57; or that references a tile past the end of its tileset's tile data. `secNN` is the tileset record at `0x3DF704 + 24 * NN`, so the primary is index 0 and `sec01` is the first secondary.
+9. **Roof colourways.** At least four distinct hues among `ROOF` variants 0–7. A variant's hue is the 30° hue bucket of its most common pixel colour (ignoring pixels whose brightest channel is below 90) across all its mapped masks; a colour with saturation below 0.2 or value below 0.25 falls in one shared "grey" bucket, which counts as a hue. If the tilesets honestly have fewer than four, each mapped variant must be a colourway of its own, and every other variant 0–7 must be covered by a `gaps` rule with a reason (guide §3 step 4).
+10. **Building pieces and templates.** `ROOF` pieces have behaviour `0x00`, `WALL` pieces `0x00` or `0x01`, and `DOOR` pieces `0x69`; no two roof variants use the same set of pieces. The `buildings` block equals what `tile_map` implies (the synthesiser's own neighbour-mask rules over the three templates), so the two can never disagree.
+11. **Compositions.** The 14 neutral ids exist; each has integer $w, h \ge 1$ with $w \times h$ metatiles, and every one but the raised road (`elevated_road`) has a door inside the grid, on a piece with a door behaviour (`0x60` or `0x69`).
+12. **Neutral names and table shape.** Tileset keys are `primary` or `secNN`, and the `tilesets` block lists exactly the tilesets the table uses, each at its own index. Composition ids are the 14 function names, building names the three templates. No id or reason contains a forbidden place word (the checker keeps only SHA-1 hashes of those words, so it names nothing). The table holds numbers, ids, and short plain-ASCII reasons only: the version-2 schema of `design_rom_asset_pipeline.md` §4, explicit masks 0–15 (no wildcard), integer fields typed as integers, no extra fields. Rules 1, 6, 7, 8 (without tile data), 10 (`buildings`), 11 (structure), and 12 need no ROM, so they run in CI too (`test_rom_spike.py`, run by `game/tests/test_runner.py`).
+
+**Each rule is also tested against a wrong table.** The falsifying tests cover the pass-22 choices (a sign object as lawn, an edge piece as water interior, a tree-over-grass piece as tall grass, one piece for grave and sign, one roof for all colours, a bridge made of a road piece) and a real piece chosen so that only the named sub-rule can catch it (a lawn with a painted-over object, a corner wedge, a waterfall, a sea piece, a shore on the wrong side, a door that is not a door, and so on). Where no real piece isolates a threshold, a crafted canvas does. Each test names the mutated entry, and a mutation run that loosens any numeric threshold, or widens any behaviour set, must fail at least one test: a rule that cannot fail proves nothing.
 
 ---
 

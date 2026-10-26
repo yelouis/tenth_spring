@@ -320,6 +320,22 @@ def main():
 		sys.exit(1)
 	print("[FAMOUS PLACES TESTS OK] Famous places configuration and unit tests passed.\n")
 
+	# Emerald Mapping Table Structure Tests (Item 12b): numbers and ids only, neutral names, coverage,
+	# no unlisted shared metatiles, gaps without entries. The ROM-gated half (pixel and behaviour
+	# tests) runs with TENTH_SPRING_ROM_GBA through tools/memguard.py, step rom_spike_gba, so it is
+	# left out here.
+	emerald_table_test_path = os.path.join(repo_root, "tools", "rom_spike", "emerald", "test_rom_spike.py")
+	if not os.path.exists(emerald_table_test_path):
+		print("\n[EMERALD TABLE ERROR] Emerald mapping table test suite missing")
+		sys.exit(1)
+	print("=== Emerald Mapping Table Structure Tests (Item 12b) ===")
+	emerald_env = {k: v for k, v in os.environ.items() if k != "TENTH_SPRING_ROM_GBA"}
+	emerald_res = subprocess.run([sys.executable, "-I", emerald_table_test_path], cwd=repo_root, env=emerald_env)
+	if emerald_res.returncode != 0:
+		print("\n[EMERALD TABLE TEST FAIL] Emerald mapping table structure tests failed.")
+		sys.exit(1)
+	print("[EMERALD TABLE TESTS OK] Mapping table structure verified (ROM-gated tests skipped).\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)

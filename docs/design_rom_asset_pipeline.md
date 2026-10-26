@@ -126,10 +126,32 @@ The Black/White ROM and the Emerald ROM are imported separately (§2), each with
   - `tiles` (u32 pointer) at `+0x04`: GBA pointer (`0x08xxxxxx` -> ROM offset `0xxxxxxx`). Primary `tiles` at `0xDD5010` decompresses to 16,384 bytes (512 8×8 4bpp tiles).
   - `palettes` (u32 pointer) at `+0x08`: 512 bytes (16 BGR555 palettes × 16 colors). Primary `palettes` at `0xDD4E10`. Secondary palettes mirror palettes 0–5 and provide area colors in palettes 6–12.
   - `metatiles` (u32 pointer) at `+0x0C`: Primary at `0x3960F0` (512 metatiles × 16 bytes = 8,192 bytes). Secondary metatiles start at local index 0 (global 512).
-  - `attributes` (u32 pointer) at `+0x10`: Primary at `0x3980F0` (512 u16 entries = 1,024 bytes). Lower 9 bits behavior byte (`MB_*`), upper 7 bits layer type.
+  - `attributes` (u32 pointer) at `+0x10`: Primary at `0x3980F0` (512 u16 entries = 1,024 bytes). **Bits 0–7 are the behaviour byte, bits 12–15 the layer type, and bits 8–11 are unused** — confirmed by the spike's test over every tileset the table names (Item 12b; the Item 12 text said "lower 9 bits").
   - `callback` (u32 pointer) at `+0x14`: animation function pointer (e.g. `0x080A0B21`).
 - **Metatile layout:** each 16×16 metatile has 8 u16 entries (4 bottom layer, 4 top layer: TL, TR, BL, BR). Each u16: bits 0–9 tile index (0..511 from primary tiles, 512..1023 from secondary tiles), bit 10 xflip, bit 11 yflip, bits 12–15 palette index (0..15).
 - **Rendering:** bottom layer 4 tiles drawn first, then top layer 4 tiles composited on top (palette color 0 transparent). Rendered at 2× integer scale (32×32 px) for the Tenth Spring overworld.
+
+**Choosing the metatiles (Item 12b, F60).** Every entry of `game/config/emerald_tile_map.json` is chosen by evidence, never by guess; pass 22 guessed, and drew signs on every lawn, striped water, bushes for tall grass, and one roof for all eight colours. The spike (`tools/rom_spike/emerald/`) offers three kinds of evidence, and the table records only metatile numbers:
+- **Behaviour bytes** (bits 0–7 of the attribute word). Tall grass only from `0x02`/`0x03`; standing water only from `0x10`–`0x12` and `0x15`–`0x17` (not the waterfall `0x13`); a bridge deck from `0x2B`; a door piece from `0x60` or `0x69`; sand from `0x21`; cropland from the plantable-soil byte `0xA0`; a plain lawn, roof, or wall from `0x00` (`0x01` for a few walls).
+- **Pixel tests**, on the 16 × 16 render: a plain lawn variant draws ≥ 90% of its pixels from the base lawn's colours with no patch of other colours larger than 3 pixels; a water interior is ≥ 95% water-coloured (blue is the strongest channel), and every water piece draws its water in the interior's colours; along a side whose mask bit is 0 the 4-px band (the middle 8 px of that side) is ≥ 25% non-water (a shore), and along a 1-bit side ≥ 90% water; the lawn and tall grass have a **blank top layer** (an object painted over the ground — a tree top, a sign — makes it a different thing); tall grass has per-channel variance > 500.
+- **The ROM's own map layouts, read as statistics only.** The spike counts, for each piece, which pieces sit on each side of it and how often it occurs; that finds the edge and corner pieces per mask, the ROM's plain choice for a ground class (the most frequent piece), and how trees, fences and paths join. **Nothing from a layout is stored except metatile numbers, a few aggregate use counts quoted in code comments, and the 14 compositions** — rectangles of metatile numbers lifted from the layouts (with the door's position inside the rectangle) — and no map, event, text, or placement. This reading never leaves the player's machine or the spike. The tests re-measure two of the choices from the layouts: the base lawn is among the ROM's five most used pieces, and each pond edge piece sits at the neighbour mask the table gives it.
+
+The rules that keep the table honest (checked by `tools/rom_spike/emerald/mapping_checks.py`, listed in `implementation_plan_rom_tiles.md` §3):
+- **No stand-ins.** A class (or a variant, or some masks of it) with no honest Emerald piece goes into `gaps`, with a reason, and the game keeps its code-drawn placeholder tile there. Two classes never share a metatile unless `shared` lists the share as intentional. Where Emerald draws one thing for two classes — its footpath ground and its plain sand are identical pixels — the table lists the share in `shared`; a twin under a second number counts as the same piece.
+- **Tilesets by index.** An entry from a secondary tileset names it by index (`"sec05"`), never by name; the `tilesets` block lists exactly the tilesets the table uses. `secNN` is the tileset record at `0x3DF704 + 24 * NN`: the primary is index 0 and `sec01` is the first secondary (the array runs to `sec57`).
+- **Compositions by function** (`design_art_direction.md` §1a), lifted from the ROM's own layouts as rectangles of metatile numbers.
+
+**Table schema (version 2)** — written by `tools/rom_spike/emerald/build_mapping.py`, which refuses to write a table that fails its checks:
+
+| Key | Contents |
+|---|---|
+| `version` | `2` |
+| `tilesets` | `{"primary": 0, "secNN": NN, …}` — exactly the tilesets the entries, buildings and compositions use |
+| `tile_map` | `class → variant → mask → {"metatile": N}` or `{"metatile": N, "tileset": "secNN"}`; every mask is an explicit number 0–15 (no wildcard); an unmasked class uses mask `"0"` |
+| `shared` | `[{"metatile", "tileset", "classes", "reason"}]` — intentional shares only |
+| `buildings` | `house_s`, `house_m`, `block_l`: `{"w", "h", "door": [x, y], "roof_colors": {"0": {"metatiles": […], "tileset"?}, …}}` — derived from `tile_map` with the synthesiser's own neighbour-mask rules, so it can never disagree with it |
+| `compositions` | the 14 function ids → `{"w", "h", "tileset", "door": [x, y] or [], "metatiles": [row-major ids]}` |
+| `gaps` | `[{"id", "classes", "variants"?, "masks"?, "reason"}]` — leaving out `variants` or `masks` means all of them |
 
 **Reference sources** (documentation only — never sources of ROMs):
 - Project Pokémon's raw database pages for Black (`projectpokemon.org/rawdb/black/`).
@@ -155,7 +177,8 @@ The Black/White ROM and the Emerald ROM are imported separately (§2), each with
 |---|---|
 | The primary tileset and the secondary tilesets the mapping table names — graphics, palettes, metatiles, attributes | `tiles/emerald_v1.png` — a 32 × 32 px atlas in the layout of `implementation_plan_world_generation_slice2.md` §5.2 — and `tiles/emerald_v1.json` |
 
-- **The bridge is a committed mapping table**, `game/config/emerald_tile_map.json`. It maps each `(class, variant, mask)` of the slice-2 tile vocabulary (slice-2 plan §3) to metatile numbers, plus multi-metatile building compositions for the building templates.
+- **The bridge is a committed mapping table**, `game/config/emerald_tile_map.json` (schema in §4). It maps each `(class, variant, mask)` of the slice-2 tile vocabulary (slice-2 plan §3) to metatile numbers, derives the three building templates in eight roof colours, holds the 14 landmark look-alike `compositions`, and lists as `gaps` what Emerald has no honest piece for.
+- **Not in the tile vocabulary at all, so not in the table:** snow terrain, high-speed rail, modern asphalt highways, glass skyscraper facades, street lamps and traffic signals, and cars and buses. These are the "modern props Emerald lacks" of `design_art_direction.md` §1 and §2a.
 - **Numbers only — never pixels.** The table is written by the Emerald tile spike, from the player's own ROM, and reviewed by the human.
 - **Not extracted:** Emerald's maps, events, text, sprites, music, or Pokémon data. The world is generated from OpenStreetMap; Pokémon sprites come from Black/White and the fan sprites, and Pokémon data from the data pack (§2a).
 
@@ -200,9 +223,8 @@ Spot-check against facts the player's own ROMs must contain. Any failure leaves 
   | `#623` | Golurk | Ground / Ghost |
 - Names for #487, #609, and #1 decode to non-empty strings with no unmapped characters.
 - **Emerald tiles:**
-  - the atlas JSON has a row for every `(class, variant)` the synthesizer can emit;
-  - every atlas tile uses ≤ 16 colours per source palette;
-  - the grass, tall-grass, and water tiles each pass a pixel-variance threshold that a wrong decompression or palette cannot pass;
+  - the table passes every rule of `implementation_plan_rom_tiles.md` §3 — coverage of every `(class, variant, mask)` the synthesiser can emit (or a `gaps` rule), the lawn, water, and tall-grass pixel and behaviour tests, no unlisted shared metatile, no entry for a gap, metatile bounds, at least four roof colourways, and neutral names;
+  - every atlas tile uses ≤ 16 colours per source palette (guaranteed by 4-bpp decoding; the spike's test asserts 16 entries per palette);
   - the importer refuses a mapping table entry that points past the end of a tileset's metatile table.
 - **Chandelure's static front sprite** is a real image, not noise. Two checks: ≤ 16 distinct colours per palette, and a pixel-variance threshold that "static" from a wrong decryption or wrong cell assembly cannot pass.
 - **Dragapult's fan sprite** (#887) loads and passes the same variance check.
