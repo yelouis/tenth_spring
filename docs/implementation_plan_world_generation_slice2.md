@@ -840,3 +840,59 @@ The placement target of §10.3 (45%) is retired (Decision 28, answered by Decisi
   - the stamp's door tile is `DOOR` 32.
 - **The stamps** regenerate byte-for-byte.
 - **Proof:** in the DC demo profile at zoom 2, `--focus=landmark` on the Lincoln Memorial and on the Washington Monument. Saved outside the repo and shown to the human with the placeholder caveat. **PAUSE.**
+
+
+---
+
+## 13. Two-tile minimum widths and the 4 × 4 house (2026-10-26) — agent guide Item 12d (**proposal: awaits the human's approval before any code**)
+
+**Why.** At the Item 12 pause the human saw that Emerald has no piece for a one-tile-wide pond, footpath, street, or bridge (every Emerald one is at least two tiles wide), and that its houses have two wall rows where `house_s` has one. They answered **"Widen to 2 tiles"** and **"Houses 4 tall"**. Both change the world generator, so they follow THE LOOP: this plan first, then a pause, then code. Nothing in this section is built.
+
+### 13.1 What changes, exactly
+
+| # | Where | Today | Becomes |
+|---|---|---|---|
+| 1 | §2.2 line widths and `get_road_width` | `service` 1 | `service` **2** |
+| 2 | §2.2 and §4.1 step 4b (`path` lines: footway, path, cycleway, pedestrian, track, steps, bridleway) | width 1 | width **2** |
+| 3 | §2.2 and `get_waterway_width` | `stream`, `ditch`, `drain` 1 (and any other value 1) | **2** (`canal` 2 and `river` 3 are unchanged) |
+| 4 | §4.2 template table, the fallback house's lattice (§4.3), §10.2 item 7 ("template sizes are unchanged"), and the §11.1 shrink sequence | `house_s` 4 × 3, 2 roof rows, 1 wall row, door in column 1 or 2 of the bottom row | `house_s` **4 × 4**, 2 roof rows, **2 wall rows**, the door in the bottom row (row 3), column 1 or 2 by the same hash; windows on odd columns of both wall rows |
+| 5 | `tools/rom_spike/emerald/mapping_checks.py` `TEMPLATES`, `design_art_direction.md` | `house_s` 4 × 3, door `[1, 2]` | 4 × 4, door `[1, 3]`; the derived `buildings` block is rebuilt |
+
+- **Brush.** The painting formula is unchanged (`lo = (w − 1) / 2`, `hi = w − 1 − lo`), so a width-2 brush covers the centreline tile and the one to its east and south.
+- **Class.** A width-2 road is `PATH`, as before (`ROAD` needs w ≥ 3); a 2-wide `service` road therefore becomes `PATH`, as `tertiary` and `residential` already are.
+- **Footprints.** `house_s`'s 4 × 4 still fits the fallback lattice (7 columns × 6 rows) with its reserved row below it; the shrink sequence ends `block_l` → `house_m` 5 × 4 → `house_s` 4 × 4. The `A < 400` size rule and the colour, door, and window hashes are unchanged.
+- **Unchanged:** `river` 3, `canal` 2, `rail` 2, primary and secondary 3, motorway and trunk 4, every other kind, `MAP_SEED`, and the salts. The ruin pass's rules and shares are unchanged.
+
+### 13.2 What it should fix, and what it leaves
+
+- **Fixes:** the one-tile masks (0, 1, 2, 4, 5, 8, 10) of `WATER`, `PATH`, and `ROAD`, and the one-tile `BRIDGE` masks, can no longer occur on a streamed line. The 4 × 4 house gets Emerald's real two-wall-row art (a door lintel above the door, full-height windows).
+- **Leaves (known limits, to be reported, not hidden):**
+  - **Bridge decks wider than two tiles** (primary and secondary roads, 3 wide; motorway and trunk, 4): the ROM's plank deck is exactly two wide, so the extra columns have no honest piece and show the placeholder. *Option for the human later:* cap every bridge deck at two tiles.
+  - **A path or road that ends, turns, or crosses** can still produce a cell with one neighbour at a tile-grid or clip edge; those cells show the placeholder, and the counts are reported.
+  - **Ruined and overgrown art** still has no Emerald piece; that is the art-library question and not part of this item.
+
+### 13.3 Targets — measure, report, and STOP if the exact rules miss
+
+`tools/measure_synth.py` and `MEASURE_RUIN` run on DC before and after; every §11.4 target is reported beside its measured value (pass 22 in brackets):
+
+| Measure | Target | Pass 22 | Expected effect |
+|---|---|---|---|
+| Path tiles | ≤ 18% | 12.8% | **rises**: footways and service roads double in width; this is the target most at risk |
+| Building tiles (`ROOF + WALL + DOOR`) | 10–16% | 11.1% | rises a little: `house_s` grows by a third |
+| Ordinary buildings gone | 20–45% | 42.9% | shifts slightly with placement; must stay inside |
+| Ordinary buildings ruined | 20–35% | 29.7% | same |
+| `TALL_GRASS` tiles | ≥ 8% | 14.0% | falls a little (paths and roads take more room) |
+| Landmarks standing | all | 4/4 | unchanged |
+
+**If an exact implementation of §13.1 misses a target, do not tune it silently:** report the numbers, STOP, and file a decision with these options — (a) raise the path ceiling to the measured figure plus a margin; (b) widen water and roads but keep footways at 1 (the one-tile footpath masks stay placeholders); (c) widen footways to 2 only near buildings.
+
+### 13.4 Tests and proof
+
+- **`tile_synth2_test` — falsifying:** a fixture with a service road, a footway, and a stream, each drawn one tile wide by today's code, comes out two tiles wide under §13.1 (run it against the old code first: it must fail); and a fixture house of template `house_s` has 2 roof rows, 2 wall rows, one `DOOR` in the bottom row, and windows on odd columns of both wall rows.
+- **Golden hashes** of `tile_synth2_test` and every renderer test that hashes cells change: commit the new ones and say in the commit body why they changed. The synthetic PBF fixture is unchanged.
+- **Emerald table:** `TEMPLATES` and the derived `buildings` block follow the 4 × 4 house; the ROM-free table tests still pass; the preview is re-rendered and shown to the human.
+- **Proof:** DC at zoom 2 around a footway, a service road, a stream, and a small house, saved by the screenshot harness; the placeholder caveat stays until the Emerald import.
+
+### 13.5 Where it goes in the queue
+
+**Item 12d, before Item 25b.** Item 25b records the §11.4 numbers and the five ruined-city screenshots; running it first would mean doing it twice. Blast radius: `tile_synth2.gd` and its test, `design_world_generation.md` only where it quotes a width or the house size, this plan (§2.2, §4.2, §10.2, §11.1, and "built" status here), `tools/rom_spike/emerald/` (`TEMPLATES`), `design_art_direction.md`, and `ongoing_general_errors.md`.

@@ -1279,7 +1279,7 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
   - **Tidied compositions:** the non-building corner cells (shore and deep water, rock cliffs, trees, a sign) of five look-alikes (`pyramid_hall`, `museum_hall`, `observatory`, `power_station`, `maze_house`) are now plain lawn (or the pyramid's sand), so they can sit on lawn. The yards, fence posts, and paving that belong to a building, and the deep water under the raised road, are unchanged.
 - **Not done here, by design:**
   - **Art libraries:** research only, nothing downloaded; findings and a recommendation go to you before anything is fetched (`design_art_direction.md` §2a already vets a few packs).
-  - **Two-tile minimum widths and the 4 × 4 house** change the world generator (slice 2), so they follow `THE LOOP`: a written plan amendment first, for your approval, because they move golden hashes and the §11.4 targets (path tiles ≤ 18%, building tiles 10–16%).
+  - **Two-tile minimum widths and the 4 × 4 house** change the world generator (slice 2), so they follow `THE LOOP`: the plan amendment is written (`implementation_plan_world_generation_slice2.md` §13, proposed as Item 12d before 25b) and **awaits your approval**; it moves golden hashes and the §11.4 targets (path tiles ≤ 18% is the one most at risk).
 - **Measured and run (the human's Mac):** `build_mapping.py` PASS for all 16 checks; the spike tests with the ROM and the ROM-free half; the game runner; see the commit.
 
 ## 🔎 Verification Findings — open, for the next agent
