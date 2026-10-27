@@ -170,6 +170,9 @@ var _screenshot_zoom: float = 1.0
 var _screenshot_target_frames: int = 10
 var _screenshot_frames_waited: int = 0
 var _screenshot_saved: bool = false
+var _screenshot_timed_out: bool = false
+## Seconds after launch (engine start) at which the screenshot harness gives up (exit code 3) instead of hanging (Item 25b).
+var screenshot_timeout_sec: float = 120.0
 var _screenshot_focus: String = "most_visited"
 var _focus_mode: String = "most_visited"
 var _total_rendered_frames: int = 0
@@ -994,8 +997,12 @@ func _update_frustum_culling() -> void:
 				if _synth_cache.has(cell):
 					if not _rendered_cells.has(cell) and not _pending_blit_cells.has(cell):
 						_pending_blit_cells.append(cell)
+				elif _rendered_cells.has(cell):
+					# Drawn already; its cache entry was evicted (a view can show more cells than the cache holds).
+					# Synthesizing it again would only evict a nearer cell and starve the farthest ones (Item 25b).
+					pass
 				else:
-					if not _rendered_cells.has(cell) and not is_overview:
+					if not is_overview:
 						_render_solid_fog(cx, cy)
 					if not _requested_cells.has(cell):
 						var dist: float = (Vector2(cx + 0.5, cy + 0.5) - cam_cell_center).length()
@@ -1010,7 +1017,10 @@ func _update_frustum_culling() -> void:
 
 	# Post requests to worker
 	if _synth_worker != null and _synth_worker.is_running():
-		_synth_worker.update_requests(new_requests, visible_cell_set)
+		# The worker keeps the nearest SynthWorker.MAX_QUEUED_REQUESTS; the cells it forgot are requested again once there is room (F61).
+		var dropped: Array[Vector2i] = _synth_worker.update_requests(new_requests, visible_cell_set)
+		for dropped_cell in dropped:
+			_requested_cells.erase(dropped_cell)
 
 	# Clean up _requested_cells for cells no longer visible
 	var req_keys := _requested_cells.keys()
@@ -1418,8 +1428,14 @@ func print_p95_frame_time() -> float:
 	return p95
 
 func pending_cell_count() -> int:
+	var parts := pending_parts()
+	return parts.x + parts.y
+
+## The two parts of the pending count: x = visible cells not yet rendered, y = overview chunks whose
+## texture still needs an update. The screenshot harness saves only when both are 0 (§4 of Item 25b).
+func pending_parts() -> Vector2i:
 	if _camera == null:
-		return 0
+		return Vector2i.ZERO
 	var vp_size := get_viewport_rect().size / _camera.zoom.x
 	var cam_pos := _camera.position
 	var vis_rect := Rect2(cam_pos - vp_size * 0.5, vp_size).grow(CELL_SIZE_PX)
@@ -1430,13 +1446,13 @@ func pending_cell_count() -> int:
 	var r1 := int(floor((vis_rect.position.y + vis_rect.size.y) / CELL_SIZE_PX))
 	var min_cy := -r1 - 1
 	var max_cy := -r0 - 1
-	var pending := _dirty_overview_chunks.size()
+	var pending_cells := 0
 	for cy in range(min_cy, max_cy + 1):
 		for cx in range(min_cx, max_cx + 1):
 			var cell := Vector2i(cx, cy)
 			if not _rendered_cells.has(cell):
-				pending += 1
-	return pending
+				pending_cells += 1
+	return Vector2i(pending_cells, _dirty_overview_chunks.size())
 
 func count_visible_doors() -> int:
 	if _camera == null:
@@ -1505,8 +1521,15 @@ func _on_frame_post_draw() -> void:
 		return
 	_total_rendered_frames += 1
 
-	if not _screenshot_saved:
-		if pending_cell_count() > 0:
+	if not _screenshot_saved and not _screenshot_timed_out:
+		var parts := pending_parts()
+		if parts.x + parts.y > 0:
+			# Seconds since the engine started, so the limit counts the focus scans before the capture begins too.
+			var waited_sec := float(Time.get_ticks_usec()) / 1000000.0
+			if waited_sec >= screenshot_timeout_sec:
+				printerr("[FAIL] screenshot harness: %d cells and %d chunks still pending after %d s" % [parts.x, parts.y, int(screenshot_timeout_sec)])
+				_screenshot_timed_out = true
+				get_tree().quit(3)
 			return
 		_screenshot_frames_waited += 1
 		if _screenshot_frames_waited >= _screenshot_target_frames:

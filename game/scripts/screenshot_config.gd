@@ -19,6 +19,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var zoom_str := ""
 	var zoom_val: float = 1.0
 	var frames_val := 10
+	var timeout_val := 120
 	var focus_str := ""
 	var focus_val := "most_visited"
 	var screen_str := ""
@@ -55,6 +56,10 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			if f_str.is_valid_int() and f_str.to_int() > 0:
 				frames_val = f_str.to_int()
 			i += 1
+		elif arg.begins_with("--timeout="):
+			var t_str := arg.trim_prefix("--timeout=").strip_edges()
+			if t_str.is_valid_int() and t_str.to_int() > 0:
+				timeout_val = t_str.to_int()
 		elif arg.begins_with("--focus="):
 			focus_str = arg.trim_prefix("--focus=").strip_edges()
 		elif arg == "--focus" and i + 1 < user_args.size():
@@ -126,6 +131,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"screenshot_path": abs_path,
 		"zoom": zoom_val,
 		"frames": frames_val,
+		"timeout": timeout_val,
 		"focus": focus_val,
 		"screen": screen_val
 	}

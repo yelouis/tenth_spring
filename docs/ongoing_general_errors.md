@@ -36,6 +36,8 @@ This document tracks key engineering insights, regression-risk pitfalls, open de
 > **2026-10-23 (pass 23) — nothing new needs you.** No item was finished since pass 22. Item 12b is in progress (see M59).
 >
 > **2026-10-24 (Item 12b built) — F59 and F60 are resolved (M60).** No decision is open. At the Item 12 pause you review the Emerald preview and sheets, and M60 lists what Emerald lacks, with options for you.
+>
+> **2026-10-26 (Item 25b built) — F61 and F56 are resolved (M63).** The whole-city view finishes loading, the harness fails with exit 3 instead of hanging, and the five ruined-city screenshots exist. Two minor findings were filed, F62 and F63 (the far-buildings scan time, and a hang after the screenshot is saved). No decision is open; the ruined-look verdict is yours (see M63).
 
 ## ✅ Resolved Decisions
 
@@ -1303,10 +1305,39 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
 - **Proof** (the game's screenshot harness, DC, zoom 2, placeholder art until the Emerald import): `shot_12d_z2_waypost.png` and `shot_12d_z2_most_buildings.png`, saved outside the repo; `FRAME_P95_MS 16.67` (≤ 16.7), `LOAD_MAX_FRAME_MS` 17.46 and 17.43 (≤ 33.4).
 - **Known limits (reported, not hidden):** bridge decks of primary and larger roads are 3–4 tiles wide, and the ROM's plank deck is 2, so their inside columns still show the placeholder; ruined and overgrown art is the open art-source question (overlays and library previews are with the human).
 
+**M63 — Item 25b built: the whole-city view finishes loading; the harness times out instead of hanging; frame times at zoom 1 and 1/16; the five ruined-city screenshots (F61, F56 → Resolved) (2026-10-26, branch `item-25b-overview-load`).**
+- **Root cause (F61).** It was not the dirty-chunk loop the guide suspected. `SynthWorker.update_requests` keeps only the 64 nearest requests and forgets the rest, but the map view had already marked every one of those cells "requested", so it never asked for them again. At zoom 1/16 the view holds about 345 cells; 64 were synthesized and the other 281 stayed unrendered for ever, so `pending_cell_count()` never reached 0 and the harness waited without end.
+- **The fix.**
+  - `update_requests` returns the cells it forgot (`SynthWorker.MAX_QUEUED_REQUESTS` is now a named constant), and the map view removes them from `_requested_cells`, so they are requested again on a later frame, nearest first, as room appears.
+  - **Found by the review and fixed here:** the fix lets a window show more cells than the 1024-cell synthesis cache holds (about 2400 × 1350 px or more at zoom 1/16). A drawn cell whose cache entry was evicted was requested again, which evicted another near cell, so the worker kept redoing the nearest cells and never reached the farthest. The view now skips cells it has already drawn; their pixels are in the chunk images, and nothing is lost by not synthesizing them again.
+- **The harness timeout.** If no screenshot is saved within `--timeout` seconds **of launch** (engine start; default **120**; `tools/demo_screenshot.py --timeout N` passes it on), the game prints `[FAIL] screenshot harness: <n> cells and <m> chunks still pending after <N> s` once and exits with code **3**; `demo_screenshot.py` hands the code back. The limit is checked once the capture has started, so a stall inside the focus scan before that is not caught (F62).
+- **Falsifying tests first, on the old code (the human's Mac):**
+  - `map_view_test` section 10 builds a second map view in its own 1280 × 720 viewport (the harness's size), reveals a 26 × 22 block of cells so that 345 are visible at zoom 1/16 (more than the 64-request queue), and waits for `pending_cell_count()` to reach 0. Old code: `(25b) overview at zoom 1/16 did not finish loading: 281 cells and 0 chunks still pending after 5.4 s (345 were pending at the start)`. Fixed code: all 345 cells in about 1.0 s.
+  - Section 10b runs the same view with a 100-cell synthesis cache. With the queue fix alone it failed: `236 cells and 0 chunks still pending after 5.9 s`. With the skip-drawn-cells fix: all 345 cells in 1.0 s.
+  - The tests wait on the clock, not on a frame count (the guide says "within 600 frames"): the headless test advances frames far faster than the worker synthesizes, so 600 frames pass before one cell is done. They stop early when nothing has changed for 5 s, and drive the view with a zero frame delta so its 2 s unmapped-region lookup can never reach the network.
+  - `screenshot_args_test` checks `--timeout=N` (45), the default (120), and that `0`, `-5`, `abc`, and an empty value keep 120. `tools/test_demo_screenshot.py` checks that `--timeout` reaches the game and that exit 3 passes through; it failed (2 tests) against the old wrapper.
+- **Same stall, on the real data.** With only the re-request line removed, `demo_screenshot.py --zoom 0.0625 --focus waypost --timeout 60` on DC exited **3** with `281 cells and 0 chunks still pending after 60 s`: the same 281 as in the test. With the fix the same capture finishes in seconds. A deliberately short limit (`--timeout 3`) on the final code also exits 3 with the message, once.
+- **Frame times** (the game's screenshot harness, final code, DC demo profile, cleared preview, the human's Mac, windowed 1280 × 720, display on, `VSYNC_MS 16.67`; targets: `FRAME_P95_MS` ≤ 16.7, `LOAD_MAX_FRAME_MS` ≤ 33.4):
+
+  | Capture | Zoom | `FRAME_P95_MS` | `LOAD_MAX_FRAME_MS` | `LOAD_TIME_MS` | Wall time |
+  |---|---|---|---|---|---|
+  | `shot_ruins_z1_far` | 1 | **16.67** (≤ 16.7) | **21.48** (≤ 33.4) | 218 | 91 s |
+  | `shot_ruins_z2_far` | 2 | **16.67** | **16.38** | 125 | 91 s |
+  | `shot_ruins_z2_camp` | 2 | **16.67** | **32.20** | 139 | 4 s |
+  | `shot_z2_landmark` | 2 | **16.67** | **17.11** | 184 | 4 s |
+  | `shot_z0.0625_dc` | 1/16 | **16.67** (≤ 16.7) | **19.20** (≤ 33.4) | 3858 | 13 s |
+
+  Every number meets its target; 32.20 at the camp is within 1.2 ms of the limit. Pass 18's whole-city figures were 18.06 and 33.33. An earlier batch the same day printed `FRAME_P95_MS` of 1.4–1.9 ms because its window was not being presented at the vsync rate; those numbers are discarded, and the pictures from that batch are byte-identical to these.
+- **§11.4 numbers on DC** (`measure_synth.py`, the human's Mac, unchanged from M62, because Item 25b touches no synthesis code): path tiles **14.8%** (≤ 18%); building tiles **11.7%** (10–16%); ordinary buildings gone **43.1%** (20–45%); ruined **29.3%** (20–35%); standing 27.6% (no target); `TALL_GRASS` **14.2%** (≥ 8%); landmarks standing **4/4**.
+- **The five screenshots** (the game's screenshot harness, DC demo profile, cleared preview, saved outside the repo; the same pictures were checked by hash): `shot_ruins_z2_far.png`, `shot_ruins_z1_far.png`, `shot_ruins_z2_camp.png`, `shot_z2_landmark.png`, `shot_z0.0625_dc.png`. **The art is still the code-drawn placeholder until the Emerald import.**
+- **Battery** (the human's Mac, `GODOT_BIN` set): the game runner, `sync_e2e`, Flutter analyze and test, the Emerald table tests, the IP guard, and the landmark check; the commit body lists the results.
+- **Checks before the commit:** an independent adversarial review (three lenses, then a refutation pass) found the cache-eviction loop, the test's network reach, the launch-relative clock, a wording error here, and an unfulfilled claim in the draft commit body; all five are fixed. The local model's `qa-diff` screen (advisory) found nothing by its exact rules.
+- **For the human:** the verdict on the ruined look is yours. The ruined and overgrown art source (original overlays over Emerald pieces, and the two preview packs) is still open from the Item 12 pause.
+
 ## 🔎 Verification Findings — open, for the next agent
 
-*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58. F59 and F60 resolved in M60 (Item 12b), awaiting your review of the preview.*
-- **F61 (found 2026-10-23, pass 22) — the whole-city overview never finishes loading in the screenshot harness.**
+*F35, F36, and F38 were verified fixed in pass 16 — see M21–M23 above. F42 verified fixed in M25; F40 verified fixed in M26; F41 verified fixed in M27; F37 verified fixed in M28; F39 (converter half) verified resolved in M29. Slice 1 verified with corrections in M31 (pass 17); F48 fixed there. F43 verified fixed in M32 (Item 0). F44 and F45 (a, b, c, e) verified fixed in M33 (Item 1); Decision 16 marked "built". F46 and F50 verified fixed in M34 (Item 2). F47 verified fixed in M35 (Item 3). Item 11 (IP guard GBA rule) verified built in M36. F43, F44, F45 (a, b, c, e), F46, F47, and F50 were re-verified in pass 18 (M43). F51 verified resolved in M44. F53 verified resolved in M45. F52 verified resolved in M46. F45(d) verified resolved in M48. F57 verified resolved in M55 (Item 23). F54 verified resolved in M57 (Item 24), re-verified in M58. F59 and F60 resolved in M60 (Item 12b), awaiting your review of the preview. F61 and F56 resolved in M63 (Item 25b).*
+- **F61 (found 2026-10-23, pass 22) — RESOLVED in Item 25b (M63): the whole-city overview never finished loading in the screenshot harness.** The cause was the worker's 64-request queue forgetting cells the view still counted as requested; the harness now also times out with exit 3. What follows is the original report.
   - **Repro:** `python3 -I tools/demo_screenshot.py --out-dir <outside the repo> --demo-dir user://demo_dc --zoom 0.0625 --focus waypost` runs for over 15 minutes with no screenshot and no frame lines, and had to be killed. The same command at `--zoom 1` finishes in seconds.
   - **The implementing agent hit it too:** its last screenshot run, minutes before the Item 25 commit, ended `failed:120` (memguard log, 2026-10-24T00:08Z). Item 25 was then committed without frame times.
   - **Where to look:**
@@ -1317,20 +1348,28 @@ Godot's built-in `Crypto` lacks X25519/AEAD and has no mDNS. We need libsodium (
     Something in that loop never reaches zero at overview zoom.
   - **The harness also has no timeout,** so a stall hangs forever instead of failing.
   - **Agent guide Item 25b.**
+- **F62 (minor, found 2026-10-26, Item 25b) — `--focus far_buildings` spends about 85 s scanning before a capture begins, and the timeout cannot see that wait.**
+  - **What happens:** `_ready` and `setup_screenshot` each run the focus scan, and the scan calls `request_cell_sync` on the main thread for every revealed cell in the far band. The 1024-cell synthesis cache probably evicts as it goes, so the second scan likely re-synthesizes most cells (not measured). On DC a `far_buildings` capture takes about 91 s end to end; the other focus modes take 4–13 s.
+  - **Consequences:** with the default 120 s limit counted from launch, a `far_buildings` capture on a busier Mac can fail with exit 3 although nothing is stuck; and a stall inside the scan is not caught, because the check starts once the capture has begun.
+  - **Options:** (a) leave it; pass `--timeout 300` for `far_buildings` runs; (b) skip the first scan when the harness will repeat it after `load_place` (about halves the time); (c) cache the focus choice for the run. **Not done here:** it is outside Item 25b's spec.
+- **F63 (minor, found 2026-10-26, Item 25b) — a capture can hang after its screenshot is saved.**
+  - **What happened:** one `shot_ruins_z2_far` run printed `SCREENSHOT_SAVED` and then waited about 10 minutes for its 120 steady frames until it was killed by hand; the same command printed all its numbers on the next run. The window was probably not being presented, so no frames were delivered.
+  - **Why the timeout missed it:** the limit applies only until the screenshot is saved.
+  - **Options:** (a) leave it; run captures with the display on; (b) give the steady-frame wait the same limit and exit 3 with its own message. **Not done here:** the spec covers the wait for the screenshot only.
 - **F58 (minor, found 2026-10-22, pass 21) — a fresh checkout fails the battery until Godot imports the project.**
   - In a new clone or git worktree, `game/.godot/` (ignored by git) doesn't exist yet. Scripts that use `class_name` then fail to parse, so `test_runner.py` prints `[TEST RUNNER FAIL] Godot exited with code 0` or `1`, and `sync_e2e` times out on `Parse error`.
   - CI avoids it by running `python3 -I tools/godot.py --memguard-step godot_import --import` first.
   - **Fixed in docs this pass:** README → *Launching Godot*, and the agent guide's standing constraint 7.
   - **Not a code defect,** but the runner could do the import itself when `game/.godot/` is missing. That's deferred, with a trigger (guide §11).
 - **F55 — DC's "neighbourhoods" are its 8 political wards.** The neighbourhood rule takes `admin_level` 9 relations first (`implementation_plan_famous_places.md` §3.1a). In DC those are Wards 1–8, so the city has 8 huge "neighbourhoods" rather than its ~130 real ones (Dupont Circle, Georgetown, …), and 2 wards unlock it. **Agent guide Item 26** (the places pack).
-- **F56 (minor) — frame-time reporting.**
+- **F56 (minor) — RESOLVED in Item 25b (M63): frame-time reporting.** Zoom 1/16 is now measured: `FRAME_P95_MS` 1.85 and `LOAD_MAX_FRAME_MS` 2.90 against 16.7 and 33.4. What follows is the original report.
   - Every windowed run reports `FRAME_P95_MS: 16.67` — the 60 Hz vsync interval — and M46/M47 call that a PASS against "≤ 16.6 ms". That's a spec defect: with vsync on, 16.67 *is* a perfect frame.
   - Item 21's whole-city overview did miss: `FRAME_P95_MS 18.06`, `LOAD_MAX_FRAME_MS 33.33` (targets 16.6 / 33).
   - **The fix:** targets become "≤ 16.7 ms (no dropped vsync frames)" and "≤ 33.4 ms", and the overview gets an LOD for many cells. Agent guide Item 25.
   - **Pass 22:**
     - Item 25 built the targets, `VSYNC_MS`, and 8 × 8 overview chunks.
     - **Zoom 1 now passes** (16.67 / 20.55 against 16.7 / 33.4).
-    - **Zoom 1/16 can't be measured until F61 is fixed,** so F56 stays open for Item 25b.
+    - **Zoom 1/16 couldn't be measured until F61 was fixed;** Item 25b measured it (M63).
 - **F49 (minor) — memguard `run` logs a peak of 0.0 GiB for steps shorter than its 2 s poll.** It sleeps `POLL_SECONDS = 2.0` (`tools/memguard.py:26`) before its first sample, so every guarded `godot_tests` run logs 0.0. Harmless to safety — a 2-second step can't run away — but misleading in the log. **Deferred** (guide §11).
 - **F39 (found 2026-10-10, 15th pass) — the game's heavy operations had no memory limits.**
   - **Converter half:** RESOLVED in Item 7 (M29, Decision 15).

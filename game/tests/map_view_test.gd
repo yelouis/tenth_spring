@@ -7,6 +7,7 @@ const MapViewScene := preload("res://world/map_view.tscn")
 const MapStoreClass := preload("res://world/region_import/map_store.gd")
 const ProfilePathsClass := preload("res://scripts/profile_paths.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
+const SynthWorkerScript := preload("res://world/synth_worker.gd")
 
 func run_test() -> bool:
 	var map_view = MapViewScene.instantiate()
@@ -497,9 +498,79 @@ func run_test() -> bool:
 		"reveal_state": 1
 	})
 
+	# 10. Item 25b / F61: the whole-city view finishes loading at zoom 1/16, even when its view extends past the
+	#     store's coverage. FALSIFYING: on the pre-25b code the synthesis queue kept 64 requests and forgot the rest,
+	#     so the cells it dropped stayed "requested" and pending_cell_count() never reached 0.
+	for gx in range(-8, 18):
+		for gy in range(-6, 16):
+			DB.upsert_map_cell(gx, gy, 1, 0) # far more revealed cells than fit in the queue; the store covers only a few
+	var o_default: Dictionary = _load_overview_at_one_sixteenth(MapViewScene, 0)
+	print("map_view_test: overview 1/16 loaded %d cells in %.1f s" % [o_default["visible"], o_default["elapsed_sec"]])
+	if o_default["visible"] <= SynthWorkerScript.MAX_QUEUED_REQUESTS:
+		push_error("(25b) test fixture too small: only %d cells pending at the start (must exceed the %d-request queue)" % [o_default["visible"], SynthWorkerScript.MAX_QUEUED_REQUESTS])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	if o_default["cells"] + o_default["chunks"] != 0:
+		push_error("(25b) overview at zoom 1/16 did not finish loading: %d cells and %d chunks still pending after %.1f s (%d were pending at the start)" % [o_default["cells"], o_default["chunks"], o_default["elapsed_sec"], o_default["visible"]])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# 10b. The same view with a cache far smaller than the view (a big window shows more cells than the 1024-cell
+	#      synthesis cache holds). FALSIFYING: when a rendered cell whose cache entry was evicted is requested again,
+	#      the worker keeps re-synthesizing the nearest cells and the farthest are never reached.
+	var o_small: Dictionary = _load_overview_at_one_sixteenth(MapViewScene, 100)
+	print("map_view_test: overview 1/16 with a 100-cell cache loaded %d cells in %.1f s" % [o_small["visible"], o_small["elapsed_sec"]])
+	if o_small["cells"] + o_small["chunks"] != 0:
+		push_error("(25b) overview at zoom 1/16 with a 100-cell synthesis cache did not finish loading: %d cells and %d chunks still pending after %.1f s (%d were pending at the start)" % [o_small["cells"], o_small["chunks"], o_small["elapsed_sec"], o_small["visible"]])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips verified)")
 	return true
+
+## Item 25b: loads the zoom-1/16 overview in a second map view that has its own 1280 x 720 viewport (the screenshot
+## harness's size: about 345 cells, more than the worker's queue). The headless root viewport is too small for that, and
+## moving the first view out of the tree would stop its worker. cache_capacity > 0 shrinks the view's synthesis cache.
+## The loop waits on the clock, because the headless test advances frames far faster than the worker synthesizes, and
+## stops early when nothing has changed for 5 s. Returns {visible, cells, chunks, elapsed_sec}.
+func _load_overview_at_one_sixteenth(view_scene: PackedScene, cache_capacity: int) -> Dictionary:
+	var sv := SubViewport.new()
+	sv.size = Vector2i(1280, 720)
+	sv.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	add_child(sv)
+	var view = view_scene.instantiate()
+	sv.add_child(view)
+	view.set_map_data_dir("user://test/map_data")
+	if cache_capacity > 0:
+		view.get_lru_cache().capacity = cache_capacity
+	view.focus_on_cell(4, 4)
+	view._set_zoom_step(0.0625)
+	var start_ms := Time.get_ticks_msec()
+	var last_change_ms := start_ms
+	var last_pending := -1
+	var visible := 0
+	var frames := 0
+	while Time.get_ticks_msec() - start_ms < 90000:
+		# delta 0.0: a real delta would run the view's 2 s unmapped-region lookup, which can reach the network.
+		view._process(0.0)
+		var pending: int = view.pending_cell_count()
+		visible = maxi(visible, view.pending_parts().x)
+		if pending == 0 and frames > 2:
+			break
+		if pending != last_pending:
+			last_pending = pending
+			last_change_ms = Time.get_ticks_msec()
+		elif Time.get_ticks_msec() - last_change_ms > 5000:
+			break
+		OS.delay_msec(5)
+		frames += 1
+	var parts: Vector2i = view.pending_parts()
+	var elapsed_sec := float(Time.get_ticks_msec() - start_ms) / 1000.0
+	sv.remove_child(view)
+	view.free()
+	sv.free()
+	return {"visible": visible, "cells": parts.x, "chunks": parts.y, "elapsed_sec": elapsed_sec}
 
 func _cleanup(map_view, test_db_path: String, test_store_path: String, test_f43_store_path: String) -> void:
 	if map_view.get_synth_worker() != null:

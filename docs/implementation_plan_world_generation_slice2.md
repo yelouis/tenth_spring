@@ -750,6 +750,8 @@ The placement target of §10.3 (45%) is retired (Decision 28, answered by Decisi
    - The main thread `blit_rect`s each finished 32 × 32 cell overview into its chunk's `Image`, and calls `ImageTexture.update()` for at most **4 chunks per frame**.
 3. **Acceptance in the DC demo profile:** at zoom 1/16 (the whole city), `FRAME_P95_MS` ≤ 16.7 (pass 18: 18.06) and `LOAD_MAX_FRAME_MS` ≤ 33.4 (pass 18: 33.33). Zoom 1 still passes both.
 
+**Built** in Items 25 and 25b (2026-10-26, `ongoing_general_errors.md` M63). Item 25b found that the whole-city view never finished loading because the synthesis worker forgot the cells beyond its 64-request queue while the view still counted them as requested (F61). The worker now returns the cells it forgot and the view asks for them again, and the screenshot harness quits with exit code 3 and `[FAIL] screenshot harness: <n> cells and <m> chunks still pending after <N> s` when nothing is saved within its timeout (120 s by default). Measured on DC (vsync-bound, 16.67 ms): zoom 1/16 `FRAME_P95_MS` 16.67 and `LOAD_MAX_FRAME_MS` 19.20; zoom 1 16.67 and 21.48. A view that shows more cells than the synthesis cache holds no longer re-synthesizes cells it has already drawn.
+
 ### 11.6 Proof v3 — Item 25
 - **New harness focus:** `--focus=far_buildings` — the revealed cell with the most `DOOR` + `RUBBLE` tiles among cells in the `far` band; ties go to the lower `(cy, cx)`.
 - **Screenshots** in the DC demo profile (cleared preview), saved outside the repo:

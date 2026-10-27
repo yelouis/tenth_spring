@@ -7,6 +7,9 @@ extends RefCounted
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 
+## At most this many requests are queued at once, nearest to the camera first (§10.5 rule 2).
+const MAX_QUEUED_REQUESTS := 64
+
 # LRU Cache for raw store features (capacity 256)
 class LruCache:
 	var capacity: int = 256
@@ -167,7 +170,10 @@ func get_request_queue_cells() -> Array[Vector2i]:
 	_mutex.unlock()
 	return cells
 
-func update_requests(new_requests: Array[Dictionary], visible_cell_set: Dictionary) -> void:
+## Replaces the visible requests with the nearest MAX_QUEUED_REQUESTS. Returns the cells it forgot (those past the limit), so the caller
+## can ask for them again on a later frame; a cell the worker has silently dropped is never synthesized otherwise.
+func update_requests(new_requests: Array[Dictionary], visible_cell_set: Dictionary) -> Array[Vector2i]:
+	var dropped: Array[Vector2i] = []
 	_mutex.lock()
 	# 1. Drop requests for cells that left the view (§10.5 rule 2)
 	var filtered_queue: Array[Dictionary] = []
@@ -193,14 +199,17 @@ func update_requests(new_requests: Array[Dictionary], visible_cell_set: Dictiona
 		return float(a.get("priority_dist", 0.0)) < float(b.get("priority_dist", 0.0))
 	)
 
-	# 4. Enforce queue limit: at most 64 requests queued (§10.5 rule 2)
-	if _request_queue.size() > 64:
-		_request_queue.resize(64)
+	# 4. Enforce the queue limit (§10.5 rule 2)
+	if _request_queue.size() > MAX_QUEUED_REQUESTS:
+		for i in range(MAX_QUEUED_REQUESTS, _request_queue.size()):
+			dropped.append(_request_queue[i]["cell"])
+		_request_queue.resize(MAX_QUEUED_REQUESTS)
 
 	_mutex.unlock()
 
 	if added_count > 0:
 		_semaphore.post()
+	return dropped
 
 func pop_results() -> Array[Dictionary]:
 	_mutex.lock()

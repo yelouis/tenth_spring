@@ -41,6 +41,7 @@ func _ready() -> void:
 			if not boot_place_id.is_empty() and map_view.has_method("load_place"):
 				map_view.load_place(boot_place_id, false)
 			if map_view.has_method("setup_screenshot"):
+				map_view.screenshot_timeout_sec = float(s_cfg.get("timeout", 120))
 				map_view.setup_screenshot(
 					str(s_cfg.get("screenshot_path", "")),
 					float(s_cfg.get("zoom", 1.0)),

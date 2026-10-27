@@ -116,11 +116,22 @@ func run_test() -> bool:
 		push_error("town_map config test failed: %s" % str(r_town_map))
 		return false
 
-	# Default zoom=1, frames=10, focus=most_visited
+	# Default zoom=1, frames=10, focus=most_visited, timeout=120 (Item 25b)
 	var r_default: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png"], false, repo_root)
-	if not r_default.get("ok", false) or r_default.get("zoom", 0) != 1 or r_default.get("frames", 0) != 10 or r_default.get("focus", "") != "most_visited":
+	if not r_default.get("ok", false) or r_default.get("zoom", 0) != 1 or r_default.get("frames", 0) != 10 or r_default.get("focus", "") != "most_visited" or r_default.get("timeout", 0) != 120:
 		push_error("Default config values mismatch: %s" % str(r_default))
 		return false
+
+	# --timeout=N is the harness's give-up time in seconds; zero, negative, and non-numeric values keep the default.
+	var r_timeout: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--timeout=45"], false, repo_root)
+	if not r_timeout.get("ok", false) or r_timeout.get("timeout", 0) != 45:
+		push_error("--timeout=45 config test failed: %s" % str(r_timeout))
+		return false
+	for bad_timeout in ["--timeout=0", "--timeout=-5", "--timeout=abc", "--timeout="]:
+		var r_bad_timeout: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", bad_timeout], false, repo_root)
+		if not r_bad_timeout.get("ok", false) or r_bad_timeout.get("timeout", 0) != 120:
+			push_error("%s should keep the default timeout of 120: %s" % [bad_timeout, str(r_bad_timeout)])
+			return false
 
 	# Non-screenshot execution
 	var r_none: Dictionary = ScreenshotConfig.parse_args(["--demo"], false, repo_root)

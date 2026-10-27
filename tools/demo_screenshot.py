@@ -44,6 +44,12 @@ def parse_args():
         help="Number of frames to wait after settling before capturing screenshot (default: 10)."
     )
     parser.add_argument(
+        "--timeout",
+        type=int,
+        default=None,
+        help="Seconds after launch at which the harness gives up with exit code 3 instead of hanging (default: 120, set by the game)."
+    )
+    parser.add_argument(
         "--screen",
         choices=["map", "town_map"],
         default="map",
@@ -141,6 +147,8 @@ def main():
             f"--zoom={z}",
             f"--frames={args.frames}",
         ]
+        if args.timeout is not None:
+            godot_cmd.append(f"--timeout={args.timeout}")
         if args.demo_dir:
             godot_cmd.append(f"--demo-dir={args.demo_dir}")
         if args.preview_cleared:
