@@ -648,19 +648,38 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
             no Nintendo content or fan sprites in the repo; none of the human's places or ROM paths;
             no test touches the real save, identity, or demo profile; Godot only through
             tools/godot.py; never force-push main.
+            LOCAL: one file that a command can check (a port, a data table, boilerplate, unit tests
+            for a pure function) may go to the local model — code-gen or unit-test-gen with
+            --verify-cmd (and --mutate for tests). Read what it wrote before you commit it.
 4 VALIDATE  This item's validation (run the falsifier against the OLD code first), then the full §1
             battery on the Mac with GODOT_BIN, then every workflow on GitHub, Linux and macOS. Report
             each numeric target beside its measured value. Map pictures come only from the harness.
             RED GATE: do not start the next item on a failing one (sole exception: sync_e2e
             between Items 27 and 28 on their shared branch).
+            LOCAL: when a run fails, re-run it as test-triage --cmd "<the command>". It prints the
+            failure lines verbatim from the whole log plus a checked summary, so you needn't read the
+            raw log. Its summary is a lead, not the result.
 5 BLOCKED?  Spec wrong, impossible, docs conflict, a target missed with the rules exactly
             implemented, a decision blank, a lookup that finds no boundary, a ROM check that fails →
             STOP. File in ongoing_general_errors.md with options.
 6 RECORD    Move the item's findings to Resolved with what-was-solved; update any design doc whose
             behavior changed — in the same commit.
+            LOCAL: doc-sync can draft the M-record and the commit body. Every number in the draft
+            must come from your inputs; pass --ran-on to say where the checks ran.
 7 COMMIT    One Conventional Commit per item, WHY in the body. Fast-forward main, then delete the
             item's branch locally and on GitHub (standing constraint 3).
+            LOCAL: before committing, qa-diff --spec <the item's plan> --spec-section "<its heading>"
+            screens the whole change, new files included. Its exact-rule findings are certain; its
+            model findings are leads to check, not instructions.
 ```
+
+**The `LOCAL` steps (the human's Mac only; optional).** They save cloud quota by handing bounded, checkable work to the local model (`qwen3-coder:30b` in Ollama). Use the `local-orchestrator` skill (Claude Code and Antigravity both have it); its script is `~/.gemini/config/plugins/tenth-spring/skills/local-orchestrator/scripts/orchestrate.py`, run from the repo root.
+- **Its output is advisory, never evidence.** "Statically checked" and "executed" still come only from the §1 battery, CI, and your own reading (standing constraint 14). Never cite `visual-qa` as proof (standing constraints 15 and 17).
+- **It takes the memory-guard lock itself** for each model call (standing constraint 6).
+- **Subagents queue; they don't run in parallel.** Every model call takes the same machine-wide lock, whether it comes from a subagent or from Antigravity, and runs alone. A call that waits more than 2 minutes exits 75. So keep the `LOCAL` calls in one agent — yourself or a single subagent — and tell the others not to call the local model.
+- **Never let two agents generate the same file.** A second one is refused. Batch `visual-qa` calls: each switch between the code and vision models reloads about 20 GB from the SSD.
+- **Exit 3, 4, 75 or 76 means do that step yourself.** Don't retry in a loop. 75 is normal when the Mac is busy.
+- **Never pull, delete, or swap models** (standing constraint 8). That is the human's call.
 
 ## Definition of Done (this build)
 - [x] **HUMAN: Decisions 29–37 answered** (2026-10-21 to 2026-10-23).
