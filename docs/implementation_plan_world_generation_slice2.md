@@ -657,6 +657,8 @@ Item 24 built §11.1 exactly. Three of DC's four landmarks then passed, but the 
 - **Acceptance:** all four DC interiors print `placed=1` and `gold_tiles > 0`. Report `measure_synth`'s numbers beside pass 18's — a few more buildings will now be stored.
 
 ### 11.2 The ruin pass (Decision 30) — Item 25
+> **Amended by Decision 43 (2026-11-01) — not yet written.** Ruined buildings will draw with the approved house sprites (state A or B by distance from the Waypost), gone buildings with state C or grass with decals, and `block_l` with `ruined_block`. The amendment is §14, written in agent guide Item 32 and approved by the human before Item 33 builds it. Until then, this section describes the code on `main`; build nothing from Decision 43 before §14 is approved.
+
 A new step **5d** runs after landmarks and fallback houses and before door paths. Step **6.5** runs after parks and cemeteries and before scatter. Both are pure functions of the cell, its 3 × 3 neighbourhood, the place's Waypost, and `MAP_SEED`, so every player sees the same ruins.
 
 1. **Input.** `area["waypost_wm"]: Vector2` is the loaded place's Waypost, projected once with `Grid.latlon_to_wm`. The map view and the synthesis worker pass it, and a store with no place (tests, legacy clips) passes none.
@@ -781,6 +783,8 @@ The placement target of §10.3 (45%) is retired (Decision 28, answered by Decisi
 ---
 
 ## 12. Landmark set pieces (2026-10-22) — agent guide Item 30
+> **Amended by Decisions 40–42 (2026-11-01) — not yet written.** The stamps become approved images (PNGs with provenance) instead of `tools/gen_landmark_stamps.py`; each has its own palette of at most 16 colours (not the `.gpl`) and an outline in a dark shade of its own colour (not `#1a1a20`); the Library of Congress (22 × 14) is the 15th stamp; and the visitor centres and site structures join the register. The amendment is §14, written in agent guide Item 32 and approved by the human before Item 30 starts. **Do not build §12.2's generator.**
+
 **Why:** the human noted that the ROM's art "might not be enough for things like the monuments in real life". A gold roof says *this is enterable*; it doesn't say *Statue of Liberty*. This section gives the famous buildings their own look: original set pieces, or Emerald look-alikes (`design_art_direction.md` §1a).
 
 ### 12.1 The register — `game/config/landmark_art.json`

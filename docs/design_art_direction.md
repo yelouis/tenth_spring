@@ -15,7 +15,9 @@ The pivot changes where art comes from. **Pokémon and item art come from the pl
 | Item icons | Player's ROM via the importer | **Never** |
 | Overworld map tiles (layout generated from OSM) | Player's **Emerald** ROM via the importer (Decision 19) | **Never** |
 | Placeholder map tiles — the no-ROM look | Original, code-drawn (`placeholder_v1`) | Yes |
-| **Landmark set pieces** — the famous buildings Emerald has no look-alike for (§1a) | Original (code-drawn or commissioned), in the Emerald style | Yes |
+| **Landmark set pieces** — the famous buildings Emerald has no look-alike for, and the Library of Congress (§1a) | Original images in the Emerald style, approved by the human (Decisions 39, 42) | Yes, with provenance and `CREDITS.md` |
+| **Ruined houses, overgrowth and rubble decals** (Decisions 38, 43) | Original images (`docs/art_brief/`, Tier 1), approved by the human | Yes, with provenance and `CREDITS.md` |
+| **Signature features of the parks** — several per site (Decision 44) | Original images from the local image model, approved by the human | Yes, with provenance and `CREDITS.md` |
 | **Modern props Emerald lacks** — cars, traffic lights, street lamps, bus stops | Free, credited libraries (§2a), palette-matched to the Emerald tiles | Yes, with `CREDITS.md` |
 | Player overworld sprite, battle UI, menus, fonts | Original | Yes |
 | Battle backgrounds per zone | Original | Yes |
@@ -50,7 +52,7 @@ The human noted that "the art from the ROMs might not be enough for things like 
    | `maze_house` | the maze house | City Museum (St. Louis) |
 
 2. **A free, credited library piece** (§2a) — mainly modern props, not landmarks.
-3. **An original set piece** — a multi-tile stamp drawn in the Emerald style: 16-colour palettes, a 1-px dark outline, light from the top left. Needed first for the icons nothing else can stand in for:
+3. **An original set piece** — a multi-tile stamp drawn in the Emerald style: its own palette of at most 16 colours (Decision 40), a 1-px outline in a dark shade of the object's own colour, never near-black (Decision 41), light from the top left. Needed first for the icons nothing else can stand in for:
    - the Statue of Liberty and the Gateway Arch;
    - the Lincoln Memorial and the Washington Monument;
    - the Space Needle, Coit Tower, and the Golden Gate's towers;
@@ -58,7 +60,9 @@ The human noted that "the art from the ROMs might not be enough for things like 
    - Alcatraz's cellhouse and Nashville's Parthenon;
    - Independence Hall, Grand Central's facade, and the Neon Museum's signs.
 
-   Code-drawn first, as `placeholder_v1` was; a human pixel artist can replace any of them later.
+   - the **Library of Congress** (22 × 14 tiles, the Archive of the Stillness) — the 15th stamp.
+
+   Each is an approved image (Decision 42), made and checked by the procedure in `docs/art_brief/ART_BRIEF.md`; a human pixel artist can replace any of them later.
 
 **The register** (slice-2 plan §12, agent guide Item 30). `game/config/landmark_art.json` maps each interior id to its source: `{"source": "original", "stamp": "<stamp id>"}` or `{"source": "emerald", "composition": "<composition id>"}`. The synthesizer places a set piece on the landmark's footprint in place of the gold-roof template (slice-2 plan §11.1). A landmark with no entry keeps the gold roof.
 
@@ -96,7 +100,8 @@ The human asked for free 2D art libraries "(give credit) … that fits the pokem
 ## 3. Technical spec (every original asset must comply)
 
 - **Tiles:** 32×32 px, integer scaling only.
-- **Palette:** one master palette ≤ 64 colours (`assets/palette/tenth_spring.gpl`). Day/dusk/night and **haunted-territory distortion** are shader tints over the same tiles, never separate tile sets.
+- **Palette:** the code-drawn placeholder tiles share one master palette ≤ 64 colours (`assets/palette/tenth_spring.gpl`). **Original sprites** (set pieces, ruined houses, decals, park features) each carry their own palette of at most 16 colours in 15-bit colour, as Emerald's tiles do (Decision 40). Day/dusk/night and **haunted-territory distortion** are shader tints over the same tiles, never separate tile sets.
+- **Outlines:** a 1-px outline in a dark shade of the object's own colour, never near-black (Decision 41).
 - **Autotiles:** placeholder autotiles use the 16-mask scheme until final art (47-blob format for grass/tall-grass/road/water/tree-line transitions; buildings from a 9-slice wall set + roof set).
 - **Tall grass must read instantly** as "encounters happen here" — the single most important tile in the game.
 - **Fog states:** `unknown` = solid `#0d1119` with a slow distortion shimmer (the Distortion); `known` = desaturated 40% + dark overlay; `cleared` = full palette.
@@ -114,7 +119,7 @@ The human asked for free 2D art libraries "(give credit) … that fits the pokem
 1. **Programmer art** through Phase 9: the code-drawn placeholder tiles (`placeholder_v1`, slice-2 plan §5) — kept permanently as the no-ROM look. Pokémon render from the Black/White cache, and map tiles from the Emerald cache, as soon as each importer exists.
 2. **Map tiles:** the Emerald importer (Decision 19) replaces licensing a base kit for the overworld. Anything Emerald lacks — snow, for example — is drawn as original art in the same style, or filed as a decision.
 3. **Commissions:** player sprite, haunted interior tiles, distortion effects, battle backgrounds.
-4. **AI:** concepting and mood reference only; never final assets.
+4. **AI-made images may be final art** (Decision 39), when each one is validated by the art tools, approved by the human, recorded in provenance with its model and licence, credited as AI-assisted in `CREDITS.md`, and made by a model whose licence allows it (Qwen-Image-2512, Apache 2.0: yes; Qwen-Image 2.1, research-only: no). The procedure is `docs/art_brief/ART_BRIEF.md`.
 
 ## 6. Files
 * `assets/palette/tenth_spring.gpl` — master palette.

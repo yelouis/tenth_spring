@@ -13,88 +13,18 @@ This document tracks decisions, open findings, and the engineering record for Te
 
 ## 🟠 Open Decisions — waiting for you
 
-Write your answer on each `Your selection:` line, or answer in chat. My recommendation is marked.
-
-### Art for the ruins, the Library of Congress, and the parks (`docs/art_brief/`, a draft, not committed)
-**Where it stands.**
-- **Tier 1 is done:** every one of its 26 assets has a chosen sprite (`docs/art_brief/tier1_selection.json`). You saw them in the example town map.
-- **Where they came from:** each one was made by Qwen-Image-2512 (Apache 2.0), or drawn by the project's own code (`draw_overlays.py`).
-- **What waits on the answers below:** Tier 2 (the 14 monuments and the ruined city block) and Item 30.
-- The art brief calls these decisions D1–D6 (`ART_BRIEF.md` §1). They're not Decisions 1–6 further down.
-
-**Art 0 — Do you approve the Tier 1 art?**
-- **A — Approve all 26** *(recommended)*. They enter the repo with their provenance and a `CREDITS.md` entry, once Art D1 allows it.
-- **B — Approve some,** and name the ones to redo.
-- **Your selection:** Yes, option A. I approve of the Tier 1 art.
-
-**Art D1 — May AI-made images become final game art?** `design_art_direction.md` §5 says AI is for concepts and mood only, never for final assets.
-- **A — Yes, with conditions** *(recommended)*:
-  - every image is validated and approved by you;
-  - its model and licence are recorded in `provenance.json`;
-  - it's credited as AI-assisted in `CREDITS.md`;
-  - only models whose licence allows it are used. Qwen-Image-2512 does (Apache 2.0). Qwen-Image 2.1 doesn't (a research-only licence), and none of the chosen sprites come from it.
-- **B — No.** AI stays concept-only, and the Tier 1 sprites become references for hand-drawn or commissioned art.
-- **Your selection:** Proceed with Option A.
-
-**Art D2 — Which palette?** The tools make both versions of every sprite (`__free` and `__master`), so you can compare them.
-- **A — Free palettes** *(recommended)*: each sprite gets its own palette of at most 16 colours (15-bit colour), as the Emerald look does.
-- **B — The 64-colour master palette** (`design_art_direction.md` §3). That palette is full, and it has no light tones for most materials: in the first run, 24 of 26 master-palette sprites failed.
-- **Your selection:** Proceed with Option A.
-
-**Art D3 — What colour are outlines?**
-- **A — A dark shade of each object's own colour** *(recommended)*. When near-black outlines were added to Emerald's own buildings, they failed the style check 12 times out of 12.
-- **B — Near-black `#1a1a20`,** which is what slice-2 §12.2 says now.
-- **Your selection:** Proceed with Option A.
-
-**Art D4 — How are Item 30's monument stamps made? This blocks Item 30.**
-- **A — From approved images** *(recommended)*. Amend slice-2 §12.2:
-  - the 14 stamps become committed PNGs with provenance, instead of being drawn by `tools/gen_landmark_stamps.py`;
-  - the **Library of Congress** is added as the 15th stamp: 22 × 14 tiles, and enterable as the Archive of the Stillness, which the game already supports;
-  - the visitor centres and site structures are added to the register.
-- **B — Keep the code-drawn stamps,** as §12.2 says now. The AI art stops at Tier 1.
-- **Your selection:** Proceed with Option A.
-
-**Art D5 — How are ruined houses placed?** Today the ruin pass draws each building tile by tile (slice-2 §11.2).
-- **A — With the house sprites** *(recommended)*. Amend §11.2:
-  - a ruined building gets a house sprite in state A or B, chosen by its distance from the Waypost;
-  - a gone building gets state C, or grass with decals;
-  - a `block_l` building gets the repeatable `ruined_block`.
-- **B — Keep the tile-by-tile ruins,** and use the Tier 1 art as decals only.
-- **Your selection:** Proceed with Option A.
-
-**Art D6 — Signature views of the parks** (Old Faithful, the Grand Canyon, …). The game places only a park's visitor centre and structures. Nothing marks its natural landmark.
-- **A — A new plan section** *(recommended)*: one signature feature per site, at a fixed lat/lon, placed like a set piece. Tier 3's 51 views are generated after that.
-- **B — Not now.** The views are generated only if you ask.
-- **Your selection:** Proceed with Option A but put multiple signature features per site. We can just generate the features with the local AI image model.
-
-### Verdict still owed at a pause
-**Item 12 — Approve the Emerald tile import plan (`docs/implementation_plan_rom_tiles.md`)?**
-- **What's done:** at the Item 12 pause you asked for changes: two-tile widths, the 4 × 4 house, the ploughed field, and tidy compositions. All are built (M61, M62). You also asked for new art for the ruins and landmarks (above).
-- **What's not:** the plan's status still reads "pending review", and its approval is what starts the Phase 2 production tile importer (agent guide §11).
-- **A — Approve it as written** *(recommended)*.
-- **B — Changes first** (say which).
-- **Your selection:** Proceed with option A. 
-
-### Two small engineering choices (screenshot harness only)
-**F62 — A `far_buildings` capture spends about 85 s in its focus scan, and the timeout can't see that wait.**
-- **A — Leave it** *(recommended)*. Pass `--timeout 300` for those runs. Only the harness is slower.
-- **B — Skip the first scan** when the harness repeats it after `load_place`. That roughly halves the time.
-- **C — Cache the focus choice** for the run.
-- **Your selection:** Proceed with option A. If you keep noticing this issue, bring this back up for me to make another decision on.
-
-**F63 — A capture can hang after its screenshot is saved,** waiting for steady frames that never arrive (once, with the window not being presented).
-- **A — Leave it,** and run captures with the display on.
-- **B — Give the steady-frame wait the same time limit,** and exit 3 with its own message *(recommended)*. A hang that has to be killed by hand costs more than the few lines this takes.
-- **Your selection:** Proceed with option B. If you keep noticing this issue, bring this back up for me to make another decision on.
+**No decision is open** (2026-11-01). You answered Art 0, Art D1–D6, the Item 12 plan, F62, and F63 that day; they are Decisions 38–45 below, and F62 and F63 under *Verification Findings*.
 
 ### Things only you can do (not decisions)
 - **The real-device sync gate (Phase 1's exit).** This is ready now: the five steps in agent guide §2.
 - **Explore Here on a real phone (Phase 0's exit),** at Item 28's pause. The nine steps are in agent guide §2.
+- **Tier 2 art run** (the 14 monuments and the ruined city block): paste the prompt in `docs/art_brief/ART_BRIEF.md` into Antigravity once it's written (ask Claude). Its sprites come back to you for approval before Item 30 uses them.
 
 ---
 
 ## 🔎 Verification Findings — open, for the next agent
-- **F62, F63** — see *Open Decisions* above. Both were found in Item 25b (M63).
+- **F63 (minor) — a capture can hang after its screenshot is saved,** waiting for steady frames that never arrive (once, with the window not being presented). **You chose B (2026-11-01):** the steady-frame wait gets the same time limit and exits 3 with its own message. **Agent guide Item 25c.** If it keeps happening after that, re-ask the human.
+- **F62 (minor) — a `far_buildings` capture spends about 85 s in its focus scan, and the timeout can't see that wait.** **You chose to leave it (2026-11-01):** pass `--timeout 300` for `far_buildings` captures. **If it keeps happening** (a capture fails with exit 3 while nothing is stuck), **re-ask the human** with the other two options: skip the first scan when the harness repeats it after `load_place`, or cache the focus choice for the run.
 - **F58 (minor) — a fresh checkout fails the battery until Godot imports the project.** Without `game/.godot/`, `class_name` scripts don't parse. Run `python3 -I tools/godot.py --memguard-step godot_import --import` first, as CI does (README → *Launching Godot*; guide constraint 7). Having the runner do the import itself is deferred (guide §11).
 - **F55 — DC's "neighbourhoods" are its 8 political wards.** The rule takes `admin_level` 9 first (`implementation_plan_famous_places.md` §3.1a), so DC has 8 huge neighbourhoods instead of its ~130 real ones, and 2 wards unlock it. Fix: **agent guide Item 26** (the places pack).
 - **F49 (minor, deferred) — memguard logs a peak of 0.0 GiB for steps shorter than its 2 s poll** (`POLL_SECONDS`, `tools/memguard.py`). Safe, but the log is misleading (guide §11).
@@ -107,7 +37,33 @@ Write your answer on each `Your selection:` line, or answer in chat. My recommen
 ## ✅ Resolved Decisions
 Newest first. Each entry gives the answer and where it lives. The options not chosen are dropped (git history has them).
 
-- **Art direction for ruins and landmarks (2026-10-26/27, at the Item 25 and Item 12 pauses).** The placeholder told you little. You saw the same views drawn with Emerald tiles and judged that the ruins and landmarks "still don't look right". So: **new original art,** generated locally and validated against the Emerald look (`docs/art_brief/`, a draft). This replaced the overlay-and-art-library path of M60 and M61. Its open questions are Art 0 and D1–D6 above.
+- **Decision 45 — The Emerald tile import plan is approved (2026-11-01; the Item 12 verdict).** `implementation_plan_rom_tiles.md` is approved as written. It is built in Phase 2 with the importer plan from Item 29 (agent guide §11).
+- **Decision 44 — Several signature features per park, made by the local image model (2026-11-01; art brief D6, amended by you).**
+  - **Several per site** (Old Faithful, Grand Prismatic Spring, and the Lower Falls at Yellowstone, not one view), each at a fixed lat/lon and placed like a set piece.
+  - **The art** comes from the local image model (Qwen-Image-2512), through the art brief, under Decision 39.
+  - **Next:** a plan section with the feature list (agent guide Item 34). It replaces the art brief's 51 one-per-site views.
+- **Decision 43 — Ruined houses are drawn with the house sprites (2026-11-01; art brief D5).**
+  - A ruined building gets a house sprite in state A (neglected) or B (broken), chosen by its distance from the Waypost.
+  - A gone building gets state C (the collapsed shell), or grass with decals.
+  - A `block_l` building gets the repeatable `ruined_block`.
+  - **Next:** the amendment to slice-2 §11.2 (agent guide Item 32), then the build (Item 33).
+- **Decision 42 — Monument stamps come from approved images (2026-11-01; art brief D4).**
+  - The 14 stamps of slice-2 §12.2 become committed PNGs with provenance, instead of being drawn by `tools/gen_landmark_stamps.py`.
+  - **The Library of Congress is the 15th stamp:** 22 × 14 tiles, enterable as the Archive of the Stillness.
+  - The visitor centres and site structures join the register.
+  - **Next:** the amendment to slice-2 §12 (agent guide Item 32), then Item 30.
+- **Decision 41 — Outlines are a dark shade of each object's own colour, never near-black (2026-11-01; art brief D3).** This replaces slice-2 §12.2's `#1a1a20` (`design_art_direction.md` §1a, §3).
+- **Decision 40 — Each original sprite has its own palette of at most 16 colours, in 15-bit colour (2026-11-01; art brief D2).** This is how Emerald's tiles work. The 64-colour master palette stays for the code-drawn placeholder tiles only (`design_art_direction.md` §3).
+- **Decision 39 — AI-made images may be final game art, with conditions (2026-11-01; art brief D1).** Each image must be:
+  - validated by the art tools;
+  - approved by you;
+  - recorded in provenance with its model and licence;
+  - credited as AI-assisted in `CREDITS.md`;
+  - made by a model whose licence allows it. Qwen-Image-2512 (Apache 2.0) does; Qwen-Image 2.1 (research-only) doesn't.
+
+  Contract: `design_art_direction.md` §5. The procedure is `docs/art_brief/ART_BRIEF.md`.
+- **Decision 38 — The Tier 1 art is approved (2026-11-01; art brief "Art 0").** All 26 sprites in `docs/art_brief/tier1_selection.json`: 9 ruined houses, 16 decals, and the Library of Congress. They enter the repo in agent guide Item 31.
+- **Art direction for ruins and landmarks (2026-10-26/27, at the Item 25 and Item 12 pauses).** The placeholder told you little. You saw the same views drawn with Emerald tiles and judged that the ruins and landmarks "still don't look right". So: **new original art,** generated locally and validated against the Emerald look (`docs/art_brief/`, a draft). This replaced the overlay-and-art-library path of M60 and M61. You answered its questions on 2026-11-01 (Decisions 38–44).
 - **Decision 37 — Accept 43% of ordinary buildings gone (2026-10-23).** The §11.4 "gone" target widened from 20–40% to 20–45%. No code changed (slice-2 §11.4).
 - **Decision 36 — Mega Evolution only (2026-10-22).** One Mega per battle, using the Walker's Keystone. There are 47 Mega Stones, each earned through late-game content; Mega Rayquaza needs none, and Wardens' aces can Mega Evolve. No Z-Moves, no Dynamax, no Primal Reversion (`design_creatures_and_battles.md` §16).
 - **Decision 35 — The long game: survival plus mastery (2026-10-22).**
@@ -180,7 +136,7 @@ Newest first. Each entry gives the answer and where it lives. The options not ch
   - Players also dump Pokémon Emerald (`BPEE`). The repo holds metatile numbers only (`game/config/emerald_tile_map.json`).
   - The code-drawn placeholder atlas stays: it's the no-ROM look, and the only atlas tests see.
   - The IP guard blocks GBA game codes (M36).
-  - The mapping was chosen by evidence (M60), and the plan awaits approval (*Open Decisions*).
+  - The mapping was chosen by evidence (M60), and the import plan was approved (Decision 45).
   - **Contracts:** `design_rom_asset_pipeline.md` and `design_art_direction.md` §1.
 - **Decision 18 — Completing the game (2026-10-19).**
   - **A new story:** the Stillness, the Distortion, and the Walkers (`design_story_and_world.md`).
@@ -299,6 +255,13 @@ One line per work record. Each lists the findings it resolved; the full records 
   - **The harness:** `--timeout` (default 120 s from launch) now ends a stalled capture with exit 3.
   - **Frame times:** all five meet ≤ 16.7 / ≤ 33.4 ms, at zoom 1 and at 1/16.
   - **Filed:** F62 and F63.
+
+**Decisions and art**
+- **M64** (2026-11-01, pass 24) — a decision pass; no code changed.
+  - This file was condensed, and Decisions 38–45 were recorded.
+  - `design_art_direction.md`, the slice-2 §11.2/§12 notes, and the tile plan's status were updated to match.
+  - The agent guide's queue is now 25c, 31, 32, 34, 26, 27+28, 33, 30, 10, 29.
+  - The battery is green on `7290149`: 22/22 game tests, `sync_e2e` OK, Flutter 37 passed and 2 skipped, and the 84 art-tool tests.
 
 ---
 

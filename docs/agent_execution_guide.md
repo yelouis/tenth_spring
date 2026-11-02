@@ -1,4 +1,4 @@
-# Agent Execution Guide — Active Build: Launch Safety, Landmarks, the Ruined City, the Real Emerald Look, Explore Here, and Generation 8 (verified 2026-10-23, pass 23; Decisions 29–37 answered)
+# Agent Execution Guide — Active Build: Original Art in the World, the Places Pack, Explore Here, and Generation 8 (verified 2026-11-01, pass 24; Decisions 38–45 answered)
 
 **You are an engineering agent picking up Tenth Spring with zero prior context.** There are two builds:
 - a PC game (**Godot 4.3**, `game/`);
@@ -9,37 +9,37 @@
   - **Sprites:** #1–649 from the player's own Black/White ROM; #650–905 from the **Smogon Sprite Project's** fan sprites.
   - **Data:** from PokéAPI's open data.
   - All of it is read or downloaded **on the player's machine**, never committed (`docs/design_rom_asset_pipeline.md`).
-- **Map art:** the player's **Emerald** ROM supplies the tiles (Decision 19). Famous buildings get original set pieces or Emerald look-alikes (`design_art_direction.md` §1a).
+- **Map art:** the player's **Emerald** ROM supplies the tiles (Decision 19). What Emerald lacks — ruined houses, overgrowth, the famous landmarks, and the parks' signature features — is **original art**, made with a local image model and approved by the human (Decisions 38–44; `docs/art_brief/ART_BRIEF.md`). Some famous buildings use Emerald look-alikes (`design_art_direction.md` §1a).
 - **Story:** an original one — the Stillness, the Distortion, nine Wardens, the Echo, and now the Glow in Las Vegas (Decision 33). `docs/design_story_and_world.md` is the theme contract.
 - **Long game** (Decision 35): fixed level-75 Warden teams, and survival (weariness). Built in Phases 5–8, not in this queue.
 - **No commerce:** no Steam, no sales.
 
 **Where things stand.**
-- **Pass 23 (2026-10-23, M59):** no item finished. **Item 12b is in progress** on `item-12-mapping-fix` — uncommitted, with the spike refactored and labelled contact sheets rendered. **Finish it first, then Item 25b.**
-- **Pass 22 (2026-10-23, M58)** — four items landed:
-  - **Items 24 and 24a are verified.** All four DC landmarks are drawn; the place list has 105 entries and 78 legendaries.
-  - **Item 25 (the ruin pass) is built and measures right,** but its proof is incomplete. **The whole-city view never finishes loading in the screenshot harness (F61),** so its zoom-1/16 frame times (F56) and two screenshots are missing.
-  - **Item 12's Emerald spike and plan are delivered,** but its mapping draws the wrong pieces (F60) and uses Nintendo names (F59).
-  - **Items 25b and 12b fix those first.**
-- **Pass 21 (2026-10-22, M56):** Item 23 verified; Item 24's stop on the Lincoln Memorial was diagnosed and fixed in the plan (slice-2 §11.1a).
-- **Pass 19 verified the whole pass-18 queue** (Items 13–22; M53) and found four problems: F54–F57 (`ongoing_general_errors.md`, *Verification Findings*).
-  - **F54:** two of DC's four enterable landmarks don't show.
-  - **F55:** DC's "neighbourhoods" are its 8 political wards.
-  - **F56:** the frame targets were stricter than vsync allows, and the whole-city overview drops frames.
-  - **F57:** every Godot crash was the agent's own tools launching Godot wrongly.
-- **The human's directives since then:**
-  - **Decision 29 — Explore Here:** the phone stops tracking. One tap reads the location once, checks it against a bundled **places pack**, and sends only area names.
-  - **Decision 30:** a **ruined, overgrown city** instead of fields of houses.
-  - **Decision 32:** Generation 8.
-  - **Decision 33:** the Glow — Las Vegas's casino society with a dark secret.
+- **Pass 24 (2026-11-01): a decision pass; no code changed.** The §1 battery was re-run on `main` (`7290149`) and is green. The human answered Decisions 38–45:
+  - **Original art** (`docs/art_brief/`):
+    - the 26 Tier 1 sprites are approved (38);
+    - AI-made images may be final art, with conditions (39);
+    - each original sprite has its own palette of ≤ 16 colours (40), and outlines in a dark shade of its own colour (41);
+    - the monument stamps come from approved images, with the Library of Congress (22 × 14) as the 15th (42);
+    - ruined houses draw with the house sprites (43);
+    - each park gets several signature features, made by the local image model (44).
+  - **The Emerald tile import plan is approved** (45).
+  - **F63 becomes Item 25c.** F62 is left as it is: pass `--timeout 300` for `far_buildings` captures, and re-ask the human if it keeps happening.
+- **Built since pass 23, and on `main`** (M60–M63; the battery and CI are green on `7290149`):
+  - **Item 12b** — the Emerald mapping chosen by evidence, with neutral names (F59, F60);
+  - **Item 12c** — the human's Item 12 review changes: the ploughed crop field, and tidy compositions;
+  - **Item 12d** — two-tile minimum widths and the 4 × 4 house (slice-2 §13);
+  - **Item 25b** — the whole-city view loads; the harness times out with exit 3; frame times at zoom 1 and 1/16; the five ruined-city screenshots (F61, F56).
+- **The human's verdict at those pauses:** in Emerald tiles, the ruins and landmarks "still don't look right", so they get **new original art.** Tier 1 of it is done and approved.
+- **Open findings:** F63 (Item 25c), F55 (Item 26), and F39's ROM half (Item 10). F62, F58, F49, and F27(d) are deferred (§11).
 - **Decision 34 — the human has supplied ROMs,** so Items 10 and 12 are unblocked:
   - **Emerald:** a clean `BPEE` dump (SHA-1 `f3ae088181bf583e55daf962a92bb46f4f1d07b7`);
   - **Black:** `IRBO`, but a **fan-modified** ROM, so it's accepted for its sprites only.
   - The human gives you the file paths in chat. **Never write them in the repo.**
 - **The pass-20 content** — the 30 new legendary places, the Glow, new puzzles and quests — is in the design docs already. This queue builds the parts that belong to Phases 2–3.
 
-**What is approved for build right now:** Items **12b (in progress), 25b, 30, 26, 27, 28, 10, and 29**, in §2's order.
-- **They pause at** Items 12b, 25b, 30, 28, and 29, for the human's verdict.
+**What is approved for build right now:** Items **25c, 31, 32, 34, 26, 27, 28, 10, and 29**, in §2's order. **Items 33 and 30** start only once their gates open (§2).
+- **They pause at** Items 32, 34, 28, 29, 33, and 30, for the human's verdict.
 - **Items 27 and 28 land together** (§2).
 
 **What NOT to touch:**
@@ -58,6 +58,10 @@
    - ROMs come only from the human, through `TENTH_SPRING_ROM_BW` and `TENTH_SPRING_ROM_GBA`, which point **outside** the repo. **Their paths are never written in the repo.**
    - **The same holds for the Smogon fan sprites and PokéAPI's data files** (Decision 32): downloaded outside the repo, never committed. Only SHA-256 manifests and credits (dex numbers and artist names) are committed.
    - Mapping tables reference ROM data **by number** only.
+   - **Original art enters the repo only as approved sprites with provenance** (Decisions 38–39, Item 31). These stay outside the repo:
+     - the style reference (`~/.tenth_spring_rom_spike/emerald/style_reference.json`), which is measured from the ROM;
+     - the raw model pictures;
+     - the context and Emerald renders.
 2. **Activate the commit hook in your clone before your first commit:** `git config core.hooksPath .githooks`. The local battery fails without it.
 3. **Never force-push `main`.** Work on a branch per item, get all workflows green, then fast-forward `main`.
    - **Then delete the item's branch,** locally (`git branch -d <branch>`) and on GitHub (`git push origin --delete <branch>`). Only `main` stays.
@@ -84,8 +88,9 @@
    - **Never run a test file with `--script`** — use `test_runner.py --only <test>`.
    - **Turn off any editor feature that starts Godot by itself** (a Godot extension's language server): two of the four crashes came from one (F57).
 8. **Download nothing** except what an item names:
-   - **Items 25b, 26, and 30:** the pinned Washington DC snapshot, only if the scratch copy is gone — `https://download.geofabrik.de/north-america/us/district-of-columbia-261001.osm.pbf` and its `.md5` — into a scratch folder outside the repo.
+   - **Items 25c, 26, 30, and 33:** the pinned Washington DC snapshot, only if the scratch copy is gone — `https://download.geofabrik.de/north-america/us/district-of-columbia-261001.osm.pbf` and its `.md5` — into a scratch folder outside the repo.
    - **Item 26:** Overpass queries at the pinned date, exactly as `implementation_plan_explore_here.md` §1.2 writes them, ≥ 5 s apart.
+   - **Item 34:** Overpass queries at the pinned date for the parks' features, ≥ 5 s apart.
    - **Item 29:**
      - PokéAPI's CSV files at one pinned commit;
      - the fan sprites #650–905 and the Mega forms' sprites, from `github.com/PokeAPI/sprites` at one pinned commit — **never** its #1–649 files;
@@ -104,20 +109,19 @@
 
 ---
 
-## 1. Verified baseline (run 2026-10-23 in this session, pass 23 — `main` at `6330289`)
+## 1. Verified baseline (run 2026-11-01 in this session, pass 24 — `main` at `7290149`)
 
 | Battery | Where | Result |
 |---|---|---|
 | `cd companion && flutter analyze` | Mac, local | **No issues found** |
 | `python3 -I ../tools/memguard.py run flutter_test -- flutter test` (in `companion/`) | Mac, local | **37 passed, 2 skipped** |
-| `python3 game/tests/test_runner.py` | Mac, local | **Executed.** **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK, `[CHECK FAMOUS PLACES OK] … 27 cities, 60 sites, 18 spots, 78 legendaries, 9 wardens`, placeholder-atlas tests OK |
-| `python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green** — `[OK] Cross-language loopback sync succeeded!` |
-| `python3 -I tools/rom_spike/emerald/test_rom_spike.py` (with `TENTH_SPRING_ROM_GBA`) | Mac, local | **7/7 OK on `main`** (pass 22). On Item 12b's uncommitted work it fails with `ImportError: cannot import name 'FEATURED_SECONDARY_TILESETS'` — the refactor renamed it, and 12b rewrites these tests |
-| CI on `10e2ed8`, `83949c7`, `b5984d6`, `efc64df`, `6330289` | GitHub | **All green** — `game_tests`, IP guard, `sync_e2e` |
-| **DC landmarks** — `check_landmarks.py` | Mac | Library of Congress `placed=1 gold_tiles=308` · Air and Space `288` · Washington Monument `20` · **Lincoln Memorial `placed=1 gold_tiles=54`** |
-| **DC ruin pass** — `measure_synth.py` | Mac | `placement_pct=32.5%`; `building_tile_pct=11.1%`; `path_tile_pct=12.8%`; `standing 27.3% · ruined 29.7% · gone 42.9%` (target 20–45%, Decision 37); `rubble 1.7%`; `tall_grass 14.0%`; `landmarks_standing=4/4` |
-| **Frame times, windowed, DC, zoom 1** (`--focus waypost`) | Mac | `FRAME_P95_MS 16.67` (≤ 16.7 ✅), `LOAD_MAX_FRAME_MS 20.55` (≤ 33.4 ✅), `VSYNC_MS 16.67` |
-| **Frame times, zoom 1/16** | Mac | ❌ **Couldn't run** — the capture never finished in 15 minutes (F61) |
+| `python3 game/tests/test_runner.py` (with `GODOT_BIN`) | Mac, local | **Executed.** **`[ALL GAME TESTS PASS] All 22 expected tests passed`**, `[REAL SAVE CHECK OK]`, static lint OK, `[CHECK FAMOUS PLACES OK] … 27 cities, 60 sites, 18 spots, 78 legendaries, 9 wardens`, `[EMERALD TABLE TESTS OK]` (its ROM-gated half skipped) |
+| `python3 -I tools/sync_e2e.py` | Mac, local | **Executed, green** — `[OK] Cross-language loopback sync succeeded!` (`visit_log 14`, `last_applied_seq 14`, `map_cell 3`, `place_node 1`) |
+| `python3 -I docs/art_brief/tools/test_art_tools.py` (moves to `tools/art_pipeline/` in Item 31) | Mac, local | **Ran 84 tests … OK** |
+| The Emerald spike's ROM-gated tests | Mac | **Not run this pass** (no ROM code changed; `TENTH_SPRING_ROM_GBA` wasn't set in this session). Last run: M62, all OK |
+| CI on `7290149` | GitHub | **All green** — `game_tests` 40447174704, IP guard 40447174765, `sync_e2e` 40447174674 |
+| **DC §11.4 numbers** — `measure_synth.py` | Mac | **Carried from M62** (no synthesis code has changed since): path tiles **14.8%** (≤ 18%) · building tiles **11.7%** (10–16%) · gone **43.1%** (20–45%) · ruined **29.3%** (20–35%) · standing 27.6% · `TALL_GRASS` **14.2%** (≥ 8%) · landmarks standing **4/4** |
+| **Frame times, DC, windowed** | Mac | **Carried from M63:** zoom 1 `FRAME_P95_MS` **16.67** / `LOAD_MAX_FRAME_MS` **21.48**; zoom 1/16 **16.67** / **19.20** (targets ≤ 16.7 / ≤ 33.4; `VSYNC_MS 16.67`) |
 | **The human's ROMs** (header read only) | Mac | Emerald `BPEE`, SHA-1 `f3ae0881…07b7` (the clean dump); Black `IRBO`, **modified** |
 | Real-device sync gate | phone + PC | ⚠️ **NOT RUN** — human. At Item 28's pause. |
 
@@ -127,23 +131,26 @@
 
 | # | Item | Why this position |
 |---|---|---|
-| 12b | **Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE** (this is the human's Item 12 review) — **in progress on `item-12-mapping-fix`; keep that work** | **The real Pokémon look.** Item 30's look-alikes come from this mapping. Already started, so it finishes first. |
-| 25b | **The whole-city view finishes loading (F61); frame times at zoom 1/16 (F56); the complete proof v3 → PAUSE** | Item 25 can't be judged without its proof, and every later screenshot at overview zoom hangs until this is fixed. Doesn't depend on 12b. |
-| 30 | **Landmark set pieces → PAUSE** (slice-2 plan §12) | Needs Item 24's placement and 24a's interiors (both delivered), and 12b's corrected compositions. |
-| 26 | **The places pack — F55** (`implementation_plan_explore_here.md` §1–2; famous-places plan §8.2) | Items 27 and 28 both read the pack. |
+| 25c | **The steady-frame wait gets the same time limit (F63)** | Small, and harness only. Every later proof capture (Items 33 and 30) depends on the harness never hanging. |
+| 31 | **The approved Tier 1 art enters the repo; the art tools move to `tools/art_pipeline/`** (Decisions 38–40) | Items 32, 33, 34, and 30 build on the committed sprites and tools. |
+| 32 | **Plan: slice-2 §14, original art in the world → PAUSE** (Decisions 40–43) | THE LOOP, step 2: Items 33 and 30 change synthesis and the renderer, so their plan comes first. |
+| 34 | **Plan: the parks' signature features, several per site → PAUSE** (Decision 44) | No code waits for it, but its feature list drives the Tier 3 art run. Written while the human reviews §14. |
+| 26 | **The places pack — F55** (`implementation_plan_explore_here.md` §1–2; famous-places plan §8.2) | Items 27 and 28 both read the pack. Doesn't wait for any verdict on the art. |
 | 27 | **Companion: Explore Here** (explore plan §3) | Needs 26. **Shares a branch with 28** — see below. |
 | 28 | **PC: explore ingest, migration 3, RevealEngine v2, boot, demo, e2e → PAUSE + real-phone check** (explore plan §4–6) | Needs 26 and 27. |
+| 33 | **Ruined houses drawn with the house sprites → PAUSE** (slice-2 §14) | **Gate:** the human approves §14. Then it goes ahead of the next ungated item, but never between 27 and 28. |
+| 30 | **Landmark set pieces from approved images → PAUSE** (slice-2 §12 as amended by §14) | **Gates:** §14 approved, the Tier 2 sprites approved by the human, and Item 33 landed (it reuses 33's sprite path). |
 | 10 | **Black/White sprite spike** — sprites only now (Decision 34) | ROM supplied. Its findings feed Item 29's combined importer plan. |
-| 29 | **Gen 8 data pack + fan sprites spike, then `implementation_plan_rom_importer.md` → PAUSE** (Decision 32; pipeline §2a) | Needs 10's findings. Phase 2 can't be coded until its plan is approved (THE LOOP, step 2). |
+| 29 | **Gen 8 data pack + fan sprites spike, then `implementation_plan_rom_importer.md` → PAUSE** (Decision 32; pipeline §2a) | Needs 10's findings. Phase 2 can't be coded until its plan is approved (THE LOOP, step 2). The tile half is already approved (Decision 45). |
 
 **Items 27 and 28 share one branch and merge to `main` together, as two commits.** The phone switches to protocol v3 in 27 and the PC in 28, so `tools/sync_e2e.py` is red between them. That's expected, and it must be green again at the end of 28. This is the only sanctioned red gate.
 
 **▶ HUMAN actions:**
 - **Give the agent your ROM paths in chat,** to set `TENTH_SPRING_ROM_GBA` (Emerald) and `TENTH_SPRING_ROM_BW` (Black). Never put them in the repo.
-- **At Item 25's pause:**
-  - the ruined-city screenshots (the art is still the placeholder);
-  - the new and changed place rows (name → boundary → Waypost).
-- **At Item 12's pause:** the Emerald contact sheets, the fixture preview in real Emerald tiles, and the list of what Emerald lacks.
+- **At Item 32's pause:** slice-2 §14 — how the ruined-house sprites and the stamps are placed.
+- **At Item 34's pause:** the list of signature features, several per park, with where each one stands.
+- **The Tier 2 art run** (the 14 monuments and the ruined city block): ask Claude for the paste prompt (`docs/art_brief/ART_BRIEF.md`), run it in Antigravity, then approve the sprites. **That approval gates Item 30.**
+- **At Item 33's pause:** the ruined town with the new sprites, in harness screenshots and in Emerald tiles.
 - **At Item 30's pause:** the landmark set pieces in DC.
 - **At Item 28's pause — the real-phone check** (explore plan §6), on your phone and PC:
   1. Pair by QR.
@@ -163,126 +170,215 @@ Deferred (trigger-gated, **do not start**): §11.
 
 ---
 
-## 3. Item 12b — Correct the Emerald mapping (F60), with neutral names (F59) → PAUSE (the human's Item 12 review)
+## 3. Item 25c — The steady-frame wait gets the same time limit (F63)
 
-**What this means for the user:** the real Pokémon Emerald look — lawns that are plain grass, ponds with shorelines, tall grass that reads as tall grass — instead of a field of stray objects and striped water.
-
-### Where it stands (pass 23)
-- **Uncommitted** on `item-12-mapping-fix`. **Keep this work — don't start over:**
-  - `tools/rom_spike/emerald/rom_spike.py` has neutral tileset keys (`sec%02d`) and writes **labelled contact sheets** for the primary and 7 secondary tilesets (`~/.tenth_spring_rom_spike/emerald/*_labelled.png`, indices legible).
-- **Not yet done:**
-  - `test_rom_spike.py` still imports the old `FEATURED_SECONDARY_TILESETS` and fails with `ImportError`;
-  - `build_mapping.py` and the corrected `emerald_tile_map.json`;
-  - neutral composition ids;
-  - the falsifying checks (step 6);
-  - the re-rendered preview;
-  - the doc updates;
-  - the spike's docstring cites the guide's "§4 (Item 12b)" — it's §3 now.
+**What this means for the user:** a screenshot capture never hangs until someone kills it by hand. It fails within `--timeout` seconds, with a message saying what it was waiting for.
 
 ### The gap
-The evidence is `~/.tenth_spring_rom_spike/emerald/preview.png` (the fixture cells in Emerald tiles) and `game/config/emerald_tile_map.json`:
-- **`GRASS`** variants 1 and 2 → metatiles 2 and 3, which draw a small grey object and red marks across every lawn;
-- **`WATER`**: every mask → 44 or 52, which draws as vertical stripes with no shoreline;
-- **`TALL_GRASS`** → 13 and 37, and parts of tall-grass areas draw as round bushes;
-- **`GRAVE` and `SIGN`** share 33;
-- **`MARSH`** reuses the sand tile (76);
-- **`RAIL`** → a road tile (290), although `gaps` lists rail;
-- **all eight roof colours** → one roof (521);
-- **the spike's checks covered only metatiles 1, 13, and 44;**
-- **Nintendo place and facility names as identifiers:** the tileset keys (`petalburg` … `battle_frontier`) and the composition ids (`game_corner`, `contest_hall`, `battle_tower`, `trick_house`, …) (F59).
+- **The wait has no limit.** After `SCREENSHOT_SAVED`, the harness waits for 120 steady frames before printing `VSYNC_MS` and `FRAME_P95_MS` and quitting (`game/world/map_view.gd:1552-1560`). The `--timeout` check covers only the wait for the screenshot (`:1524-1533`).
+- **A frame-based check can't catch it.** The count advances only in `_on_frame_post_draw` (`:1519`), which runs only when a frame is drawn.
+- **It happened in M63:** one capture printed `SCREENSHOT_SAVED`, waited about 10 minutes, and was killed by hand. The window was probably not being presented, so no frames came. **A check inside `_on_frame_post_draw` can't fire when frames stop,** so the limit needs a timer.
+- `game/scenes/town_map.gd` quits right after its save, so it has no such wait.
 
 ### Implementation
-1. **Labelled contact sheets** — ✅ done in the work in progress. Keep them current if the spike changes.
-2. **Choose each class's metatiles by evidence, never by guess.** Use any of these, and record the method in `design_rom_asset_pipeline.md` §4:
-   - **the metatile attribute table (behaviour byte)** — tall grass only from tall-grass behaviours, water only from water behaviours;
-   - **pixel tests** — a plain-grass variant draws ≥ 90% of its pixels from the base grass metatile's colours;
-   - **the ROM's own map layouts, read as statistics only:** count which metatiles border the water interior on each side to find shoreline pieces per mask, and likewise for path edges and tree borders. Nothing from a layout is stored except metatile numbers.
-3. **No stand-ins that draw a different object.** A class with no honest Emerald piece goes in `gaps` and keeps its placeholder tile: rail, marsh, snow, and graves if the chosen tilesets have none. Different classes never share a metatile unless the table lists the share as intentional.
-4. **Roof colours:** map at least four distinct Emerald roof colourways, if the tilesets have them. If not, record the reason in `gaps`.
-5. **Neutral names (F59):**
-   - tilesets keyed by index (`"sec05"`);
-   - compositions named by function (`casino_hall`, `theatre_hall`, `tall_tower`, `maze_house`, `pyramid_hall`, `dome_centre`, `museum_hall`, `maritime_hall`, `grand_hall`, `stadium`, `elevated_road`, `observatory`, `power_station`, `dept_store`);
-   - the spike's comments neutral as well;
-   - rename `design_art_direction.md` §1a's table to match. Commit messages and docs describe Emerald by function only.
-6. **Falsifying checks** in `tools/rom_spike/emerald/test_rom_spike.py` (ROM-gated) — **run them against today's table first; they must fail:**
-   - every `GRASS` variant passes the 90% grass-colour test;
-   - every `WATER` mask-15 metatile is ≥ 95% water colours, and a mask with a 0 bit shows shore pixels on that side;
-   - every `TALL_GRASS` metatile has the tall-grass behaviour;
-   - no unlisted shared metatiles;
-   - no `tile_map` entry for a class in `gaps`.
-7. **Re-render** the preview of the same fixture cells, plus the labelled contact sheets.
-8. **Update `docs/implementation_plan_rom_tiles.md` §3** so these checks are also the importer's validation.
-9. **Show the preview and the contact sheets to the human. PAUSE** — this is the Item 12 review.
+1. **Start a timer at the save.** When the screenshot is saved (`:1546`), start a one-shot timer of `screenshot_timeout_sec` seconds: `get_tree().create_timer(screenshot_timeout_sec, true, false, true)` (process always, ignore time scale). This limit counts from the save, not from launch.
+2. **When it fires,** if the steady-frame line hasn't printed:
+   - print once to stderr `[FAIL] screenshot harness: <k> of 120 steady frames after <N> s`, where `<k>` = `_steady_frames_count` and `<N>` = `int(screenshot_timeout_sec)`;
+   - quit with exit code **3**.
+
+   If the 120 frames arrive first, the timer does nothing.
+3. **Route both exit-3 paths through one function,** `_harness_fail(message: String)`, which prints and quits. A test can replace its quit with a recorded call: inject a `Callable`, the way the existing dependency-injection seams do (§14).
+4. **`tools/demo_screenshot.py` already passes exit 3 through.** Change it only if its test needs the new message.
 
 ### Validation
-- Every new check passes, and failed on the pass-22 table.
-- The new preview shows plain lawns, shorelines, and tall grass. Describe what changed, region by region, when you show it.
-- `git status` shows only the spike's code, `emerald_tile_map.json`, and doc changes. The guard exits 0.
+- **Falsifying test first** (a new `map_view_test` section):
+  - put a map view in screenshot mode with a 1 s limit;
+  - mark the screenshot saved, and deliver no frames;
+  - assert `_harness_fail` is called within 3 s of the save, with `0 of 120 steady frames after 1 s`.
+
+  **Against the old code it must fail:** nothing is called.
+- **A normal capture still prints `FRAME_P95_MS` and exits 0:** `demo_screenshot.py --zoom 1 --focus waypost` on `user://demo_dc`.
+- **The full §1 battery,** then every workflow.
 
 ### Blast radius (same commit)
-`game/config/emerald_tile_map.json` · `tools/rom_spike/emerald/*.py` · `docs/design_rom_asset_pipeline.md` §4 · `docs/design_art_direction.md` §1a · `docs/implementation_plan_rom_tiles.md` §3 · `ongoing_general_errors.md` (F60, F59 → Resolved; Decision 19 status).
+`game/world/map_view.gd` · `game/tests/map_view_test.gd` · `ongoing_general_errors.md` (F63 → Resolved, a new M-number) · slice-2 §11.5 (one line on the steady-frame limit).
 
 ---
 
-## 4. Item 25b — The whole-city view finishes loading; honest frame times; the complete proof v3 → PAUSE (F61, F56)
+## 4. Item 31 — The approved Tier 1 art enters the repo; the art tools move to `tools/art_pipeline/` (Decisions 38–40)
 
-**What this means for the user:** the whole-city view of a famous city loads and stays smooth. And they finally see the full set of ruined-city screenshots, with real numbers, to judge the look.
+**What this means for the user:** the 26 sprites they approved are saved in the game, each with a record of how it was made. The tools that made and checked them are tested on every run, like the rest of the code.
 
 ### The gap
-- **The capture never finishes at overview zoom.** `python3 -I tools/demo_screenshot.py --out-dir <outside the repo> --demo-dir user://demo_dc --zoom 0.0625 --focus waypost` ran over 15 minutes in pass 22 with no screenshot, and had to be killed. `--zoom 1` finishes in seconds.
-  - The implementing agent's own run before the Item 25 commit ended `failed:120` (memguard log, 2026-10-24T00:08Z).
-  - The map view saves only once `pending_cell_count() == 0` (`game/world/map_view.gd:1420-1437`, checked at `:1509`). That count includes `_dirty_overview_chunks.size()`.
-  - Every overview blit re-marks its chunk dirty (`:1142`), and `_flush_overview_chunks()` drains at most 4 per call (`:1089`).
-- **The harness has no timeout,** so a stall hangs forever instead of failing.
-- **Item 25 recorded no frame times and no M-record,** and only 3 of its 5 screenshots exist.
+- **Nothing is committed yet:** `docs/art_brief/` (the brief, the catalogue, the tools, and `tier1_selection.json`).
+- **The chosen pictures live outside the repo,** in `../tenth_spring_art_work_3/`, `../tenth_spring_art_work_4/`, `../tenth_spring_art_work_5/`, and `../tenth_spring_art_code/`. Each folder has `raw/<asset>/candidate_NN.png` and a `provenance.json`.
+- **Every chosen sprite must be converted again** with the current `convert_art.py`. Shadow removal and outline repair changed after some of them were chosen (`tier1_selection.json`).
 
 ### Implementation
-1. **Diagnose.** At zoom 1/16, print the two parts of `pending_cell_count()` — unrendered visible cells, and dirty chunks — every 60 frames. Find the part that never reaches zero, fix the cause, and remove the print.
-2. **Add a harness timeout.** If no screenshot is saved within **120 s** of launch, print `[FAIL] screenshot harness: <n> cells and <m> chunks still pending after 120 s` and quit with exit code **3**.
-3. **New `map_view_test` case.** At zoom 1/16, on a fixture whose view extends past the store's coverage, `pending_cell_count()` reaches 0 within 600 frames. **Run it against the old code first: it must fail.**
-4. **Capture all five slice-2 §11.6 screenshots** in `user://demo_dc` — `shot_ruins_z2_far`, `shot_ruins_z1_far`, `shot_ruins_z2_camp`, `shot_z2_landmark`, and `shot_z0.0625_dc` — outside the repo, and tell the human the paths.
-5. **Record Item 25** in `ongoing_general_errors.md` (a new M-number):
-   - the §11.4 numbers of the §1 baseline;
-   - the frame times at zoom 1 **and 1/16** beside 16.7 / 33.4, with `VSYNC_MS`.
-6. **Show the five screenshots to the human,** with the placeholder caveat. **PAUSE** for their verdict on the ruined look.
+1. **Move the tools.** `docs/art_brief/tools/*.py` move to `tools/art_pipeline/`. Fix every path inside them, and in `ART_BRIEF.md` and `CATALOGUE.md`. The brief, the catalogue, `earlier_prompts.json`, `tier1_selection.json`, and `guides/` stay in `docs/art_brief/`.
+2. **Convert each of the 26 chosen raw images** with `tools/art_pipeline/convert_art.py`:
+   - free palette only (Decision 40), so not `--mode both`;
+   - the roofed houses with `--variants`, which also writes their roof colourways.
+3. **Validate** with `tools/art_pipeline/validate_art.py` against the human's style reference, `~/.tenth_spring_rom_spike/emerald/style_reference.json`. `build_style_reference.py` builds it from the ROM, so **it is never committed.** Every sprite either passes, or `tier1_selection.json` says it passed by eye. Report each one.
+4. **Commit the sprites:**
+   - **Where:**
+     - the 9 houses and 16 decals go in `game/assets/original/ruins/`;
+     - the Library of Congress goes in `game/assets/original/landmarks/`.
+   - **Names:** `<asset id>.png`, and each roof colourway as `<asset id>__<colourway>.png`.
+   - **`game/assets/original/provenance.json`,** with one entry per sprite:
+     - its asset id;
+     - the source file name, and the run folder's *name* (not a path);
+     - the round and the date;
+     - the model, and the licence with its link;
+     - the prompt (`null` for the three drawn by code);
+     - how it passed: on the checks, or by eye.
+5. **Add an "Original art" section to `CREDITS.md`:**
+   - the Tier 1 sprites are AI-assisted, made with Qwen-Image-2512 Q8_0 (Apache 2.0) and the Lightning 8-step LoRA (Apache 2.0);
+   - the cracks, grass tufts, and creeping vine are drawn by the project's own code;
+   - the human approved them on 2026-11-01.
+6. **The tests join the runner.** `game/tests/test_runner.py` runs `tools/art_pipeline/test_art_tools.py` (84 tests) like the other tool tests, and fails if it fails.
+7. **Every new file passes the IP guard.** These stay outside the repo: the style reference, the raw pictures, the context renders, and anything else made from the ROM.
 
 ### Validation
-- The new test passes, and failed on the old code.
-- Zoom 1/16 finishes with `FRAME_P95_MS` ≤ 16.7 and `LOAD_MAX_FRAME_MS` ≤ 33.4. **Report every number beside its target.**
-- A deliberately stalled run (for example, a store path that doesn't exist) fails with exit 3 and the message, instead of hanging.
-- The full §1 battery, then every workflow.
+- **`test_art_tools.py`:** 84 tests OK from its new place, and through the runner.
+- **Conversion is deterministic:** convert every sprite twice, and the two hashes match.
+- **`validate_art.py` on the committed sprites:** each passes, or is listed as passed by eye.
+- **`git status`** shows no file outside the paths above, and the guard exits 0.
+- **The full §1 battery,** then every workflow.
 
 ### Blast radius (same commit)
-`map_view.gd` · `map_view_test.gd` · `tools/demo_screenshot.py` (exit 3 handling) · `ongoing_general_errors.md` (F61 and F56 → Resolved) · slice-2 plan §11.5 ("built").
+`tools/art_pipeline/` · `docs/art_brief/` · `game/assets/original/` · `CREDITS.md` · `game/tests/test_runner.py` · `design_art_direction.md` §6 (files) · `ongoing_general_errors.md` (a new M-number).
 
 ---
 
-## 5. Item 30 — Landmark set pieces → PAUSE
+## 5. Item 32 — Plan: slice-2 §14, original art in the world → PAUSE (Decisions 40–43)
 
-**What this means for the user:** the Statue of Liberty looks like the Statue of Liberty, and the Lincoln Memorial like the Lincoln Memorial — not a gold-roofed box.
+**What this means for the user:** before any code changes, they see exactly how the approved ruined-house sprites and the monument stamps will be placed on the map, and approve it.
 
 ### The gap
-- Every landmark is drawn as a gilded building template (`tile_synth2.gd`, §10.8 code).
-- There is no stamp art, no register, no class 21, and no renderer path for set pieces.
+- **§11.2 draws ruins tile by tile:** variant bit 16, `RUBBLE`, and `TALL_GRASS`.
+- **§12.2 draws stamps with a code generator,** a near-black outline, and the master palette.
+- **Decisions 40–43 change all of that,** and no section yet says how. Both sections now carry an "Amended by …" note that points at §14.
+
+### Implementation — write `implementation_plan_world_generation_slice2.md` §14, at the depth of §11–§13
+1. **Sprite choice (Decision 43).** Give the exact rule for each choice:
+   - **Which ruined sprite** a building gets: `house_s_a`/`_b`, `house_m_a`/`_b`, or their `_door2` twins when the door is in column 2. Choose by band (`camp`, `near`, `mid`, `far`), with an exact share per band and a salt.
+   - **Which roof colourway,** from `u(gx0, gy0, <new salt>)`.
+   - **How a gone building chooses** between state C and grass with decals: a share per band, and a salt.
+   - **The decals:** which of the 16, how many, on which tiles, and with which salts.
+   - **`block_l` → `ruined_block`:** how one repeatable block tiles a footprint wider than itself.
+2. **How sprites reach the screen,** with one mechanism for ruins and landmarks:
+   - a sprite atlas built from `game/assets/original/`;
+   - a synthesized class that marks the sprite's footprint: §12's class 21 `STAMP`, or a new class (say which);
+   - the renderer draws each sprite once per footprint, at integer scale;
+   - what walkability and doors the footprint keeps. A ruined house's door stays for doorway searching (Decision 27); a state-C shell has none;
+   - what the placeholder and Emerald atlases draw underneath.
+3. **Set pieces (Decisions 40–42).** Rewrite §12.2:
+   - stamps are approved PNGs with provenance, with no generator;
+   - each has its own palette of at most 16 colours, and an outline in a dark shade of its own colour;
+   - the **Library of Congress** is the 15th stamp: 22 × 14 tiles, door in columns 10–11 on row 13 (`docs/art_brief/catalogue.json`);
+   - the register gains the visitor centres and site structures, by their ids in `famous_places.json`;
+   - a landmark whose art isn't approved yet keeps the gold-roof template, as now.
+4. **Determinism.** Every choice is a pure function of the cell, `MAP_SEED`, and the place's Waypost (Decision 23). List the new salts after §11.2's 9–14.
+5. **Targets, tests, and proof,** in the style of §11.4 and §11.6:
+   - which §11.4 numbers can move, and why;
+   - one falsifying test per rule;
+   - the golden hashes that change;
+   - the proof: harness screenshots, plus the same views in Emerald tiles rendered from the human's ROM, outside the repo. The human judges the look in Emerald art, not in the placeholder.
+6. **Show §14 to the human. PAUSE.**
+
+### Validation
+- **Nothing is left to the builder:** every number, salt, file name, and class id in §14 is exact.
+- **§14 names its art by asset id** from `docs/art_brief/catalogue.json`, and its sizes match the catalogue.
+- **No code changes** in this item.
+
+### Blast radius (same commit)
+Slice-2 §11.2 and §12 (their notes point at §14) · `design_world_generation.md` (ruins) · `design_art_direction.md` §1a · `ongoing_general_errors.md` (a new M-number).
+
+---
+
+## 5a. Item 33 — Ruined houses drawn with the house sprites → PAUSE (Decision 43)
+
+**What this means for the user:** the ruined town looks like the art they approved. They see neglected and broken houses, collapsed shells, and overgrowth, instead of tile-by-tile holes.
+
+**Gate:** start only once the human approves §14 (Item 32). Then start it before the next ungated item, but never between Items 27 and 28.
+
+### The gap
+§11.2 as built (`tile_synth2.gd`, step 5d) draws ruins with variant bit 16 and `RUBBLE`. Nothing reads Item 31's sprites.
 
 ### Implementation
-Exactly **slice-2 plan §12**:
+Exactly slice-2 §14, as the human approved it.
+
+### Validation
+§14's tests, each target beside its measured value, and §14's proof. **PAUSE** for the human's verdict on the ruined look.
+
+### Blast radius (same commit)
+As §14 lists. At least: `tile_synth2.gd` and its test (golden hashes) · `map_view.gd` · the sprite atlas · `measure_synth.py` · slice-2 §14 ("built") · `ongoing_general_errors.md`.
+
+---
+
+## 5b. Item 30 — Landmark set pieces from approved images → PAUSE (Decision 42)
+
+**What this means for the user:** the Statue of Liberty looks like the Statue of Liberty, and the Library of Congress like the Library of Congress, not a gold-roofed box.
+
+**Gates:**
+- **the human approves §14** (Item 32);
+- **the human approves the Tier 2 sprites:** the 14 monuments, made by the art run in Antigravity (`docs/art_brief/ART_BRIEF.md` §9);
+- **Item 33 has landed,** since this item reuses its sprite atlas and renderer path.
+
+Then start it before the next ungated item, but never between Items 27 and 28.
+
+### The gap
+- **Every landmark is drawn as a gilded building template** (`tile_synth2.gd`, the §10.8 code).
+- **The set-piece path doesn't exist yet:** no register, no class 21, and no renderer path for set pieces.
+
+### Implementation
+Exactly **slice-2 §12, as amended by §14**:
 - the register `game/config/landmark_art.json`, checked by `check_famous_places.py`;
-- `tools/gen_landmark_stamps.py` and the 14 stamps (`stamps_v1.png`/`.json`), with up to 8 new palette colours;
-- the placement rule, with fallback to the gilded template;
-- class 21 `STAMP`, with the door as `DOOR` 32;
-- the renderer drawing class 21 from the stamp atlas, or from Emerald composition rows once Item 12b's corrected mapping and the tile builder exist.
-- **The register's first entries:**
-  - every §12.2 stamp, on its interior;
-  - an Emerald composition for every §1a look-alike in Item 12b's corrected mapping.
+- the 15 approved stamps, committed under `game/assets/original/landmarks/` with their provenance (**no `tools/gen_landmark_stamps.py`**);
+- the placement rule, falling back to the gilded template;
+- class 21, with the door as `DOOR` 32;
+- the renderer drawing class 21 from the sprite atlas, or from an Emerald composition where the register names one.
 
 ### Validation
-- **`tile_synth2_test` (u),** including the falsifying case. The stamps regenerate byte-for-byte.
+- **`tile_synth2_test` (u),** including the falsifying case.
 - **The register check** fails on a planted unknown stamp id.
-- **Proof:** DC at zoom 2 — the Lincoln Memorial and the Washington Monument — saved by the harness and shown to the human. **PAUSE.**
+- **Proof:** DC at zoom 2 — the Lincoln Memorial, the Washington Monument, and the Library of Congress — saved by the harness. Show it beside the same view in Emerald tiles, rendered from the human's ROM outside the repo. **PAUSE.**
 
 ### Blast radius (same commit)
-`tile_synth2.gd` and test (golden hashes) · `map_view.gd` (class 21) · `tools/gen_landmark_stamps.py` and its test · `game/assets/landmarks/` · `assets/palette/tenth_spring.gpl` · `game/config/landmark_art.json` · `check_famous_places.py` · slice-2 plan §12 ("built").
+`tile_synth2.gd` and its test (golden hashes) · `map_view.gd` (class 21) · `game/assets/original/landmarks/` · `game/config/landmark_art.json` · `check_famous_places.py` · `CREDITS.md` · slice-2 §12 and §14 ("built").
+
+---
+
+## 5c. Item 34 — Plan: the parks' signature features, several per site → PAUSE (Decision 44)
+
+**What this means for the user:** each park shows its famous natural sights where they really are — at Yellowstone, Old Faithful, Grand Prismatic Spring, and the Lower Falls — so arriving at a park feels like arriving at *that* park.
+
+### The gap
+- **Nothing marks a park's natural landmarks.** The game places only a park's visitor centre and its structures (`famous_places.json`; `implementation_plan_famous_places.md`).
+- **The art brief's `vistas` group has one picture per site (51), with no location.**
+
+### Implementation
+1. **Write `implementation_plan_famous_places.md` §9, "Signature features",** at foundation depth.
+   - **The list.** Give each site its 2–5 most famous natural sights (the human asked for several). For each feature:
+     - an id and a name;
+     - the OpenStreetMap element that locates it, at the pinned `MAP_SNAPSHOT`;
+     - the lat/lon read from that element;
+     - a footprint in tiles;
+     - its story hook, if it has one (`design_famous_places.md` §1.2).
+   - **The data:** where the list lives (`famous_places.json` gains `features`, or a new `game/config/park_features.json` — choose one and say why), plus the checker rules: every feature lies inside its site's boundary, and ids are unique.
+   - **Placement:** like a set piece (§14's mechanism), at the feature's location. Say what it falls back to before its art is approved, and what is walkable.
+   - **The art:** `catalogue_build.py` replaces the `vistas` group with one asset per feature, with prompts in the brief's style, to be made by the local model (Decision 44).
+2. **Locate features from the pinned snapshot:** Overpass at the pinned date, ≥ 5 s apart, as in Item 26. Never `-latest`. Feature locations are public landmarks, not the human's places.
+3. **Show the list and the section to the human. PAUSE.**
+
+### Validation
+- **A script checks every feature:** it has a source element, and it lies inside its site's boundary.
+- **The catalogue rebuilds,** and `test_art_tools.py` passes.
+- **No game code changes** in this item.
+
+### Blast radius (same commit)
+`implementation_plan_famous_places.md` §9 · `design_famous_places.md` (one line on features) · `docs/art_brief/` (`vistas` → features) · `ongoing_general_errors.md`.
 
 ---
 
@@ -481,13 +577,15 @@ Exactly **`implementation_plan_explore_here.md` §4**:
 ---
 
 ## 11. Deferred — trigger-gated, do NOT start
-- **The Phase 2 production importer** — the GDScript modules and the first-run download. **Trigger:** the human approves `implementation_plan_rom_importer.md` at Item 29's pause, and `implementation_plan_rom_tiles.md` at Item 12's.
+- **The Phase 2 production importer** — the GDScript modules and the first-run download. **Trigger:** the human approves `implementation_plan_rom_importer.md` at Item 29's pause. (`implementation_plan_rom_tiles.md` is already approved — Decision 45.)
 - **Distort gameplay with a walking avatar** — the real Waypost rule, the hub's Rest, PC Box, and Garden, the arrival and resume banners, and weariness's Waypost beds (`design_travel_and_time.md` §4–5; `design_long_game.md` §4.4). **Trigger:** Phase 4.
 - **The battle engine with Gen 8 rules, Mega Evolution, weariness, and fixed-level trainers** (`design_creatures_and_battles.md`; `design_long_game.md`). **Trigger:** Phase 5, after Phase 2 lands. Write its plan first.
 - **Famous interiors, the 34 puzzle kinds, doorway searching, the quest engine, the Walker's Journal, and the quest roster** (`design_interiors_and_quests.md`; `content_quest_roster.md`). **Trigger:** Phase 7. Write `implementation_plan_interiors_and_quests.md` first, and pause.
 - **Legendary lairs and lore requirements, Warden trials at level 75, survivors, the Glow and its vault, the Ultra Beasts in fields, and the Echo** (`design_famous_places.md` §5–§6; `design_story_and_world.md` §4–§5, §4a–§4b). **Trigger:** Phase 8.
-- **Modern street props from Kenney's CC0 packs** (`design_art_direction.md` §2a). **Trigger:** the human approves the Emerald look at Item 12's pause and asks for more street detail.
-- **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, and ledges. **Trigger:** the human approves the ruined look at Item 25's pause. Write `implementation_plan_world_generation_slice3.md` first, and pause.
+- **Modern street props from Kenney's CC0 packs** (`design_art_direction.md` §2a). **Trigger:** the human asks for more street detail.
+- **Slice 3** — spawn zones, tall-grass encounters, biomes and regions per cell, Distortion Fields, and ledges. **Trigger:** the human approves the ruined look at Item 33's pause (at Item 25's, the Emerald-tile ruins didn't look right). Write `implementation_plan_world_generation_slice3.md` first, and pause.
+- **Tier 3 art runs** — the 60 visitor centres, the 16 site structures, and the parks' signature features (`docs/art_brief/` §9). **Trigger:** the human asks. The features also need Item 34's list to be approved.
+- **F62 — a `far_buildings` capture spends about 85 s in its focus scan.** The human chose to leave it (2026-11-01): pass `--timeout 300` for `far_buildings` captures. **Trigger:** a `far_buildings` capture fails with exit 3 while nothing is stuck. Then **re-ask the human** — don't fix it on your own. The options are in `ongoing_general_errors.md` (F62).
 - **Widening the map beyond famous places.** **Trigger:** a human request. Explore Here records nothing outside famous places, so players will explore new places when they arrive.
 - **Moving `MAP_SNAPSHOT` forward,** and with it a new places pack. **Trigger:** a release the human approves.
 - **F58 — the runner could import a fresh checkout itself.** When `game/.godot/` is missing, `test_runner.py` could run `tools/godot.py --memguard-step godot_import --import` first. **Trigger:** an agent or CI job stumbles on a fresh clone again. Until then the README and standing constraint 7 tell you to import.
@@ -509,11 +607,16 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 ---
 
 ## 13. Already delivered — do NOT rework
+- **Builds since pass 22, on `main`; the battery and CI are green on `7290149` (pass 24):**
+  - **Item 12b** (M60) — the Emerald mapping by evidence; `emerald_tile_map.json` version 2; 16 checks; neutral names;
+  - **Item 12c** (M61) — the ploughed crop field, and tidy compositions;
+  - **Item 12d** (M62) — two-tile minimum widths, and the 4 × 4 house;
+  - **Item 25b** (M63) — the whole-city view loads; `--timeout` with exit 3; frame times; the five screenshots.
 - **Pass 21–22 builds, verified in pass 22 (M57, M58):**
   - **Item 24** — landmarks first, the `building:part` rule, 3 × 3 matching, `check_landmarks.py`; all four DC landmarks drawn;
   - **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries, with the extended checker;
-  - **Item 25** — the ruin pass, class 20, bit 16, the overgrowth table, `MEASURE_RUIN`, 8 × 8 overview chunks, `VSYNC_MS`, `--focus=far_buildings` (Item 25b finishes its proof);
-  - **Item 12** — the Emerald spike, its tests, contact sheets, `implementation_plan_rom_tiles.md`, and the first draft of `emerald_tile_map.json` (Item 12b corrects the mapping).
+  - **Item 25** — the ruin pass, class 20, bit 16, the overgrowth table, `MEASURE_RUIN`, 8 × 8 overview chunks, `VSYNC_MS`, `--focus=far_buildings` (Item 33 changes how ruins are drawn, by §14);
+  - **Item 12** — the Emerald spike, its tests, contact sheets, `implementation_plan_rom_tiles.md`, and the first draft of `emerald_tile_map.json`.
 - **Pass 20 build, verified in pass 21 (M55, M56):** **Item 23** — `tools/godot.py` (headless by default, an absolute `--path`, refusal of non-`SceneTree` scripts, `--memguard-step`), all nine launch sites switched, `test_runner.py --only`, and the no-direct-launch lint.
 - **Phase 0 capture pipeline:** the `LocationSource` seam, `VisitCorridorDetector`, `fuzz.dart`, the Drift outbox, `GpxReplaySource`, and the scout-ledger UI. **Item 27 deletes these by design** (Decision 29) — that's not rework.
 - **Early fixes:** F1, F2, F3, F5, F6, F8, F9, F11, F13, F17, F18, F21, F22.
@@ -561,6 +664,7 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Decision 20 — `landuse=construction` is not stored.**
 - **Camera limits of ±200,000,000 px,** so that any US location is reachable.
 - **Item 6's commit message lists template sizes `3×3` and `7×6`;** the code uses the plan's `4×3`, `5×4`, and footprint-sized `block_l`. The code is right.
+- **Item 25b's tests wait on the clock, not on "600 frames"** (as the pass-23 guide said). A headless test advances frames far faster than the worker synthesizes, so they stop early when nothing has changed for 5 s (M63).
 - **Until Items 27 and 28 delete them:** `relocation_manager.gd`'s minimal-circle snap; `nativeVisits()` returning `null`; `_triggerManualScout` clearing SnackBars; and `buildBatchPayload`'s `"bodyFix": ?bodyFix`.
 
 ## 15. Intentional decisions — do NOT change
@@ -605,6 +709,13 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 - **Anything enterable has a purpose** (Decision 27), and every puzzle has an in-world reason. Ordinary buildings are searched from the doorway. **Casinos may appear, but nothing simulates betting** (Decision 33).
 - **Legendaries get one decisive battle,** at their own place behind a challenge. Every lore requirement is "caught or defeated", so no choice can lock a player out. Wardens appear only once their region's three cities are unlocked.
 - **Minor ways are never drawn.** Buildings come before footpaths, and roads before buildings. **Landmarks come before every other building** (after Item 24). Synthesis never runs on the main thread.
+- **Original art** (Decisions 38–44):
+  - only images the human approved, each with provenance and a `CREDITS.md` entry;
+  - AI-made only from a model whose licence allows it: Qwen-Image-2512 (Apache 2.0) yes; Qwen-Image 2.1 (research-only) no;
+  - each sprite has its own palette of ≤ 16 colours in 15-bit colour; the master palette is for the placeholder tiles only;
+  - outlines are a dark shade of the object's own colour, never near-black;
+  - the Library of Congress is the 15th stamp, enterable as the Archive of the Stillness;
+  - every sprite is judged in Emerald art, not the placeholder.
 - **Stack:** Godot 4.3 (PC; Decision 31 = A) + Flutter (companion). No Steam, no monetization.
 
 ## 16. Where the contracts live
@@ -615,9 +726,11 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 | Phases 0–1 build steps, v1 DDL, TLS sync (Part A retired) | `docs/implementation_plan_foundation.md` |
 | **Explore Here** — the places pack, the companion, the PC's unlocks (Items 26–28) | `docs/implementation_plan_explore_here.md` |
 | Slice 1 of world generation | `docs/implementation_plan_world_generation.md` |
-| **Slice 2** + §10 (pass 18) + **§11 ruins, landmarks first, frame targets** + **§12 landmark set pieces** | `docs/implementation_plan_world_generation_slice2.md` |
+| **Slice 2** + §10 (pass 18) + **§11 ruins, landmarks first, frame targets** + **§12 landmark set pieces** + §13 widths + **§14 original art in the world** (Item 32) | `docs/implementation_plan_world_generation_slice2.md` |
+| **Original art** — the procedure, every asset with its exact prompt, the chosen Tier 1 sprites | `docs/art_brief/ART_BRIEF.md`, `CATALOGUE.md`, `tier1_selection.json` |
+| **The Emerald tile importer** (approved; Phase 2) | `docs/implementation_plan_rom_tiles.md` |
 | **What the map contains** — 27 cities, 60 parks, the 78 legendary places and their backstories, Wardens, unlocking, Distort | `docs/design_famous_places.md` |
-| Building famous places (Items 17–21) + **§8 pass-19/20 amendments** (Items 24a, 26, 28) | `docs/implementation_plan_famous_places.md` |
+| Building famous places (Items 17–21) + **§8 pass-19/20 amendments** (Items 24a, 26, 28) + **§9 signature features** (Item 34) | `docs/implementation_plan_famous_places.md` |
 | Enterable buildings, the 34 puzzle kinds, the 78 lair challenges, side quests | `docs/design_interiors_and_quests.md` |
 | The 110 city quests and 60 park quests | `docs/content_quest_roster.md` |
 | The backstory, Calder's nine rules, the regions, **the Glow** | `docs/design_story_and_world.md` |
@@ -642,8 +755,9 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 1 STUDY     Read this item + the design_*.md / implementation_plan_*.md sections it names.
             Specs are decisions.
 2 PLAN      Building a phase or slice with no approved implementation_plan_*.md? Write one FIRST
-            and PAUSE for human review. (Items 24–30 implement approved plans: slice-2 §11–§12,
-            famous-places §8, explore-here §1–§4. Items 10, 12, and 29 are spikes that end in plans.)
+            and PAUSE for human review. (Items 26–28 implement approved plans: famous-places §8,
+            explore-here §1–§4. Items 32 and 34 write plans; Items 33 and 30 build them once
+            approved. Items 10 and 29 are spikes that end in plans.)
 3 IMPLEMENT Exactly as written, on a branch. Honor §15 and the standing constraints — above all:
             no Nintendo content or fan sprites in the repo; none of the human's places or ROM paths;
             no test touches the real save, identity, or demo profile; Godot only through
@@ -683,18 +797,25 @@ Full list, contracts, and exit criteria: **`docs/master_implementation_plan.md`*
 
 ## Definition of Done (this build)
 - [x] **HUMAN: Decisions 29–37 answered** (2026-10-21 to 2026-10-23).
+- [x] **HUMAN: Decisions 38–45 answered** (2026-11-01): the original art, the Emerald tile plan, F62, and F63.
 - [x] **Item 23 (F57)** — `tools/godot.py`; every launcher switched; `test_runner --only`; the falsifying refusal passes (verified pass 21, M56).
 - [x] **Item 24 (F54)** — landmarks first, plus §11.1a; all four DC landmarks `placed=1`, `gold_tiles > 0` (verified pass 22, M58).
 - [x] **Item 24a** — `famous_places.json` at 105 entries and 78 legendaries; the checker extended (verified pass 22, M58).
-- [x] **Item 25** — the ruin pass built and measured (M58). Its proof is finished in 25b.
-- [x] **Item 12** — the Emerald spike, verify markers resolved, the plan written (M58). Its mapping is corrected in 12b.
-- [ ] **Item 12b (F60, F59)** — *in progress*; — evidence-based mapping, honest gaps, neutral names, falsifying checks; the new preview and labelled contact sheets **shown; paused** (the human's Item 12 review).
-- [ ] **Item 25b (F61, F56)** — the whole-city view loads; the harness times out instead of hanging; frame times at zoom 1 and 1/16 beside their targets; five screenshots **shown; paused.**
-- [ ] **Item 30** — the register, 14 stamps, class 21; DC proof **shown; paused.**
+- [x] **Item 25** — the ruin pass built and measured (M58).
+- [x] **Item 12** — the Emerald spike, verify markers resolved, the plan written (M58).
+- [x] **Items 12b, 12c, 12d (F60, F59)** — the evidence-based mapping, the review changes, two-tile widths, and the 4 × 4 house (M60–M62). The human's Item 12 verdict: the plan is approved (Decision 45).
+- [x] **Item 25b (F61, F56)** — the whole-city view loads; the harness times out; frame times at zoom 1 and 1/16; five screenshots (M63). The human's verdict: new original art.
+- [ ] **Item 25c (F63)** — the steady-frame wait exits 3 with its own message; the falsifying test failed on the old code and passes.
+- [ ] **Item 31** — the 26 Tier 1 sprites and their provenance committed; the tools in `tools/art_pipeline/` with their 84 tests in the runner; `CREDITS.md`.
+- [ ] **Item 32** — slice-2 §14 written and **shown; paused.**
+- [ ] **Item 34** — the signature-feature list and `implementation_plan_famous_places.md` §9 **shown; paused.**
+- [ ] **HUMAN: the Tier 2 sprites approved** (gates Item 30).
 - [ ] **Item 26 (F55)** — the places pack built, bundled twice, and hash-checked; DC re-converted with real neighbourhoods; `T` reported.
 - [ ] **Item 27** — Explore Here on the companion; no background permission anywhere; no real-number column.
 - [ ] **Item 28** — protocol v3, migration 3, RevealEngine v2, resume, explore-point demos; `sync_e2e` green; 27 and 28 merged together; **paused.**
 - [ ] **HUMAN: the real-phone check passes** (§2) — **closes Phases 0 and 1.**
+- [ ] **Item 33** — ruined houses drawn with the sprites, by §14; its proof **shown; paused.**
+- [ ] **Item 30** — the register, the 15 approved stamps, class 21; DC proof **shown; paused.**
 - [ ] **Item 10** — sprite rules confirmed; 649/649 decode from the human's ROM; preview shown.
 - [ ] **Item 29** — pinned sources, manifests, credits, `CREDITS.md`; coverage listed; preview shown; `implementation_plan_rom_importer.md`; **paused.**
 - [ ] The full §1 battery and every CI workflow (Linux and macOS) are green.

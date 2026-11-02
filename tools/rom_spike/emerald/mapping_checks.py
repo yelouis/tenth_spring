@@ -659,7 +659,7 @@ def roof_colourways(tilesets, mapping):
 def check_roof_colourways(tilesets, mapping):
     """At least four distinct roof colourways among ROOF variants 0-7 (pass 22 mapped all eight to one).
     If the tilesets honestly have fewer, each mapped variant must be a colourway of its own and
-    every other variant 0-7 must be covered by a `gaps` rule with a reason (guide §3 step 4:
+    every other variant 0-7 must be covered by a `gaps` rule with a reason (agent guide Item 12b, step 4:
     "if not, record the reason in gaps")."""
     ways = roof_colourways(tilesets, mapping)
     distinct = sorted(set(ways.values()))
