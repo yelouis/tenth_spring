@@ -60,3 +60,6 @@ roms/
 !game/tests/fixtures/*.osm.pbf
 map_data/
 demo/
+
+# Design docs: kept locally only, never committed (the human, 2026-11-01)
+docs/
