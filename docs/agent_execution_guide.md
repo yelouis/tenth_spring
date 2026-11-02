@@ -79,7 +79,7 @@
    - **Map-cell numbers (`cx`, `cy`), tile numbers, and Web-Mercator positions of their area count as coordinates.** Report sizes and counts only.
    - Keep all of it in `~/tenth_spring_private/`. Tests use made-up coordinates near (0.01, 0.01) — open ocean.
 6. **Heavy commands go through the memory guard:** `python3 -I tools/memguard.py run <step> -- <command>` (`design_memory_and_resources.md` §2). `test_runner.py`, `sync_e2e.py`, and `demo_import.py` wrap themselves.
-   - Never run two heavy commands at once, and never leave one running beyond the session.
+   - Never run two heavy commands at once, and never leave one running beyond the session. **The one exception is `memguard run --parallel`** (`design_memory_and_resources.md` §2), for a long job that shares no state with this project's other steps — the local image model's server during an art run. It yields first when memory runs short.
    - If a step exits **75** (no room) or **76** (stopped for memory), report it — don't retry in a loop.
    - The Mac is shared with other projects that use tens of GB. **Never** deliberately starve it.
 7. **Godot on the human's Mac** is at `/Applications/Godot.app/Contents/MacOS/Godot` (4.3-stable), **not** on `PATH`. Set `GODOT_BIN` to it.

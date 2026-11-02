@@ -3,14 +3,8 @@
 Unit and regression tests for Developer Tooling Memory Guard (tools/memguard.py).
 Contract: docs/design_memory_and_resources.md §4
 
-Tests the 7 required cases:
-1. admits when there is room;
-2. waits, then admits when memory frees up;
-3. times out with exit 75 and the exact message;
-4. a real sleep child is stopped when fake pressure turns critical twice (exit 76);
-5. falsifying, real memory: a child that allocates ~200 MiB under a 50 MiB budget is stopped as a runaway;
-6. a second process waits for the lock, and the lock frees when its holder is SIGKILLed;
-7. a nested run with TENTH_SPRING_MEMGUARD_HELD set doesn't deadlock.
+Tests the 15 cases listed in design_memory_and_resources.md §4 (11-15: parallel steps, the ledger, and
+--admit-timeout).
 """
 
 import fcntl
@@ -460,6 +454,171 @@ class TestMemguard(unittest.TestCase):
             self.assertEqual(cm.exception.code, 76)
         finally:
             memguard.save_budgets(budgets_backup)
+
+    def _outcomes(self, step):
+        with open(memguard.get_log_file(), "r", encoding="utf-8") as f:
+            return [r["outcome"] for r in (json.loads(l) for l in f if l.strip()) if r["step"] == step]
+
+    def test_case_11_parallel_runs_while_the_lock_is_held(self):
+        """Case 11: falsifying — a parallel step runs while another process holds the heavy lock; an exclusive one waits."""
+        memguard.set_memory_reader(lambda: memguard.MemoryInfo(
+            available_bytes=20 * (1024**3), total_bytes=64 * (1024**3), pressure_level=1))
+        lock_file = memguard.get_lock_file()
+        holder = subprocess.Popen(
+            [sys.executable, "-c",
+             f"import fcntl, time; f = open({lock_file!r}, 'a+'); fcntl.flock(f.fileno(), fcntl.LOCK_EX); "
+             f"print('LOCKED', flush=True); time.sleep(30)"],
+            stdout=subprocess.PIPE, text=True)
+        env = os.environ.copy()
+        env["TENTH_SPRING_LOCK_DIR"] = self.lock_dir
+        ok = [sys.executable, "-c", "import sys; sys.exit(0)"]
+        try:
+            self.assertEqual(holder.stdout.readline().strip(), "LOCKED")
+            t0 = time.time()
+            self.assertEqual(memguard.run_guarded("test_c11_parallel", ok, override_budget_gib=1.0, parallel=True,
+                                                  poll_seconds=0.05), 0)
+            self.assertLess(time.time() - t0, 5.0)
+            exclusive = subprocess.Popen([sys.executable, "-I", MEMGUARD_PATH, "run", "godot_selftest", "--", *ok],
+                                         env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            time.sleep(0.5)
+            self.assertIsNone(exclusive.poll())  # still waiting for the lock
+        finally:
+            holder.kill()
+            holder.communicate()
+        exclusive.communicate(timeout=10.0)
+        self.assertEqual(exclusive.returncode, 0)
+
+    def test_case_12_parallel_admission_leaves_room_for_running_steps(self):
+        """Case 12: a parallel step waits while the running steps may still grow into the memory it would take."""
+        memguard.set_memory_reader(lambda: memguard.MemoryInfo(
+            available_bytes=20 * (1024**3), total_bytes=64 * (1024**3), pressure_level=1))
+        ok = [sys.executable, "-c", "import sys; sys.exit(0)"]
+        sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"])
+        try:
+            # Another guarded step is running with a 20 GiB budget, and its tree uses almost nothing yet
+            memguard._ledger_edit(lambda entries: entries.append(
+                {"id": "other", "pid": sleeper.pid, "step": "other_step", "budget_gib": 20.0, "mode": "exclusive",
+                 "started": "2026-11-01T00:00:00+00:00"}))
+            # 1 GiB + 6.4 GiB floor fits in 20 GiB, but not with the other step's ~20 GiB still to come
+            with self.assertRaises(SystemExit) as cm:
+                memguard.run_guarded("test_c12_parallel", ok, override_budget_gib=1.0, parallel=True,
+                                     admit_timeout=0.2, poll_seconds=0.05)
+            self.assertEqual(cm.exception.code, 75)
+            # An exclusive step's admission is unchanged: budget + FLOOR only
+            self.assertEqual(memguard.run_guarded("test_c12_exclusive", ok, override_budget_gib=1.0,
+                                                  poll_seconds=0.05), 0)
+        finally:
+            sleeper.kill()
+            sleeper.communicate()
+        # Once that step's process is gone, its entry is dropped and the parallel step is admitted
+        self.assertEqual(memguard.run_guarded("test_c12_parallel", ok, override_budget_gib=1.0, parallel=True,
+                                              admit_timeout=0.2, poll_seconds=0.05), 0)
+        self.assertEqual(memguard.running_steps(), [])
+
+    def test_case_13_parallel_step_yields_first(self):
+        """Case 13: falsifying — a parallel step stops below FLOOR and on one critical poll; an exclusive one runs on."""
+        long_cmd = [sys.executable, "-c", "import time; time.sleep(10)"]
+        short_cmd = [sys.executable, "-c", "import time; time.sleep(0.5)"]
+
+        def reader_from(watch_reading):
+            calls = [0]
+
+            def reader():
+                calls[0] += 1
+                if calls[0] <= 1:  # admission
+                    return memguard.MemoryInfo(available_bytes=20 * (1024**3), total_bytes=64 * (1024**3), pressure_level=1)
+                return watch_reading(calls[0])
+            return reader
+
+        # 64 GiB total -> floor 6.4 GiB; 5 GiB is under the floor but above half of it
+        below_floor = lambda n: memguard.MemoryInfo(available_bytes=5 * (1024**3), total_bytes=64 * (1024**3), pressure_level=1)
+        # one critical poll, then normal again
+        critical_once = lambda n: memguard.MemoryInfo(available_bytes=20 * (1024**3), total_bytes=64 * (1024**3),
+                                                      pressure_level=4 if n == 2 else 1)
+        for name, reading, cause in (("floor", below_floor, "available below floor"),
+                                     ("pressure", critical_once, "critical memory pressure")):
+            memguard.set_memory_reader(reader_from(reading))
+            with self.assertRaises(SystemExit) as cm:
+                memguard.run_guarded(f"test_c13_parallel_{name}", long_cmd, override_budget_gib=1.0, parallel=True,
+                                     poll_seconds=0.05, stop_grace=1.0, allow_rss_check=False)
+            self.assertEqual(cm.exception.code, 76)
+            self.assertEqual(self._outcomes(f"test_c13_parallel_{name}")[-1], f"stopped:yielded: {cause}")
+            memguard.set_memory_reader(reader_from(reading))
+            self.assertEqual(memguard.run_guarded(f"test_c13_exclusive_{name}", short_cmd, override_budget_gib=1.0,
+                                                  poll_seconds=0.05, stop_grace=1.0, allow_rss_check=False), 0)
+        self.assertEqual(memguard.running_steps(), [])
+
+    def test_case_14_running_steps_are_listed_with_their_mode(self):
+        """Case 14: a running step is in the ledger with its mode, and leaves it when it ends (CLI flags)."""
+        env = os.environ.copy()
+        env["TENTH_SPRING_LOCK_DIR"] = self.lock_dir
+        ledger = memguard.get_ledger_file()
+        show = [sys.executable, "-c", f"import json; print(json.dumps(json.load(open({ledger!r}))))"]
+        res = subprocess.run([sys.executable, "-I", MEMGUARD_PATH, "run", "--parallel", "--admit-timeout", "0",
+                              "godot_selftest", "--", *show], env=env, capture_output=True, text=True, timeout=30.0)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        entries = json.loads(res.stdout.strip().splitlines()[-1])
+        self.assertEqual([(e["step"], e["mode"]) for e in entries], [("godot_selftest", "parallel")])
+        self.assertEqual(memguard.running_steps(), [])
+        bad = subprocess.run([sys.executable, "-I", MEMGUARD_PATH, "run", "--admit-timeout", "soon", "godot_selftest",
+                              "--", *show], env=env, capture_output=True, text=True, timeout=30.0)
+        self.assertEqual(bad.returncode, 1)
+
+    def test_case_15_admit_timeout_zero_waits_without_limit(self):
+        """Case 15: falsifying — admit_timeout 0 keeps waiting past 15 minutes, then runs when memory frees."""
+        fake_time = [1700000000.0]
+        memguard.set_clock(lambda: fake_time[0])
+        memguard.set_sleep(lambda s: fake_time.__setitem__(0, fake_time[0] + s))
+
+        def reader():
+            short = fake_time[0] - 1700000000.0 < 20 * 60.0
+            return memguard.MemoryInfo(available_bytes=(1 if short else 20) * (1024**3), total_bytes=64 * (1024**3),
+                                       pressure_level=1)
+        memguard.set_memory_reader(reader)
+        import io
+        from contextlib import redirect_stderr
+        with redirect_stderr(io.StringIO()):
+            code = memguard.run_guarded("test_c15", [sys.executable, "-c", "import sys; sys.exit(0)"],
+                                        override_budget_gib=1.0, admit_timeout=0, poll_seconds=2.0, parallel=True)
+        self.assertEqual(code, 0)
+
+    def test_case_16_stopping_the_guard_stops_its_child(self):
+        """Case 16: falsifying — SIGTERM or Ctrl-C to the guard also stops its child (exit 130), which runs in its
+        own session and would otherwise keep running unwatched."""
+        env = os.environ.copy()
+        env["TENTH_SPRING_LOCK_DIR"] = self.lock_dir
+        pid_file = os.path.join(self.test_dir, "child.pid")
+        child = [sys.executable, "-c",
+                 f"import os, time; open({pid_file!r}, 'w').write(str(os.getpid())); time.sleep(60)"]
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            if os.path.exists(pid_file):
+                os.remove(pid_file)
+            guard = subprocess.Popen([sys.executable, "-I", MEMGUARD_PATH, "run", "--parallel", "godot_selftest", "--",
+                                      *child], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            deadline = time.time() + 20.0
+            while not (os.path.exists(pid_file) and open(pid_file).read()):
+                self.assertLess(time.time(), deadline, "the child never started")
+                time.sleep(0.05)
+            child_pid = int(open(pid_file).read())
+            try:
+                guard.send_signal(sig)
+                guard.wait(timeout=20.0)
+                self.assertEqual(guard.returncode, 130)
+                gone = False
+                for _ in range(50):
+                    try:
+                        os.kill(child_pid, 0)
+                    except ProcessLookupError:
+                        gone = True
+                        break
+                    time.sleep(0.1)
+                self.assertTrue(gone, "the child outlived its guard")
+            finally:
+                try:
+                    os.kill(child_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+        self.assertEqual(memguard.running_steps(), [])
 
 
 if __name__ == "__main__":

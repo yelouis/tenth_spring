@@ -43,6 +43,16 @@ Every heavy command an agent or test runner starts — Godot runs, Flutter test 
 2. **Wait for room:** wait until **available ≥ budget + FLOOR** and **pressure < 4**. Poll every 2 s, and log every 30 s: `memguard: waiting for memory for <step>: need <X> GiB, have <Y> GiB`.
 3. **Give up cleanly:** after `ADMIT_TIMEOUT`, exit **75** with `memguard: not enough free memory for <step> (need <X> GiB, have <Y> GiB) — other programs are using it; close some or try later`. **Never start anyway.**
 4. **Nested runs:** the child gets the environment variable `TENTH_SPRING_MEMGUARD_HELD=<step>`. A nested `memguard run` seeing it skips the lock and admission — the parent's budget must cover the whole tree. This prevents self-deadlock (e.g. `test_runner.py` under CI).
+5. **The ledger:** every admitted step is recorded in `~/.cache/tenth_spring/locks/running.json` (pid, step, budget, mode, start), under a short-held `ledger.lock`, and removed when it ends. An entry whose process is gone is dropped on the next read. `memguard doctor` lists them.
+6. **`--admit-timeout <seconds>`** replaces `ADMIT_TIMEOUT` for one run; **0 waits without a limit** (still logging every 30 s).
+
+**Parallel steps (`memguard run --parallel <step> -- …`, added 2026-11-01).** The human asked that a long job — the local image model's server for the art runs — run *alongside* other work when memory allows, and queue when it doesn't, and never stop the other work. A parallel step:
+- **skips the exclusive lock,** so it neither waits for nor blocks this project's other steps. Use it only for a job that shares no state with them: no Godot user dir, no test save, no `sync_e2e` port. Godot, Flutter, the sync test, and the demo stay exclusive;
+- **is admitted** when **available ≥ budget + FLOOR + the headroom of the running steps** — each one's budget minus its tree's RSS now, the memory it may still grow into — and pressure < 4. An exclusive step's admission is unchanged (budget + FLOOR), so a parallel step never makes one wait for memory it hasn't used yet;
+- **stops with its guard:** for every step, SIGTERM or Ctrl-C to the guard stops the child's process group as well (exit **130**, outcome `interrupted`). The child runs in its own session, so it would otherwise keep running unwatched;
+- **yields first:** its watchdog stops it on **one** critical-pressure poll, or when available < **FLOOR** — before any exclusive step's guard (2 polls, FLOOR / 2) would act. It exits **76** with `memguard: stopped <step> — yielded: <cause>; peak <P> GiB`. It never signals a process outside its own group.
+
+**Budgets for GPU memory.** On Apple silicon, memory a step gives the GPU (for example ComfyUI on MPS) doesn't show in its RSS, so `memguard measure` under-counts it. Such a step is measured by the **drop in available memory** while it runs, recorded with `"measured_by": "available"`, and rounded up to 0.5 GiB **without** `BUDGET_MARGIN`: the drop already counts the model file's page cache, which macOS can reclaim. Never `measure --replace` it. `art_qwen_image_2512`: 28.3 GiB measured (one 768 × 1344 image, 2026-11-01), budget 28.5 GiB.
 
 **Watchdog** (while the step runs; the child is started in its own process group):
 
@@ -61,6 +71,7 @@ On a stop, exit **76** with `memguard: stopped <step> — <cause>; peak <P> GiB`
 
 **Agent rules:**
 - Never run a heavy command outside `memguard`.
+- Use `--parallel` only as above; when it exits 76, wait and start it again through `memguard` (it queues until memory frees), never in a tight loop.
 - Never background a heavy job that outlives the session.
 - Read `memguard doctor` before a long run.
 - If a step exits 75 or 76, report it — don't retry in a loop.
@@ -118,7 +129,13 @@ Converting a regional `.osm.pbf` (hundreds of MB to over 1 GB) into the map stor
   7. a nested run with `TENTH_SPRING_MEMGUARD_HELD` set doesn't deadlock;
   8. a real `sleep` child is stopped when available memory drops below `FLOOR / 2` (exit 76);
   9. **falsifying, waiting line:** waiting line is printed every 30s when memory is insufficient (clock starts near 1.7e9);
-  10. **falsifying, measure watchdog & raise-only:** `measure` stops runaway processes exceeding 2× cap, preserves existing budgets when new peak is lower, and allows overwrite with `--replace`.
+  10. **falsifying, measure watchdog & raise-only:** `measure` stops runaway processes exceeding 2× cap, preserves existing budgets when new peak is lower, and allows overwrite with `--replace`;
+  11. **falsifying:** a parallel step runs while another process holds the lock, and an exclusive one still waits for it;
+  12. a parallel step waits while a running step's unused budget would not fit; an exclusive step's admission ignores it; a dead step's entry is dropped;
+  13. **falsifying:** a parallel step yields below FLOOR and on one critical poll, and an exclusive step under the same readings runs to the end;
+  14. a running step is in the ledger with its mode and leaves it when it ends; `--parallel` and `--admit-timeout` parse, and a bad timeout exits 1;
+  15. **falsifying:** `--admit-timeout 0` keeps waiting past 15 minutes and runs once memory frees;
+  16. **falsifying:** SIGTERM or Ctrl-C to the guard stops its child too, and the guard exits 130.
 - **Game:** the map-conversion plan's speed spike must report **peak memory** alongside MB/s for both test files. Its unit tests run the converter on the synthetic PBF fixture with a fake `get_memory_info` that drops below the floor mid-run, and assert that it pauses, resumes, and produces an identical map store.
 
 ## 5. Files

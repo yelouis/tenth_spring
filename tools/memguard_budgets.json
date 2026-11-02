@@ -111,5 +111,20 @@
     "date": "2026-10-22",
     "machine": "darwin arm64",
     "status": "measured"
+  },
+  "art_validate": {
+    "budget_gib": 3.5,
+    "peak_gib": 2.669,
+    "date": "2026-10-31",
+    "machine": "darwin arm64",
+    "status": "measured"
+  },
+  "art_qwen_image_2512": {
+    "budget_gib": 28.5,
+    "peak_gib": 28.3,
+    "date": "2026-11-01",
+    "machine": "darwin arm64",
+    "status": "measured",
+    "measured_by": "available"
   }
 }

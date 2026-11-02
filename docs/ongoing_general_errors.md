@@ -37,6 +37,10 @@ This document tracks decisions, open findings, and the engineering record for Te
 ## ✅ Resolved Decisions
 Newest first. Each entry gives the answer and where it lives. The options not chosen are dropped (git history has them).
 
+- **Decision 46 — Tier 2 gets 10 rounds, and art runs share the Mac (2026-11-01; your directive).**
+  - **10 rounds:** Tier 2 allows 10 rounds of 4 images per asset, as Tier 1 does (raised from 3).
+  - **Sharing the Mac:** an art run may run while another job, from another system, uses the Mac. It never stops that job: it runs alongside when memory allows, and queues otherwise.
+  - **How:** `memguard run --parallel` (`design_memory_and_resources.md` §2; M65), and the Tier 2 prompt in `docs/art_brief/ART_BRIEF.md`.
 - **Decision 45 — The Emerald tile import plan is approved (2026-11-01; the Item 12 verdict).** `implementation_plan_rom_tiles.md` is approved as written. It is built in Phase 2 with the importer plan from Item 29 (agent guide §11).
 - **Decision 44 — Several signature features per park, made by the local image model (2026-11-01; art brief D6, amended by you).**
   - **Several per site** (Old Faithful, Grand Prismatic Spring, and the Lower Falls at Yellowstone, not one view), each at a fixed lat/lon and placed like a set piece.
@@ -262,6 +266,18 @@ One line per work record. Each lists the findings it resolved; the full records 
   - `design_art_direction.md`, the slice-2 §11.2/§12 notes, and the tile plan's status were updated to match.
   - The agent guide's queue is now 25c, 31, 32, 34, 26, 27+28, 33, 30, 10, 29.
   - The battery is green on `7290149`: 22/22 game tests, `sync_e2e` OK, Flutter 37 passed and 2 skipped, and the 84 art-tool tests.
+- **M65** (2026-11-01) — the memory guard can run a job alongside others, for Decision 46.
+  - **`memguard run --parallel`:**
+    - it skips the exclusive lock;
+    - it is admitted when memory fits, plus the running steps' unused budgets, which a new ledger records;
+    - it yields first: below FLOOR, or on one critical poll.
+  - **`--admit-timeout 0`** waits without a limit.
+  - **`memguard doctor`** lists the running steps.
+  - **A guard that is stopped** (SIGTERM or Ctrl-C) now stops its child too, with exit 130. Before this, the child ran on unwatched in its own session.
+  - **Tests:** cases 11–16 are new. Every one was run against the old code and against seven broken variants of the new code; each failure was caught.
+  - **Budgets:** `art_qwen_image_2512` is 28.5 GiB, measured as a 28.3 GiB drop in available memory, since GPU memory isn't in RSS; `art_validate` is 3.5 GiB, from its 2.67 GiB peak in the log.
+  - **Live check:** ComfyUI started in parallel next to the test suite's guarded steps, and stopped with its guard.
+  - **The Tier 2 limit** is now 10 rounds (catalogue, brief, validator test), and the Tier 2 prompt is written.
 
 ---
 

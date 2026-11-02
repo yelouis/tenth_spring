@@ -251,6 +251,97 @@ def get_log_file() -> str:
     return os.path.expanduser("~/.cache/tenth_spring/memguard.log")
 
 
+def get_ledger_file() -> str:
+    return os.path.join(get_lock_dir(), "running.json")
+
+
+def get_ledger_lock_file() -> str:
+    return os.path.join(get_lock_dir(), "ledger.lock")
+
+
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    except (OSError, ValueError, OverflowError):
+        return False
+    return True
+
+
+def _ledger_edit(edit):
+    """Runs edit(entries) under the short ledger lock, on the entries whose memguard process is still alive.
+    Whatever edit leaves in the list is saved; its return value is returned."""
+    lock_path = get_ledger_lock_file()
+    os.makedirs(os.path.dirname(lock_path), exist_ok=True)
+    with open(lock_path, "a+") as fd:
+        fcntl.flock(fd.fileno(), fcntl.LOCK_EX)
+        try:
+            path = get_ledger_file()
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    entries = json.load(f)
+            except (OSError, ValueError):
+                entries = []
+            if not isinstance(entries, list):
+                entries = []
+            entries[:] = [e for e in entries if isinstance(e, dict) and _pid_alive(int(e.get("pid", -1)))]
+            result = edit(entries)
+            tmp = path + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(entries, f, indent=1)
+                f.write("\n")
+            os.replace(tmp, path)
+            return result
+        finally:
+            fcntl.flock(fd.fileno(), fcntl.LOCK_UN)
+
+
+def running_steps() -> list:
+    """The guarded steps running now, from the ledger."""
+    return _ledger_edit(lambda entries: [dict(e) for e in entries])
+
+
+def _headroom_bytes(entries: list) -> int:
+    """Memory the running steps may still grow into: each one's budget minus its process tree's RSS now."""
+    total = 0
+    for e in entries:
+        budget_bytes = int(float(e.get("budget_gib", 0.0)) * (1024**3))
+        total += max(0, budget_bytes - get_process_tree_rss(int(e["pid"])))
+    return total
+
+
+def _try_admit(step: str, budget_gib: float, parallel: bool, mem: MemoryInfo):
+    """Decides admission under the ledger lock and, when admitted, records the step there.
+    Returns (entry id or None, bytes required). An exclusive step needs budget + FLOOR, as always; a parallel
+    step also leaves room for what the other running steps may still grow into."""
+    def edit(entries):
+        required = None
+        if mem.available_bytes is not None:
+            required = int(budget_gib * (1024**3)) + get_floor_bytes(mem.total_bytes)
+            if parallel:
+                required += _headroom_bytes(entries)
+            if mem.available_bytes < required or (mem.pressure_level is not None and mem.pressure_level >= 4):
+                return None, required
+        entry_id = f"{os.getpid()}-{os.urandom(4).hex()}"
+        entries.append({"id": entry_id, "pid": os.getpid(), "step": step, "budget_gib": round(budget_gib, 3),
+                        "mode": "parallel" if parallel else "exclusive",
+                        "started": datetime.datetime.now(datetime.timezone.utc).isoformat()})
+        return entry_id, required
+    return _ledger_edit(edit)
+
+
+def _deregister(entry_id: str | None):
+    if entry_id is None:
+        return
+    try:
+        _ledger_edit(lambda entries: entries.__setitem__(slice(None), [e for e in entries if e.get("id") != entry_id]))
+    except Exception as e:
+        print(f"memguard: failed to update the ledger {get_ledger_file()}: {e}", file=sys.stderr)
+
+
 def _log_run(step: str, budget: float, peak: float, waited_ms: int, outcome: str):
     log_path = get_log_file()
     try:
@@ -302,6 +393,36 @@ def get_step_budget(step: str) -> tuple[float, bool]:
     return DEFAULT_UNMEASURED_BUDGET_GIB, True
 
 
+class _Interrupted(Exception):
+    """SIGTERM reached the guard itself."""
+
+
+def _raise_interrupted(signum, frame):
+    raise _Interrupted()
+
+
+def _stop_group(proc, stop_grace: float):
+    """Stops the child's whole process group: SIGTERM, then SIGKILL after stop_grace."""
+    try:
+        os.killpg(proc.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    grace_start = now()
+    while now() - grace_start < stop_grace:
+        if proc.poll() is not None:
+            break
+        sleep(0.2)
+    if proc.poll() is None:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            proc.wait(timeout=5.0)
+        except Exception:
+            pass
+
+
 def run_guarded(
     step: str,
     cmd: list[str],
@@ -310,9 +431,16 @@ def run_guarded(
     stop_grace: float = STOP_GRACE,
     runaway_factor: float = RUNAWAY_FACTOR,
     override_budget_gib: float | None = None,
-    allow_rss_check: bool = True
+    allow_rss_check: bool = True,
+    parallel: bool = False
 ) -> int:
-    """Executes cmd guarded by admission, machine-wide serialization, and watchdog."""
+    """Executes cmd guarded by admission, machine-wide serialization, and watchdog.
+
+    parallel=True (`memguard run --parallel`) is for a long job that shares no state with this project's other
+    steps, such as the local image model's server: it skips the exclusive lock, so it runs alongside other steps
+    when memory allows, and it yields first — its watchdog stops it at FLOOR and on one critical poll, before
+    any other step's guard would act. It never signals a process outside its own group.
+    admit_timeout 0 waits for memory without a limit."""
     # Nested run bypass
     if os.environ.get(ENV_MEMGUARD_HELD):
         res = subprocess.run(cmd)
@@ -327,41 +455,36 @@ def run_guarded(
     if is_unmeasured:
         print(f"memguard: WARNING: step '{step}' is UNMEASURED — using {budget_gib:.1f} GiB default budget", file=sys.stderr)
 
-    lock_file = get_lock_file()
-    os.makedirs(os.path.dirname(lock_file), exist_ok=True)
-
     wait_start = now()
-    lock_fd = open(lock_file, "a+")
+    lock_fd = None
+    entry_id = None
 
     try:
-        # 1. Acquire machine-wide exclusive lock
-        fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
-        try:
-            lock_fd.seek(0)
-            lock_fd.truncate()
-            lock_fd.write(f"{os.getpid()}\n")
-            lock_fd.flush()
-        except Exception:
-            pass
+        # 1. Acquire machine-wide exclusive lock (a parallel step doesn't)
+        if not parallel:
+            lock_file = get_lock_file()
+            os.makedirs(os.path.dirname(lock_file), exist_ok=True)
+            lock_fd = open(lock_file, "a+")
+            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_EX)
+            try:
+                lock_fd.seek(0)
+                lock_fd.truncate()
+                lock_fd.write(f"{os.getpid()}\n")
+                lock_fd.flush()
+            except Exception:
+                pass
 
-        # 2. Wait for room (admission)
+        # 2. Wait for room (admission); an admitted step is recorded in the ledger
         last_logged_elapsed = 0.0
         while True:
             mem = read_memory()
-            if mem.available_bytes is None:
-                # Platform unreadable: serialize with lock only
-                break
-
-            floor_bytes = get_floor_bytes(mem.total_bytes)
-            budget_bytes = int(budget_gib * (1024**3))
-            required_bytes = budget_bytes + floor_bytes
-
-            if mem.available_bytes >= required_bytes and (mem.pressure_level is None or mem.pressure_level < 4):
-                # Room admitted
+            entry_id, required_bytes = _try_admit(step, budget_gib, parallel, mem)
+            if entry_id is not None:
+                # Room admitted (or the platform is unreadable: serialize with the lock only)
                 break
 
             elapsed = now() - wait_start
-            if elapsed >= admit_timeout:
+            if admit_timeout and elapsed >= admit_timeout:
                 need_gib = required_bytes / (1024**3)
                 have_gib = mem.available_bytes / (1024**3)
                 msg = (
@@ -391,80 +514,81 @@ def run_guarded(
         child_env[ENV_MEMGUARD_HELD] = step
 
         proc = subprocess.Popen(cmd, start_new_session=True, env=child_env)
-
-        critical_pressure_count = 0
+        # Ctrl-C or SIGTERM to the guard stops its child too: the child runs in its own session, so it would
+        # otherwise keep running unwatched
+        try:
+            previous_term = signal.signal(signal.SIGTERM, _raise_interrupted)
+        except ValueError:  # not the main thread
+            previous_term = None
         peak_rss = 0
-        budget_bytes = int(budget_gib * (1024**3))
+        try:
+            critical_pressure_count = 0
+            budget_bytes = int(budget_gib * (1024**3))
 
-        while proc.poll() is None:
-            sleep(poll_seconds)
+            while proc.poll() is None:
+                sleep(poll_seconds)
 
-            current_rss = get_process_tree_rss(proc.pid)
-            if current_rss > peak_rss:
-                peak_rss = current_rss
+                current_rss = get_process_tree_rss(proc.pid)
+                if current_rss > peak_rss:
+                    peak_rss = current_rss
 
-            mem = read_memory()
-            cause = None
+                mem = read_memory()
+                cause = None
 
-            if mem.pressure_level is not None and mem.pressure_level >= 4:
-                critical_pressure_count += 1
-                if critical_pressure_count >= 2:
-                    cause = "critical memory pressure"
-            else:
-                critical_pressure_count = 0
+                # A parallel step yields first: one critical poll, or available below FLOOR (not FLOOR / 2)
+                if mem.pressure_level is not None and mem.pressure_level >= 4:
+                    critical_pressure_count += 1
+                    if critical_pressure_count >= (1 if parallel else 2):
+                        cause = "critical memory pressure"
+                else:
+                    critical_pressure_count = 0
 
-            if not cause and mem.available_bytes is not None:
-                floor_bytes = get_floor_bytes(mem.total_bytes)
-                if mem.available_bytes < (floor_bytes / 2):
-                    cause = "available below floor"
+                if not cause and mem.available_bytes is not None:
+                    floor_bytes = get_floor_bytes(mem.total_bytes)
+                    if mem.available_bytes < (floor_bytes if parallel else floor_bytes / 2):
+                        cause = "available below floor"
 
-            if not cause and allow_rss_check:
-                if current_rss > budget_bytes * runaway_factor:
-                    cause = "tree RSS exceeded budget"
+                if not cause and allow_rss_check:
+                    if current_rss > budget_bytes * runaway_factor:
+                        cause = "tree RSS exceeded budget"
 
-            if cause:
-                # Stop the whole process group
-                try:
-                    os.killpg(proc.pid, signal.SIGTERM)
-                except ProcessLookupError:
-                    pass
+                if cause and parallel:
+                    cause = f"yielded: {cause}"
 
-                grace_start = now()
-                while now() - grace_start < stop_grace:
-                    if proc.poll() is not None:
-                        break
-                    sleep(0.2)
+                if cause:
+                    _stop_group(proc, stop_grace)
 
-                if proc.poll() is None:
-                    try:
-                        os.killpg(proc.pid, signal.SIGKILL)
-                    except ProcessLookupError:
-                        pass
-                    try:
-                        proc.wait(timeout=5.0)
-                    except Exception:
-                        pass
+                    peak_gib = peak_rss / (1024**3)
+                    print(f"memguard: stopped {step} — {cause}; peak {peak_gib:.1f} GiB", file=sys.stderr)
+                    _log_run(step, budget_gib, peak_gib, waited_ms, f"stopped:{cause}")
+                    sys.exit(EXIT_STOPPED_BY_GUARD)
 
-                peak_gib = peak_rss / (1024**3)
-                print(f"memguard: stopped {step} — {cause}; peak {peak_gib:.1f} GiB", file=sys.stderr)
-                _log_run(step, budget_gib, peak_gib, waited_ms, f"stopped:{cause}")
-                sys.exit(EXIT_STOPPED_BY_GUARD)
+            proc.wait()
+            peak_gib = peak_rss / (1024**3)
+            outcome = "ok" if proc.returncode == 0 else f"failed:{proc.returncode}"
+            _log_run(step, budget_gib, peak_gib, waited_ms, outcome)
 
-        proc.wait()
-        peak_gib = peak_rss / (1024**3)
-        outcome = "ok" if proc.returncode == 0 else f"failed:{proc.returncode}"
-        _log_run(step, budget_gib, peak_gib, waited_ms, outcome)
-
-        return proc.returncode
+            return proc.returncode
+        except (KeyboardInterrupt, _Interrupted):
+            _stop_group(proc, stop_grace)
+            peak_gib = peak_rss / (1024**3)
+            print(f"memguard: stopped {step} — interrupted; peak {peak_gib:.1f} GiB", file=sys.stderr)
+            _log_run(step, budget_gib, peak_gib, waited_ms, "interrupted")
+            sys.exit(130)
+        finally:
+            if previous_term is not None:
+                signal.signal(signal.SIGTERM, previous_term)
     finally:
-        try:
-            fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
-        except Exception:
-            pass
-        try:
-            lock_fd.close()
-        except Exception:
-            pass
+        _deregister(entry_id)
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
+            except Exception:
+                pass
+            try:
+                lock_fd.close()
+            except Exception:
+                pass
 
 
 def measure_step(
@@ -499,6 +623,7 @@ def measure_step(
 
     wait_start = now()
     lock_fd = open(lock_file, "a+")
+    entry_id = None
 
     try:
         # 1. Acquire machine-wide exclusive lock
@@ -552,6 +677,7 @@ def measure_step(
             sleep(POLL_SECONDS)
 
         waited_ms = int((now() - wait_start) * 1000)
+        entry_id = _try_admit(step, budget_gib, False, MemoryInfo())[0]  # recorded in the ledger for parallel steps
 
         # 3. Launch child in own process group and run watchdog (0.2s sampling, 2x cap)
         child_env = os.environ.copy()
@@ -655,6 +781,7 @@ def measure_step(
         print(f"memguard: measured {step}: peak {peak_gib:.3f} GiB, budget {new_budget_gib:.1f} GiB (written to tools/memguard_budgets.json)")
         return 0
     finally:
+        _deregister(entry_id)
         try:
             fcntl.flock(lock_fd.fileno(), fcntl.LOCK_UN)
         except Exception:
@@ -738,6 +865,19 @@ def cmd_doctor() -> int:
     else:
         print("Current lock holder: None (lock is free)")
 
+    try:
+        steps = running_steps()
+    except Exception as e:
+        steps = []
+        print(f"Could not read the ledger {get_ledger_file()}: {e}")
+    if steps:
+        print("Running guarded steps:")
+        for e in steps:
+            print(f"  {e.get('step')} — {e.get('mode')}, budget {float(e.get('budget_gib', 0.0)):.1f} GiB, "
+                  f"PID {e.get('pid')}, since {e.get('started')}")
+    else:
+        print("Running guarded steps: none")
+
     # Budgets table
     print("\nConfigured Budgets:")
     budgets = load_budgets()
@@ -760,8 +900,10 @@ def cmd_doctor() -> int:
 
 
 def main():
+    usage = ("Usage: memguard [run [--parallel] [--admit-timeout <seconds>] <step> -- <cmd...> | "
+             "measure [--replace] <step> -- <cmd...> | doctor]")
     if len(sys.argv) < 2:
-        print("Usage: memguard [run <step> -- <cmd...> | measure [--replace] <step> -- <cmd...> | doctor]", file=sys.stderr)
+        print(usage, file=sys.stderr)
         sys.exit(1)
 
     subcmd = sys.argv[1]
@@ -769,13 +911,33 @@ def main():
         sys.exit(cmd_doctor())
     elif subcmd in ("run", "measure"):
         replace = False
+        parallel = False
+        admit_timeout = ADMIT_TIMEOUT
         args = sys.argv[2:]
-        if subcmd == "measure" and "--replace" in args:
+        # Options come before the step name; everything after "--" is the command
+        while args and args[0].startswith("--") and args[0] != "--":
+            opt = args.pop(0)
+            if subcmd == "measure" and opt == "--replace":
+                replace = True
+            elif subcmd == "run" and opt == "--parallel":
+                parallel = True
+            elif subcmd == "run" and opt == "--admit-timeout" and args:
+                try:
+                    admit_timeout = float(args.pop(0))
+                except ValueError:
+                    admit_timeout = -1.0
+                if admit_timeout < 0:
+                    print("memguard run: --admit-timeout takes a number of seconds, 0 for no limit", file=sys.stderr)
+                    sys.exit(1)
+            else:
+                print(f"memguard {subcmd}: unknown option {opt}\n{usage}", file=sys.stderr)
+                sys.exit(1)
+        if subcmd == "measure" and "--replace" in args[: args.index("--") if "--" in args else len(args)]:
             replace = True
             args.remove("--replace")
 
         if len(args) < 1 or "--" not in args:
-            print(f"Usage: memguard {subcmd} {'[--replace] ' if subcmd == 'measure' else ''}<step> -- <cmd...>", file=sys.stderr)
+            print(usage, file=sys.stderr)
             sys.exit(1)
 
         step = args[0]
@@ -786,7 +948,7 @@ def main():
             sys.exit(1)
 
         if subcmd == "run":
-            code = run_guarded(step, cmd)
+            code = run_guarded(step, cmd, admit_timeout=admit_timeout, parallel=parallel)
             sys.exit(code)
         else:
             code = measure_step(step, cmd, replace=replace)
