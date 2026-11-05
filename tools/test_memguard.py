@@ -620,6 +620,24 @@ class TestMemguard(unittest.TestCase):
                     pass
         self.assertEqual(memguard.running_steps(), [])
 
+    def test_case_17_samples_memory_at_two_tenths_second(self):
+        """Case 17: falsifying — memguard samples a step's memory at 0.2 s (F49), capturing short step peaks."""
+        child_code = (
+            "import time; "
+            "blob = bytearray(64 * 1024 * 1024); "
+            "time.sleep(0.6)"
+        )
+        cmd = [sys.executable, "-c", child_code]
+        code = memguard.run_guarded("test_c17", cmd, override_budget_gib=1.0)
+        self.assertEqual(code, 0)
+
+        log_file = memguard.get_log_file()
+        with open(log_file, "r", encoding="utf-8") as f:
+            records = [json.loads(l) for l in f if l.strip()]
+        c17_records = [r for r in records if r["step"] == "test_c17"]
+        self.assertTrue(c17_records)
+        self.assertGreaterEqual(c17_records[-1]["peak"], 0.05)
+
 
 if __name__ == "__main__":
     unittest.main()

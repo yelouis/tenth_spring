@@ -525,8 +525,10 @@ def run_guarded(
             critical_pressure_count = 0
             budget_bytes = int(budget_gib * (1024**3))
 
+            interval = min(0.2, poll_seconds)
             while proc.poll() is None:
-                sleep(poll_seconds)
+                sleep(interval)
+                interval = poll_seconds
 
                 current_rss = get_process_tree_rss(proc.pid)
                 if current_rss > peak_rss:
