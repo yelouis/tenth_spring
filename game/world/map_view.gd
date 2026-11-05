@@ -169,13 +169,21 @@ var _screenshot_path: String = ""
 var _screenshot_zoom: float = 1.0
 var _screenshot_target_frames: int = 10
 var _screenshot_frames_waited: int = 0
-var _screenshot_saved: bool = false
+var _screenshot_saved: bool = false:
+
+	set(value):
+		_screenshot_saved = value
+		if _screenshot_saved and is_inside_tree():
+			_arm_steady_timer()
 var _screenshot_timed_out: bool = false
 ## Seconds after launch (engine start) at which the screenshot harness gives up (exit code 3) instead of hanging (Item 25b).
 var screenshot_timeout_sec: float = 120.0
 var _screenshot_focus: String = "most_visited"
 var _focus_mode: String = "most_visited"
 var _total_rendered_frames: int = 0
+var _steady_timer: SceneTreeTimer = null
+var harness_fail_handler: Callable = Callable()
+
 
 func _ready() -> void:
 	_camera = get_node_or_null("MapCamera") as Camera2D
@@ -1527,9 +1535,8 @@ func _on_frame_post_draw() -> void:
 			# Seconds since the engine started, so the limit counts the focus scans before the capture begins too.
 			var waited_sec := float(Time.get_ticks_usec()) / 1000000.0
 			if waited_sec >= screenshot_timeout_sec:
-				printerr("[FAIL] screenshot harness: %d cells and %d chunks still pending after %d s" % [parts.x, parts.y, int(screenshot_timeout_sec)])
 				_screenshot_timed_out = true
-				get_tree().quit(3)
+				_harness_fail("[FAIL] screenshot harness: %d cells and %d chunks still pending after %d s" % [parts.x, parts.y, int(screenshot_timeout_sec)])
 			return
 		_screenshot_frames_waited += 1
 		if _screenshot_frames_waited >= _screenshot_target_frames:
@@ -1544,6 +1551,7 @@ func _on_frame_post_draw() -> void:
 				var visible_doors := count_visible_doors()
 				print("VISIBLE_DOORS %d" % visible_doors)
 				_screenshot_saved = true
+				_arm_steady_timer()
 			else:
 				printerr("[FAIL] Viewport texture returned empty image")
 				get_tree().quit(1)
@@ -1558,6 +1566,24 @@ func _on_frame_post_draw() -> void:
 		print("VSYNC_MS: %.2f" % vsync_ms)
 		print("FRAME_P95_MS: %.2f" % p95)
 		get_tree().quit(0)
+
+func _arm_steady_timer() -> void:
+	if _steady_timer != null or not is_inside_tree():
+		return
+	_steady_timer = get_tree().create_timer(screenshot_timeout_sec, true, false, true)
+	_steady_timer.timeout.connect(_on_steady_frames_timeout)
+
+func _on_steady_frames_timeout() -> void:
+	if _steady_frames_count < 120:
+		_harness_fail("[FAIL] screenshot harness: %d of 120 steady frames after %d s" % [_steady_frames_count, int(screenshot_timeout_sec)])
+
+func _harness_fail(message: String) -> void:
+	printerr(message)
+	if harness_fail_handler.is_valid():
+		harness_fail_handler.call(message)
+	else:
+		get_tree().quit(3)
+
 
 func set_map_fetcher(fetcher) -> void:
 	if _map_fetcher != null and _map_fetcher is Object:

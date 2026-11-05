@@ -525,9 +525,69 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# 11. Item 25c / F63: steady-frame timeout when frame delivery halts after screenshot save.
+	# FALSIFYING on old code: old code had no timer after screenshot save; setting _screenshot_saved
+	# and delivering no frames never calls _harness_fail, so recorded_fails remains empty.
+	var shot_view = MapViewScene.instantiate()
+	add_child(shot_view)
+	shot_view.set_map_data_dir("user://test/map_data")
+	shot_view.setup_screenshot("/tmp/fake_shot.png", 1.0, 10)
+	shot_view.screenshot_timeout_sec = 1.0
+	var recorded_fails: Array[String] = []
+	if "harness_fail_handler" in shot_view:
+		shot_view.harness_fail_handler = func(msg: String):
+			recorded_fails.append(msg)
+	shot_view._screenshot_saved = true
+
+	var start_ms := Time.get_ticks_msec()
+	while recorded_fails.is_empty() and (Time.get_ticks_msec() - start_ms) < 3000:
+		var elapsed_sec := float(Time.get_ticks_msec() - start_ms) / 1000.0
+		if elapsed_sec >= shot_view.screenshot_timeout_sec:
+			if shot_view.get("_steady_timer") != null:
+				shot_view._steady_timer.emit_signal("timeout")
+				break
+		OS.delay_msec(10)
+
+	var wait_duration := float(Time.get_ticks_msec() - start_ms) / 1000.0
+	shot_view.queue_free()
+
+	if recorded_fails.is_empty():
+		push_error("(25c) steady frames timeout failed to call _harness_fail after %.2f s" % wait_duration)
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	var expected_msg := "[FAIL] screenshot harness: 0 of 120 steady frames after 1 s"
+	if recorded_fails[0] != expected_msg:
+		push_error("(25c) steady frames timeout message mismatch: expected '%s', got '%s'" % [expected_msg, recorded_fails[0]])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# 11b. If 120 steady frames have arrived, the timeout callback is a no-op:
+	var completed_view = MapViewScene.instantiate()
+	add_child(completed_view)
+	completed_view.set_map_data_dir("user://test/map_data")
+	completed_view.setup_screenshot("/tmp/fake_shot.png", 1.0, 10)
+	completed_view.screenshot_timeout_sec = 1.0
+	var noop_fails: Array[String] = []
+	if "harness_fail_handler" in completed_view:
+		completed_view.harness_fail_handler = func(msg: String):
+			noop_fails.append(msg)
+	completed_view._screenshot_saved = true
+	completed_view._steady_frames_count = 120
+	if completed_view.get("_steady_timer") != null:
+		completed_view._steady_timer.emit_signal("timeout")
+	completed_view.queue_free()
+
+	if not noop_fails.is_empty():
+		push_error("(25c) steady frames timeout should be no-op when 120 frames reached, but failed with: %s" % str(noop_fails))
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
-	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips verified)")
+	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout verified)")
 	return true
+
+
 
 ## Item 25b: loads the zoom-1/16 overview in a second map view that has its own 1280 x 720 viewport (the screenshot
 ## harness's size: about 345 cells, more than the worker's queue). The headless root viewport is too small for that, and
