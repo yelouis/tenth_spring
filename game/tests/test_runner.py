@@ -336,6 +336,18 @@ def main():
 		sys.exit(1)
 	print("[EMERALD TABLE TESTS OK] Mapping table structure verified (ROM-gated tests skipped).\n")
 
+	# Art Pipeline Test Suite (Item 31)
+	art_pipeline_test_path = os.path.join(repo_root, "tools", "art_pipeline", "test_art_pipeline.py")
+	if not os.path.exists(art_pipeline_test_path):
+		print("\n[ART PIPELINE ERROR] Art pipeline test suite missing")
+		sys.exit(1)
+	print("=== Art Pipeline Test Suite ===")
+	art_res = subprocess.run([sys.executable, "-I", art_pipeline_test_path], cwd=repo_root)
+	if art_res.returncode != 0:
+		print("\n[ART PIPELINE TEST FAIL] Art pipeline unit tests failed.")
+		sys.exit(1)
+	print("[ART PIPELINE TESTS OK] 50 art pipeline tests passed.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)
