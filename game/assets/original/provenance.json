@@ -425,17 +425,17 @@
   {
     "asset": "obelisk",
     "tier": 2,
-    "source_file": "candidate_02.png",
+    "source_file": "candidate_04.png",
     "run_folder": "tenth_spring_art_work_8",
     "round": 1,
-    "date": "2026-11-04T03:12:38.401995Z",
-    "seed": 108425,
+    "date": "2026-11-04T03:15:03.079040Z",
+    "seed": 108499,
     "model": "Qwen-Image-2512 Q8_0 GGUF (unsloth) + Lightning 8-step LoRA V1.0",
     "licence": "Apache-2.0 (https://huggingface.co/Qwen/Qwen-Image-2512)",
     "prompt": "Original pixel art of one famous monument for a top-down game map, in the classic 16-bit handheld style: bright, cheerful, clean, and easy to read at a glance. Flat colours with hard square pixel edges: no anti-aliasing, no gradients, no blur, no dithering noise, no painted or photographic texture. The view is straight from the front and a little from above, square to the picture. The monument stands alone in the middle of the picture. Light comes from the upper left: lighter tones on the top and left of every shape, darker tones on the bottom and right. Every object has a one-pixel outline in a dark shade of its own colour. There is no pure black or near-black anywhere: the darkest tones are deep tinted shades (dark brown, dark navy, dark green) at about a third of full brightness. Colours are soft, bright, and moderately saturated, never neon. Each material uses two to four clearly different tones. Big, simple shapes and large flat areas of colour, with little texture. The picture is bright and soft, as in daylight: most of it is light and mid tones, and dark tones are kept for outlines and small shadows. The background is one flat, solid, pure magenta (#FF00FF) that fills the whole picture out to every edge, all around the subject: no ground or floor beyond the subject itself, no cast shadow, no frame, box, grid, or panel, and nothing else in the picture.\n\nSubject: The Washington Monument: a tall, slender, four-sided white marble obelisk tapering upward to a small pointed pyramid top. About a third of the way up, the stone changes to a slightly warmer, darker shade. Its plain square foot, with a small dark doorway in the middle, is the bottom of the drawing.\n\nSize and layout: it is drawn on a grid of exactly 48 by 384 chunky square pixels (3 tiles wide and 24 tall, each tile 16 by 16 pixels), and the object stands in the middle of the picture, about eight times as tall as it is wide, with flat magenta around it on every side, below it too. The entrance is in the bottom row of tiles, in the middle tile column (the second of 3 columns). The object is symmetrical left to right, apart from its shading.\n\nIt must read at a glance as: a tall white stone obelisk.\n\nDo not include: people, creatures, animals, characters, or mascots; vehicles; fire, smoke, or glow effects; text, letters, numbers, writing on signs, logos, emblems, flags, signatures, or watermarks; borders or picture frames; photographs, 3D rendering, perspective distortion, soft or cast shadows, bloom, or lens effects; anything copied from an existing video game.",
     "passed": "checks",
     "missed": [],
-    "approval": "2026-11-04 (Decision 49)",
+    "approval": "2026-11-05 (Decision 50)",
     "footprint": "6 x 24 (Decision 48)"
   },
   {
@@ -563,19 +563,19 @@
   {
     "asset": "liberty",
     "tier": 2,
-    "source_file": "candidate_02.png",
+    "source_file": "candidate_31.png",
     "run_folder": "tenth_spring_art_work_8",
-    "round": 1,
-    "date": "2026-11-04T04:44:16.420321Z",
-    "seed": 508425,
+    "round": 8,
+    "date": "2026-11-04T05:27:15.625219Z",
+    "seed": 516498,
     "model": "Qwen-Image-2512 Q8_0 GGUF (unsloth) + Lightning 8-step LoRA V1.0",
     "licence": "Apache-2.0 (https://huggingface.co/Qwen/Qwen-Image-2512)",
-    "prompt": "Original pixel art of one famous monument for a top-down game map, in the classic 16-bit handheld style: bright, cheerful, clean, and easy to read at a glance. Flat colours with hard square pixel edges: no anti-aliasing, no gradients, no blur, no dithering noise, no painted or photographic texture. The view is straight from the front and a little from above, square to the picture. The monument stands alone in the middle of the picture. Light comes from the upper left: lighter tones on the top and left of every shape, darker tones on the bottom and right. Every object has a one-pixel outline in a dark shade of its own colour. There is no pure black or near-black anywhere: the darkest tones are deep tinted shades (dark brown, dark navy, dark green) at about a third of full brightness. Colours are soft, bright, and moderately saturated, never neon. Each material uses two to four clearly different tones. Big, simple shapes and large flat areas of colour, with little texture. The picture is bright and soft, as in daylight: most of it is light and mid tones, and dark tones are kept for outlines and small shadows. The background is one flat, solid, pure magenta (#FF00FF) that fills the whole picture out to every edge, all around the subject: no ground or floor beyond the subject itself, no cast shadow, no frame, box, grid, or panel, and nothing else in the picture.\n\nSubject: The Statue of Liberty on her pedestal. A robed female statue in pale blue-green weathered copper stands upright, her right arm raised high holding a torch whose flame is a gilded gold sculpture, her left arm holding a tablet against her side, a spiked crown on her head. She stands on a tall square pedestal of pale grey-pink granite with a classical cornice. A small dark arched doorway is at the foot of the pedestal, in the middle.\n\nSize and layout: it is drawn on a grid of exactly 80 by 240 chunky square pixels (5 tiles wide and 15 tall, each tile 16 by 16 pixels), and the object stands in the middle of the picture, about three times as tall as it is wide, with flat magenta around it on every side, below it too. The entrance is in the bottom row of tiles, in the middle tile column (the third of 5 columns).\n\nIt must read at a glance as: a green robed statue holding up a torch, on a stone pedestal.\n\nStatues are allowed (a statue is not a person).\nDo not include: people, creatures, animals, characters, or mascots; vehicles; fire, smoke, or glow effects; text, letters, numbers, writing on signs, logos, emblems, flags, signatures, or watermarks; borders or picture frames; photographs, 3D rendering, perspective distortion, soft or cast shadows, bloom, or lens effects; anything copied from an existing video game.",
+    "prompt": "Original pixel art of one famous monument for a top-down game map, in the classic 16-bit handheld style: bright, cheerful, clean, and easy to read at a glance. Flat colours with hard square pixel edges: no anti-aliasing, no gradients, no blur, no dithering noise, no painted or photographic texture. The view is straight from the front and a little from above, square to the picture. The monument stands alone in the middle of the picture. Light comes from the upper left: lighter tones on the top and left of every shape, darker tones on the bottom and right. Every object has a one-pixel outline in a dark shade of its own colour. There is no pure black or near-black anywhere: the darkest tones are deep tinted shades (dark brown, dark navy, dark green) at about a third of full brightness. Colours are soft, bright, and moderately saturated, never neon. Each material uses two to four clearly different tones. Big, simple shapes and large flat areas of colour, with little texture. The picture is bright and soft, as in daylight: most of it is light and mid tones, and dark tones are kept for outlines and small shadows. The background is one flat, solid, pure magenta (#FF00FF) that fills the whole picture out to every edge, all around the subject: no ground or floor beyond the subject itself, no cast shadow, no frame, box, grid, or panel, and nothing else in the picture.\n\nSubject: The Statue of Liberty on her pedestal. A robed female statue in pale blue-green weathered copper stands upright, her right arm raised high holding a torch whose flame is a gilded gold sculpture, her left arm holding a tablet against her side, a spiked crown on her head. She stands on a tall square pedestal of pale grey-pink granite with a classical cornice. A small dark arched doorway is at the foot of the pedestal, in the middle.\n\nSize and layout: it is drawn on a grid of exactly 80 by 240 chunky square pixels (5 tiles wide and 15 tall, each tile 16 by 16 pixels), and the object stands in the middle of the picture, about three times as tall as it is wide, with flat magenta around it on every side, below it too. The entrance is in the bottom row of tiles, in the middle tile column (the third of 5 columns).\n\nIt must read at a glance as: a green robed statue holding up a torch, on a stone pedestal.\n\nStatues are allowed (a statue is not a person).\nDo not include: people, creatures, animals, characters, or mascots; vehicles; fire, smoke, or glow effects; text, letters, numbers, writing on signs, logos, emblems, flags, signatures, or watermarks; borders or picture frames; photographs, 3D rendering, perspective distortion, soft or cast shadows, bloom, or lens effects; anything copied from an existing video game. Give the whole silhouette a one-pixel dark outline in a deeper shade of its own colour.",
     "passed": "by eye",
     "missed": [
-      "door 0.09 (target 0.12): the pedestal's doorway is there, dark and in the middle, but smaller than the door tile"
+      "background_clear 0.749 edge, 0.000 gap: the stepped base runs off the picture, and the sprite cuts it flat"
     ],
-    "approval": "2026-11-04 (Decision 49)"
+    "approval": "2026-11-05 (Decision 50)"
   },
   {
     "asset": "lincoln",
