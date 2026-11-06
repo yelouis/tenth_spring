@@ -39,7 +39,7 @@ jobs:
         run: python3 game/tests/test_runner.py
 
   game-tests-macos:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
