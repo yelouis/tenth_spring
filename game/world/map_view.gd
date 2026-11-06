@@ -45,6 +45,7 @@ const MAP_COLORS := {
 	18: Color("#b07840"), # SIGN
 	19: Color("#a8c060"), # CROP
 	20: Color("#8a7a6a"), # RUBBLE
+	21: Color("#8a7a6a"), # STAMP
 }
 
 const ROOF_BASE_COLORS := [
@@ -110,6 +111,12 @@ var _world_known: TileMapLayer = null
 var _world_cleared: TileMapLayer = null
 var _fog_layer: TileMapLayer = null
 var _overview_layer: Node2D = null
+var _stamp_base_layer: Node2D = null
+var _stamp_overhang_layer: Node2D = null
+var _cell_stamp_sprites: Dictionary = {} # Vector2i -> Array[Sprite2D]
+var _stamp_images: Dictionary = {} # stamp_id (int) -> Image
+var _stamp_textures: Dictionary = {} # stamp_id (int) -> ImageTexture
+var _tiled_stamp_textures: Dictionary = {} # Vector3i(stamp_id, w, h) -> ImageTexture
 var _overview_sprites: Dictionary = {} # chunk_key (Vector2i) -> Sprite2D
 var _overview_chunks: Dictionary = {} # chunk_key (Vector2i) -> Dictionary {image: Image, tex: ImageTexture, sprite: Sprite2D}
 var _dirty_overview_chunks: Dictionary = {} # chunk_key (Vector2i) -> bool
@@ -198,6 +205,26 @@ func _ready() -> void:
 	_world_cleared = get_node_or_null("WorldCleared") as TileMapLayer
 	_fog_layer = get_node_or_null("FogLayer") as TileMapLayer
 	_overview_layer = get_node_or_null("OverviewLayer") as Node2D
+	if _fog_layer != null:
+		_fog_layer.z_index = 20
+	if _overview_layer != null:
+		_overview_layer.z_index = 30
+
+	_stamp_base_layer = get_node_or_null("StampBaseLayer") as Node2D
+	if _stamp_base_layer == null:
+		_stamp_base_layer = Node2D.new()
+		_stamp_base_layer.name = "StampBaseLayer"
+		_stamp_base_layer.z_index = 1
+		_stamp_base_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(_stamp_base_layer)
+
+	_stamp_overhang_layer = get_node_or_null("StampOverhangLayer") as Node2D
+	if _stamp_overhang_layer == null:
+		_stamp_overhang_layer = Node2D.new()
+		_stamp_overhang_layer.name = "StampOverhangLayer"
+		_stamp_overhang_layer.z_index = 10
+		_stamp_overhang_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(_stamp_overhang_layer)
 
 	_demo_badge = get_node_or_null("AttributionUI/DemoBadge") as Label
 	_attribution_label = get_node_or_null("AttributionUI/AttributionLabel") as Label
@@ -326,6 +353,9 @@ func _clear_rendered_layers() -> void:
 		_world_cleared.clear()
 	if _fog_layer != null:
 		_fog_layer.clear()
+	for cell_k in _cell_stamp_sprites.keys():
+		_clear_cell_stamps(cell_k)
+	_cell_stamp_sprites.clear()
 	for s in _overview_sprites.values():
 		if is_instance_valid(s):
 			s.queue_free()
@@ -420,6 +450,10 @@ func _init_tile_sets() -> void:
 		_fog_layer.tile_set = tileset
 
 func get_atlas_coords(cls: int, variant: int, mask: int) -> Vector2i:
+	if cls == TileSynth2.TILE_STAMP or (cls == TileSynth2.TILE_DOOR and mask > 0):
+		cls = TileSynth2.TILE_GRASS
+		variant = 0
+		mask = 0
 	var row := 0
 	if _class_any_variant.has(cls):
 		row = _class_any_variant[cls]
@@ -604,6 +638,7 @@ func _focus_most_buildings() -> void:
 			var item := {
 				"buf": res["tiles"],
 				"signs": res["signs"],
+				"stamps": res.get("stamps", []),
 				"has_data": res["has_data"],
 				"image": res.get("image", null),
 				"thread_id": res.get("thread_id", 0),
@@ -693,6 +728,7 @@ func _focus_far_buildings() -> void:
 			var item := {
 				"buf": res["tiles"],
 				"signs": res["signs"],
+				"stamps": res.get("stamps", []),
 				"has_data": res["has_data"],
 				"image": res.get("image", null),
 				"thread_id": res.get("thread_id", 0),
@@ -716,7 +752,7 @@ func _focus_far_buildings() -> void:
 				var idx := (ty * 32 + tx) * 3
 				if idx < buf.size():
 					var cls: int = buf[idx]
-					if cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_RUBBLE:
+					if cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_RUBBLE or cls == TileSynth2.TILE_STAMP:
 						score += 1
 
 		if score > max_score:
@@ -955,6 +991,10 @@ func _set_zoom_step(zoom_val: float) -> void:
 		_world_cleared.visible = not show_overview
 	if _fog_layer != null:
 		_fog_layer.visible = not show_overview
+	if _stamp_base_layer != null:
+		_stamp_base_layer.visible = not show_overview
+	if _stamp_overhang_layer != null:
+		_stamp_overhang_layer.visible = not show_overview
 
 func _update_frustum_culling() -> void:
 	if _camera == null:
@@ -1076,6 +1116,7 @@ func _drain_worker_results() -> void:
 		_synth_cache.put(cell, {
 			"buf": res["tiles"],
 			"signs": res["signs"],
+			"stamps": res.get("stamps", []),
 			"has_data": res["has_data"],
 			"image": res.get("image", null),
 			"thread_id": res.get("thread_id", 0),
@@ -1215,6 +1256,8 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 					else:
 						_fog_layer.erase_cell(st)
 
+			_render_cell_stamps(cx, cy, item)
+
 	# Overview chunk in OverviewLayer (§11.5 step 2)
 	if _overview_layer != null:
 		var img: Image = item.get("image", null)
@@ -1340,6 +1383,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 		item = {
 			"buf": res["tiles"],
 			"signs": res["signs"],
+			"stamps": res.get("stamps", []),
 			"has_data": res["has_data"],
 			"image": res.get("image", null),
 			"thread_id": res.get("thread_id", 0),
@@ -1365,6 +1409,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 		item = {
 			"buf": synth_res.get("tiles", PackedByteArray()),
 			"signs": synth_res.get("signs", []),
+			"stamps": synth_res.get("stamps", []),
 			"has_data": has_map_data or is_covered_by_store,
 			"thread_id": OS.get_thread_caller_id(),
 			"reveal_state": reveal_state
@@ -1395,6 +1440,7 @@ func get_steady_frame_p95_ms() -> float:
 	return sorted[idx]
 
 func _render_solid_fog(cx: int, cy: int) -> void:
+	_clear_cell_stamps(Vector2i(cx, cy))
 	var solid_fog_row: int = _fog_rows.get("solid", 54)
 	for ty in 32:
 		for tx in 32:
@@ -1409,6 +1455,7 @@ func _render_solid_fog(cx: int, cy: int) -> void:
 func _unrender_cell(cx: int, cy: int) -> void:
 	var cell := Vector2i(cx, cy)
 	_unmapped_revealed_cells.erase(cell)
+	_clear_cell_stamps(cell)
 	for ty in 32:
 		for tx in 32:
 			var coord := _screen_tile(cx, cy, tx, ty)
@@ -1418,6 +1465,142 @@ func _unrender_cell(cx: int, cy: int) -> void:
 				_world_cleared.erase_cell(coord)
 			if _fog_layer != null:
 				_fog_layer.erase_cell(coord)
+
+func _clear_cell_stamps(cell: Vector2i) -> void:
+	if not _cell_stamp_sprites.has(cell):
+		return
+	var sprites: Array = _cell_stamp_sprites[cell]
+	for s in sprites:
+		if is_instance_valid(s):
+			s.queue_free()
+	_cell_stamp_sprites.erase(cell)
+
+func _load_stamp_image(sid: int, def: Dictionary) -> Image:
+	if _stamp_images.has(sid):
+		return _stamp_images[sid]
+	var rel_path: String = str(def.get("path", ""))
+	if rel_path.is_empty():
+		return null
+	var res_path := "res://assets/original/" + rel_path
+	var abs_path := ProjectSettings.globalize_path(res_path)
+	var img: Image = null
+	if FileAccess.file_exists(abs_path):
+		img = Image.load_from_file(abs_path)
+	if (img == null or img.is_empty()) and ResourceLoader.exists(res_path):
+		var loaded = load(res_path)
+		if loaded is Texture2D:
+			img = (loaded as Texture2D).get_image()
+		elif loaded is Image:
+			img = loaded
+	if img != null and not img.is_empty():
+		_stamp_images[sid] = img
+		return img
+	return null
+
+func _get_stamp_texture(sid: int, sw: int, sh: int, def: Dictionary) -> Texture2D:
+	if bool(def.get("tiled", false)):
+		var t_key := Vector3i(sid, sw, sh)
+		if _tiled_stamp_textures.has(t_key):
+			return _tiled_stamp_textures[t_key]
+		var src_img := _load_stamp_image(sid, def)
+		if src_img == null:
+			return null
+		var out_img := Image.create(sw * 16, sh * 16, false, src_img.get_format())
+		for y in sh:
+			for x in sw:
+				var src_t: Vector2i = TileSynth2.ruined_block_src_tile(x, y, sw, sh)
+				out_img.blit_rect(src_img, Rect2i(src_t.x * 16, src_t.y * 16, 16, 16), Vector2i(x * 16, y * 16))
+		var t_tex := ImageTexture.create_from_image(out_img)
+		_tiled_stamp_textures[t_key] = t_tex
+		return t_tex
+
+	if _stamp_textures.has(sid):
+		return _stamp_textures[sid]
+	var img := _load_stamp_image(sid, def)
+	if img == null:
+		return null
+	var tex := ImageTexture.create_from_image(img)
+	_stamp_textures[sid] = tex
+	return tex
+
+func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
+	var cell := Vector2i(cx, cy)
+	_clear_cell_stamps(cell)
+	if _stamp_base_layer == null:
+		return
+	var stamps: Array = item.get("stamps", [])
+	if stamps.is_empty():
+		return
+	var reveal_state: int = int(item.get("reveal_state", 1))
+	if reveal_state <= 0:
+		return
+	var is_known_look: bool = (reveal_state == 1 and not _preview_cleared)
+	var known_mat: Material = _world_known.material if (is_known_look and _world_known != null) else null
+	var created: Array[Sprite2D] = []
+
+	for st in stamps:
+		var sid: int = int(st.get("stamp_id", -1))
+		var agx: int = int(st.get("anchor_gx", 0))
+		var agy: int = int(st.get("anchor_gy", 0))
+		var sw: int = int(st.get("w", 0))
+		var sh: int = int(st.get("h", 0))
+		if sid < 0 or sw <= 0 or sh <= 0:
+			continue
+		var def: Dictionary = TileSynth2.get_stamp_def(sid)
+		if def.is_empty():
+			continue
+		var tex: Texture2D = _get_stamp_texture(sid, sw, sh, def)
+		if tex == null:
+			continue
+
+		var tx0: int = maxi(0, cx * 32 - agx)
+		var tx1: int = mini(sw, (cx + 1) * 32 - agx)
+		var ty0: int = maxi(0, cy * 32 - agy)
+		var ty1: int = mini(sh, (cy + 1) * 32 - agy)
+		if tx0 >= tx1 or ty0 >= ty1:
+			continue
+
+		var base_rows: int = sh if bool(def.get("tiled", false)) else int(def.get("base_rows", sh))
+		var split_ty: int = (sh - base_rows) if (sid >= 0 and sid <= 14 and base_rows > 0 and sh > base_rows) else 0
+
+		if ty0 < split_ty and _stamp_overhang_layer != null:
+			var o_ty0: int = ty0
+			var o_ty1: int = mini(ty1, split_ty)
+			var o_lx: int = (agx + tx0) - cx * 32
+			var o_ly: int = (agy + o_ty0) - cy * 32
+			var o_st := _screen_tile(cx, cy, o_lx, o_ly)
+			var o_sp := Sprite2D.new()
+			o_sp.centered = false
+			o_sp.texture = tex
+			o_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			o_sp.region_enabled = true
+			o_sp.region_rect = Rect2(float(tx0 * 16), float(o_ty0 * 16), float((tx1 - tx0) * 16), float((o_ty1 - o_ty0) * 16))
+			o_sp.scale = Vector2(2.0, 2.0)
+			o_sp.position = Vector2(float(o_st.x * 32), float(o_st.y * 32))
+			o_sp.material = known_mat
+			_stamp_overhang_layer.add_child(o_sp)
+			created.append(o_sp)
+
+		if ty1 > split_ty:
+			var b_ty0: int = maxi(ty0, split_ty)
+			var b_ty1: int = ty1
+			var b_lx: int = (agx + tx0) - cx * 32
+			var b_ly: int = (agy + b_ty0) - cy * 32
+			var b_st := _screen_tile(cx, cy, b_lx, b_ly)
+			var b_sp := Sprite2D.new()
+			b_sp.centered = false
+			b_sp.texture = tex
+			b_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			b_sp.region_enabled = true
+			b_sp.region_rect = Rect2(float(tx0 * 16), float(b_ty0 * 16), float((tx1 - tx0) * 16), float((b_ty1 - b_ty0) * 16))
+			b_sp.scale = Vector2(2.0, 2.0)
+			b_sp.position = Vector2(float(b_st.x * 32), float(b_st.y * 32))
+			b_sp.material = known_mat
+			_stamp_base_layer.add_child(b_sp)
+			created.append(b_sp)
+
+	if not created.is_empty():
+		_cell_stamp_sprites[cell] = created
 
 func get_lru_cache() -> LruCache:
 	return _synth_cache

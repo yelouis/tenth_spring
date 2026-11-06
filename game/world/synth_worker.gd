@@ -108,6 +108,7 @@ const MAP_COLORS := {
 	18: Color("#b07840"), # SIGN
 	19: Color("#a8c060"), # CROP
 	20: Color("#8a7a6a"), # RUBBLE
+	21: Color("#8a7a6a"), # STAMP
 }
 
 const ROOF_BASE_COLORS := [
@@ -372,11 +373,13 @@ func _process_request(req: Dictionary) -> Dictionary:
 
 	var tile_buf: PackedByteArray
 	var signs_list: Array = []
+	var stamps_list: Array = []
 
 	if has_map_data or is_covered_by_store:
 		var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
 		tile_buf = synth_res.get("tiles", PackedByteArray())
 		signs_list = synth_res.get("signs", [])
+		stamps_list = synth_res.get("stamps", [])
 		has_map_data = true
 	else:
 		tile_buf = PackedByteArray()
@@ -414,6 +417,7 @@ func _process_request(req: Dictionary) -> Dictionary:
 		"cell": cell,
 		"tiles": tile_buf,
 		"signs": signs_list,
+		"stamps": stamps_list,
 		"has_data": has_map_data,
 		"image": overview_image,
 		"thread_id": caller_id,

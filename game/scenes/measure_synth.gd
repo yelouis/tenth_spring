@@ -180,8 +180,15 @@ func _ready() -> void:
 		var t_size := tiles.size()
 		for idx in range(0, t_size, 3):
 			var cls: int = tiles[idx]
+			var variant: int = tiles[idx + 1]
+			var mask: int = tiles[idx + 2]
 			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR:
 				total_building_tiles += 1
+			elif cls == TileSynth2.TILE_STAMP:
+				if (mask & TileSynth2.STAMP_FLAG_SOLID) != 0 and (variant <= 38 or variant == 42 or variant >= 128):
+					total_building_tiles += 1
+				elif (variant >= 39 and variant <= 41) or (variant >= 43 and variant <= 58):
+					total_rubble_tiles += 1
 			elif cls == TileSynth2.TILE_PATH:
 				total_path_tiles += 1
 			elif cls == TileSynth2.TILE_ROAD:

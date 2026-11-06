@@ -30,6 +30,12 @@ const TILE_GRAVE := 17
 const TILE_SIGN := 18
 const TILE_CROP := 19
 const TILE_RUBBLE := 20
+const TILE_STAMP := 21
+
+# Stamp flags in mask_id for TILE_STAMP (§14.2.2)
+const STAMP_FLAG_SOLID := 1
+const STAMP_FLAG_OVERHANG := 2
+const STAMP_FLAG_DOOR := 4
 
 # Grid Dimensions
 const CELL_TILES := 32
@@ -39,7 +45,7 @@ const WORK_CELL_START := 4
 const WORK_CELL_END := 36 # exclusive
 const OUTPUT_BUFFER_SIZE := 32 * 32 * 3 # 3072 bytes
 
-# Salts (§3, §11.2 step 7)
+# Salts (§3, §11.2 step 7, §14.4)
 const SALT_TREE_SCATTER := 1
 const SALT_FLOWERS := 2
 const SALT_GRASS_VARIANT := 3
@@ -54,6 +60,134 @@ const SALT_YARD_LOT_GRASS := 11
 const SALT_LOT_TREE := 12
 const SALT_PATH_OVERGROWTH := 13
 const SALT_PLAZA_WEEDS := 14
+const SALT_RUIN_STATE := 15
+const SALT_RUIN_COLOURWAY := 16
+const SALT_GONE_STATE := 17
+const SALT_DECAL_COUNT := 18
+const SALT_DECAL_DOORSTEP := 19
+const SALT_DECAL_POS := 20
+
+# Stamp metadata table 0..58 (§14.2.1)
+const STAMP_TABLE: Dictionary = {
+	0: {"id": "alcatraz", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5]},
+	1: {"id": "arch", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23]},
+	2: {"id": "boston_light", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4]},
+	3: {"id": "coit", "path": "landmarks/coit.png", "w": 2, "h": 10, "base_rows": 2, "door": [1, 9]},
+	4: {"id": "gg_tower", "path": "landmarks/gg_tower.png", "w": 4, "h": 24, "base_rows": 2, "door": null},
+	5: {"id": "grand_central", "path": "landmarks/grand_central.png", "w": 15, "h": 7, "base_rows": 4, "door": [7, 6]},
+	6: {"id": "hatteras_light", "path": "landmarks/hatteras_light.png", "w": 2, "h": 9, "base_rows": 2, "door": [1, 8]},
+	7: {"id": "independence", "path": "landmarks/independence.png", "w": 7, "h": 9, "base_rows": 4, "door": [3, 8]},
+	8: {"id": "liberty", "path": "landmarks/liberty.png", "w": 5, "h": 15, "base_rows": 3, "door": [2, 14]},
+	9: {"id": "library_of_congress", "path": "landmarks/library_of_congress.png", "w": 22, "h": 14, "base_rows": 7, "door": [10, 13]},
+	10: {"id": "lincoln", "path": "landmarks/lincoln.png", "w": 9, "h": 7, "base_rows": 4, "door": [4, 6]},
+	11: {"id": "needle", "path": "landmarks/needle.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23]},
+	12: {"id": "neon_signs", "path": "landmarks/neon_signs.png", "w": 6, "h": 3, "base_rows": 1, "door": [3, 2]},
+	13: {"id": "obelisk", "path": "landmarks/obelisk.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23]},
+	14: {"id": "parthenon", "path": "landmarks/parthenon.png", "w": 7, "h": 5, "base_rows": 3, "door": [3, 4]},
+	15: {"id": "house_s_a", "path": "ruins/house_s_a.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	16: {"id": "house_s_a__teal", "path": "ruins/house_s_a__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	17: {"id": "house_s_a__green", "path": "ruins/house_s_a__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	18: {"id": "house_s_a__purple", "path": "ruins/house_s_a__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	19: {"id": "house_s_a_door2", "path": "ruins/house_s_a_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	20: {"id": "house_s_a_door2__teal", "path": "ruins/house_s_a_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	21: {"id": "house_s_a_door2__green", "path": "ruins/house_s_a_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	22: {"id": "house_s_a_door2__purple", "path": "ruins/house_s_a_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	23: {"id": "house_s_b", "path": "ruins/house_s_b.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	24: {"id": "house_s_b__teal", "path": "ruins/house_s_b__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	25: {"id": "house_s_b__green", "path": "ruins/house_s_b__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	26: {"id": "house_s_b__purple", "path": "ruins/house_s_b__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	27: {"id": "house_s_b_door2", "path": "ruins/house_s_b_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	28: {"id": "house_s_b_door2__teal", "path": "ruins/house_s_b_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	29: {"id": "house_s_b_door2__green", "path": "ruins/house_s_b_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	30: {"id": "house_s_b_door2__purple", "path": "ruins/house_s_b_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	31: {"id": "house_m_a", "path": "ruins/house_m_a.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	32: {"id": "house_m_a__teal", "path": "ruins/house_m_a__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	33: {"id": "house_m_a__green", "path": "ruins/house_m_a__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	34: {"id": "house_m_a__purple", "path": "ruins/house_m_a__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	35: {"id": "house_m_b", "path": "ruins/house_m_b.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	36: {"id": "house_m_b__teal", "path": "ruins/house_m_b__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	37: {"id": "house_m_b__green", "path": "ruins/house_m_b__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	38: {"id": "house_m_b__purple", "path": "ruins/house_m_b__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	39: {"id": "house_s_c", "path": "ruins/house_s_c.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
+	40: {"id": "house_s_c_door2", "path": "ruins/house_s_c_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
+	41: {"id": "house_m_c", "path": "ruins/house_m_c.png", "w": 5, "h": 4, "base_rows": 4, "door": null},
+	42: {"id": "ruined_block", "path": "ruins/ruined_block.png", "w": 8, "h": 7, "base_rows": 7, "door": [2, 6], "tiled": true},
+	43: {"id": "decal_rubble", "path": "ruins/decal_rubble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	44: {"id": "decal_rubble_weeds", "path": "ruins/decal_rubble_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	45: {"id": "decal_stones", "path": "ruins/decal_stones.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	46: {"id": "decal_beams", "path": "ruins/decal_beams.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	47: {"id": "decal_wall_stump", "path": "ruins/decal_wall_stump.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
+	48: {"id": "decal_wall_corner", "path": "ruins/decal_wall_corner.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	49: {"id": "decal_tufts", "path": "ruins/decal_tufts.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	50: {"id": "decal_cracks", "path": "ruins/decal_cracks.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	51: {"id": "decal_weeds", "path": "ruins/decal_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	52: {"id": "decal_bush", "path": "ruins/decal_bush.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	53: {"id": "decal_bramble", "path": "ruins/decal_bramble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	54: {"id": "decal_stump", "path": "ruins/decal_stump.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	55: {"id": "decal_creeper", "path": "ruins/decal_creeper.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	56: {"id": "decal_sapling", "path": "ruins/decal_sapling.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	57: {"id": "decal_boulder", "path": "ruins/decal_boulder.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
+	58: {"id": "decal_doorstep", "path": "ruins/decal_doorstep.png", "w": 1, "h": 1, "base_rows": 0, "door": null}
+}
+
+static func get_stamp_def(stamp_id: int) -> Dictionary:
+	return STAMP_TABLE.get(stamp_id, {})
+
+## Walkability function home (§14.2.4, Decision 27)
+static func is_walkable(cls: int, _variant: int, mask: int) -> bool:
+	if cls == TILE_STAMP:
+		return (mask & STAMP_FLAG_SOLID) == 0
+	if cls == TILE_VOID or cls == TILE_TREE or cls == TILE_WATER or cls == TILE_ROOF or cls == TILE_WALL or cls == TILE_FENCE or cls == TILE_SIGN:
+		return false
+	return true
+
+static func is_tile_walkable_in_buffer(tiles: PackedByteArray, lx: int, ly: int) -> bool:
+	if lx < 0 or lx >= 32 or ly < 0 or ly >= 32:
+		return false
+	var idx := (ly * 32 + lx) * 3
+	return is_walkable(tiles[idx], tiles[idx + 1], tiles[idx + 2])
+
+## Tiling lookup for ruined_block (8x7 source -> WxH footprint, never stacking wall rows above roof rows; §14.1.5)
+static func ruined_block_src_tile(x: int, y: int, w: int, h: int) -> Vector2i:
+	var ty := 0
+	if h <= 5:
+		var map_5 := [0, 1, 2, 5, 6]
+		ty = map_5[clampi(y, 0, 4)]
+	elif h == 6:
+		var map_6 := [0, 1, 2, 4, 5, 6]
+		ty = map_6[clampi(y, 0, 5)]
+	else:
+		if y == 0:
+			ty = 0
+		elif y <= h - 6:
+			ty = 1
+		elif y == h - 5:
+			ty = 2
+		else:
+			ty = 3 + (y - (h - 4))
+
+	var tx := 0
+	if x <= 2:
+		tx = maxi(0, x)
+	elif x == w - 1:
+		tx = 7
+	elif w <= 6:
+		tx = 3 if x == 3 else 6
+	elif w == 7:
+		if x == 3:
+			tx = 3
+		elif x == 4:
+			tx = 4
+		else:
+			tx = 6
+	else:
+		if x == w - 3:
+			tx = 5
+		elif x == w - 2:
+			tx = 6
+		else:
+			tx = 3 + ((x - 3) % 2)
+	return Vector2i(tx, ty)
 
 # Forbidden building placement tile classes (§4.2, §10.2, §11.1)
 const FORBIDDEN_BUILDING_TILES: Array[int] = [
@@ -326,6 +460,12 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 	var grid_variant := PackedByteArray()
 	grid_variant.resize(total_tiles)
 	grid_variant.fill(0)
+
+	var grid_mask := PackedByteArray()
+	grid_mask.resize(total_tiles)
+	grid_mask.fill(0)
+
+	var stamps_list: Array[Dictionary] = []
 
 	var is_park := PackedByteArray()
 	is_park.resize(total_tiles)
@@ -1344,24 +1484,92 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		elif fate == "ruined":
 			ordinary_ruined += 1
 			surviving_buildings.append(b)
-			# Drawing a ruined building (§11.2 step 4):
-			# 1. Every ROOF, WALL, and DOOR tile gets variant bit 16;
-			# 2. Roof tiles where u(gx, gy, 10) < 0.25 become RUBBLE (variant 0)
-			for tr in b_h:
-				var r: int = b_row0 + tr
-				for tc in b_w:
-					var c: int = b_col0 + tc
-					var idx: int = r * WORK_SIZE + c
-					var gx: int = cx * 32 + (c - 4)
-					var gy: int = cy * 32 + (35 - r)
-					if grid_class[idx] == TILE_ROOF:
-						if u_rand(gx, gy, world_seed, SALT_ROOF_COLLAPSE) < 0.25:
-							grid_class[idx] = TILE_RUBBLE
-							grid_variant[idx] = 0
+			# Drawing a ruined building with whole-building sprites (§14.1.1, §14.1.2, §14.1.5):
+			var c_draw: float = u_rand(gx0, gy0, world_seed, SALT_RUIN_COLOURWAY)
+			var roof_col := 0
+			if c_draw < 0.40:
+				roof_col = 0
+			elif c_draw < 0.60:
+				roof_col = 1
+			elif c_draw < 0.80:
+				roof_col = 2
+			else:
+				roof_col = 3
+
+			if b_t == "block_l":
+				# Ruined block_l -> ruined_block (stamp_id = 42, door at [2, b_h - 1])
+				for old_d_col in b["door_cols"]:
+					if old_d_col != 2:
+						all_doors.erase(Vector2i(b_col0 + old_d_col, b_row0 + b_h - 1))
+				var bl_door_pos := Vector2i(b_col0 + 2, b_row0 + b_h - 1)
+				if not all_doors.has(bl_door_pos):
+					all_doors.append(bl_door_pos)
+				b["door_cols"] = [2]
+				for tr in b_h:
+					var r: int = b_row0 + tr
+					for tc in b_w:
+						var c: int = b_col0 + tc
+						var idx: int = r * WORK_SIZE + c
+						if tc == 2 and tr == b_h - 1:
+							grid_class[idx] = TILE_DOOR
+							grid_variant[idx] = 16 + roof_col
+							grid_mask[idx] = 42
 						else:
-							grid_variant[idx] = grid_variant[idx] | 16
-					elif grid_class[idx] == TILE_WALL or grid_class[idx] == TILE_DOOR:
-						grid_variant[idx] = grid_variant[idx] | 16
+							grid_class[idx] = TILE_STAMP
+							grid_variant[idx] = 42
+							grid_mask[idx] = STAMP_FLAG_SOLID
+				if b_col0 + b_w > WORK_CELL_START and b_col0 < WORK_CELL_END and b_row0 + b_h > WORK_CELL_START and b_row0 < WORK_CELL_END:
+					stamps_list.append({
+						"stamp_id": 42,
+						"anchor_gx": cx * 32 + (b_col0 - 4),
+						"anchor_gy": cy * 32 + (b_row0 - 4),
+						"w": b_w,
+						"h": b_h
+					})
+			else:
+				var state_b_thresh := 0.75
+				match band:
+					"camp":
+						state_b_thresh = 0.20
+					"near":
+						state_b_thresh = 0.50
+					"mid":
+						state_b_thresh = 0.75
+					"far":
+						state_b_thresh = 0.90
+				var is_state_b: bool = u_rand(gx0, gy0, world_seed, SALT_RUIN_STATE) < state_b_thresh
+				var d_col: int = int(b["door_cols"][0]) if not b["door_cols"].is_empty() else 1
+				var stamp_id := 15
+				if b_t == "house_m":
+					stamp_id = (35 if is_state_b else 31) + roof_col
+					d_col = 2
+				else:
+					if d_col == 2:
+						stamp_id = (27 if is_state_b else 19) + roof_col
+					else:
+						stamp_id = (23 if is_state_b else 15) + roof_col
+
+				for tr in b_h:
+					var r: int = b_row0 + tr
+					for tc in b_w:
+						var c: int = b_col0 + tc
+						var idx: int = r * WORK_SIZE + c
+						if tc == d_col and tr == b_h - 1:
+							grid_class[idx] = TILE_DOOR
+							grid_variant[idx] = 16 + roof_col
+							grid_mask[idx] = stamp_id
+						else:
+							grid_class[idx] = TILE_STAMP
+							grid_variant[idx] = stamp_id
+							grid_mask[idx] = STAMP_FLAG_SOLID
+				if b_col0 + b_w > WORK_CELL_START and b_col0 < WORK_CELL_END and b_row0 + b_h > WORK_CELL_START and b_row0 < WORK_CELL_END:
+					stamps_list.append({
+						"stamp_id": stamp_id,
+						"anchor_gx": cx * 32 + (b_col0 - 4),
+						"anchor_gy": cy * 32 + (b_row0 - 4),
+						"w": b_w,
+						"h": b_h
+					})
 
 			# 3. One RUBBLE (variant 0) on the first GRASS tile of the template's east ring column,
 			# else its west ring column, scanning top to bottom
@@ -1403,35 +1611,116 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 							grid_variant[idx] = 0
 		else:
 			ordinary_gone += 1
-			# Drawing a gone building (§11.2 step 5):
+			# Drawing a gone building (§14.1.3, §14.1.4, §14.1.5 rule 4):
 			# 1. Remove its doors from all_doors
 			for d_col in b["door_cols"]:
 				var d_pos := Vector2i(b_col0 + d_col, b_row0 + b_h - 1)
 				all_doors.erase(d_pos)
-			# 2. Every template tile becomes GRASS, then TALL_GRASS where u(gx, gy, 11) < 0.60
-			for tr in b_h:
-				var r: int = b_row0 + tr
-				for tc in b_w:
-					var c: int = b_col0 + tc
-					var idx: int = r * WORK_SIZE + c
-					var gx: int = cx * 32 + (c - 4)
-					var gy: int = cy * 32 + (35 - r)
-					if u_rand(gx, gy, world_seed, SALT_YARD_LOT_GRASS) < 0.60:
-						grid_class[idx] = TILE_TALL_GRASS
-						grid_variant[idx] = 0
-					else:
-						grid_class[idx] = TILE_GRASS
-						grid_variant[idx] = 0
-			# 3. One RUBBLE (variant 1) on the template's centre tile, and a TREE on its top-left tile where u(gx0, gy0, 12) < 0.50
-			var center_c: int = b_col0 + b_w / 2
-			var center_r: int = b_row0 + b_h / 2
-			var center_idx: int = center_r * WORK_SIZE + center_c
-			grid_class[center_idx] = TILE_RUBBLE
-			grid_variant[center_idx] = 1
-			if u_rand(gx0, gy0, world_seed, SALT_LOT_TREE) < 0.50:
-				var tl_idx: int = b_row0 * WORK_SIZE + b_col0
-				grid_class[tl_idx] = TILE_TREE
-				grid_variant[tl_idx] = 0
+
+			var state_c_thresh := 0.25
+			match band:
+				"camp":
+					state_c_thresh = 0.60
+				"near":
+					state_c_thresh = 0.40
+				"mid":
+					state_c_thresh = 0.25
+				"far":
+					state_c_thresh = 0.10
+			var is_state_c: bool = (b_t != "block_l") and (u_rand(gx0, gy0, world_seed, SALT_GONE_STATE) < state_c_thresh)
+
+			if is_state_c:
+				var d_col: int = int(b["door_cols"][0]) if not b["door_cols"].is_empty() else 1
+				var stamp_id := 39
+				if b_t == "house_m":
+					stamp_id = 41
+				elif d_col == 2:
+					stamp_id = 40
+				else:
+					stamp_id = 39
+				for tr in b_h:
+					var r: int = b_row0 + tr
+					for tc in b_w:
+						var c: int = b_col0 + tc
+						var idx: int = r * WORK_SIZE + c
+						grid_class[idx] = TILE_STAMP
+						grid_variant[idx] = stamp_id
+						grid_mask[idx] = STAMP_FLAG_SOLID
+				if b_col0 + b_w > WORK_CELL_START and b_col0 < WORK_CELL_END and b_row0 + b_h > WORK_CELL_START and b_row0 < WORK_CELL_END:
+					stamps_list.append({
+						"stamp_id": stamp_id,
+						"anchor_gx": cx * 32 + (b_col0 - 4),
+						"anchor_gy": cy * 32 + (b_row0 - 4),
+						"w": b_w,
+						"h": b_h
+					})
+			else:
+				# Grass with decals: every template tile becomes GRASS, then TALL_GRASS where u(gx, gy, 11) < 0.60
+				for tr in b_h:
+					var r: int = b_row0 + tr
+					for tc in b_w:
+						var c: int = b_col0 + tc
+						var idx: int = r * WORK_SIZE + c
+						var gx: int = cx * 32 + (c - 4)
+						var gy: int = cy * 32 + (35 - r)
+						if u_rand(gx, gy, world_seed, SALT_YARD_LOT_GRASS) < 0.60:
+							grid_class[idx] = TILE_TALL_GRASS
+							grid_variant[idx] = 0
+						else:
+							grid_class[idx] = TILE_GRASS
+							grid_variant[idx] = 0
+						grid_mask[idx] = 0
+
+				var base_decal_count: int = 2 if b_t == "block_l" else 1
+				var num_decals: int = base_decal_count + int(floor(u_rand(gx0, gy0, world_seed, SALT_DECAL_COUNT) * 3.0))
+				var start_i := 0
+				var occupied_local: Dictionary = {}
+				if u_rand(gx0, gy0, world_seed, SALT_DECAL_DOORSTEP) < 0.50:
+					var d_col: int = int(b["door_cols"][0]) if not b["door_cols"].is_empty() else 1
+					var ds_c: int = b_col0 + d_col
+					var ds_r: int = b_row0 + b_h - 1
+					var ds_idx: int = ds_r * WORK_SIZE + ds_c
+					grid_class[ds_idx] = TILE_STAMP
+					grid_variant[ds_idx] = 58
+					grid_mask[ds_idx] = 0
+					occupied_local[Vector2i(d_col, b_h - 1)] = true
+					if ds_c >= WORK_CELL_START and ds_c < WORK_CELL_END and ds_r >= WORK_CELL_START and ds_r < WORK_CELL_END:
+						stamps_list.append({
+							"stamp_id": 58,
+							"anchor_gx": cx * 32 + (ds_c - 4),
+							"anchor_gy": cy * 32 + (ds_r - 4),
+							"w": 1,
+							"h": 1
+						})
+					start_i = 1
+
+				for i in range(start_i, num_decals):
+					var lx: int = int(floor(u_rand(gx0 + i * 7, gy0, world_seed, SALT_DECAL_POS) * float(b_w)))
+					var ly: int = int(floor(u_rand(gx0, gy0 + i * 11, world_seed, SALT_DECAL_POS) * float(b_h)))
+					var d_sid: int = 43 + int(floor(u_rand(gx0 + i * 13, gy0 + i * 17, world_seed, SALT_DECAL_COUNT) * 15.0))
+					var placed_decal := false
+					for _attempt in b_w:
+						if not occupied_local.has(Vector2i(lx, ly)):
+							occupied_local[Vector2i(lx, ly)] = true
+							placed_decal = true
+							break
+						lx = (lx + 1) % b_w
+					if placed_decal:
+						var dc: int = b_col0 + lx
+						var dr: int = b_row0 + ly
+						var d_idx: int = dr * WORK_SIZE + dc
+						var d_mask: int = STAMP_FLAG_SOLID if (d_sid == 47 or d_sid == 57) else 0
+						grid_class[d_idx] = TILE_STAMP
+						grid_variant[d_idx] = d_sid
+						grid_mask[d_idx] = d_mask
+						if dc >= WORK_CELL_START and dc < WORK_CELL_END and dr >= WORK_CELL_START and dr < WORK_CELL_END:
+							stamps_list.append({
+								"stamp_id": d_sid,
+								"anchor_gx": cx * 32 + (dc - 4),
+								"anchor_gy": cy * 32 + (dr - 4),
+								"w": 1,
+								"h": 1
+							})
 
 	# Only standing and ruined buildings keep their template for door paths and POI signs (§11.2 step 5)
 	placed_buildings = surviving_buildings
@@ -1469,8 +1758,8 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						var idx := br * WORK_SIZE + bc
 						var current_class: int = grid_class[idx]
 
-						# A path tile never overwrites ROOF, WALL, DOOR, or RUBBLE; it simply skips those tiles.
-						if current_class in [TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_RUBBLE]:
+						# A path tile never overwrites ROOF, WALL, DOOR, RUBBLE, or STAMP; it simply skips those tiles.
+						if current_class in [TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_RUBBLE, TILE_STAMP]:
 							continue
 
 						if current_class == TILE_WATER or current_class == TILE_BRIDGE:
@@ -1499,7 +1788,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				if cur_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA]:
 					reached_connector = true
 					break
-				if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_RUBBLE, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
+				if cur_cls in [TILE_WATER, TILE_RAIL, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_RUBBLE, TILE_STAMP, TILE_FENCE, TILE_BRIDGE, TILE_VOID]:
 					break
 				walk_path.append(Vector2i(wc, wr))
 			if reached_connector:
@@ -1722,7 +2011,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 							var nr: int = r + dr
 							if nc >= 0 and nc < WORK_SIZE and nr >= 0 and nr < WORK_SIZE:
 								var n_cls: int = grid_class[nr * WORK_SIZE + nc]
-								if n_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA, TILE_DOOR, TILE_WALL, TILE_ROOF, TILE_RUBBLE, TILE_FENCE, TILE_SIGN]:
+								if n_cls in [TILE_PATH, TILE_ROAD, TILE_PLAZA, TILE_DOOR, TILE_WALL, TILE_ROOF, TILE_RUBBLE, TILE_STAMP, TILE_FENCE, TILE_SIGN]:
 									blocked = true
 									break
 						if blocked:
@@ -1973,14 +2262,16 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < road_v1_thresh else 0
 				TILE_TREE:
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_TREE_VARIANT) < 0.30 else 0
-				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE:
+				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE, TILE_STAMP:
 					variant = grid_variant[idx]
 				_:
 					variant = 0
 
 			# Mask byte
 			var mask := 0
-			if cls == TILE_ROOF:
+			if cls == TILE_STAMP or cls == TILE_DOOR:
+				mask = grid_mask[idx]
+			elif cls == TILE_ROOF:
 				var my_color: int = 32 if (grid_variant[idx] & 32) != 0 else (grid_variant[idx] % 8)
 				if grid_class[(r - 1) * WORK_SIZE + c] == TILE_ROOF:
 					var n_col: int = 32 if (grid_variant[(r - 1) * WORK_SIZE + c] & 32) != 0 else (grid_variant[(r - 1) * WORK_SIZE + c] % 8)
@@ -2041,9 +2332,20 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			output[out_idx + 2] = mask
 			out_idx += 3
 
+	stamps_list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var ay: int = int(a["anchor_gy"]) + int(a["h"])
+		var by: int = int(b["anchor_gy"]) + int(b["h"])
+		if ay != by:
+			return ay < by
+		if int(a["anchor_gx"]) != int(b["anchor_gx"]):
+			return int(a["anchor_gx"]) < int(b["anchor_gx"])
+		return int(a["stamp_id"]) < int(b["stamp_id"])
+	)
+
 	return {
 		"tiles": output,
 		"signs": PackedStringArray(signs_list),
+		"stamps": stamps_list,
 		"stats": {
 			"building_candidates": total_building_candidates,
 			"buildings_placed": buildings_placed_count,

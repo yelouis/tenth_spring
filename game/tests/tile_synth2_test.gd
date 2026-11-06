@@ -11,8 +11,8 @@ const Grid := preload("res://world/grid.gd")
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
-# Final Golden hash (§8 a, §10.7) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "69c9934357cca8a202b1a13f9a63ea7bc39e078401fc28468d28ce55d3a4bbb8"
+# Final Golden hash (§8 a, §10.7, §14.5.3) — proven identical on Linux and macOS CI
+const GOLDEN_HASH: String = "a767cfeac9b9b113ee13602c432b78eb80e24659b193a184f243905041c06b25"
 
 func run_test() -> bool:
 	_cleanup()
@@ -337,7 +337,7 @@ func run_test() -> bool:
 	for r in range(8, 15):
 		for c in range(2, 11):
 			var cls: int = tiles_4_4[(r * 32 + c) * 3]
-			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_RUBBLE:
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_RUBBLE or cls == TileSynth2.TILE_STAMP:
 				fallback_building_tiles += 1
 	if fallback_building_tiles == 0 or int(synth_4_4.get("stats", {}).get("fallback_placed", 0)) < 1:
 		push_error("(i) Residential polygon with no footprints produced 0 fallback houses in cell (4, 4)")
@@ -408,7 +408,7 @@ func run_test() -> bool:
 		for c in range(19, 29):
 			var idx: int = (r * 32 + c) * 3
 			var cls: int = tiles_4_4[idx]
-			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_RUBBLE:
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_DOOR or cls == TileSynth2.TILE_RUBBLE or cls == TileSynth2.TILE_STAMP:
 				shop_roof_tiles += 1
 			elif cls == TileSynth2.TILE_PLAZA:
 				parking_plaza_tiles += 1
@@ -798,10 +798,11 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
-	# (q)-(t) Ruin Pass, Fixed Fates,RUBBLE, Bit 16 & Determinism (§11.2, §11.7)
+	# (q)-(t) Ruin Pass, Fixed Fates, RUBBLE, Stamps & Determinism (§11.2, §14.1, §14.5.2)
 	# -------------------------------------------------------------
 	# (r) Falsifying: verify that in a cell with multiple houses in the far band,
-	# at least one tile is RUBBLE (class 20) and at least one ROOF/WALL/DOOR tile has variant bit 16.
+	# at least one tile is RUBBLE (class 20, side ring), ruined/gone houses emit class 21 (TILE_STAMP)
+	# and entries in res["stamps"], and NO tile carries legacy ROOF/WALL variant bit 16.
 	var r_area := _build_empty_area()
 	var r_polys: Array = []
 	for h_i in 6:
@@ -817,16 +818,22 @@ func run_test() -> bool:
 	var r_res := TileSynth2.synthesize_cell(4, 4, r_area, 0)
 	var r_tiles: PackedByteArray = r_res["tiles"]
 	var r_rubble_count := 0
-	var r_bit16_count := 0
+	var r_stamp_tile_count := 0
+	var r_legacy_roof_wall_bit16 := 0
 	for i in range(0, r_tiles.size(), 3):
 		var cls: int = r_tiles[i]
 		var v: int = r_tiles[i + 1]
 		if cls == 20: # TILE_RUBBLE
 			r_rubble_count += 1
-		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 16) != 0:
-			r_bit16_count += 1
-	if r_rubble_count == 0 or r_bit16_count == 0:
-		push_error("(r) [falsifier] Expected RUBBLE tiles and bit-16 building tiles after ruin pass, got rubble=%d bit16=%d" % [r_rubble_count, r_bit16_count])
+		elif cls == 21: # TILE_STAMP
+			r_stamp_tile_count += 1
+		if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL) and (v & 16) != 0:
+			r_legacy_roof_wall_bit16 += 1
+	var r_stamps: Array = r_res.get("stamps", [])
+	if r_rubble_count == 0 or r_stamp_tile_count == 0 or r_stamps.is_empty() or r_legacy_roof_wall_bit16 != 0:
+		push_error("(r) [falsifier] Expected RUBBLE ring tiles, TILE_STAMP (21) tiles, non-empty stamps list, and 0 legacy ROOF/WALL bit-16 tiles; got rubble=%d stamp_tiles=%d stamps=%d legacy_bit16=%d" % [
+			r_rubble_count, r_stamp_tile_count, r_stamps.size(), r_legacy_roof_wall_bit16
+		])
 		store.close()
 		_cleanup()
 		return false
@@ -953,6 +960,161 @@ func run_test() -> bool:
 		store.close()
 		_cleanup()
 		return false
+
+	# -------------------------------------------------------------
+	# (v) Item 33 (§14.1, §14.2, §14.4, §14.5.2): Ruined house sprites, door column reuse,
+	#     State C vs decals (independent SALT_DECAL_DOORSTEP = 19), walkability, and ruined_block non-stacking.
+	#     FALSIFYING: fails on pre-Item 33 code.
+	# -------------------------------------------------------------
+	var ts_inst := TileSynth2.new()
+	if not ts_inst.has_method("is_walkable") or not ts_inst.has_method("is_tile_walkable_in_buffer") or not ts_inst.has_method("ruined_block_src_tile"):
+		push_error("(v) [falsifier] TileSynth2 is missing is_walkable / is_tile_walkable_in_buffer / ruined_block_src_tile")
+		store.close()
+		_cleanup()
+		return false
+
+	# 1. Ruined house_s (4x4, subkind "ruins"), ruined house_m (5x4, subkind "ruins"), and ruined block_l (10x9, subkind "hospital")
+	var v_area := _build_empty_area()
+	# house_s at store units (2..3, 12..13) -> 16x16m (256 m^2 < 500) -> house_s (4x4)
+	var v_hs_ring := PackedVector2Array([
+		Vector2(2.0, 12.0), Vector2(3.0, 12.0), Vector2(3.0, 13.0), Vector2(2.0, 13.0)
+	])
+	# house_m at store units (2..4, 2..3.5) -> 32x24m (768 m^2 in 500..1500) -> house_m (5x4)
+	var v_hm_ring := PackedVector2Array([
+		Vector2(2.0, 2.0), Vector2(4.0, 2.0), Vector2(4.0, 3.5), Vector2(2.0, 3.5)
+	])
+	# block_l at store units (6..11, 5..9.5) -> w_t = 10, h_t = 9 -> block_l (10x9)
+	var v_bl_ring := PackedVector2Array([
+		Vector2(6.0, 5.0), Vector2(11.0, 5.0), Vector2(11.0, 9.5), Vector2(6.0, 9.5)
+	])
+	v_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "ruins", "geom_rings": [v_hs_ring], "name": ""},
+		{"kind": "building", "subkind": "ruins", "geom_rings": [v_hm_ring], "name": ""},
+		{"kind": "building", "subkind": "hospital", "geom_rings": [v_bl_ring], "name": "Ruined Wing"}
+	]
+	v_area["waypost_wm"] = Vector2(float(4 * 256) + 5000.0, float(4 * 256)) # far band
+	var v_res := TileSynth2.synthesize_cell(4, 4, v_area, 0)
+	var v_tiles: PackedByteArray = v_res["tiles"]
+	var v_stamps: Array = v_res.get("stamps", [])
+	if v_stamps.size() != 3:
+		push_error("(v.1) [falsifier] Expected 3 stamp entries (ruined house_s + ruined house_m + ruined 10x9 block_l), got %d: %s" % [v_stamps.size(), str(v_stamps)])
+		store.close()
+		_cleanup()
+		return false
+
+	var found_hs_stamp := false
+	var found_hm_stamp := false
+	var found_bl_stamp := false
+	for st in v_stamps:
+		var sid: int = int(st.get("stamp_id", -1))
+		var sw: int = int(st.get("w", 0))
+		var sh: int = int(st.get("h", 0))
+		var agx: int = int(st.get("anchor_gx", 0))
+		var agy: int = int(st.get("anchor_gy", 0))
+		var lx0: int = agx - 4 * 32
+		var ly0: int = agy - 4 * 32
+		if sid >= 15 and sid <= 30 and sw == 4 and sh == 4:
+			found_hs_stamp = true
+			# Check SALT_DOOR_ROOF = 5 reuse: gx0 = agx, gy0 = 4 * 32 + (31 - ly0)
+			var hs_gx0: int = agx
+			var hs_gy0: int = 4 * 32 + (31 - ly0)
+			var expected_d_col: int = 1 if TileSynth2.u_rand(hs_gx0, hs_gy0, 0, TileSynth2.SALT_DOOR_ROOF) < 0.5 else 2
+			var stamp_is_door2: bool = (sid >= 19 and sid <= 22) or (sid >= 27 and sid <= 30)
+			if (expected_d_col == 2) != stamp_is_door2:
+				push_error("(v.1) Ruined house_s stamp_id %d did not reuse SALT_DOOR_ROOF door_col=%d" % [sid, expected_d_col])
+				store.close()
+				_cleanup()
+				return false
+			# Verify door tile is walkable TILE_DOOR (14, mask=sid) and other 15 tiles are solid TILE_STAMP (21, variant=sid, mask=1)
+			for ty in 4:
+				for tx in 4:
+					var t_idx: int = ((ly0 + ty) * 32 + (lx0 + tx)) * 3
+					var t_cls: int = v_tiles[t_idx]
+					var t_var: int = v_tiles[t_idx + 1]
+					var t_msk: int = v_tiles[t_idx + 2]
+					if tx == expected_d_col and ty == 3:
+						if t_cls != TileSynth2.TILE_DOOR or t_msk != sid or not bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
+							push_error("(v.1) Ruined house_s door tile mismatch at (%d,%d): cls=%d var=%d mask=%d" % [tx, ty, t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+					else:
+						if t_cls != 21 or t_var != sid or t_msk != 1 or bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
+							push_error("(v.1) Ruined house_s body tile mismatch at (%d,%d): cls=%d var=%d mask=%d" % [tx, ty, t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+		elif sid >= 31 and sid <= 38 and sw == 5 and sh == 4:
+			found_hm_stamp = true
+			for ty in 4:
+				for tx in 5:
+					var t_idx: int = ((ly0 + ty) * 32 + (lx0 + tx)) * 3
+					var t_cls: int = v_tiles[t_idx]
+					var t_var: int = v_tiles[t_idx + 1]
+					var t_msk: int = v_tiles[t_idx + 2]
+					if tx == 2 and ty == 3:
+						if t_cls != TileSynth2.TILE_DOOR or t_msk != sid or not bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
+							push_error("(v.1) Ruined house_m door tile mismatch at (2,3): cls=%d var=%d mask=%d" % [t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+					else:
+						if t_cls != 21 or t_var != sid or t_msk != 1 or bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
+							push_error("(v.1) Ruined house_m body tile mismatch at (%d,%d): cls=%d var=%d mask=%d" % [tx, ty, t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+		elif sid == 42 and sw == 10 and sh == 9:
+			found_bl_stamp = true
+			for ty in 9:
+				for tx in 10:
+					var t_idx: int = ((ly0 + ty) * 32 + (lx0 + tx)) * 3
+					var t_cls: int = v_tiles[t_idx]
+					var t_var: int = v_tiles[t_idx + 1]
+					var t_msk: int = v_tiles[t_idx + 2]
+					if tx == 2 and ty == 8:
+						if t_cls != TileSynth2.TILE_DOOR or t_msk != 42 or not bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
+							push_error("(v.1) Ruined block_l door tile mismatch at (2,8): cls=%d var=%d mask=%d" % [t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+					else:
+						if t_cls != 21 or t_var != 42 or t_msk != 1 or bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
+							push_error("(v.1) Ruined block_l body tile mismatch at (%d,%d): cls=%d var=%d mask=%d" % [tx, ty, t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+
+	if not found_hs_stamp or not found_hm_stamp or not found_bl_stamp:
+		push_error("(v.1) Missing ruined house_s (%s), house_m (%s), or 10x9 block_l (%s) in stamps: %s" % [str(found_hs_stamp), str(found_hm_stamp), str(found_bl_stamp), str(v_stamps)])
+		store.close()
+		_cleanup()
+		return false
+
+	# 2. Verify ruined_block_src_tile(x, y, 10, 9) non-stacking vertical mapping and east-edge horizontal mapping
+	var expected_ty_9 := [0, 1, 1, 1, 2, 3, 4, 5, 6]
+	var expected_tx_10 := [0, 1, 2, 3, 4, 3, 4, 5, 6, 7]
+	for y in 9:
+		for x in 10:
+			var src_t: Vector2i = ts_inst.call("ruined_block_src_tile", x, y, 10, 9)
+			if src_t.x != expected_tx_10[x] or src_t.y != expected_ty_9[y]:
+				push_error("(v.2) ruined_block_src_tile(%d, %d, 10, 9) expected (%d, %d), got %s" % [x, y, expected_tx_10[x], expected_ty_9[y], str(src_t)])
+				store.close()
+				_cleanup()
+				return false
+
+	# 3. Verify walkability of decals (47 decal_wall_stump & 57 decal_boulder are solid; others 43..58 are walkable)
+	if bool(ts_inst.call("is_walkable", 21, 47, 1)) != false or bool(ts_inst.call("is_walkable", 21, 57, 1)) != false:
+		push_error("(v.3) Solid decals (47, 57) must return is_walkable == false")
+		store.close()
+		_cleanup()
+		return false
+	if bool(ts_inst.call("is_walkable", 21, 43, 0)) != true or bool(ts_inst.call("is_walkable", 21, 58, 0)) != true:
+		push_error("(v.3) Walkable decals (43, 58) must return is_walkable == true")
+		store.close()
+		_cleanup()
+		return false
+
 
 
 	# (a) Final Golden Hash Verification over cells (4,4), (4,5), (5,4), (5,5)

@@ -583,8 +583,58 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# 12. Item 33 (§14.2.5): StampBaseLayer (z=1), StampOverhangLayer (z=10), lawn under TILE_STAMP / stamp TILE_DOOR,
+	#     and Sprite2D stamp rendering + cleanup.
+	var stamp_base: Node2D = map_view.get_node_or_null("StampBaseLayer")
+	var stamp_overhang: Node2D = map_view.get_node_or_null("StampOverhangLayer")
+	var s_fog_layer: TileMapLayer = map_view.get_node_or_null("FogLayer")
+	var s_overview_layer: Node2D = map_view.get_node_or_null("OverviewLayer")
+	if stamp_base == null or stamp_overhang == null or stamp_base.z_index != 1 or stamp_overhang.z_index != 10:
+		push_error("(33) Stamp layers missing or wrong z_index: base=%s overhang=%s" % [str(stamp_base), str(stamp_overhang)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	if s_fog_layer == null or s_fog_layer.z_index != 20 or s_overview_layer == null or s_overview_layer.z_index != 30:
+		push_error("(33) FogLayer/OverviewLayer z_index mismatch: fog=%s overview=%s" % [str(s_fog_layer.z_index if s_fog_layer else -1), str(s_overview_layer.z_index if s_overview_layer else -1)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var grass_0_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
+	var stamp_15_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_STAMP, 15, TileSynth2.STAMP_FLAG_SOLID)
+	var stamp_door_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_DOOR, 16, 15)
+	if stamp_15_coords != grass_0_coords or stamp_door_coords != grass_0_coords:
+		push_error("(33) Expected TILE_STAMP and stamp TILE_DOOR (mask>0) to map to TILE_GRASS (0,0) %s, got stamp=%s door=%s" % [str(grass_0_coords), str(stamp_15_coords), str(stamp_door_coords)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var stamp_test_tiles := PackedByteArray()
+	stamp_test_tiles.resize(32 * 32 * 3)
+	stamp_test_tiles.fill(0)
+	DB.upsert_map_cell(12, 12, 1, 0)
+	map_view.get_lru_cache().put(Vector2i(12, 12), {
+		"buf": stamp_test_tiles,
+		"signs": [],
+		"stamps": [
+			{"stamp_id": 15, "anchor_gx": 12 * 32 + 4, "anchor_gy": 12 * 32 + 6, "w": 4, "h": 4, "door_gx": 12 * 32 + 5, "door_gy": 12 * 32 + 9},
+			{"stamp_id": 42, "anchor_gx": 12 * 32 + 12, "anchor_gy": 12 * 32 + 10, "w": 10, "h": 9, "door_gx": 12 * 32 + 17, "door_gy": 12 * 32 + 18}
+		],
+		"reveal_state": 1
+	})
+	map_view._render_cell(12, 12)
+	if not map_view._cell_stamp_sprites.has(Vector2i(12, 12)):
+		push_error("(33) _render_cell did not populate _cell_stamp_sprites for cell (12, 12)")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var cell_12_nodes: Array = map_view._cell_stamp_sprites[Vector2i(12, 12)]
+	if cell_12_nodes.size() != 2:
+		push_error("(33) Expected 2 Sprite2D nodes for house_s (1) + 10x9 ruined_block (1), got %d" % cell_12_nodes.size())
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._clear_cell_stamps(Vector2i(12, 12))
+	if map_view._cell_stamp_sprites.has(Vector2i(12, 12)):
+		push_error("(33) _clear_cell_stamps did not remove _cell_stamp_sprites for cell (12, 12)")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
-	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout verified)")
+	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")
 	return true
 
 
