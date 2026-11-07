@@ -1115,6 +1115,177 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	# -------------------------------------------------------------
+	# (w) Item 33b (F70 a, §14.1.3, §14.1.4): Gone-building path — State C shells (39..41),
+	#     decal lots (43..58), and independent SALT_DECAL_DOORSTEP = 19 across >= 64 footprints.
+	#     FALSIFYING: fails if doorstep uses salt 18 instead of 19 or if State C is switched off.
+	# -------------------------------------------------------------
+	var w_cells := [11, 13, 15, 20, 23, 30, 32, 43]
+	var w_cy := 10
+	var w_total_footprints := 0
+	var w_state_c_lots := 0
+	var w_decal_lots := 0
+	var w_doorstep_only_lots := 0
+	var w_multi_no_doorstep_lots := 0
+
+	for w_cx in w_cells:
+		var w_area := _build_empty_area()
+		var w_polys: Array = []
+		var w_lot_specs: Array = []
+		for grid_r in 3:
+			for grid_c in 3:
+				var col0_t: int = 6 + grid_c * 9
+				var row0_t: int = 6 + grid_r * 9
+				var is_hm: bool = ((grid_r + grid_c + w_cx) % 2 == 1)
+				var bw: int = 5 if is_hm else 4
+				var bh: int = 4
+				var cc_f: float = float(col0_t) + float(bw) / 2.0
+				var rc_f: float = float(row0_t) + float(bh) / 2.0
+				var bx_c: float = (cc_f - 4.0) / 2.0
+				var by_c: float = (36.0 - rc_f) / 2.0
+				var half_x: float = 1.0 if is_hm else 0.5
+				var half_y: float = 0.75 if is_hm else 0.5
+				var ring := PackedVector2Array([
+					Vector2(bx_c - half_x, by_c - half_y),
+					Vector2(bx_c + half_x, by_c - half_y),
+					Vector2(bx_c + half_x, by_c + half_y),
+					Vector2(bx_c - half_x, by_c + half_y)
+				])
+				w_polys.append({"kind": "building", "subkind": "house", "geom_rings": [ring], "name": ""})
+				w_lot_specs.append({
+					"col0": col0_t,
+					"row0": row0_t,
+					"w": bw,
+					"h": bh,
+					"is_hm": is_hm
+				})
+				w_total_footprints += 1
+		w_area[Vector2i.ZERO]["polys"] = w_polys
+		w_area["waypost_wm"] = Vector2(float(w_cx * 256) + 5000.0, float(w_cy * 256)) # far band (>= 3 km)
+		var w_res := TileSynth2.synthesize_cell(w_cx, w_cy, w_area, 0)
+		var w_tiles: PackedByteArray = w_res["tiles"]
+		var w_stamps: Array = w_res.get("stamps", [])
+
+		for spec in w_lot_specs:
+			var col0: int = spec["col0"]
+			var row0: int = spec["row0"]
+			var bw: int = spec["w"]
+			var bh: int = spec["h"]
+			var is_hm: bool = spec["is_hm"]
+			var lx0: int = col0 - 4
+			var ly0: int = row0 - 4
+			var gx0: int = w_cx * 32 + lx0
+			var gy0: int = w_cy * 32 + (35 - row0)
+			var gy0_top: int = w_cy * 32 + ly0
+			var d_col: int = 2 if is_hm else (1 if TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_DOOR_ROOF) < 0.5 else 2)
+
+			var f_val: float = TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_BUILDING_FATE)
+			if f_val < 0.55:
+				continue # standing or ruined in far band
+
+			var is_sc: bool = TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_GONE_STATE) < 0.10
+			if is_sc:
+				w_state_c_lots += 1
+				var expected_sc_id: int = 41 if is_hm else (40 if d_col == 2 else 39)
+				for ty in bh:
+					for tx in bw:
+						var t_idx: int = ((ly0 + ty) * 32 + (lx0 + tx)) * 3
+						var t_cls: int = w_tiles[t_idx]
+						var t_var: int = w_tiles[t_idx + 1]
+						var t_msk: int = w_tiles[t_idx + 2]
+						if t_cls == TileSynth2.TILE_DOOR:
+							push_error("(w) State C lot at (%d,%d) contained unexpected TILE_DOOR" % [gx0, gy0])
+							store.close()
+							_cleanup()
+							return false
+						if t_cls != 21 or t_var != expected_sc_id or t_msk != 1:
+							push_error("(w) State C lot tile (%d,%d) expected (21,%d,1), got (%d,%d,%d)" % [tx, ty, expected_sc_id, t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+				var matched_sc_stamps := 0
+				for st in w_stamps:
+					if int(st.get("stamp_id", -1)) == expected_sc_id and int(st.get("anchor_gx", -999)) == gx0 and int(st.get("anchor_gy", -999)) == gy0_top and int(st.get("w", 0)) == bw and int(st.get("h", 0)) == bh:
+						matched_sc_stamps += 1
+				if matched_sc_stamps != 1:
+					push_error("(w) State C lot at (%d,%d) expected 1 stamp entry (%d, %d, %d, %d, %d), got %d" % [gx0, gy0, expected_sc_id, gx0, gy0_top, bw, bh, matched_sc_stamps])
+					store.close()
+					_cleanup()
+					return false
+			else:
+				w_decal_lots += 1
+				var num_decals: int = 1 + int(floor(TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_DECAL_COUNT) * 3.0))
+				var has_doorstep: bool = TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_DECAL_DOORSTEP) < 0.50
+				if has_doorstep and num_decals == 1:
+					w_doorstep_only_lots += 1
+				if not has_doorstep and num_decals >= 2:
+					w_multi_no_doorstep_lots += 1
+
+				# Compute expected decals after collision skips (§14.1.4)
+				var expected_occupied: Dictionary = {}
+				if has_doorstep:
+					expected_occupied[Vector2i(d_col, bh - 1)] = 58
+				var start_i: int = 1 if has_doorstep else 0
+				for i in range(start_i, num_decals):
+					var dlx: int = int(floor(TileSynth2.u_rand(gx0 + i * 7, gy0, 0, TileSynth2.SALT_DECAL_POS) * float(bw)))
+					var dly: int = int(floor(TileSynth2.u_rand(gx0, gy0 + i * 11, 0, TileSynth2.SALT_DECAL_POS) * float(bh)))
+					var d_sid: int = 43 + int(floor(TileSynth2.u_rand(gx0 + i * 13, gy0 + i * 17, 0, TileSynth2.SALT_DECAL_COUNT) * 15.0))
+					for _att in bw:
+						if not expected_occupied.has(Vector2i(dlx, dly)):
+							expected_occupied[Vector2i(dlx, dly)] = d_sid
+							break
+						dlx = (dlx + 1) % bw
+
+				var actual_decal_tiles := 0
+				for ty in bh:
+					for tx in bw:
+						var t_idx: int = ((ly0 + ty) * 32 + (lx0 + tx)) * 3
+						var t_cls: int = w_tiles[t_idx]
+						var t_var: int = w_tiles[t_idx + 1]
+						var t_msk: int = w_tiles[t_idx + 2]
+						if t_cls == TileSynth2.TILE_DOOR:
+							push_error("(w) Decal lot at (%d,%d) contained unexpected TILE_DOOR" % [gx0, gy0])
+							store.close()
+							_cleanup()
+							return false
+						var is_ds_tile: bool = (tx == d_col and ty == bh - 1 and t_cls == 21 and t_var == 58 and t_msk == 0)
+						if tx == d_col and ty == bh - 1 and has_doorstep != is_ds_tile:
+							push_error("(w) Decal lot at (%d,%d) doorstep mismatch at (%d,%d): expected has_doorstep=%s, got (%d,%d,%d)" % [gx0, gy0, tx, ty, str(has_doorstep), t_cls, t_var, t_msk])
+							store.close()
+							_cleanup()
+							return false
+						if t_cls == 21:
+							actual_decal_tiles += 1
+							if not (tx == d_col and ty == bh - 1 and has_doorstep):
+								var exp_msk: int = 1 if (t_var == 47 or t_var == 57) else 0
+								if t_var < 43 or t_var > 57 or t_msk != exp_msk:
+									push_error("(w) Decal tile at (%d,%d) invalid variant/mask: (%d,%d,%d)" % [tx, ty, t_cls, t_var, t_msk])
+									store.close()
+									_cleanup()
+									return false
+						else:
+							var t_gx: int = w_cx * 32 + (lx0 + tx)
+							var t_gy: int = w_cy * 32 + (31 - (ly0 + ty))
+							var exp_cls: int = TileSynth2.TILE_TALL_GRASS if TileSynth2.u_rand(t_gx, t_gy, 0, TileSynth2.SALT_YARD_LOT_GRASS) < 0.60 else TileSynth2.TILE_GRASS
+							if t_cls != exp_cls:
+								push_error("(w) Decal lot ground tile at (%d,%d) expected cls=%d, got %d" % [tx, ty, exp_cls, t_cls])
+								store.close()
+								_cleanup()
+								return false
+				if actual_decal_tiles != expected_occupied.size():
+					push_error("(w) Decal lot at (%d,%d) expected %d decal tiles, got %d" % [gx0, gy0, expected_occupied.size(), actual_decal_tiles])
+					store.close()
+					_cleanup()
+					return false
+
+	if w_total_footprints < 64 or w_state_c_lots < 3 or w_decal_lots < 3 or w_doorstep_only_lots < 1 or w_multi_no_doorstep_lots < 1:
+		push_error("(w) Gone-path fixture coverage insufficient: footprints=%d state_c=%d decal_lots=%d doorstep_only=%d multi_no_doorstep=%d" % [
+			w_total_footprints, w_state_c_lots, w_decal_lots, w_doorstep_only_lots, w_multi_no_doorstep_lots
+		])
+		store.close()
+		_cleanup()
+		return false
+
 
 
 	# (a) Final Golden Hash Verification over cells (4,4), (4,5), (5,4), (5,5)
