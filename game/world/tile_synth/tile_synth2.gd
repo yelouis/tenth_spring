@@ -111,7 +111,7 @@ const STAMP_TABLE: Dictionary = {
 	39: {"id": "house_s_c", "path": "ruins/house_s_c.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
 	40: {"id": "house_s_c_door2", "path": "ruins/house_s_c_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
 	41: {"id": "house_m_c", "path": "ruins/house_m_c.png", "w": 5, "h": 4, "base_rows": 4, "door": null},
-	42: {"id": "ruined_block", "path": "ruins/ruined_block.png", "w": 8, "h": 7, "base_rows": 7, "door": [2, 6], "tiled": true},
+	42: {"id": "ruined_block", "path": "ruins/ruined_block.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4], "tiled": true},
 	43: {"id": "decal_rubble", "path": "ruins/decal_rubble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
 	44: {"id": "decal_rubble_weeds", "path": "ruins/decal_rubble_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
 	45: {"id": "decal_stones", "path": "ruins/decal_stones.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
@@ -1497,35 +1497,91 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				roof_col = 3
 
 			if b_t == "block_l":
-				# Ruined block_l -> ruined_block (stamp_id = 42, door at [2, b_h - 1])
+				# Ruined block_l -> Option B stand-in (Decision 52, F69 a-b, §14.1.5):
+				# Standing section W' x H' = min(W, 8) x min(H, 7) at the footprint's south-west corner;
+				# doors at the drawing's doorway columns 3 and 4 ([3, 4] for W' >= 7, [3] for W' == 6);
+				# rest of the footprint is a row-major rubble lot of L tiles with max(2, floor(L / 8)) decals.
+				var sec_w: int = mini(b_w, 8)
+				var sec_h: int = mini(b_h, 7)
+				var sec_row0: int = b_row0 + (b_h - sec_h)
+				var new_door_cols: Array[int] = [3]
+				if sec_w >= 7:
+					new_door_cols.append(4)
 				for old_d_col in b["door_cols"]:
-					if old_d_col != 2:
-						all_doors.erase(Vector2i(b_col0 + old_d_col, b_row0 + b_h - 1))
-				var bl_door_pos := Vector2i(b_col0 + 2, b_row0 + b_h - 1)
-				if not all_doors.has(bl_door_pos):
-					all_doors.append(bl_door_pos)
-				b["door_cols"] = [2]
+					all_doors.erase(Vector2i(b_col0 + old_d_col, b_row0 + b_h - 1))
+				for nd_col in new_door_cols:
+					var bl_door_pos := Vector2i(b_col0 + nd_col, b_row0 + b_h - 1)
+					if not all_doors.has(bl_door_pos):
+						all_doors.append(bl_door_pos)
+				b["door_cols"] = new_door_cols
+
+				var lot_tiles: Array[Vector2i] = []
 				for tr in b_h:
 					var r: int = b_row0 + tr
 					for tc in b_w:
 						var c: int = b_col0 + tc
 						var idx: int = r * WORK_SIZE + c
-						if tc == 2 and tr == b_h - 1:
-							grid_class[idx] = TILE_DOOR
-							grid_variant[idx] = 16 + roof_col
-							grid_mask[idx] = 42
+						if tc < sec_w and tr >= b_h - sec_h:
+							if tr == b_h - 1 and tc in new_door_cols:
+								grid_class[idx] = TILE_DOOR
+								grid_variant[idx] = 16 + roof_col
+								grid_mask[idx] = 42
+							else:
+								grid_class[idx] = TILE_STAMP
+								grid_variant[idx] = 42
+								grid_mask[idx] = STAMP_FLAG_SOLID
 						else:
-							grid_class[idx] = TILE_STAMP
-							grid_variant[idx] = 42
-							grid_mask[idx] = STAMP_FLAG_SOLID
-				if b_col0 + b_w > WORK_CELL_START and b_col0 < WORK_CELL_END and b_row0 + b_h > WORK_CELL_START and b_row0 < WORK_CELL_END:
+							var gx: int = cx * 32 + (c - 4)
+							var gy: int = cy * 32 + (35 - r)
+							if u_rand(gx, gy, world_seed, SALT_YARD_LOT_GRASS) < 0.60:
+								grid_class[idx] = TILE_TALL_GRASS
+								grid_variant[idx] = 0
+							else:
+								grid_class[idx] = TILE_GRASS
+								grid_variant[idx] = 0
+							grid_mask[idx] = 0
+							lot_tiles.append(Vector2i(tc, tr))
+
+				if b_col0 + sec_w > WORK_CELL_START and b_col0 < WORK_CELL_END and sec_row0 + sec_h > WORK_CELL_START and sec_row0 < WORK_CELL_END:
 					stamps_list.append({
 						"stamp_id": 42,
 						"anchor_gx": cx * 32 + (b_col0 - 4),
-						"anchor_gy": cy * 32 + (b_row0 - 4),
-						"w": b_w,
-						"h": b_h
+						"anchor_gy": cy * 32 + (sec_row0 - 4),
+						"w": sec_w,
+						"h": sec_h
 					})
+
+				var lot_len: int = lot_tiles.size()
+				if lot_len > 0:
+					var lot_decal_count: int = mini(lot_len, maxi(2, int(floor(float(lot_len) / 8.0))))
+					var taken_lot_k: Dictionary = {}
+					for i in lot_decal_count:
+						var k: int = int(floor(u_rand(gx0 + i * 7, gy0 + i * 11, world_seed, SALT_DECAL_POS) * float(lot_len)))
+						var placed_k := -1
+						for _step in lot_len:
+							if not taken_lot_k.has(k):
+								taken_lot_k[k] = true
+								placed_k = k
+								break
+							k = (k + 1) % lot_len
+						if placed_k >= 0:
+							var lt: Vector2i = lot_tiles[placed_k]
+							var dc: int = b_col0 + lt.x
+							var dr: int = b_row0 + lt.y
+							var d_idx: int = dr * WORK_SIZE + dc
+							var d_sid: int = 43 + int(floor(u_rand(gx0 + i * 13, gy0 + i * 17, world_seed, SALT_DECAL_COUNT) * 15.0))
+							var d_mask: int = STAMP_FLAG_SOLID if (d_sid == 47 or d_sid == 57) else 0
+							grid_class[d_idx] = TILE_STAMP
+							grid_variant[d_idx] = d_sid
+							grid_mask[d_idx] = d_mask
+							if dc >= WORK_CELL_START and dc < WORK_CELL_END and dr >= WORK_CELL_START and dr < WORK_CELL_END:
+								stamps_list.append({
+									"stamp_id": d_sid,
+									"anchor_gx": cx * 32 + (dc - 4),
+									"anchor_gy": cy * 32 + (dr - 4),
+									"w": 1,
+									"h": 1
+								})
 			else:
 				var state_b_thresh := 0.75
 				match band:

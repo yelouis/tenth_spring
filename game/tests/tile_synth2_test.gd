@@ -12,7 +12,7 @@ const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
 # Final Golden hash (§8 a, §10.7, §14.5.3) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "a767cfeac9b9b113ee13602c432b78eb80e24659b193a184f243905041c06b25"
+const GOLDEN_HASH: String = "c626aaf164311a0fcfa9c3c0366844c75b5ce560de4eb62065bea43e92aa7b76"
 
 func run_test() -> bool:
 	_cleanup()
@@ -996,8 +996,8 @@ func run_test() -> bool:
 	var v_res := TileSynth2.synthesize_cell(4, 4, v_area, 0)
 	var v_tiles: PackedByteArray = v_res["tiles"]
 	var v_stamps: Array = v_res.get("stamps", [])
-	if v_stamps.size() != 3:
-		push_error("(v.1) [falsifier] Expected 3 stamp entries (ruined house_s + ruined house_m + ruined 10x9 block_l), got %d: %s" % [v_stamps.size(), str(v_stamps)])
+	if v_stamps.size() < 3:
+		push_error("(v.1) [falsifier] Expected >= 3 stamp entries (ruined house_s + ruined house_m + ruined block_l SW section + lot decals), got %d: %s" % [v_stamps.size(), str(v_stamps)])
 		store.close()
 		_cleanup()
 		return false
@@ -1064,17 +1064,17 @@ func run_test() -> bool:
 							store.close()
 							_cleanup()
 							return false
-		elif sid == 42 and sw == 10 and sh == 9:
+		elif sid == 42 and sw == 8 and sh == 7:
 			found_bl_stamp = true
-			for ty in 9:
-				for tx in 10:
+			for ty in 7:
+				for tx in 8:
 					var t_idx: int = ((ly0 + ty) * 32 + (lx0 + tx)) * 3
 					var t_cls: int = v_tiles[t_idx]
 					var t_var: int = v_tiles[t_idx + 1]
 					var t_msk: int = v_tiles[t_idx + 2]
-					if tx == 2 and ty == 8:
+					if (tx == 3 or tx == 4) and ty == 6:
 						if t_cls != TileSynth2.TILE_DOOR or t_msk != 42 or not bool(ts_inst.call("is_tile_walkable_in_buffer", v_tiles, lx0 + tx, ly0 + ty)):
-							push_error("(v.1) Ruined block_l door tile mismatch at (2,8): cls=%d var=%d mask=%d" % [t_cls, t_var, t_msk])
+							push_error("(v.1) Ruined block_l door tile mismatch at (%d,6): cls=%d var=%d mask=%d" % [tx, t_cls, t_var, t_msk])
 							store.close()
 							_cleanup()
 							return false
@@ -1282,6 +1282,107 @@ func run_test() -> bool:
 		push_error("(w) Gone-path fixture coverage insufficient: footprints=%d state_c=%d decal_lots=%d doorstep_only=%d multi_no_doorstep=%d" % [
 			w_total_footprints, w_state_c_lots, w_decal_lots, w_doorstep_only_lots, w_multi_no_doorstep_lots
 		])
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (x) Item 33c (Decision 52, F69 a-b, §14.1.5): Big ruined blocks — Option B ("one section stands,
+	#     the rest is rubble") and doors at the drawing's doorway columns 3 and 4.
+	#     FALSIFYING: on Item 33's code, a 16x14 ruined block_l has 223 STAMP 42 tiles and a door in col 2.
+	# -------------------------------------------------------------
+	var x_area := _build_empty_area()
+	# 1. 16x14 block_l at store units (2..10, 5..12) -> w_t=16, h_t=14 -> col0=8, row0=12 (lx0=4, ly0=8)
+	var x_ring_16_14 := PackedVector2Array([
+		Vector2(2.0, 5.0), Vector2(10.0, 5.0), Vector2(10.0, 12.0), Vector2(2.0, 12.0)
+	])
+	x_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "hospital", "geom_rings": [x_ring_16_14], "name": "Ruined Complex"}
+	]
+	x_area["waypost_wm"] = Vector2(float(4 * 256) + 5000.0, float(4 * 256))
+	var x_res := TileSynth2.synthesize_cell(4, 4, x_area, 0)
+	var x_tiles: PackedByteArray = x_res["tiles"]
+	var x_stamps: Array = x_res.get("stamps", [])
+
+	var x_lx0 := 4
+	var x_ly0 := 8
+	var x_stamp42_count := 0
+	var x_door_cols_found: Array[int] = []
+	var x_lot_decal_count := 0
+	for ty in 14:
+		for tx in 16:
+			var t_idx: int = ((x_ly0 + ty) * 32 + (x_lx0 + tx)) * 3
+			var t_cls: int = x_tiles[t_idx]
+			var t_var: int = x_tiles[t_idx + 1]
+			var t_msk: int = x_tiles[t_idx + 2]
+			var in_sw_sec: bool = (tx < 8 and ty >= 7)
+			if ty == 13 and t_cls == TileSynth2.TILE_DOOR and t_msk == 42:
+				x_door_cols_found.append(tx)
+			elif t_cls == 21 and t_var == 42 and t_msk == 1:
+				x_stamp42_count += 1
+			elif not in_sw_sec and t_cls == 21:
+				if t_var < 43 or t_var > 57:
+					push_error("(x) [falsifier] Ruined 16x14 block_l lot had unexpected decal variant %d at (%d,%d)" % [t_var, tx, ty])
+					store.close()
+					_cleanup()
+					return false
+				var exp_d_msk: int = 1 if (t_var == 47 or t_var == 57) else 0
+				if t_msk != exp_d_msk:
+					push_error("(x) [falsifier] Ruined 16x14 block_l decal %d had wrong mask %d at (%d,%d)" % [t_var, t_msk, tx, ty])
+					store.close()
+					_cleanup()
+					return false
+				x_lot_decal_count += 1
+
+	if x_stamp42_count != 54 or x_door_cols_found != [3, 4] or x_lot_decal_count != 21 or x_stamps.size() != 22:
+		push_error("(x) [falsifier] Ruined 16x14 block_l expected 54 STAMP-42 tiles, doors=[3, 4], 21 lot decals, and 22 stamps; got stamp42=%d doors=%s decals=%d stamps=%d" % [
+			x_stamp42_count, str(x_door_cols_found), x_lot_decal_count, x_stamps.size()
+		])
+		store.close()
+		_cleanup()
+		return false
+
+	var def_42: Dictionary = TileSynth2.get_stamp_def(42)
+	if def_42.get("door", []) != [3, 6] or def_42.get("door_cols", []) != [3, 4]:
+		push_error("(x) [falsifier] STAMP_TABLE[42] expected door=[3, 6] and door_cols=[3, 4], got %s" % str(def_42))
+		store.close()
+		_cleanup()
+		return false
+
+	# 2. A 6x5 ruined block_l keeps today's crop (W'=6, H'=5, L=0), with its one door in column 3
+	var x65_area := _build_empty_area()
+	# 3.0 x 2.5 store units -> 48x40 m = 1920 m^2; to force block_l (A >= 2000), use subkind "hospital" with 3.2 x 2.5 su = 2048 m^2 -> round(6.4)=6, round(5.0)=5
+	var x_ring_6_5 := PackedVector2Array([
+		Vector2(4.0, 6.0), Vector2(7.2, 6.0), Vector2(7.2, 8.5), Vector2(4.0, 8.5)
+	])
+	x65_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "hospital", "geom_rings": [x_ring_6_5], "name": "Small Clinic"}
+	]
+	x65_area["waypost_wm"] = Vector2(float(4 * 256) + 5000.0, float(4 * 256))
+	var x65_res := TileSynth2.synthesize_cell(4, 4, x65_area, 0)
+	var x65_tiles: PackedByteArray = x65_res["tiles"]
+	var x65_stamps: Array = x65_res.get("stamps", [])
+	if x65_stamps.size() != 1 or int(x65_stamps[0].get("w", 0)) != 6 or int(x65_stamps[0].get("h", 0)) != 5:
+		push_error("(x.2) Ruined 6x5 block_l expected 1 stamp of 6x5, got %s" % str(x65_stamps))
+		store.close()
+		_cleanup()
+		return false
+	var x65_lx0: int = int(x65_stamps[0]["anchor_gx"]) - 4 * 32
+	var x65_ly0: int = int(x65_stamps[0]["anchor_gy"]) - 4 * 32
+	var x65_doors: Array[int] = []
+	var x65_stamp42 := 0
+	for ty in 5:
+		for tx in 6:
+			var t_idx: int = ((x65_ly0 + ty) * 32 + (x65_lx0 + tx)) * 3
+			var t_cls: int = x65_tiles[t_idx]
+			var t_var: int = x65_tiles[t_idx + 1]
+			var t_msk: int = x65_tiles[t_idx + 2]
+			if ty == 4 and tx == 3 and t_cls == TileSynth2.TILE_DOOR and t_msk == 42:
+				x65_doors.append(tx)
+			elif t_cls == 21 and t_var == 42 and t_msk == 1:
+				x65_stamp42 += 1
+	if x65_stamp42 != 29 or x65_doors != [3]:
+		push_error("(x.2) Ruined 6x5 block_l expected 29 STAMP-42 tiles and door=[3], got stamp42=%d doors=%s" % [x65_stamp42, str(x65_doors)])
 		store.close()
 		_cleanup()
 		return false
