@@ -89,26 +89,26 @@ var _sync_requests: Dictionary = {}
 # Palette colors for overview texture (§5.3 / §6)
 const MAP_COLORS := {
 	0: Color("#2a3242"),  # VOID
-	1: Color("#78c850"),  # GRASS
-	2: Color("#4f9a3a"),  # TALL_GRASS
-	3: Color("#3a7d3a"),  # TREE
-	4: Color("#4a90d8"),  # WATER
-	5: Color("#e8d8a0"),  # SAND
-	6: Color("#6a9a6a"),  # MARSH
-	7: Color("#d8c090"),  # PATH
-	8: Color("#8a8a90"),  # ROAD
-	9: Color("#6b6b6b"),  # RAIL
-	10: Color("#b07840"), # BRIDGE
-	11: Color("#b0b0b8"), # PLAZA
+	1: Color("#6cb458"),  # GRASS
+	2: Color("#448238"),  # TALL_GRASS
+	3: Color("#2c602e"),  # TREE
+	4: Color("#58a4d4"),  # WATER
+	5: Color("#d4bc86"),  # SAND
+	6: Color("#587650"),  # MARSH
+	7: Color("#c4a474"),  # PATH
+	8: Color("#868e96"),  # ROAD
+	9: Color("#747c84"),  # RAIL
+	10: Color("#ac7c4c"), # BRIDGE
+	11: Color("#b2b2aa"), # PLAZA
 	13: Color("#e8e0d0"), # WALL
-	14: Color("#7a5028"), # DOOR
-	15: Color("#f0f0f0"), # FENCE
+	14: Color("#845a38"), # DOOR
+	15: Color("#cca472"), # FENCE
 	16: Color("#f85878"), # FLOWERS
-	17: Color("#a0a0a8"), # GRAVE
-	18: Color("#b07840"), # SIGN
-	19: Color("#a8c060"), # CROP
-	20: Color("#8a7a6a"), # RUBBLE
-	21: Color("#8a7a6a"), # STAMP
+	17: Color("#b2b2aa"), # GRAVE
+	18: Color("#ac7c4c"), # SIGN
+	19: Color("#92d472"), # CROP
+	20: Color("#948674"), # RUBBLE
+	21: Color("#948674"), # STAMP
 }
 
 const ROOF_BASE_COLORS := [

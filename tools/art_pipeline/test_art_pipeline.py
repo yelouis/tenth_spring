@@ -17,6 +17,7 @@ import zlib
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import art_lib as al  # noqa: E402
+import recolour_tiles as rt  # noqa: E402
 import validate_art as va  # noqa: E402
 
 MAGENTA = (255, 0, 255, 255)
@@ -610,6 +611,44 @@ class OriginalityTests(unittest.TestCase):
 
     def test_original_art_is_not_flagged(self):
         self.assertEqual(al.originality(synthetic_house(), self.ref_hashes, self.ref_patterns), [])
+
+
+class RecolourTilesTests(unittest.TestCase):
+    def test_recolour_rgba_maps_palette_and_binary_alpha(self):
+        src_img = al.Image(2, 2)
+        src_img.set(0, 0, (141, 196, 53, 255))
+        src_img.set(1, 0, (132, 187, 44, 255))
+        src_img.set(0, 1, (255, 0, 255, 255))
+        src_img.set(1, 1, (141, 196, 53, 64))
+        out = rt.recolour_rgba(src_img)
+        self.assertEqual(out.get(0, 0), rt.TS_TERRAIN_PALETTE["grass_base"])
+        self.assertEqual(out.get(1, 0), rt.TS_TERRAIN_PALETTE["grass_shade"])
+        self.assertEqual(out.get(0, 1), (0, 0, 0, 0))
+        self.assertEqual(out.get(1, 1), (0, 0, 0, 0))
+
+    def test_compose_quarter_tiles_produces_16_distinct_masks(self):
+        patch = []
+        for idx, col in enumerate([
+            (200, 50, 50, 255),
+            (50, 200, 50, 255),
+            (50, 50, 200, 255),
+            (200, 200, 50, 255),
+            (200, 50, 200, 255),
+            (50, 200, 200, 255),
+            (150, 100, 50, 255),
+            (50, 150, 100, 255),
+            (100, 50, 150, 255),
+        ]):
+            im = al.Image(16, 16)
+            im.fill(col)
+            im.set(idx % 8, idx // 8, (255, 255, 255, 255))
+            patch.append(im)
+        seen = set()
+        for mask in range(16):
+            tile = rt.compose_quarter_tiles(*patch, mask)
+            self.assertEqual((tile.w, tile.h), (16, 16))
+            seen.add(bytes(tile.px))
+        self.assertEqual(len(seen), 16)
 
 
 if __name__ == "__main__":

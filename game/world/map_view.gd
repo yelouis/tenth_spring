@@ -26,26 +26,26 @@ const ZOOM_STEPS: Array = [0.0625, 0.25, 1.0, 2.0]
 # Palette colors for overview texture (§5.3)
 const MAP_COLORS := {
 	0: Color("#2a3242"),  # VOID
-	1: Color("#78c850"),  # GRASS
-	2: Color("#4f9a3a"),  # TALL_GRASS
-	3: Color("#3a7d3a"),  # TREE
-	4: Color("#4a90d8"),  # WATER
-	5: Color("#e8d8a0"),  # SAND
-	6: Color("#6a9a6a"),  # MARSH
-	7: Color("#d8c090"),  # PATH
-	8: Color("#8a8a90"),  # ROAD
-	9: Color("#6b6b6b"),  # RAIL
-	10: Color("#b07840"), # BRIDGE
-	11: Color("#b0b0b8"), # PLAZA
+	1: Color("#6cb458"),  # GRASS
+	2: Color("#448238"),  # TALL_GRASS
+	3: Color("#2c602e"),  # TREE
+	4: Color("#58a4d4"),  # WATER
+	5: Color("#d4bc86"),  # SAND
+	6: Color("#587650"),  # MARSH
+	7: Color("#c4a474"),  # PATH
+	8: Color("#868e96"),  # ROAD
+	9: Color("#747c84"),  # RAIL
+	10: Color("#ac7c4c"), # BRIDGE
+	11: Color("#b2b2aa"), # PLAZA
 	13: Color("#e8e0d0"), # WALL
-	14: Color("#7a5028"), # DOOR
-	15: Color("#f0f0f0"), # FENCE
+	14: Color("#845a38"), # DOOR
+	15: Color("#cca472"), # FENCE
 	16: Color("#f85878"), # FLOWERS
-	17: Color("#a0a0a8"), # GRAVE
-	18: Color("#b07840"), # SIGN
-	19: Color("#a8c060"), # CROP
-	20: Color("#8a7a6a"), # RUBBLE
-	21: Color("#8a7a6a"), # STAMP
+	17: Color("#b2b2aa"), # GRAVE
+	18: Color("#ac7c4c"), # SIGN
+	19: Color("#92d472"), # CROP
+	20: Color("#948674"), # RUBBLE
+	21: Color("#948674"), # STAMP
 }
 
 const ROOF_BASE_COLORS := [
@@ -377,29 +377,34 @@ func _init_tile_sets() -> void:
 		texture = atlas_data["texture"]
 		json_dict = atlas_data["json"]
 	else:
-		if ResourceLoader.exists("res://assets/tiles/placeholder_v1.png"):
-			texture = load("res://assets/tiles/placeholder_v1.png") as Texture2D
-		if texture == null:
-			var abs_p := ProjectSettings.globalize_path("res://assets/tiles/placeholder_v1.png")
-			if FileAccess.file_exists(abs_p):
-				var img := Image.load_from_file(abs_p)
-				if img != null and not img.is_empty():
-					texture = ImageTexture.create_from_image(img)
+		for png_res in ["res://assets/tiles/original_v1.png", "res://assets/tiles/placeholder_v1.png"]:
+			if ResourceLoader.exists(png_res):
+				texture = load(png_res) as Texture2D
+			if texture == null:
+				var abs_p := ProjectSettings.globalize_path(png_res)
+				if FileAccess.file_exists(abs_p):
+					var img := Image.load_from_file(abs_p)
+					if img != null and not img.is_empty():
+						texture = ImageTexture.create_from_image(img)
+			if texture != null:
+				break
 
-		var json_path := "res://assets/tiles/placeholder_v1.json"
 		var json_text := ""
-		if FileAccess.file_exists(json_path):
-			var f := FileAccess.open(json_path, FileAccess.READ)
-			if f != null:
-				json_text = f.get_as_text()
-				f.close()
-		else:
-			var abs_jp := ProjectSettings.globalize_path(json_path)
-			if FileAccess.file_exists(abs_jp):
-				var f := FileAccess.open(abs_jp, FileAccess.READ)
+		for json_path in ["res://assets/tiles/original_v1.json", "res://assets/tiles/placeholder_v1.json"]:
+			if FileAccess.file_exists(json_path):
+				var f := FileAccess.open(json_path, FileAccess.READ)
 				if f != null:
 					json_text = f.get_as_text()
 					f.close()
+			else:
+				var abs_jp := ProjectSettings.globalize_path(json_path)
+				if FileAccess.file_exists(abs_jp):
+					var f := FileAccess.open(abs_jp, FileAccess.READ)
+					if f != null:
+						json_text = f.get_as_text()
+						f.close()
+			if not json_text.is_empty():
+				break
 		if not json_text.is_empty():
 			var parsed = JSON.parse_string(json_text)
 			if parsed is Dictionary:

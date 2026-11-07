@@ -303,6 +303,18 @@ def main():
 		sys.exit(1)
 	print("[PLACEHOLDER ATLAS TESTS OK] Placeholder atlas reproducibility and coverage verified.\n")
 
+	# Original Recoloured Terrain Atlas Test Suite (Item 40)
+	orig_atlas_test_path = os.path.join(repo_root, "tools", "test_original_atlas.py")
+	if not os.path.exists(orig_atlas_test_path):
+		print("\n[ORIGINAL ATLAS ERROR] Original atlas test suite missing")
+		sys.exit(1)
+	print("=== Original Terrain Atlas Test Suite (Item 40) ===")
+	orig_atlas_res = subprocess.run([sys.executable, "-I", orig_atlas_test_path], cwd=repo_root)
+	if orig_atlas_res.returncode != 0:
+		print("\n[ORIGINAL ATLAS TEST FAIL] Original atlas unit tests failed.")
+		sys.exit(1)
+	print("[ORIGINAL ATLAS TESTS OK] Original terrain atlas reproducibility, schema, and style bounds verified.\n")
+
 	# Famous Places Configuration Check & Unit Test Suite (Item 17)
 	famous_places_check_path = os.path.join(repo_root, "tools", "check_famous_places.py")
 	famous_places_test_path = os.path.join(repo_root, "tools", "test_check_famous_places.py")
@@ -346,7 +358,7 @@ def main():
 	if art_res.returncode != 0:
 		print("\n[ART PIPELINE TEST FAIL] Art pipeline unit tests failed.")
 		sys.exit(1)
-	print("[ART PIPELINE TESTS OK] 50 art pipeline tests passed.\n")
+	print("[ART PIPELINE TESTS OK] 52 art pipeline tests passed.\n")
 
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
