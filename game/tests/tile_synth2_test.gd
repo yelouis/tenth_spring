@@ -1012,7 +1012,7 @@ func run_test() -> bool:
 		var agx: int = int(st.get("anchor_gx", 0))
 		var agy: int = int(st.get("anchor_gy", 0))
 		var lx0: int = agx - 4 * 32
-		var ly0: int = agy - 4 * 32
+		var ly0: int = agy - TileSynth2._cell_row0(4)
 		if sid >= 15 and sid <= 30 and sw == 4 and sh == 4:
 			found_hs_stamp = true
 			# Check SALT_DOOR_ROOF = 5 reuse: gx0 = agx, gy0 = 4 * 32 + (31 - ly0)
@@ -1176,7 +1176,7 @@ func run_test() -> bool:
 			var ly0: int = row0 - 4
 			var gx0: int = w_cx * 32 + lx0
 			var gy0: int = w_cy * 32 + (35 - row0)
-			var gy0_top: int = w_cy * 32 + ly0
+			var gy0_top: int = TileSynth2._cell_row0(w_cy) + ly0
 			var d_col: int = 2 if is_hm else (1 if TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_DOOR_ROOF) < 0.5 else 2)
 
 			var f_val: float = TileSynth2.u_rand(gx0, gy0, 0, TileSynth2.SALT_BUILDING_FATE)
@@ -1368,7 +1368,7 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 	var x65_lx0: int = int(x65_stamps[0]["anchor_gx"]) - 4 * 32
-	var x65_ly0: int = int(x65_stamps[0]["anchor_gy"]) - 4 * 32
+	var x65_ly0: int = int(x65_stamps[0]["anchor_gy"]) - TileSynth2._cell_row0(4)
 	var x65_doors: Array[int] = []
 	var x65_stamp42 := 0
 	for ty in 5:
@@ -1383,6 +1383,283 @@ func run_test() -> bool:
 				x65_stamp42 += 1
 	if x65_stamp42 != 29 or x65_doors != [3]:
 		push_error("(x.2) Ruined 6x5 block_l expected 29 STAMP-42 tiles and door=[3], got stamp42=%d doors=%s" % [x65_stamp42, str(x65_doors)])
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (y) Item 30 (§12.4 (u), §14.3, §14.5.2 tests 2-4, F68):
+	#     Landmark set pieces, base_rows half-opacity walkability, cross-cell seams, and tiles map recompute.
+	# -------------------------------------------------------------
+	# (y.1 / u) Landmark set-piece placement, DOOR 32 (mask=stamp_id), suppression of overlapping building,
+	#           and gilded fallback when all 21 stamp nudges fail.
+	var y1_area := _build_empty_area()
+	var y1_ring := PackedVector2Array([
+		Vector2(3.0, 3.0), Vector2(11.0, 3.0), Vector2(11.0, 9.0), Vector2(3.0, 9.0)
+	])
+	var y1_overlap_ring := PackedVector2Array([
+		Vector2(4.0, 5.0), Vector2(6.0, 5.0), Vector2(6.0, 7.0), Vector2(4.0, 7.0)
+	])
+	y1_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "public", "geom_rings": [y1_ring], "name": "Lincoln Memorial"},
+		{"kind": "building", "subkind": "house", "geom_rings": [y1_overlap_ring], "name": "Overlapping Shed"}
+	]
+	var y1_door_wm := Vector2(float(4 * 256) + 7.0 * 16.0, float(4 * 256) + 4.0 * 16.0)
+	y1_area[Vector2i.ZERO]["landmarks"] = [
+		{"id": "dc:lincoln-memorial", "name": "Lincoln Memorial", "door_wm": y1_door_wm}
+	]
+	var y1_res := TileSynth2.synthesize_cell(4, 4, y1_area, 0)
+	var y1_stamps: Array = y1_res.get("stamps", [])
+	var y1_tiles: PackedByteArray = y1_res["tiles"]
+	var y1_stamp10_tiles := 0
+	var y1_gilded_roof_tiles := 0
+	var y1_ordinary_roof_tiles := 0
+	var y1_door_found := false
+	for i in range(0, y1_tiles.size(), 3):
+		if y1_tiles[i] == 21 and y1_tiles[i + 1] == 10:
+			y1_stamp10_tiles += 1
+		elif y1_tiles[i] == TileSynth2.TILE_ROOF:
+			if (y1_tiles[i + 1] & 32) != 0:
+				y1_gilded_roof_tiles += 1
+			else:
+				y1_ordinary_roof_tiles += 1
+		elif y1_tiles[i] == TileSynth2.TILE_DOOR and y1_tiles[i + 1] == 32 and y1_tiles[i + 2] == 10:
+			y1_door_found = true
+	if y1_stamps.size() != 1 or y1_stamp10_tiles == 0 or y1_gilded_roof_tiles != 0 or y1_ordinary_roof_tiles != 0 or not y1_door_found:
+		push_error("(y.1 / u) [falsifier] Expected dc:lincoln-memorial set piece (stamp_id=10, TILE_STAMP=21, DOOR 32 mask=10, 0 ROOF tiles); got stamps=%d stamp10_tiles=%d gilded_roof=%d ordinary_roof=%d door_found=%s" % [
+			y1_stamps.size(), y1_stamp10_tiles, y1_gilded_roof_tiles, y1_ordinary_roof_tiles, str(y1_door_found)
+		])
+		store.close()
+		_cleanup()
+		return false
+
+	# Verify gilded fallback when all 21 stamp nudges are blocked by water around the 22x14 set-piece footprint
+	var y1_fb_area := _build_empty_area()
+	var y1_fb_bldg_ring := PackedVector2Array([
+		Vector2(6.0, 5.0), Vector2(10.0, 5.0), Vector2(10.0, 8.0), Vector2(6.0, 8.0)
+	])
+	var y1_fb_water_ring := PackedVector2Array([
+		Vector2(0.0, 0.0), Vector2(4.5, 0.0), Vector2(4.5, 16.0), Vector2(0.0, 16.0)
+	])
+	var y1_fb_water_ring2 := PackedVector2Array([
+		Vector2(11.5, 0.0), Vector2(16.0, 0.0), Vector2(16.0, 16.0), Vector2(11.5, 16.0)
+	])
+	y1_fb_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "public", "geom_rings": [y1_fb_bldg_ring], "name": "Library of Congress"},
+		{"kind": "water", "subkind": "water", "geom_rings": [y1_fb_water_ring], "name": ""},
+		{"kind": "water", "subkind": "water", "geom_rings": [y1_fb_water_ring2], "name": ""}
+	]
+	y1_fb_area[Vector2i.ZERO]["landmarks"] = [
+		{"id": "dc:library-of-congress", "name": "Library of Congress", "door_wm": Vector2(float(4 * 256) + 8.0 * 16.0, float(4 * 256) + 5.0 * 16.0)}
+	]
+	var y1_fb_res := TileSynth2.synthesize_cell(4, 4, y1_fb_area, 0)
+	var y1_fb_tiles: PackedByteArray = y1_fb_res["tiles"]
+	var y1_fb_gilded_roof := 0
+	for i in range(0, y1_fb_tiles.size(), 3):
+		if y1_fb_tiles[i] == TileSynth2.TILE_ROOF and (y1_fb_tiles[i + 1] & 32) != 0:
+			y1_fb_gilded_roof += 1
+	if not y1_fb_res.get("stamps", []).is_empty() or y1_fb_gilded_roof == 0:
+		push_error("(y.1 / u) Expected gilded template fallback when all 21 stamp nudges hit water; got stamps=%d gilded_roof=%d" % [
+			y1_fb_res.get("stamps", []).size(), y1_fb_gilded_roof
+		])
+		store.close()
+		_cleanup()
+		return false
+
+	# (y.2) §14.5.2 test 2: dc:washington-monument (obelisk, stamp_id=13, 6x24, base_rows=3, door=[2, 23])
+	var y2_area := _build_empty_area()
+	var y2_door_wm := Vector2(float(4 * 256) + 16.5 * 8.0, float(4 * 256) + 5.5 * 8.0) # lx=16, ly=26
+	y2_area[Vector2i.ZERO]["landmarks"] = [
+		{"id": "dc:washington-monument", "name": "Washington Monument", "door_wm": y2_door_wm}
+	]
+	var y2_res := TileSynth2.synthesize_cell(4, 4, y2_area, 0)
+	var y2_stamps: Array = y2_res.get("stamps", [])
+	var y2_tiles: PackedByteArray = y2_res["tiles"]
+	if y2_stamps.size() != 1 or int(y2_stamps[0].get("stamp_id", -1)) != 13:
+		push_error("(y.2) Expected dc:washington-monument stamp_id=13, got %s" % str(y2_stamps))
+		store.close()
+		_cleanup()
+		return false
+	var y2_lx0: int = int(y2_stamps[0]["anchor_gx"]) - 4 * 32
+	var y2_ly0: int = int(y2_stamps[0]["anchor_gy"]) - TileSynth2._cell_row0(4)
+	# Base row ty=22, tx=2 is solid (not walkable); door ty=23, tx=2 is walkable DOOR 32 (mask=13); overhang ty=18, tx=2 is walkable STAMP (mask=2)
+	var y2_base_idx: int = ((y2_ly0 + 22) * 32 + (y2_lx0 + 2)) * 3
+	var y2_door_idx: int = ((y2_ly0 + 23) * 32 + (y2_lx0 + 2)) * 3
+	var y2_over_idx: int = ((y2_ly0 + 18) * 32 + (y2_lx0 + 2)) * 3
+	if y2_tiles[y2_base_idx] != 21 or y2_tiles[y2_base_idx + 1] != 13 or y2_tiles[y2_base_idx + 2] != 1 or bool(ts_inst.call("is_tile_walkable_in_buffer", y2_tiles, y2_lx0 + 2, y2_ly0 + 22)):
+		push_error("(y.2) Washington Monument base tile (2, 22) must be solid TILE_STAMP (21, 13, 1)")
+		store.close()
+		_cleanup()
+		return false
+	if y2_tiles[y2_door_idx] != TileSynth2.TILE_DOOR or y2_tiles[y2_door_idx + 1] != 32 or y2_tiles[y2_door_idx + 2] != 13 or not bool(ts_inst.call("is_tile_walkable_in_buffer", y2_tiles, y2_lx0 + 2, y2_ly0 + 23)):
+		push_error("(y.2) Washington Monument door tile (2, 23) must be walkable TILE_DOOR (14, 32, 13)")
+		store.close()
+		_cleanup()
+		return false
+	if y2_tiles[y2_over_idx] != 21 or y2_tiles[y2_over_idx + 1] != 13 or y2_tiles[y2_over_idx + 2] != 2 or not bool(ts_inst.call("is_tile_walkable_in_buffer", y2_tiles, y2_lx0 + 2, y2_ly0 + 18)):
+		push_error("(y.2) Washington Monument overhang shaft tile (2, 18) must be walkable TILE_STAMP (21, 13, 2)")
+		store.close()
+		_cleanup()
+		return false
+
+	# (y.3) §14.5.2 test 3: st-louis:gateway-arch (arch, stamp_id=1, 24x24, base_rows=4, door=[11, 23])
+	var y3_area := _build_empty_area()
+	var y3_door_wm := Vector2(float(4 * 256) + 15.5 * 8.0, float(4 * 256) + 5.5 * 8.0) # lx=15, ly=26 -> anchor lx=4, ly=3
+	y3_area[Vector2i.ZERO]["landmarks"] = [
+		{"id": "st-louis:gateway-arch", "name": "Gateway Arch", "door_wm": y3_door_wm}
+	]
+	var y3_res := TileSynth2.synthesize_cell(4, 4, y3_area, 0)
+	var y3_stamps: Array = y3_res.get("stamps", [])
+	var y3_tiles: PackedByteArray = y3_res["tiles"]
+	if y3_stamps.size() != 1 or int(y3_stamps[0].get("stamp_id", -1)) != 1:
+		push_error("(y.3) Expected st-louis:gateway-arch stamp_id=1, got %s" % str(y3_stamps))
+		store.close()
+		_cleanup()
+		return false
+	var y3_lx0: int = int(y3_stamps[0]["anchor_gx"]) - 4 * 32
+	var y3_ly0: int = int(y3_stamps[0]["anchor_gy"]) - TileSynth2._cell_row0(4)
+	# Legs (2, 22) and (21, 22) are solid ("#"); open span (7, 23) and (16, 23) (".") and door (11, 23) are walkable
+	for leg_tx in [2, 21]:
+		var leg_idx: int = ((y3_ly0 + 22) * 32 + (y3_lx0 + leg_tx)) * 3
+		if y3_tiles[leg_idx] != 21 or y3_tiles[leg_idx + 1] != 1 or y3_tiles[leg_idx + 2] != 1 or bool(ts_inst.call("is_tile_walkable_in_buffer", y3_tiles, y3_lx0 + leg_tx, y3_ly0 + 22)):
+			push_error("(y.3) Gateway Arch leg tile (%d, 22) must be solid TILE_STAMP (21, 1, 1)" % leg_tx)
+			store.close()
+			_cleanup()
+			return false
+	for span_tx in [7, 16]:
+		var span_idx: int = ((y3_ly0 + 23) * 32 + (y3_lx0 + span_tx)) * 3
+		if y3_tiles[span_idx] == 21 or not bool(ts_inst.call("is_tile_walkable_in_buffer", y3_tiles, y3_lx0 + span_tx, y3_ly0 + 23)):
+			push_error("(y.3) Gateway Arch open span tile (%d, 23) must be walkable ground (not TILE_STAMP), got cls=%d" % [span_tx, y3_tiles[span_idx]])
+			store.close()
+			_cleanup()
+			return false
+	if not bool(ts_inst.call("is_tile_walkable_in_buffer", y3_tiles, y3_lx0 + 11, y3_ly0 + 23)):
+		push_error("(y.3) Gateway Arch door tile (11, 23) must be walkable")
+		store.close()
+		_cleanup()
+		return false
+
+	# (y.4) §14.5.2 test 4 & F68 (a), (e): East-west seam (arch across Cell (0,0) and Cell (1,0))
+	#       and North-south seam (obelisk across Cell (0,0) and Cell (0,1)).
+	var ew_door_wm := Vector2(26.5 * 8.0, 5.5 * 8.0) # Cell (0,0), lx=26, ly=26 -> anchor_gx=15, anchor_gy=-29 (spans gx 15..38)
+	var ew_lm := [{"id": "st-louis:gateway-arch", "name": "Gateway Arch", "door_wm": ew_door_wm}]
+	var ew_area_00 := _build_empty_area()
+	ew_area_00[Vector2i.ZERO]["landmarks"] = ew_lm
+	var ew_area_10 := _build_empty_area()
+	ew_area_10[Vector2i(-1, 0)]["landmarks"] = ew_lm
+	var ew_res_00 := TileSynth2.synthesize_cell(0, 0, ew_area_00, 0)
+	var ew_res_10 := TileSynth2.synthesize_cell(1, 0, ew_area_10, 0)
+	var ew_st_00: Array = ew_res_00.get("stamps", [])
+	var ew_st_10: Array = ew_res_10.get("stamps", [])
+	if ew_st_00.size() != 1 or ew_st_10.size() != 1 or ew_st_00[0] != ew_st_10[0]:
+		push_error("(y.4 EW seam) Cell (0,0) and Cell (1,0) stamp mismatch: %s vs %s" % [str(ew_st_00), str(ew_st_10)])
+		store.close()
+		_cleanup()
+		return false
+	# Verify seam columns gx=31 (lx=31 in Cell (0,0), tx=16) and gx=32 (lx=0 in Cell (1,0), tx=17) match arch tiles
+	var arch_tiles_map: Array = TileSynth2.get_stamp_def(1).get("tiles", [])
+	var ew_t00: PackedByteArray = ew_res_00["tiles"]
+	var ew_t10: PackedByteArray = ew_res_10["tiles"]
+	for ty in 24:
+		var ly: int = 3 + ty
+		var idx_31: int = (ly * 32 + 31) * 3
+		var idx_32: int = (ly * 32 + 0) * 3
+		var row_s: String = str(arch_tiles_map[ty])
+		var ch_31: String = row_s[16]
+		var ch_32: String = row_s[17]
+		if (ew_t00[idx_31] == 21) != (ch_31 != ".") or (ew_t10[idx_32] == 21) != (ch_32 != "."):
+			push_error("(y.4 EW seam) Arch seam mismatch at ty=%d: cell(0,0) cls=%d (ch %s), cell(1,0) cls=%d (ch %s)" % [
+				ty, ew_t00[idx_31], ch_31, ew_t10[idx_32], ch_32
+			])
+			store.close()
+			_cleanup()
+			return false
+
+	# North-south seam: Washington Monument (obelisk, stamp_id=13, 6x24, door=[2, 23]) with door at Cell (0,0) lx=16, ly=3
+	# (door_wm = (16.5 * 8.0, 28.5 * 8.0)), extending 20 rows north into Cell (0, 1) (ly 12..31).
+	var ns_door_wm := Vector2(16.5 * 8.0, 28.5 * 8.0)
+	var ns_lm := [{"id": "dc:washington-monument", "name": "Washington Monument", "door_wm": ns_door_wm}]
+	var ns_area_00 := _build_empty_area()
+	ns_area_00[Vector2i.ZERO]["landmarks"] = ns_lm
+	var ns_area_01 := _build_empty_area()
+	ns_area_01[Vector2i(0, -1)]["landmarks"] = ns_lm
+	var ns_res_00 := TileSynth2.synthesize_cell(0, 0, ns_area_00, 0)
+	var ns_res_01 := TileSynth2.synthesize_cell(0, 1, ns_area_01, 0)
+	var ns_st_00: Array = ns_res_00.get("stamps", [])
+	var ns_st_01: Array = ns_res_01.get("stamps", [])
+	if ns_st_00.size() != 1 or ns_st_01.size() != 1 or ns_st_00[0] != ns_st_01[0] or int(ns_st_00[0].get("anchor_gy", 0)) != -52:
+		push_error("(y.4 NS seam) [falsifier] Cell (0,0) and Cell (0,1) north-south seam anchor mismatch: cell(0,0)=%s vs cell(0,1)=%s (expected identical anchor_gy=-52)" % [
+			str(ns_st_00), str(ns_st_01)
+		])
+		store.close()
+		_cleanup()
+		return false
+	# Verify seam rows: Cell (0,0) ly=0 (ty=20) and Cell (0,1) ly=31 (ty=19) match obelisk tiles
+	var obelisk_tiles_map: Array = TileSynth2.get_stamp_def(13).get("tiles", [])
+	var ns_t00: PackedByteArray = ns_res_00["tiles"]
+	var ns_t01: PackedByteArray = ns_res_01["tiles"]
+	var ob_row20: String = str(obelisk_tiles_map[20])
+	var ob_row19: String = str(obelisk_tiles_map[19])
+	for tx in 6:
+		var lx: int = 14 + tx
+		var idx_c00_ly0: int = (0 * 32 + lx) * 3
+		var idx_c01_ly31: int = (31 * 32 + lx) * 3
+		var ch_ty20: String = ob_row20[tx]
+		var ch_ty19: String = ob_row19[tx]
+		if (ns_t00[idx_c00_ly0] == 21) != (ch_ty20 != ".") or (ns_t01[idx_c01_ly31] == 21) != (ch_ty19 != "."):
+			push_error("(y.4 NS seam) Obelisk seam row mismatch at tx=%d: cell(0,0) ly=0 cls=%d (ch %s), cell(0,1) ly=31 cls=%d (ch %s)" % [
+				tx, ns_t00[idx_c00_ly0], ch_ty20, ns_t01[idx_c01_ly31], ch_ty19
+			])
+			store.close()
+			_cleanup()
+			return false
+
+	# Verify that Item 33's legacy anchor frame (cy * 32 + ly) produces a north-south seam mismatch (-20 != 44)
+	TileSynth2._use_legacy_item33_anchor_frame = true
+	var leg_ns_00 := TileSynth2.synthesize_cell(0, 0, ns_area_00, 0)
+	var leg_ns_01 := TileSynth2.synthesize_cell(0, 1, ns_area_01, 0)
+	TileSynth2._use_legacy_item33_anchor_frame = false
+	var leg_agy_00: int = int(leg_ns_00.get("stamps", [{}])[0].get("anchor_gy", 0))
+	var leg_agy_01: int = int(leg_ns_01.get("stamps", [{}])[0].get("anchor_gy", 0))
+	if leg_agy_00 == leg_agy_01 or leg_agy_00 != -20 or leg_agy_01 != 44:
+		push_error("(y.4 NS seam) [falsifier] Legacy Item 33 anchor frame should mismatch (-20 vs 44), got %d vs %d" % [leg_agy_00, leg_agy_01])
+		store.close()
+		_cleanup()
+		return false
+
+	# (y.5) F68 (d): Recompute all 15 landmark "tiles" maps from game/assets/original/<path> and verify
+	#       that flipping 128 pixels' alpha in tile (7, 23) of an in-memory copy of arch.png fails the check.
+	var landmark_sids := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 59]
+	for sid in landmark_sids:
+		var s_def: Dictionary = TileSynth2.get_stamp_def(sid)
+		var s_path: String = str(s_def.get("path", ""))
+		var s_w: int = int(s_def.get("w", 0))
+		var s_h: int = int(s_def.get("h", 0))
+		var s_base: int = int(s_def.get("base_rows", s_h))
+		var lm_tiles_arr: Array = s_def.get("tiles", [])
+		var img := Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/" + s_path))
+		if img == null or img.is_empty():
+			push_error("(y.5) Failed to load res://assets/original/%s" % s_path)
+			store.close()
+			_cleanup()
+			return false
+		var recomputed: Array[String] = TileSynth2.compute_stamp_tiles_from_image(img, s_w, s_h, s_base)
+		if recomputed != lm_tiles_arr:
+			push_error("(y.5) Landmark stamp %d (%s) recomputed tiles map did not match STAMP_TABLE" % [sid, s_path])
+			store.close()
+			_cleanup()
+			return false
+
+	var mut_arch_img := Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/landmarks/arch.png"))
+	var flipped := 0
+	for py in range(23 * 16, 24 * 16):
+		for px in range(7 * 16, 8 * 16):
+			if flipped < 128:
+				mut_arch_img.set_pixel(px, py, Color(1.0, 0.0, 0.0, 1.0))
+				flipped += 1
+	var mut_recomputed: Array[String] = TileSynth2.compute_stamp_tiles_from_image(mut_arch_img, 24, 24, 4)
+	if mut_recomputed == TileSynth2.get_stamp_def(1).get("tiles", []) or mut_recomputed[23][7] != "#":
+		push_error("(y.5) [falsifier] Flipping 128 pixels' alpha in tile (7, 23) of arch.png failed to change recomputed tiles map to '#'")
 		store.close()
 		_cleanup()
 		return false

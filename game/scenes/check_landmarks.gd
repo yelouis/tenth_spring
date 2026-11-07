@@ -118,7 +118,7 @@ func _ready() -> void:
 				for idx in range(0, tiles.size(), 3):
 					var cls: int = tiles[idx]
 					var v: int = tiles[idx + 1]
-					if (cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0:
+					if ((cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR) and (v & 32) != 0) or (cls == TileSynth2.TILE_STAMP and str(TileSynth2.get_stamp_def(v).get("kind", "")) == "landmark"):
 						gold_tiles += 1
 
 				var signs: PackedStringArray = res.get("signs", PackedStringArray())

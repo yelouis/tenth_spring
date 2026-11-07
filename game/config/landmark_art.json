@@ -1,0 +1,294 @@
+{
+  "interiors": {
+    "dc:washington-monument": {
+      "source": "original",
+      "stamp": "obelisk"
+    },
+    "dc:lincoln-memorial": {
+      "source": "original",
+      "stamp": "lincoln"
+    },
+    "dc:library-of-congress": {
+      "source": "original",
+      "stamp": "library_of_congress"
+    },
+    "new-york:statue-of-liberty": {
+      "source": "original",
+      "stamp": "liberty"
+    },
+    "new-york:grand-central": {
+      "source": "original",
+      "stamp": "grand_central"
+    },
+    "st-louis:gateway-arch": {
+      "source": "original",
+      "stamp": "arch"
+    },
+    "seattle:space-needle": {
+      "source": "original",
+      "stamp": "needle"
+    },
+    "san-francisco:coit-tower": {
+      "source": "original",
+      "stamp": "coit"
+    },
+    "san-francisco:alcatraz": {
+      "source": "original",
+      "stamp": "alcatraz"
+    },
+    "boston-harbor-islands:boston-light": {
+      "source": "original",
+      "stamp": "boston_light"
+    },
+    "cape-hatteras:lighthouse": {
+      "source": "original",
+      "stamp": "hatteras_light"
+    },
+    "nashville:parthenon": {
+      "source": "original",
+      "stamp": "parthenon"
+    },
+    "philadelphia:independence-hall": {
+      "source": "original",
+      "stamp": "independence"
+    },
+    "las-vegas:neon-museum": {
+      "source": "original",
+      "stamp": "neon_signs"
+    },
+    "acadia:visitor-centre": {
+      "source": "gilded"
+    },
+    "mount-washington:visitor-centre": {
+      "source": "gilded"
+    },
+    "mount-washington:weather-station": {
+      "source": "gilded"
+    },
+    "walden-pond:visitor-centre": {
+      "source": "gilded"
+    },
+    "cape-cod:visitor-centre": {
+      "source": "gilded"
+    },
+    "niagara-falls:visitor-centre": {
+      "source": "gilded"
+    },
+    "niagara-falls:cave-of-winds": {
+      "source": "gilded"
+    },
+    "thomas-edison:visitor-centre": {
+      "source": "gilded"
+    },
+    "thomas-edison:laboratory": {
+      "source": "gilded"
+    },
+    "great-smoky-mountains:visitor-centre": {
+      "source": "gilded"
+    },
+    "cape-hatteras:visitor-centre": {
+      "source": "gilded"
+    },
+    "wright-brothers:visitor-centre": {
+      "source": "gilded"
+    },
+    "wright-brothers:hangar": {
+      "source": "gilded"
+    },
+    "biscayne:visitor-centre": {
+      "source": "gilded"
+    },
+    "reelfoot-lake:visitor-centre": {
+      "source": "gilded"
+    },
+    "mammoth-cave:visitor-centre": {
+      "source": "gilded"
+    },
+    "mammoth-cave:historic-entrance": {
+      "source": "gilded"
+    },
+    "big-bend:visitor-centre": {
+      "source": "gilded"
+    },
+    "hot-springs:visitor-centre": {
+      "source": "gilded"
+    },
+    "padre-island:visitor-centre": {
+      "source": "gilded"
+    },
+    "buffalo-river:visitor-centre": {
+      "source": "gilded"
+    },
+    "cuyahoga-valley:visitor-centre": {
+      "source": "gilded"
+    },
+    "isle-royale:visitor-centre": {
+      "source": "gilded"
+    },
+    "sleeping-bear-dunes:visitor-centre": {
+      "source": "gilded"
+    },
+    "theodore-roosevelt:visitor-centre": {
+      "source": "gilded"
+    },
+    "voyageurs:visitor-centre": {
+      "source": "gilded"
+    },
+    "badlands:visitor-centre": {
+      "source": "gilded"
+    },
+    "tallgrass-prairie:visitor-centre": {
+      "source": "gilded"
+    },
+    "yellowstone:visitor-centre": {
+      "source": "gilded"
+    },
+    "grand-canyon:visitor-centre": {
+      "source": "gilded"
+    },
+    "arches:visitor-centre": {
+      "source": "gilded"
+    },
+    "carlsbad-caverns:visitor-centre": {
+      "source": "gilded"
+    },
+    "carlsbad-caverns:cavern-lair": {
+      "source": "gilded"
+    },
+    "craters-of-the-moon:visitor-centre": {
+      "source": "gilded"
+    },
+    "craters-of-the-moon:lava-tubes": {
+      "source": "gilded"
+    },
+    "white-sands:visitor-centre": {
+      "source": "gilded"
+    },
+    "redwood:visitor-centre": {
+      "source": "gilded"
+    },
+    "hawaii-volcanoes:visitor-centre": {
+      "source": "gilded"
+    },
+    "hawaii-volcanoes:lava-tube": {
+      "source": "gilded"
+    },
+    "mount-rainier:visitor-centre": {
+      "source": "gilded"
+    },
+    "glacier-bay:visitor-centre": {
+      "source": "gilded"
+    },
+    "yosemite:visitor-centre": {
+      "source": "gilded"
+    },
+    "katahdin-woods-and-waters:visitor-centre": {
+      "source": "gilded"
+    },
+    "everglades:visitor-centre": {
+      "source": "gilded"
+    },
+    "cathedral-caverns:visitor-centre": {
+      "source": "gilded"
+    },
+    "cathedral-caverns:cave-lair": {
+      "source": "gilded"
+    },
+    "boston-harbor-islands:visitor-centre": {
+      "source": "gilded"
+    },
+    "monadnock:visitor-centre": {
+      "source": "gilded"
+    },
+    "marsh-billings-rockefeller:visitor-centre": {
+      "source": "gilded"
+    },
+    "cherry-springs:visitor-centre": {
+      "source": "gilded"
+    },
+    "adirondack:visitor-centre": {
+      "source": "gilded"
+    },
+    "dry-tortugas:visitor-centre": {
+      "source": "gilded"
+    },
+    "dry-tortugas:fort-jefferson": {
+      "source": "gilded"
+    },
+    "kennedy-space-center:visitor-centre": {
+      "source": "gilded"
+    },
+    "kennedy-space-center:launch-gantry": {
+      "source": "gilded"
+    },
+    "congaree:visitor-centre": {
+      "source": "gilded"
+    },
+    "gulf-islands:visitor-centre": {
+      "source": "gilded"
+    },
+    "ruby-falls:visitor-centre": {
+      "source": "gilded"
+    },
+    "ruby-falls:cavern-lair": {
+      "source": "gilded"
+    },
+    "red-river-gorge:visitor-centre": {
+      "source": "gilded"
+    },
+    "red-river-gorge:arch-chamber": {
+      "source": "gilded"
+    },
+    "barataria-preserve:visitor-centre": {
+      "source": "gilded"
+    },
+    "crater-of-diamonds:visitor-centre": {
+      "source": "gilded"
+    },
+    "mcdonald-observatory:visitor-centre": {
+      "source": "gilded"
+    },
+    "mcdonald-observatory:telescope-dome": {
+      "source": "gilded"
+    },
+    "caddo-lake:visitor-centre": {
+      "source": "gilded"
+    },
+    "apostle-islands:visitor-centre": {
+      "source": "gilded"
+    },
+    "porcupine-mountains:visitor-centre": {
+      "source": "gilded"
+    },
+    "pictured-rocks:visitor-centre": {
+      "source": "gilded"
+    },
+    "minuteman-missile:visitor-centre": {
+      "source": "gilded"
+    },
+    "minuteman-missile:silo-lair": {
+      "source": "gilded"
+    },
+    "bonneville-salt-flats:visitor-centre": {
+      "source": "gilded"
+    },
+    "meteor-crater:visitor-centre": {
+      "source": "gilded"
+    },
+    "meteor-crater:crater-cavern": {
+      "source": "gilded"
+    },
+    "sequoia:visitor-centre": {
+      "source": "gilded"
+    },
+    "lassen-volcanic:visitor-centre": {
+      "source": "gilded"
+    }
+  },
+  "structures": {
+    "san-francisco:golden-gate-tower": {
+      "source": "original",
+      "stamp": "gg_tower"
+    }
+  }
+}

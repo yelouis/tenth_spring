@@ -217,6 +217,7 @@ func _ready() -> void:
 		_stamp_base_layer.z_index = 1
 		_stamp_base_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(_stamp_base_layer)
+	_stamp_base_layer.y_sort_enabled = true
 
 	_stamp_overhang_layer = get_node_or_null("StampOverhangLayer") as Node2D
 	if _stamp_overhang_layer == null:
@@ -225,6 +226,7 @@ func _ready() -> void:
 		_stamp_overhang_layer.z_index = 10
 		_stamp_overhang_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(_stamp_overhang_layer)
+	_stamp_overhang_layer.y_sort_enabled = true
 
 	_demo_badge = get_node_or_null("AttributionUI/DemoBadge") as Label
 	_attribution_label = get_node_or_null("AttributionUI/AttributionLabel") as Label
@@ -783,16 +785,45 @@ func _focus_waypost() -> void:
 	_focus_initial_cell()
 
 func _focus_landmark() -> void:
+	var target_lm_id := ""
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--landmark="):
+			target_lm_id = arg.trim_prefix("--landmark=").strip_edges()
 	var places: Array = RevealEngine.load_places()
 	for p in places:
 		if str(p.get("id", "")) == _active_place_id or _active_place_id.is_empty():
 			var interiors: Array = p.get("interiors", [])
-			if not interiors.is_empty():
-				var door: Dictionary = interiors[0].get("door", {})
+			for interior in interiors:
+				var i_id: String = str(interior.get("id", ""))
+				if not target_lm_id.is_empty() and i_id != target_lm_id:
+					continue
+				var door: Dictionary = interior.get("door", {})
 				var d_lat := float(door.get("lat", 0.0))
 				var d_lon := float(door.get("lon", 0.0))
-				var cell := Grid.latlon_to_cell(d_lat, d_lon)
-				focus_on_cell(cell.x, cell.y)
+				if target_lm_id.is_empty():
+					var cell := Grid.latlon_to_cell(d_lat, d_lon)
+					focus_on_cell(cell.x, cell.y)
+					return
+				var wm := Grid.latlon_to_wm(d_lat, d_lon)
+				var door_gx := floori(wm.x / Grid.TILE_WM)
+				var door_gy := -floori(wm.y / Grid.TILE_WM) - 1
+				var sid := TileSynth2.get_landmark_stamp_id(i_id)
+				var def := TileSynth2.get_stamp_def(sid)
+				if not def.is_empty():
+					var sw := int(def.get("w", 1))
+					var sh := int(def.get("h", 1))
+					var d_arr = def.get("door", [sw / 2, sh - 1])
+					var d_col := int(d_arr[0]) if (d_arr is Array and d_arr.size() >= 2) else (sw / 2)
+					var d_row := int(d_arr[1]) if (d_arr is Array and d_arr.size() >= 2) else (sh - 1)
+					var center_tx := float(door_gx - d_col) + float(sw) * 0.5
+					var visible_h := float(mini(sh, 18)) if _current_zoom_step <= 1.0 else float(mini(sh, 10))
+					var center_ty := float(door_gy - d_row + sh) - visible_h * 0.5
+					if _camera != null:
+						_camera.position = Vector2(center_tx * 32.0, center_ty * 32.0)
+					_update_return_home_visibility()
+					return
+				var fb_cell := Grid.latlon_to_cell(d_lat, d_lon)
+				focus_on_cell(fb_cell.x, fb_cell.y)
 				return
 	_focus_initial_cell()
 
@@ -1538,13 +1569,27 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 	var known_mat: Material = _world_known.material if (is_known_look and _world_known != null) else null
 	var created: Array[Sprite2D] = []
 
-	for st in stamps:
+	var sorted_stamps: Array = stamps.duplicate()
+	sorted_stamps.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var ay: int = int(a.get("anchor_gy", 0)) + int(a.get("h", 0))
+		var by: int = int(b.get("anchor_gy", 0)) + int(b.get("h", 0))
+		if ay != by:
+			return ay < by
+		var ax: int = int(a.get("anchor_gx", 0))
+		var bx: int = int(b.get("anchor_gx", 0))
+		if ax != bx:
+			return ax < bx
+		return int(a.get("stamp_id", 0)) < int(b.get("stamp_id", 0))
+	)
+	var cell_r0: int = (-cy - 1) * 32
+
+	for st in sorted_stamps:
 		var sid: int = int(st.get("stamp_id", -1))
 		var agx: int = int(st.get("anchor_gx", 0))
 		var agy: int = int(st.get("anchor_gy", 0))
 		var sw: int = int(st.get("w", 0))
 		var sh: int = int(st.get("h", 0))
-		if sid < 0 or sw <= 0 or sh <= 0:
+		if sid <= 0 or sw <= 0 or sh <= 0:
 			continue
 		var def: Dictionary = TileSynth2.get_stamp_def(sid)
 		if def.is_empty():
@@ -1555,20 +1600,17 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 
 		var tx0: int = maxi(0, cx * 32 - agx)
 		var tx1: int = mini(sw, (cx + 1) * 32 - agx)
-		var ty0: int = maxi(0, cy * 32 - agy)
-		var ty1: int = mini(sh, (cy + 1) * 32 - agy)
+		var ty0: int = maxi(0, cell_r0 - agy)
+		var ty1: int = mini(sh, cell_r0 + 32 - agy)
 		if tx0 >= tx1 or ty0 >= ty1:
 			continue
 
 		var base_rows: int = sh if bool(def.get("tiled", false)) else int(def.get("base_rows", sh))
-		var split_ty: int = (sh - base_rows) if (sid >= 0 and sid <= 14 and base_rows > 0 and sh > base_rows) else 0
+		var split_ty: int = (sh - base_rows) if (str(def.get("kind", "")) == "landmark" and base_rows > 0 and sh > base_rows) else 0
 
 		if ty0 < split_ty and _stamp_overhang_layer != null:
 			var o_ty0: int = ty0
 			var o_ty1: int = mini(ty1, split_ty)
-			var o_lx: int = (agx + tx0) - cx * 32
-			var o_ly: int = (agy + o_ty0) - cy * 32
-			var o_st := _screen_tile(cx, cy, o_lx, o_ly)
 			var o_sp := Sprite2D.new()
 			o_sp.centered = false
 			o_sp.texture = tex
@@ -1576,7 +1618,8 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 			o_sp.region_enabled = true
 			o_sp.region_rect = Rect2(float(tx0 * 16), float(o_ty0 * 16), float((tx1 - tx0) * 16), float((o_ty1 - o_ty0) * 16))
 			o_sp.scale = Vector2(2.0, 2.0)
-			o_sp.position = Vector2(float(o_st.x * 32), float(o_st.y * 32))
+			o_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
+			o_sp.offset = Vector2(0.0, float((o_ty0 - sh) * 16))
 			o_sp.material = known_mat
 			_stamp_overhang_layer.add_child(o_sp)
 			created.append(o_sp)
@@ -1584,9 +1627,6 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 		if ty1 > split_ty:
 			var b_ty0: int = maxi(ty0, split_ty)
 			var b_ty1: int = ty1
-			var b_lx: int = (agx + tx0) - cx * 32
-			var b_ly: int = (agy + b_ty0) - cy * 32
-			var b_st := _screen_tile(cx, cy, b_lx, b_ly)
 			var b_sp := Sprite2D.new()
 			b_sp.centered = false
 			b_sp.texture = tex
@@ -1594,7 +1634,8 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 			b_sp.region_enabled = true
 			b_sp.region_rect = Rect2(float(tx0 * 16), float(b_ty0 * 16), float((tx1 - tx0) * 16), float((b_ty1 - b_ty0) * 16))
 			b_sp.scale = Vector2(2.0, 2.0)
-			b_sp.position = Vector2(float(b_st.x * 32), float(b_st.y * 32))
+			b_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
+			b_sp.offset = Vector2(0.0, float((b_ty0 - sh) * 16))
 			b_sp.material = known_mat
 			_stamp_base_layer.add_child(b_sp)
 			created.append(b_sp)

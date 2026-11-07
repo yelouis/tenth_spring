@@ -67,68 +67,133 @@ const SALT_DECAL_COUNT := 18
 const SALT_DECAL_DOORSTEP := 19
 const SALT_DECAL_POS := 20
 
-# Stamp metadata table 0..58 (§14.2.1)
+# Stamp metadata table 1..59 (0 reserved; §14.2.1, §14.3.2, F68 b-c)
 const STAMP_TABLE: Dictionary = {
-	0: {"id": "alcatraz", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5]},
-	1: {"id": "arch", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23]},
-	2: {"id": "boston_light", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4]},
-	3: {"id": "coit", "path": "landmarks/coit.png", "w": 2, "h": 10, "base_rows": 2, "door": [1, 9]},
-	4: {"id": "gg_tower", "path": "landmarks/gg_tower.png", "w": 4, "h": 24, "base_rows": 2, "door": null},
-	5: {"id": "grand_central", "path": "landmarks/grand_central.png", "w": 15, "h": 7, "base_rows": 4, "door": [7, 6]},
-	6: {"id": "hatteras_light", "path": "landmarks/hatteras_light.png", "w": 2, "h": 9, "base_rows": 2, "door": [1, 8]},
-	7: {"id": "independence", "path": "landmarks/independence.png", "w": 7, "h": 9, "base_rows": 4, "door": [3, 8]},
-	8: {"id": "liberty", "path": "landmarks/liberty.png", "w": 5, "h": 15, "base_rows": 3, "door": [2, 14]},
-	9: {"id": "library_of_congress", "path": "landmarks/library_of_congress.png", "w": 22, "h": 14, "base_rows": 7, "door": [10, 13]},
-	10: {"id": "lincoln", "path": "landmarks/lincoln.png", "w": 9, "h": 7, "base_rows": 4, "door": [4, 6]},
-	11: {"id": "needle", "path": "landmarks/needle.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23]},
-	12: {"id": "neon_signs", "path": "landmarks/neon_signs.png", "w": 6, "h": 3, "base_rows": 1, "door": [3, 2]},
-	13: {"id": "obelisk", "path": "landmarks/obelisk.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23]},
-	14: {"id": "parthenon", "path": "landmarks/parthenon.png", "w": 7, "h": 5, "base_rows": 3, "door": [3, 4]},
-	15: {"id": "house_s_a", "path": "ruins/house_s_a.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	16: {"id": "house_s_a__teal", "path": "ruins/house_s_a__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	17: {"id": "house_s_a__green", "path": "ruins/house_s_a__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	18: {"id": "house_s_a__purple", "path": "ruins/house_s_a__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	19: {"id": "house_s_a_door2", "path": "ruins/house_s_a_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	20: {"id": "house_s_a_door2__teal", "path": "ruins/house_s_a_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	21: {"id": "house_s_a_door2__green", "path": "ruins/house_s_a_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	22: {"id": "house_s_a_door2__purple", "path": "ruins/house_s_a_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	23: {"id": "house_s_b", "path": "ruins/house_s_b.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	24: {"id": "house_s_b__teal", "path": "ruins/house_s_b__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	25: {"id": "house_s_b__green", "path": "ruins/house_s_b__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	26: {"id": "house_s_b__purple", "path": "ruins/house_s_b__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
-	27: {"id": "house_s_b_door2", "path": "ruins/house_s_b_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	28: {"id": "house_s_b_door2__teal", "path": "ruins/house_s_b_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	29: {"id": "house_s_b_door2__green", "path": "ruins/house_s_b_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	30: {"id": "house_s_b_door2__purple", "path": "ruins/house_s_b_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
-	31: {"id": "house_m_a", "path": "ruins/house_m_a.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	32: {"id": "house_m_a__teal", "path": "ruins/house_m_a__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	33: {"id": "house_m_a__green", "path": "ruins/house_m_a__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	34: {"id": "house_m_a__purple", "path": "ruins/house_m_a__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	35: {"id": "house_m_b", "path": "ruins/house_m_b.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	36: {"id": "house_m_b__teal", "path": "ruins/house_m_b__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	37: {"id": "house_m_b__green", "path": "ruins/house_m_b__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	38: {"id": "house_m_b__purple", "path": "ruins/house_m_b__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
-	39: {"id": "house_s_c", "path": "ruins/house_s_c.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
-	40: {"id": "house_s_c_door2", "path": "ruins/house_s_c_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
-	41: {"id": "house_m_c", "path": "ruins/house_m_c.png", "w": 5, "h": 4, "base_rows": 4, "door": null},
-	42: {"id": "ruined_block", "path": "ruins/ruined_block.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4], "tiled": true},
-	43: {"id": "decal_rubble", "path": "ruins/decal_rubble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	44: {"id": "decal_rubble_weeds", "path": "ruins/decal_rubble_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	45: {"id": "decal_stones", "path": "ruins/decal_stones.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	46: {"id": "decal_beams", "path": "ruins/decal_beams.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	47: {"id": "decal_wall_stump", "path": "ruins/decal_wall_stump.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
-	48: {"id": "decal_wall_corner", "path": "ruins/decal_wall_corner.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	49: {"id": "decal_tufts", "path": "ruins/decal_tufts.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	50: {"id": "decal_cracks", "path": "ruins/decal_cracks.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	51: {"id": "decal_weeds", "path": "ruins/decal_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	52: {"id": "decal_bush", "path": "ruins/decal_bush.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	53: {"id": "decal_bramble", "path": "ruins/decal_bramble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	54: {"id": "decal_stump", "path": "ruins/decal_stump.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	55: {"id": "decal_creeper", "path": "ruins/decal_creeper.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	56: {"id": "decal_sapling", "path": "ruins/decal_sapling.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	57: {"id": "decal_boulder", "path": "ruins/decal_boulder.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
-	58: {"id": "decal_doorstep", "path": "ruins/decal_doorstep.png", "w": 1, "h": 1, "base_rows": 0, "door": null}
+	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
+	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
+	3: {"id": "coit", "kind": "landmark", "path": "landmarks/coit.png", "w": 2, "h": 10, "base_rows": 2, "door": [1, 9], "tiles": ["..", "..", "..", "++", "++", "++", "++", "++", "##", "##"]},
+	4: {"id": "gg_tower", "kind": "landmark", "path": "landmarks/gg_tower.png", "w": 4, "h": 24, "base_rows": 2, "door": null, "tiles": ["....", "....", "....", "....", "....", "....", "....", "....", "....", "....", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "####", "#+##"]},
+	5: {"id": "grand_central", "kind": "landmark", "path": "landmarks/grand_central.png", "w": 15, "h": 7, "base_rows": 4, "door": [7, 6], "tiles": ["...+++++++++...", ".+++++++++++++.", "+++++++++++++++", "###############", "###############", "###############", "###############"]},
+	6: {"id": "hatteras_light", "kind": "landmark", "path": "landmarks/hatteras_light.png", "w": 2, "h": 9, "base_rows": 2, "door": [1, 8], "tiles": ["..", "..", "++", "++", "++", "++", "++", "##", "##"]},
+	7: {"id": "independence", "kind": "landmark", "path": "landmarks/independence.png", "w": 7, "h": 9, "base_rows": 4, "door": [3, 8], "tiles": ["...+...", "...+...", "..+++..", "+.+++.+", "+++++++", "#######", "#######", "#######", "#######"]},
+	8: {"id": "liberty", "kind": "landmark", "path": "landmarks/liberty.png", "w": 5, "h": 15, "base_rows": 3, "door": [2, 14], "tiles": [".....", ".....", ".....", ".+...", ".+...", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", "+###+", "#####", "#####"]},
+	9: {"id": "library_of_congress", "kind": "landmark", "path": "landmarks/library_of_congress.png", "w": 22, "h": 14, "base_rows": 7, "door": [10, 13], "tiles": ["..........++..........", "..+++++++++++++++++...", ".++++++++++++++++++++.", ".++++++++++++++++++++.", ".++++++++++++++++++++.", ".++++++++++++++++++++.", "+++++++++++++++++++++.", "+####################+", "######################", "######################", "######################", "######################", "######################", "###++++#######+++++###"]},
+	10: {"id": "lincoln", "kind": "landmark", "path": "landmarks/lincoln.png", "w": 9, "h": 7, "base_rows": 4, "door": [4, 6], "tiles": [".........", ".+++++++.", "+++++++++", "+#######+", "+#######+", "#########", "#########"]},
+	11: {"id": "needle", "kind": "landmark", "path": "landmarks/needle.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23], "tiles": ["......", "......", "......", "......", "..++..", "..++..", "..++..", "++++++", "++++++", ".++++.", ".++++.", "..++..", "..++..", "..++..", "..++..", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", "++++++", "######", "######", "+####+"]},
+	12: {"id": "neon_signs", "kind": "landmark", "path": "landmarks/neon_signs.png", "w": 6, "h": 3, "base_rows": 1, "door": [3, 2], "tiles": [".+++++", ".+++++", "##+###"]},
+	13: {"id": "obelisk", "kind": "landmark", "path": "landmarks/obelisk.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23], "tiles": ["......", "......", "......", "......", "......", "..++..", "..++..", ".+++..", ".+++..", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", "######", "######", "######"]},
+	14: {"id": "parthenon", "kind": "landmark", "path": "landmarks/parthenon.png", "w": 7, "h": 5, "base_rows": 3, "door": [3, 4], "tiles": [".+++++.", "+++++++", "######+", "######+", "#######"]},
+	15: {"id": "house_s_a", "kind": "house", "path": "ruins/house_s_a.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	16: {"id": "house_s_a__teal", "kind": "house", "path": "ruins/house_s_a__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	17: {"id": "house_s_a__green", "kind": "house", "path": "ruins/house_s_a__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	18: {"id": "house_s_a__purple", "kind": "house", "path": "ruins/house_s_a__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	19: {"id": "house_s_a_door2", "kind": "house", "path": "ruins/house_s_a_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	20: {"id": "house_s_a_door2__teal", "kind": "house", "path": "ruins/house_s_a_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	21: {"id": "house_s_a_door2__green", "kind": "house", "path": "ruins/house_s_a_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	22: {"id": "house_s_a_door2__purple", "kind": "house", "path": "ruins/house_s_a_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	23: {"id": "house_s_b", "kind": "house", "path": "ruins/house_s_b.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	24: {"id": "house_s_b__teal", "kind": "house", "path": "ruins/house_s_b__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	25: {"id": "house_s_b__green", "kind": "house", "path": "ruins/house_s_b__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	26: {"id": "house_s_b__purple", "kind": "house", "path": "ruins/house_s_b__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	27: {"id": "house_s_b_door2", "kind": "house", "path": "ruins/house_s_b_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	28: {"id": "house_s_b_door2__teal", "kind": "house", "path": "ruins/house_s_b_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	29: {"id": "house_s_b_door2__green", "kind": "house", "path": "ruins/house_s_b_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	30: {"id": "house_s_b_door2__purple", "kind": "house", "path": "ruins/house_s_b_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	31: {"id": "house_m_a", "kind": "house", "path": "ruins/house_m_a.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	32: {"id": "house_m_a__teal", "kind": "house", "path": "ruins/house_m_a__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	33: {"id": "house_m_a__green", "kind": "house", "path": "ruins/house_m_a__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	34: {"id": "house_m_a__purple", "kind": "house", "path": "ruins/house_m_a__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	35: {"id": "house_m_b", "kind": "house", "path": "ruins/house_m_b.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	36: {"id": "house_m_b__teal", "kind": "house", "path": "ruins/house_m_b__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	37: {"id": "house_m_b__green", "kind": "house", "path": "ruins/house_m_b__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	38: {"id": "house_m_b__purple", "kind": "house", "path": "ruins/house_m_b__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	39: {"id": "house_s_c", "kind": "shell", "path": "ruins/house_s_c.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
+	40: {"id": "house_s_c_door2", "kind": "shell", "path": "ruins/house_s_c_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": null},
+	41: {"id": "house_m_c", "kind": "shell", "path": "ruins/house_m_c.png", "w": 5, "h": 4, "base_rows": 4, "door": null},
+	42: {"id": "ruined_block", "kind": "block", "path": "ruins/ruined_block.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4], "tiled": true},
+	43: {"id": "decal_rubble", "kind": "decal", "path": "ruins/decal_rubble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	44: {"id": "decal_rubble_weeds", "kind": "decal", "path": "ruins/decal_rubble_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	45: {"id": "decal_stones", "kind": "decal", "path": "ruins/decal_stones.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	46: {"id": "decal_beams", "kind": "decal", "path": "ruins/decal_beams.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	47: {"id": "decal_wall_stump", "kind": "decal", "path": "ruins/decal_wall_stump.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
+	48: {"id": "decal_wall_corner", "kind": "decal", "path": "ruins/decal_wall_corner.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	49: {"id": "decal_tufts", "kind": "decal", "path": "ruins/decal_tufts.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	50: {"id": "decal_cracks", "kind": "decal", "path": "ruins/decal_cracks.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	51: {"id": "decal_weeds", "kind": "decal", "path": "ruins/decal_weeds.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	52: {"id": "decal_bush", "kind": "decal", "path": "ruins/decal_bush.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	53: {"id": "decal_bramble", "kind": "decal", "path": "ruins/decal_bramble.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	54: {"id": "decal_stump", "kind": "decal", "path": "ruins/decal_stump.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	55: {"id": "decal_creeper", "kind": "decal", "path": "ruins/decal_creeper.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	56: {"id": "decal_sapling", "kind": "decal", "path": "ruins/decal_sapling.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	57: {"id": "decal_boulder", "kind": "decal", "path": "ruins/decal_boulder.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
+	58: {"id": "decal_doorstep", "kind": "decal", "path": "ruins/decal_doorstep.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
+	59: {"id": "alcatraz", "kind": "landmark", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5], "tiles": [".......+.........++++...", "...++++++++++++++++++...", "...++++++++++++++++++...", "...+#################...", "...+#################++.", ".+####################+."]}
 }
+
+static var _landmark_art_loaded := false
+static var _landmark_art_map: Dictionary = {}
+static var _stamp_id_by_asset_name: Dictionary = {}
+
+static func _ensure_landmark_art_loaded() -> void:
+	if _landmark_art_loaded:
+		return
+	_landmark_art_loaded = true
+	for sid_key in STAMP_TABLE.keys():
+		var sdef: Dictionary = STAMP_TABLE[sid_key]
+		var aid: String = str(sdef.get("id", ""))
+		if not aid.is_empty():
+			_stamp_id_by_asset_name[aid] = int(sid_key)
+	var path := "res://config/landmark_art.json"
+	if not FileAccess.file_exists(path):
+		return
+	var f := FileAccess.open(path, FileAccess.READ)
+	if f == null:
+		return
+	var parsed = JSON.parse_string(f.get_as_text())
+	f.close()
+	if parsed is Dictionary:
+		var ints = parsed.get("interiors", {})
+		if ints is Dictionary:
+			for k in ints.keys():
+				_landmark_art_map[str(k)] = ints[k]
+		var structs = parsed.get("structures", {})
+		if structs is Dictionary:
+			for k in structs.keys():
+				_landmark_art_map[str(k)] = structs[k]
+
+static func get_landmark_stamp_id(lm_id: String) -> int:
+	if lm_id.is_empty():
+		return -1
+	_ensure_landmark_art_loaded()
+	var spec = _landmark_art_map.get(lm_id, null)
+	if not (spec is Dictionary):
+		return -1
+	if str(spec.get("source", "")) != "original":
+		return -1
+	var asset_name: String = str(spec.get("stamp", ""))
+	return int(_stamp_id_by_asset_name.get(asset_name, -1))
+
+static func compute_stamp_tiles_from_image(img: Image, w: int, h: int, base_rows: int) -> Array[String]:
+	var rows: Array[String] = []
+	if img == null or img.get_width() != w * 16 or img.get_height() != h * 16:
+		return rows
+	for ty in h:
+		var is_base: bool = (ty >= h - base_rows)
+		var row_str := ""
+		for tx in w:
+			var opaque := 0
+			for py in range(ty * 16, (ty + 1) * 16):
+				for px in range(tx * 16, (tx + 1) * 16):
+					if img.get_pixel(px, py).a8 > 0:
+						opaque += 1
+			if opaque == 0:
+				row_str += "."
+			elif is_base and opaque >= 128:
+				row_str += "#"
+			else:
+				row_str += "+"
+		rows.append(row_str)
+	return rows
 
 static func get_stamp_def(stamp_id: int) -> Dictionary:
 	return STAMP_TABLE.get(stamp_id, {})
@@ -192,15 +257,15 @@ static func ruined_block_src_tile(x: int, y: int, w: int, h: int) -> Vector2i:
 # Forbidden building placement tile classes (§4.2, §10.2, §11.1)
 const FORBIDDEN_BUILDING_TILES: Array[int] = [
 	TILE_WATER, TILE_ROAD, TILE_PATH, TILE_RAIL, TILE_BRIDGE,
-	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
+	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_STAMP, TILE_GRAVE, TILE_FENCE, TILE_VOID
 ]
 const FORBIDDEN_LANDMARK_TILES: Array[int] = [
 	TILE_WATER, TILE_ROAD, TILE_RAIL, TILE_BRIDGE,
-	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_GRAVE, TILE_FENCE, TILE_VOID
+	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_STAMP, TILE_GRAVE, TILE_FENCE, TILE_VOID
 ]
 const FORBIDDEN_SOUTH_RING_TILES: Array[int] = [
 	TILE_WATER, TILE_RAIL, TILE_BRIDGE,
-	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_VOID
+	TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_STAMP, TILE_VOID
 ]
 
 # Nudge offsets in evaluation order (§10.2 step 4)
@@ -449,6 +514,393 @@ static func _template_door_cols(t_name: String, w: int, gx0: int, gy0: int, worl
 			if off < w - 1:
 				cols.append(off)
 	return cols
+
+## Build pure-OSM landmark-local terrain grid in global (C, R) coordinates (§14.3.5 rule 4, F68 a & e)
+static func _build_landmark_terrain_grid(pad_c0: int, pad_c1: int, pad_r0: int, pad_r1: int, ncx_lo: int, ncx_hi: int, ncy_lo: int, ncy_hi: int, cx: int, cy: int, area: Dictionary) -> PackedByteArray:
+	var gw: int = pad_c1 - pad_c0 + 1
+	var gh: int = pad_r1 - pad_r0 + 1
+	var total: int = gw * gh
+	var local_class := PackedByteArray()
+	local_class.resize(total)
+	local_class.fill(TILE_VOID)
+
+	var local_cemetery := PackedByteArray()
+	local_cemetery.resize(total)
+	local_cemetery.fill(0)
+
+	var local_water_way := PackedByteArray()
+	local_water_way.resize(total)
+	local_water_way.fill(0)
+
+	var local_water_poly_sea := PackedByteArray()
+	local_water_poly_sea.resize(total)
+	local_water_poly_sea.fill(0)
+
+	# 1. Coverage & Sea (§4.1 steps 1-2)
+	var coast_segments: Array = []
+	var incoming: Dictionary = {}
+	var outgoing: Dictionary = {}
+	for ncy in range(ncy_lo, ncy_hi + 1):
+		for ncx in range(ncx_lo, ncx_hi + 1):
+			var off := Vector2i(ncx - cx, ncy - cy)
+			var n_data: Dictionary = area.get(off, {})
+			var lines: Array = n_data.get("lines", [])
+			for line in lines:
+				if line.get("kind", "") != "coastline":
+					continue
+				var geom = line.get("geom_pts", null)
+				if geom == null:
+					continue
+				var pts: PackedVector2Array = MapStore.unpack_pts(geom) if geom is PackedByteArray else PackedVector2Array(geom)
+				if pts.size() < 2:
+					continue
+				var origin := Vector2(float(ncx) * Grid.CELL_WM, float(ncy) * Grid.CELL_WM)
+				for i in range(pts.size() - 1):
+					var a := origin + pts[i] * MapStore.GEOM_UNIT_WM
+					var b := origin + pts[i + 1] * MapStore.GEOM_UNIT_WM
+					if (b - a).length_squared() < 1e-6:
+						continue
+					coast_segments.append([a, b])
+					incoming[_quantize_wm(b)] = a
+					outgoing[_quantize_wm(a)] = b
+
+	for lr in gh:
+		var gr: int = pad_r0 + lr
+		var owner_cy: int = -floori(float(gr) / 32.0) - 1
+		var gy_north: int = -gr - 1
+		for lc in gw:
+			var gc: int = pad_c0 + lc
+			var owner_cx: int = floori(float(gc) / 32.0)
+			var off := Vector2i(owner_cx - cx, owner_cy - cy)
+			var n_data: Dictionary = area.get(off, {})
+			var idx: int = lr * gw + lc
+			if not n_data.get("covered", false):
+				local_class[idx] = TILE_VOID
+				continue
+			local_class[idx] = TILE_GRASS
+			var sea_val: int = int(n_data.get("sea", 0))
+			if sea_val == 1:
+				local_class[idx] = TILE_WATER
+				local_water_poly_sea[idx] = 1
+			elif sea_val == 2 and not coast_segments.is_empty():
+				var p_wm := Vector2((float(gc) + 0.5) * Grid.TILE_WM, (float(gy_north) + 0.5) * Grid.TILE_WM)
+				var min_dist_sq := INF
+				var nearest_seg = null
+				var nearest_t := 0.0
+				for seg in coast_segments:
+					var sa: Vector2 = seg[0]
+					var sb: Vector2 = seg[1]
+					var ab := sb - sa
+					var len_sq := ab.length_squared()
+					var t := 0.0
+					if len_sq > 1e-6:
+						t = clampf((p_wm - sa).dot(ab) / len_sq, 0.0, 1.0)
+					var proj := sa + ab * t
+					var dist_sq := (p_wm - proj).length_squared()
+					if dist_sq < min_dist_sq:
+						min_dist_sq = dist_sq
+						nearest_seg = seg
+						nearest_t = t
+				if nearest_seg != null:
+					var na: Vector2 = nearest_seg[0]
+					var nb: Vector2 = nearest_seg[1]
+					var is_sea := false
+					if nearest_t > 1e-4 and nearest_t < 1.0 - 1e-4:
+						is_sea = (nb - na).cross(p_wm - na) < 0.0
+					else:
+						var v: Vector2 = na if nearest_t <= 1e-4 else nb
+						var vk := _quantize_wm(v)
+						if incoming.has(vk) and outgoing.has(vk):
+							var u_pt: Vector2 = incoming[vk]
+							var w_pt: Vector2 = outgoing[vk]
+							is_sea = (w_pt - u_pt).cross(p_wm - v) < 0.0
+						else:
+							is_sea = (nb - na).cross(p_wm - na) < 0.0
+					if is_sea:
+						local_class[idx] = TILE_WATER
+						local_water_poly_sea[idx] = 1
+
+	# 2. Land Cover Polygons (§4.1 step 3)
+	var polys_by_order: Dictionary = {
+		"farmland": [], "scrub": [], "forest": [], "park": [], "cemetery": [],
+		"sand": [], "wetland": [], "parking": [], "water": []
+	}
+	for ncy in range(ncy_lo, ncy_hi + 1):
+		for ncx in range(ncx_lo, ncx_hi + 1):
+			var off := Vector2i(ncx - cx, ncy - cy)
+			var polys: Array = area.get(off, {}).get("polys", [])
+			var base_c: float = float(ncx * 32 - pad_c0)
+			var base_r: float = float((-ncy - 1) * 32 - pad_r0)
+			for poly in polys:
+				var kind: String = poly.get("kind", "")
+				if not polys_by_order.has(kind):
+					continue
+				var geom = poly.get("geom_rings", null)
+				if geom == null:
+					continue
+				var rings: Array[PackedVector2Array] = []
+				if geom is PackedByteArray:
+					rings = MapStore.unpack_rings(geom)
+				elif geom is Array:
+					for r_item in geom:
+						if r_item is PackedVector2Array:
+							rings.append(r_item)
+				if rings.is_empty():
+					continue
+				var mapped_rings: Array[PackedVector2Array] = []
+				for ring in rings:
+					var m_ring := PackedVector2Array()
+					for pt in ring:
+						m_ring.append(Vector2(base_c + 2.0 * pt.x, base_r + 32.0 - 2.0 * pt.y))
+					mapped_rings.append(m_ring)
+				polys_by_order[kind].append(mapped_rings)
+
+	var order_keys := ["farmland", "scrub", "forest", "park", "cemetery", "sand", "wetland", "parking", "water"]
+	for kind in order_keys:
+		for rings in polys_by_order[kind]:
+			var outer: PackedVector2Array = rings[0]
+			var holes: Array[PackedVector2Array] = []
+			for h_i in range(1, rings.size()):
+				holes.append(rings[h_i])
+			var min_c := gw - 1
+			var max_c := 0
+			var min_r := gh - 1
+			var max_r := 0
+			for pt in outer:
+				min_c = mini(min_c, floori(pt.x))
+				max_c = maxi(max_c, ceili(pt.x))
+				min_r = mini(min_r, floori(pt.y))
+				max_r = maxi(max_r, ceili(pt.y))
+			min_c = clampi(min_c, 0, gw - 1)
+			max_c = clampi(max_c, 0, gw - 1)
+			min_r = clampi(min_r, 0, gh - 1)
+			max_r = clampi(max_r, 0, gh - 1)
+			for lr in range(min_r, max_r + 1):
+				var py := float(lr) + 0.5
+				var gy_north: int = -(pad_r0 + lr) - 1
+				for lc in range(min_c, max_c + 1):
+					var px := float(lc) + 0.5
+					if not point_in_polygon(px, py, outer, holes):
+						continue
+					var idx := lr * gw + lc
+					if local_class[idx] == TILE_VOID:
+						continue
+					match kind:
+						"farmland":
+							local_class[idx] = TILE_CROP if posmod(gy_north, 2) == 0 else TILE_GRASS
+						"scrub":
+							local_class[idx] = TILE_TALL_GRASS
+						"forest":
+							local_class[idx] = TILE_TREE
+						"park":
+							local_class[idx] = TILE_GRASS
+						"cemetery":
+							local_class[idx] = TILE_GRASS
+							local_cemetery[idx] = 1
+						"sand":
+							local_class[idx] = TILE_SAND
+						"wetland":
+							local_class[idx] = TILE_MARSH
+						"parking":
+							local_class[idx] = TILE_PLAZA
+						"water":
+							local_class[idx] = TILE_WATER
+							local_water_poly_sea[idx] = 1
+
+	# 3. Linear features before buildings (§4.1 step 4a) + path bridges
+	var line_groups: Dictionary = {"waterway": [], "rail": [], "road": [], "path": []}
+	for ncy in range(ncy_lo, ncy_hi + 1):
+		for ncx in range(ncx_lo, ncx_hi + 1):
+			var off := Vector2i(ncx - cx, ncy - cy)
+			var lines: Array = area.get(off, {}).get("lines", [])
+			var base_c: float = float(ncx * 32 - pad_c0)
+			var base_r: float = float((-ncy - 1) * 32 - pad_r0)
+			for line in lines:
+				var kind: String = line.get("kind", "")
+				if not line_groups.has(kind):
+					continue
+				var subkind: String = line.get("subkind", "")
+				var geom = line.get("geom_pts", null)
+				if geom == null:
+					continue
+				var pts: PackedVector2Array = MapStore.unpack_pts(geom) if geom is PackedByteArray else PackedVector2Array(geom)
+				if pts.size() < 2:
+					continue
+				var mapped_pts := PackedVector2Array()
+				for pt in pts:
+					mapped_pts.append(Vector2(base_c + 2.0 * pt.x, base_r + 32.0 - 2.0 * pt.y))
+				line_groups[kind].append({"subkind": subkind, "pts": mapped_pts})
+
+	for kind in ["waterway", "rail", "road", "path"]:
+		for item in line_groups[kind]:
+			var subkind: String = item["subkind"]
+			var is_bridge: bool = subkind.ends_with(":bridge")
+			if kind == "path" and not is_bridge:
+				continue
+			var pts: PackedVector2Array = item["pts"]
+			var width := 2
+			var target_class := TILE_PATH
+			match kind:
+				"waterway":
+					width = get_waterway_width(subkind)
+					target_class = TILE_WATER
+				"rail":
+					width = 2
+					target_class = TILE_RAIL
+				"road":
+					width = get_road_width(subkind)
+					target_class = TILE_ROAD if width >= 3 else TILE_PATH
+				"path":
+					width = 2
+					target_class = TILE_PATH
+			var lo: int = (width - 1) / 2
+			var hi: int = width - 1 - lo
+			for i in range(pts.size() - 1):
+				var p0: Vector2 = pts[i]
+				var p1: Vector2 = pts[i + 1]
+				var supercover := supercover_line(floori(p0.x), floori(p0.y), floori(p1.x), floori(p1.y))
+				for center in supercover:
+					for br in range(center.y - lo, center.y + hi + 1):
+						if br < 0 or br >= gh:
+							continue
+						for bc in range(center.x - lo, center.x + hi + 1):
+							if bc < 0 or bc >= gw:
+								continue
+							var idx := br * gw + bc
+							var cur_cls: int = local_class[idx]
+							if cur_cls == TILE_VOID:
+								continue
+							if kind == "waterway":
+								local_class[idx] = TILE_WATER
+								local_water_way[idx] = 1
+							elif kind == "rail":
+								if cur_cls == TILE_WATER or cur_cls == TILE_BRIDGE:
+									if is_bridge:
+										local_class[idx] = TILE_BRIDGE
+								else:
+									local_class[idx] = TILE_RAIL
+							elif kind == "road":
+								if cur_cls == TILE_WATER or cur_cls == TILE_BRIDGE:
+									if is_bridge:
+										local_class[idx] = TILE_BRIDGE
+									elif local_water_way[idx] == 1 and local_water_poly_sea[idx] == 0:
+										local_class[idx] = target_class
+								else:
+									local_class[idx] = target_class
+							elif kind == "path" and is_bridge:
+								if cur_cls == TILE_WATER or cur_cls == TILE_BRIDGE:
+									local_class[idx] = TILE_BRIDGE
+
+	# 4. Cemeteries (§4.1 step 7) -> GRAVE and FENCE
+	for lr in gh:
+		var gy_north: int = -(pad_r0 + lr) - 1
+		for lc in gw:
+			var idx := lr * gw + lc
+			if local_cemetery[idx] == 1 and local_class[idx] == TILE_GRASS:
+				var gc: int = pad_c0 + lc
+				if posmod(gc, 2) == 0 and posmod(gy_north, 3) == 0:
+					local_class[idx] = TILE_GRAVE
+
+	var cemetery_fences := PackedByteArray()
+	cemetery_fences.resize(total)
+	cemetery_fences.fill(0)
+	var card_offs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
+	for lr in gh:
+		for lc in gw:
+			var idx := lr * gw + lc
+			if local_cemetery[idx] == 1 and (local_class[idx] == TILE_GRASS or local_class[idx] == TILE_GRAVE):
+				for noff in card_offs:
+					var nc: int = lc + noff.x
+					var nr: int = lr + noff.y
+					if nc < 0 or nc >= gw or nr < 0 or nr >= gh or local_cemetery[nr * gw + nc] == 0:
+						cemetery_fences[idx] = 1
+						break
+	for idx in total:
+		if cemetery_fences[idx] == 1:
+			local_class[idx] = TILE_FENCE
+
+	return local_class
+
+## Shared-input cross-cell landmark stamp resolution (§14.3.3, §14.3.5, F68 a & e)
+static func _resolve_landmark_stamp(door_wm: Vector2, def: Dictionary, cx: int, cy: int, area: Dictionary) -> Dictionary:
+	var sw: int = int(def.get("w", 0))
+	var sh: int = int(def.get("h", 0))
+	var base_rows: int = int(def.get("base_rows", sh))
+	var tiles_map: Array = def.get("tiles", [])
+	if sw <= 0 or sh <= 0 or tiles_map.size() != sh:
+		return {"placed": false}
+
+	var door_arr = def.get("door", null)
+	var has_door: bool = (door_arr is Array and door_arr.size() >= 2)
+	var door_col: int = int(door_arr[0]) if has_door else (sw / 2)
+	var door_row: int = int(door_arr[1]) if has_door else (sh - 1)
+
+	var door_gx: int = floori(door_wm.x / Grid.TILE_WM)
+	var door_gy: int = -floori(door_wm.y / Grid.TILE_WM) - 1
+
+	var c_min: int = door_gx - door_col - 4
+	var c_max: int = door_gx - door_col + sw + 3
+	var r_min: int = door_gy - door_row + sh - base_rows - 4
+	var r_max: int = door_gy - door_row + sh + 4
+
+	var ncx_lo: int = floori(float(c_min) / 32.0)
+	var ncx_hi: int = floori(float(c_max) / 32.0)
+	var ncy_lo: int = -floori(float(r_max) / 32.0) - 1
+	var ncy_hi: int = -floori(float(r_min) / 32.0) - 1
+
+	var pad_c0: int = c_min - 1
+	var pad_c1: int = c_max + 1
+	var pad_r0: int = r_min - 1
+	var pad_r1: int = r_max + 1
+	var gw: int = pad_c1 - pad_c0 + 1
+
+	var local_class: PackedByteArray = _build_landmark_terrain_grid(
+		pad_c0, pad_c1, pad_r0, pad_r1, ncx_lo, ncx_hi, ncy_lo, ncy_hi, cx, cy, area
+	)
+
+	var forbidden_base: Array[int] = [
+		TILE_WATER, TILE_ROAD, TILE_RAIL, TILE_BRIDGE, TILE_VOID, TILE_GRAVE, TILE_FENCE
+	]
+	var forbidden_south: Array[int] = [
+		TILE_WATER, TILE_RAIL, TILE_BRIDGE, TILE_VOID
+	]
+
+	for nudge in LANDMARK_NUDGE_OFFSETS:
+		var agx: int = door_gx - door_col + nudge.x
+		var agy: int = door_gy - door_row + nudge.y
+		var ok := true
+		for ty in range(sh - base_rows, sh):
+			var row_str: String = str(tiles_map[ty])
+			for tx in sw:
+				var is_door_tile: bool = (has_door and tx == door_col and ty == door_row)
+				if row_str[tx] == "#" or is_door_tile:
+					var lc: int = (agx + tx) - pad_c0
+					var lr: int = (agy + ty) - pad_r0
+					var cls: int = local_class[lr * gw + lc]
+					if cls in forbidden_base:
+						ok = false
+						break
+			if not ok:
+				break
+		if ok and has_door:
+			var sc: int = (agx + door_col) - pad_c0
+			var sr: int = (agy + door_row + 1) - pad_r0
+			var s_cls: int = local_class[sr * gw + sc]
+			if s_cls in forbidden_south:
+				ok = false
+		if ok:
+			return {
+				"placed": true,
+				"anchor_gx": agx,
+				"anchor_gy": agy
+			}
+
+	return {"placed": false}
+
+static var _use_legacy_item33_anchor_frame := false
+
+static func _cell_row0(cy: int) -> int:
+	return cy * 32 if _use_legacy_item33_anchor_frame else (-cy - 1) * 32
 
 ## Synthesize a cell's 32x32 tiles from a 3x3 neighbourhood (§4)
 static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int = MapConstants.MAP_SEED) -> Dictionary:
@@ -1004,6 +1456,9 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				})
 
 	var cell_origin_wm := Vector2(float(cx) * Grid.CELL_WM, float(cy) * Grid.CELL_WM)
+	var in_landmark_stamp_box := PackedByteArray()
+	in_landmark_stamp_box.resize(total_tiles)
+	in_landmark_stamp_box.fill(0)
 
 	for entry in all_landmarks:
 		var lm: Dictionary = entry["lm"]
@@ -1070,6 +1525,115 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						best_near_area = c_area
 						best_near_off = c_off
 						matched_nf_idx = nf_i
+
+		# Landmark set-piece placement (§12.3, §14.3, F68 a-f)
+		var lm_stamp_id: int = get_landmark_stamp_id(lm_id)
+		if lm_stamp_id >= 0:
+			var s_def: Dictionary = get_stamp_def(lm_stamp_id)
+			var s_res: Dictionary = _resolve_landmark_stamp(door_wm, s_def, cx, cy, area)
+			if bool(s_res.get("placed", false)):
+				if matched_nf_idx != -1:
+					used_neigh_footprints[matched_nf_idx] = true
+					var matched_nf_s: Dictionary = neigh_footprints[matched_nf_idx]
+					if matched_nf_s["offset"] == Vector2i.ZERO:
+						used_candidate_indices[int(matched_nf_s["center_idx"])] = true
+
+				var agx: int = int(s_res["anchor_gx"])
+				var agy: int = int(s_res["anchor_gy"])
+				var sw: int = int(s_def["w"])
+				var sh: int = int(s_def["h"])
+				var base_rows: int = int(s_def["base_rows"])
+				var tiles_map: Array = s_def["tiles"]
+				var door_arr = s_def.get("door", null)
+				var has_door: bool = (door_arr is Array and door_arr.size() >= 2)
+				var d_col: int = int(door_arr[0]) if has_door else (sw / 2)
+				var d_row: int = int(door_arr[1]) if has_door else (sh - 1)
+				var door_tile_gx: int = agx + d_col
+				var door_tile_gy: int = agy + d_row
+
+				var cell_c0: int = cx * 32
+				var cell_r0: int = (-cy - 1) * 32
+
+				# Suppress any ordinary building candidate overlapping the stamp's W x H box or the tile south of its door (§14.3.5 rule 5, F68 e)
+				for c_idx in building_candidates.size():
+					if used_candidate_indices.has(c_idx):
+						continue
+					var bc: Dictionary = building_candidates[c_idx]
+					var bc_c0: int = cell_c0 + (int(bc["col0"]) - 4)
+					var bc_c1: int = bc_c0 + int(bc["w"]) - 1
+					var bc_r0: int = cell_r0 + (int(bc["row0"]) - 4)
+					var bc_r1: int = bc_r0 + int(bc["h"]) - 1
+					if bc_c1 >= agx and bc_c0 < agx + sw and bc_r1 >= agy and bc_r0 < agy + sh:
+						used_candidate_indices[c_idx] = true
+					elif has_door and door_tile_gx >= bc_c0 and door_tile_gx <= bc_c1 and (door_tile_gy + 1) >= bc_r0 and (door_tile_gy + 1) <= bc_r1:
+						used_candidate_indices[c_idx] = true
+
+				for ty in sh:
+					var r: int = (agy + ty) - cell_r0 + 4
+					if r < 0 or r >= WORK_SIZE:
+						continue
+					var row_str: String = str(tiles_map[ty])
+					for tx in sw:
+						var c: int = (agx + tx) - cell_c0 + 4
+						if c < 0 or c >= WORK_SIZE:
+							continue
+						var idx: int = r * WORK_SIZE + c
+						reserved_grid[idx] = 1
+						in_landmark_stamp_box[idx] = 1
+						var ch: String = row_str[tx]
+						if has_door and tx == d_col and ty == d_row:
+							grid_class[idx] = TILE_DOOR
+							grid_variant[idx] = 32
+							grid_mask[idx] = lm_stamp_id
+							if c >= WORK_CELL_START and c < WORK_CELL_END and r >= WORK_CELL_START and r < WORK_CELL_END:
+								all_doors.append(Vector2i(c, r))
+						elif ch == "#":
+							grid_class[idx] = TILE_STAMP
+							grid_variant[idx] = lm_stamp_id
+							grid_mask[idx] = STAMP_FLAG_SOLID
+						elif ch == "+":
+							grid_class[idx] = TILE_STAMP
+							grid_variant[idx] = lm_stamp_id
+							grid_mask[idx] = 0 if ty >= sh - base_rows else STAMP_FLAG_OVERHANG
+
+				if has_door:
+					var sc: int = door_tile_gx - cell_c0 + 4
+					var sr: int = (door_tile_gy + 1) - cell_r0 + 4
+					if sc >= 0 and sc < WORK_SIZE and sr >= 0 and sr < WORK_SIZE:
+						reserved_grid[sr * WORK_SIZE + sc] = 1
+						in_landmark_stamp_box[sr * WORK_SIZE + sc] = 1
+
+				if agx + sw > cell_c0 and agx < cell_c0 + 32 and agy + sh > cell_r0 and agy < cell_r0 + 32:
+					var out_agy: int = (cy * 32 + (agy - cell_r0)) if _use_legacy_item33_anchor_frame else agy
+					stamps_list.append({
+						"stamp_id": lm_stamp_id,
+						"anchor_gx": agx,
+						"anchor_gy": out_agy,
+						"w": sw,
+						"h": sh
+					})
+
+				if has_door and door_tile_gx >= cell_c0 and door_tile_gx < cell_c0 + 32 and door_tile_gy >= cell_r0 and door_tile_gy < cell_r0 + 32 and landmarks_placed_count < 4:
+					buildings_placed_count += 1
+					landmarks_placed_count += 1
+					if not lm_id.is_empty():
+						landmark_ids_placed.append(lm_id)
+					var lm_door_c_s: int = door_tile_gx - cell_c0 + 4
+					var lm_door_r_s: int = door_tile_gy - cell_r0 + 4
+					placed_buildings.append({
+						"col0": lm_door_c_s,
+						"row0": lm_door_r_s,
+						"w": 1,
+						"h": 1,
+						"door_cols": [0],
+						"is_landmark": true
+					})
+					landmark_sign_specs.append({
+						"name": lm_name,
+						"is_building": true,
+						"door_pos": Vector2i(lm_door_c_s, lm_door_r_s)
+					})
+				continue
 
 		if matched_nf_idx == -1:
 			# If no footprint is found anywhere and the door lies in the centre cell, place the sign only (§11.1a step 2)
@@ -1546,7 +2110,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					stamps_list.append({
 						"stamp_id": 42,
 						"anchor_gx": cx * 32 + (b_col0 - 4),
-						"anchor_gy": cy * 32 + (sec_row0 - 4),
+						"anchor_gy": _cell_row0(cy) + (sec_row0 - 4),
 						"w": sec_w,
 						"h": sec_h
 					})
@@ -1578,7 +2142,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 								stamps_list.append({
 									"stamp_id": d_sid,
 									"anchor_gx": cx * 32 + (dc - 4),
-									"anchor_gy": cy * 32 + (dr - 4),
+									"anchor_gy": _cell_row0(cy) + (dr - 4),
 									"w": 1,
 									"h": 1
 								})
@@ -1622,7 +2186,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					stamps_list.append({
 						"stamp_id": stamp_id,
 						"anchor_gx": cx * 32 + (b_col0 - 4),
-						"anchor_gy": cy * 32 + (b_row0 - 4),
+						"anchor_gy": _cell_row0(cy) + (b_row0 - 4),
 						"w": b_w,
 						"h": b_h
 					})
@@ -1635,7 +2199,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				for r in range(b_row0, b_row0 + b_h):
 					if r >= 0 and r < WORK_SIZE:
 						var e_idx: int = r * WORK_SIZE + east_c
-						if grid_class[e_idx] == TILE_GRASS:
+						if grid_class[e_idx] == TILE_GRASS and in_landmark_stamp_box[e_idx] == 0:
 							grid_class[e_idx] = TILE_RUBBLE
 							grid_variant[e_idx] = 0
 							rubble_ring_placed = true
@@ -1646,7 +2210,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					for r in range(b_row0, b_row0 + b_h):
 						if r >= 0 and r < WORK_SIZE:
 							var w_idx: int = r * WORK_SIZE + west_c
-							if grid_class[w_idx] == TILE_GRASS:
+							if grid_class[w_idx] == TILE_GRASS and in_landmark_stamp_box[w_idx] == 0:
 								grid_class[w_idx] = TILE_RUBBLE
 								grid_variant[w_idx] = 0
 								break
@@ -1706,7 +2270,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					stamps_list.append({
 						"stamp_id": stamp_id,
 						"anchor_gx": cx * 32 + (b_col0 - 4),
-						"anchor_gy": cy * 32 + (b_row0 - 4),
+						"anchor_gy": _cell_row0(cy) + (b_row0 - 4),
 						"w": b_w,
 						"h": b_h
 					})
@@ -1744,7 +2308,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						stamps_list.append({
 							"stamp_id": 58,
 							"anchor_gx": cx * 32 + (ds_c - 4),
-							"anchor_gy": cy * 32 + (ds_r - 4),
+							"anchor_gy": _cell_row0(cy) + (ds_r - 4),
 							"w": 1,
 							"h": 1
 						})
@@ -1773,7 +2337,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 							stamps_list.append({
 								"stamp_id": d_sid,
 								"anchor_gx": cx * 32 + (dc - 4),
-								"anchor_gy": cy * 32 + (dr - 4),
+								"anchor_gy": _cell_row0(cy) + (dr - 4),
 								"w": 1,
 								"h": 1
 							})
@@ -1898,7 +2462,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					park_trees[idx] = 1
 
 	for idx in total_tiles:
-		if park_trees[idx] == 1:
+		if park_trees[idx] == 1 and in_landmark_stamp_box[idx] == 0:
 			grid_class[idx] = TILE_TREE
 
 	# 6c. Forests: tiles at least 2 tiles from forest edge become TALL_GRASS where v > 0.70
@@ -1947,7 +2511,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 	for r in WORK_SIZE:
 		for c in WORK_SIZE:
 			var idx := r * WORK_SIZE + c
-			if is_cemetery[idx] == 1 and grid_class[idx] == TILE_GRASS:
+			if is_cemetery[idx] == 1 and grid_class[idx] == TILE_GRASS and in_landmark_stamp_box[idx] == 0:
 				var gx := cx * 32 + (c - 4)
 				var gy := cy * 32 + (35 - r)
 				if posmod(gx, 2) == 0 and posmod(gy, 3) == 0:
@@ -1972,7 +2536,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					cemetery_fences[idx] = 1
 
 	for idx in total_tiles:
-		if cemetery_fences[idx] == 1:
+		if cemetery_fences[idx] == 1 and in_landmark_stamp_box[idx] == 0:
 			grid_class[idx] = TILE_FENCE
 
 	# -------------------------------------------------------------
@@ -2056,7 +2620,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 
 				# 8a. TREE scatter
 				var threshold: float = res_tree_thresh if is_residential[idx] == 1 else 0.05
-				if u_rand(gx, gy, world_seed, SALT_TREE_SCATTER) < threshold:
+				if in_landmark_stamp_box[idx] == 0 and u_rand(gx, gy, world_seed, SALT_TREE_SCATTER) < threshold:
 					# Check 8-neighbourhood for forbidden classes
 					var blocked := false
 					for dr in range(-1, 2):

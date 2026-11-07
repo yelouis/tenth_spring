@@ -589,8 +589,8 @@ func run_test() -> bool:
 	var stamp_overhang: Node2D = map_view.get_node_or_null("StampOverhangLayer")
 	var s_fog_layer: TileMapLayer = map_view.get_node_or_null("FogLayer")
 	var s_overview_layer: Node2D = map_view.get_node_or_null("OverviewLayer")
-	if stamp_base == null or stamp_overhang == null or stamp_base.z_index != 1 or stamp_overhang.z_index != 10:
-		push_error("(33) Stamp layers missing or wrong z_index: base=%s overhang=%s" % [str(stamp_base), str(stamp_overhang)])
+	if stamp_base == null or stamp_overhang == null or stamp_base.z_index != 1 or stamp_overhang.z_index != 10 or not stamp_base.y_sort_enabled or not stamp_overhang.y_sort_enabled:
+		push_error("(33/30) Stamp layers missing, wrong z_index, or y_sort_enabled false: base=%s overhang=%s" % [str(stamp_base), str(stamp_overhang)])
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 	if s_fog_layer == null or s_fog_layer.z_index != 20 or s_overview_layer == null or s_overview_layer.z_index != 30:
@@ -608,12 +608,13 @@ func run_test() -> bool:
 	stamp_test_tiles.resize(32 * 32 * 3)
 	stamp_test_tiles.fill(0)
 	DB.upsert_map_cell(12, 12, 1, 0)
+	var c12_r0: int = (-12 - 1) * 32
 	map_view.get_lru_cache().put(Vector2i(12, 12), {
 		"buf": stamp_test_tiles,
 		"signs": [],
 		"stamps": [
-			{"stamp_id": 15, "anchor_gx": 12 * 32 + 4, "anchor_gy": 12 * 32 + 6, "w": 4, "h": 4, "door_gx": 12 * 32 + 5, "door_gy": 12 * 32 + 9},
-			{"stamp_id": 42, "anchor_gx": 12 * 32 + 12, "anchor_gy": 12 * 32 + 10, "w": 10, "h": 9, "door_gx": 12 * 32 + 17, "door_gy": 12 * 32 + 18}
+			{"stamp_id": 15, "anchor_gx": 12 * 32 + 4, "anchor_gy": c12_r0 + 6, "w": 4, "h": 4},
+			{"stamp_id": 42, "anchor_gx": 12 * 32 + 12, "anchor_gy": c12_r0 + 10, "w": 8, "h": 7}
 		],
 		"reveal_state": 1
 	})
@@ -624,7 +625,7 @@ func run_test() -> bool:
 		return false
 	var cell_12_nodes: Array = map_view._cell_stamp_sprites[Vector2i(12, 12)]
 	if cell_12_nodes.size() != 2:
-		push_error("(33) Expected 2 Sprite2D nodes for house_s (1) + 10x9 ruined_block (1), got %d" % cell_12_nodes.size())
+		push_error("(33) Expected 2 Sprite2D nodes for house_s (1) + 8x7 ruined_block (1), got %d" % cell_12_nodes.size())
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 	map_view._clear_cell_stamps(Vector2i(12, 12))
@@ -632,6 +633,42 @@ func run_test() -> bool:
 		push_error("(33) _clear_cell_stamps did not remove _cell_stamp_sprites for cell (12, 12)")
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
+
+	# 13. Item 30 (§14.3.4, §14.3.5, F68 a, f): Cross-cell north-south seam & y-sort position/offset check
+	var ns_stamp := {"stamp_id": 13, "anchor_gx": 14, "anchor_gy": -52, "w": 6, "h": 24}
+	DB.upsert_map_cell(0, 0, 1, 0)
+	DB.upsert_map_cell(0, 1, 1, 0)
+	map_view.get_lru_cache().put(Vector2i(0, 0), {
+		"buf": stamp_test_tiles, "signs": [], "stamps": [ns_stamp], "reveal_state": 1
+	})
+	map_view.get_lru_cache().put(Vector2i(0, 1), {
+		"buf": stamp_test_tiles, "signs": [], "stamps": [ns_stamp], "reveal_state": 1
+	})
+	map_view._render_cell(0, 0)
+	map_view._render_cell(0, 1)
+	var c00_nodes: Array = map_view._cell_stamp_sprites.get(Vector2i(0, 0), [])
+	var c01_nodes: Array = map_view._cell_stamp_sprites.get(Vector2i(0, 1), [])
+	if c00_nodes.size() != 2 or c01_nodes.size() != 1:
+		push_error("(30) Expected 2 slices in cell(0,0) (overhang ty=20 + base ty=21..23) and 1 overhang slice in cell(0,1) (ty=0..19), got %d and %d" % [c00_nodes.size(), c01_nodes.size()])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var sp_c01: Sprite2D = c01_nodes[0]
+	var sp_c00_over: Sprite2D = c00_nodes[0]
+	var sp_c00_base: Sprite2D = c00_nodes[1]
+	# All 3 slices share the exact same y-sort foot position.y == (-52 + 24) * 32 == -896.0
+	if not is_equal_approx(sp_c01.position.y, -896.0) or not is_equal_approx(sp_c00_over.position.y, -896.0) or not is_equal_approx(sp_c00_base.position.y, -896.0):
+		push_error("(30) Cross-cell slices must share y-sort foot position.y=-896.0, got %f, %f, %f" % [sp_c01.position.y, sp_c00_over.position.y, sp_c00_base.position.y])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	# Verify seamless vertical continuation across cell boundary y = -32 * 32 = -1024.0
+	var c01_bottom_y: float = sp_c01.position.y + sp_c01.offset.y * sp_c01.scale.y + sp_c01.region_rect.size.y * sp_c01.scale.y
+	var c00_top_y: float = sp_c00_over.position.y + sp_c00_over.offset.y * sp_c00_over.scale.y
+	if not is_equal_approx(c01_bottom_y, -1024.0) or not is_equal_approx(c00_top_y, -1024.0):
+		push_error("(30) North-south seam gap between cell(0,1) bottom (%f) and cell(0,0) top (%f)" % [c01_bottom_y, c00_top_y])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._clear_cell_stamps(Vector2i(0, 0))
+	map_view._clear_cell_stamps(Vector2i(0, 1))
 
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")

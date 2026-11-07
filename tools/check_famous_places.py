@@ -279,7 +279,148 @@ def validate_famous_places(config_path):
         unreachable = sorted(legendary_dex_set - reachable)
         raise ValueError(f"Circular or unreachable legendary dex chain: {unreachable}")
 
+    # Validate game/config/landmark_art.json (§12.1, §14.3.7, F68 c)
+    config_dir = os.path.dirname(os.path.abspath(config_path))
+    repo_root = os.path.dirname(os.path.dirname(config_dir))
+    landmark_art_path = os.environ.get(
+        "TENTH_SPRING_LANDMARK_ART_JSON",
+        os.path.join(config_dir, "landmark_art.json"),
+    )
+    validate_landmark_art(repo_root, places, landmark_art_path)
+
     return True
+
+
+REQUIRED_TIER2_INTERIOR_STAMPS = {
+    "dc:washington-monument": "obelisk",
+    "dc:lincoln-memorial": "lincoln",
+    "dc:library-of-congress": "library_of_congress",
+    "new-york:statue-of-liberty": "liberty",
+    "new-york:grand-central": "grand_central",
+    "st-louis:gateway-arch": "arch",
+    "seattle:space-needle": "needle",
+    "san-francisco:coit-tower": "coit",
+    "san-francisco:alcatraz": "alcatraz",
+    "boston-harbor-islands:boston-light": "boston_light",
+    "cape-hatteras:lighthouse": "hatteras_light",
+    "nashville:parthenon": "parthenon",
+    "philadelphia:independence-hall": "independence",
+    "las-vegas:neon-museum": "neon_signs",
+}
+
+REQUIRED_TIER2_STRUCTURE_STAMPS = {
+    "san-francisco:golden-gate-tower": "gg_tower",
+}
+
+
+def _find_original_png(original_dir, asset_id):
+    for subdir in ("landmarks", "ruins"):
+        candidate = os.path.join(original_dir, subdir, f"{asset_id}.png")
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+def validate_landmark_art(repo_root, places, landmark_art_path):
+    if not os.path.isfile(landmark_art_path):
+        raise FileNotFoundError(f"Landmark art register not found: {landmark_art_path}")
+
+    with open(landmark_art_path, "r", encoding="utf-8") as f:
+        reg = json.load(f)
+
+    if not isinstance(reg, dict):
+        raise ValueError("landmark_art.json root must be a JSON object")
+    if "stamps" in reg:
+        raise ValueError("landmark_art.json must not contain 'stamps' geometry table (STAMP_TABLE lives in tile_synth2.gd, F68 c)")
+
+    interiors_reg = reg.get("interiors")
+    structures_reg = reg.get("structures")
+    if not isinstance(interiors_reg, dict) or not isinstance(structures_reg, dict):
+        raise ValueError("landmark_art.json must contain 'interiors' and 'structures' objects")
+
+    all_interior_ids = set()
+    vc_ids = set()
+    site_struct_ids = set()
+    for p in places:
+        p_kind = p.get("kind", "")
+        for item in p.get("interiors", []):
+            iid = item.get("id", "")
+            all_interior_ids.add(iid)
+            if p_kind == "site":
+                if iid.endswith(":visitor-centre"):
+                    vc_ids.add(iid)
+                elif iid not in REQUIRED_TIER2_INTERIOR_STAMPS:
+                    site_struct_ids.add(iid)
+
+    if len(vc_ids) != 60:
+        raise ValueError(f"Expected 60 park visitor centres in famous_places.json, got {len(vc_ids)}")
+    if len(site_struct_ids) != 16:
+        raise ValueError(f"Expected 16 Tier 3 site structures in famous_places.json, got {len(site_struct_ids)}")
+
+    # Load provenance.json and emerald_tile_map.json
+    original_dir = os.path.join(repo_root, "game", "assets", "original")
+    prov_path = os.path.join(original_dir, "provenance.json")
+    if not os.path.isfile(prov_path):
+        raise FileNotFoundError(f"Provenance file not found: {prov_path}")
+    with open(prov_path, "r", encoding="utf-8") as f:
+        prov_list = json.load(f)
+    prov_assets = {entry.get("asset") for entry in prov_list if isinstance(entry, dict) and entry.get("asset")}
+
+    emerald_map_path = os.path.join(repo_root, "game", "config", "emerald_tile_map.json")
+    emerald_compositions = set()
+    if os.path.isfile(emerald_map_path):
+        with open(emerald_map_path, "r", encoding="utf-8") as f:
+            em_map = json.load(f)
+        if isinstance(em_map.get("compositions"), dict):
+            emerald_compositions = set(em_map["compositions"].keys())
+
+    def _check_entry(entry_id, spec, section_name):
+        if not isinstance(spec, dict):
+            raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] must be an object")
+        src = spec.get("source", "")
+        if src == "original":
+            stamp_id = spec.get("stamp", "")
+            if not isinstance(stamp_id, str) or not stamp_id:
+                raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] source='original' requires non-empty 'stamp'")
+            if stamp_id not in prov_assets:
+                raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] references unknown stamp '{stamp_id}' (not in provenance.json)")
+            if _find_original_png(original_dir, stamp_id) is None:
+                raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] stamp '{stamp_id}' PNG missing under game/assets/original/")
+        elif src == "emerald":
+            comp_id = spec.get("composition", "")
+            if not isinstance(comp_id, str) or not comp_id or comp_id not in emerald_compositions:
+                raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] references unknown emerald composition '{comp_id}'")
+        elif src == "gilded":
+            pass
+        else:
+            raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] has invalid source '{src}'")
+
+    for iid, spec in interiors_reg.items():
+        if iid not in all_interior_ids:
+            raise ValueError(f"landmark_art.json interiors key '{iid}' is not a valid interior ID in famous_places.json")
+        _check_entry(iid, spec, "interiors")
+
+    for sid, spec in structures_reg.items():
+        _check_entry(sid, spec, "structures")
+
+    # Verify all 14 enterable Tier 2 stamps, 60 visitor centres, 16 site structures, and gg_tower are registered
+    for req_iid, req_stamp in REQUIRED_TIER2_INTERIOR_STAMPS.items():
+        entry = interiors_reg.get(req_iid)
+        if not entry or entry.get("source") != "original" or entry.get("stamp") != req_stamp:
+            raise ValueError(f"landmark_art.json missing required Tier 2 interior stamp '{req_iid}' -> '{req_stamp}'")
+
+    for vc_id in sorted(vc_ids):
+        if vc_id not in interiors_reg:
+            raise ValueError(f"landmark_art.json missing visitor centre '{vc_id}'")
+
+    for ss_id in sorted(site_struct_ids):
+        if ss_id not in interiors_reg:
+            raise ValueError(f"landmark_art.json missing Tier 3 site structure '{ss_id}'")
+
+    for req_sid, req_stamp in REQUIRED_TIER2_STRUCTURE_STAMPS.items():
+        entry = structures_reg.get(req_sid)
+        if not entry or entry.get("source") != "original" or entry.get("stamp") != req_stamp:
+            raise ValueError(f"landmark_art.json missing required Tier 2 structure stamp '{req_sid}' -> '{req_stamp}'")
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

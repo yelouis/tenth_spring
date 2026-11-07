@@ -185,9 +185,10 @@ func _ready() -> void:
 			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_DOOR:
 				total_building_tiles += 1
 			elif cls == TileSynth2.TILE_STAMP:
-				if (mask & TileSynth2.STAMP_FLAG_SOLID) != 0 and (variant <= 38 or variant == 42 or variant >= 128):
+				var s_kind: String = str(TileSynth2.get_stamp_def(variant).get("kind", ""))
+				if (mask & TileSynth2.STAMP_FLAG_SOLID) != 0 and s_kind in ["landmark", "house", "shell", "block"]:
 					total_building_tiles += 1
-				elif (variant >= 39 and variant <= 41) or (variant >= 43 and variant <= 58):
+				elif s_kind == "decal":
 					total_rubble_tiles += 1
 			elif cls == TileSynth2.TILE_PATH:
 				total_path_tiles += 1
