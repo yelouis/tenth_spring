@@ -66,8 +66,9 @@ const SALT_GONE_STATE := 17
 const SALT_DECAL_COUNT := 18
 const SALT_DECAL_DOORSTEP := 19
 const SALT_DECAL_POS := 20
+const SALT_BLOCK_DESIGN := 21
 
-# Stamp metadata table 1..59 (0 reserved; §14.2.1, §14.3.2, F68 b-c)
+# Stamp metadata table 1..70 (0 reserved; §14.2.1, §14.3.2, F68 b-c, Item 38)
 const STAMP_TABLE: Dictionary = {
 	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
 	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
@@ -127,7 +128,18 @@ const STAMP_TABLE: Dictionary = {
 	56: {"id": "decal_sapling", "kind": "decal", "path": "ruins/decal_sapling.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
 	57: {"id": "decal_boulder", "kind": "decal", "path": "ruins/decal_boulder.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
 	58: {"id": "decal_doorstep", "kind": "decal", "path": "ruins/decal_doorstep.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	59: {"id": "alcatraz", "kind": "landmark", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5], "tiles": [".......+.........++++...", "...++++++++++++++++++...", "...++++++++++++++++++...", "...+#################...", "...+#################++.", ".+####################+."]}
+	59: {"id": "alcatraz", "kind": "landmark", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5], "tiles": [".......+.........++++...", "...++++++++++++++++++...", "...++++++++++++++++++...", "...+#################...", "...+#################++.", ".+####################+."]},
+	60: {"id": "ruined_block_8x7_b", "kind": "block", "path": "ruins/ruined_block_8x7_b.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4]},
+	61: {"id": "ruined_block_6x11_a", "kind": "block", "path": "ruins/ruined_block_6x11_a.png", "w": 6, "h": 11, "base_rows": 11, "door": [2, 10], "door_cols": [2, 3]},
+	62: {"id": "ruined_block_6x11_b", "kind": "block", "path": "ruins/ruined_block_6x11_b.png", "w": 6, "h": 11, "base_rows": 11, "door": [2, 10], "door_cols": [2, 3]},
+	63: {"id": "ruined_block_9x9_a", "kind": "block", "path": "ruins/ruined_block_9x9_a.png", "w": 9, "h": 9, "base_rows": 9, "door": [4, 8], "door_cols": [4]},
+	64: {"id": "ruined_block_9x9_b", "kind": "block", "path": "ruins/ruined_block_9x9_b.png", "w": 9, "h": 9, "base_rows": 9, "door": [4, 8], "door_cols": [4]},
+	65: {"id": "ruined_block_11x13_a", "kind": "block", "path": "ruins/ruined_block_11x13_a.png", "w": 11, "h": 13, "base_rows": 13, "door": [5, 12], "door_cols": [5]},
+	66: {"id": "ruined_block_11x13_b", "kind": "block", "path": "ruins/ruined_block_11x13_b.png", "w": 11, "h": 13, "base_rows": 13, "door": [5, 12], "door_cols": [5]},
+	67: {"id": "ruined_block_16x14_a", "kind": "block", "path": "ruins/ruined_block_16x14_a.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
+	68: {"id": "ruined_block_16x14_b", "kind": "block", "path": "ruins/ruined_block_16x14_b.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
+	69: {"id": "ruined_block_23x14_a", "kind": "block", "path": "ruins/ruined_block_23x14_a.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
+	70: {"id": "ruined_block_23x14_b", "kind": "block", "path": "ruins/ruined_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]}
 }
 
 static var _landmark_art_loaded := false
@@ -2061,16 +2073,56 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 				roof_col = 3
 
 			if b_t == "block_l":
-				# Ruined block_l -> Option B stand-in (Decision 52, F69 a-b, §14.1.5):
-				# Standing section W' x H' = min(W, 8) x min(H, 7) at the footprint's south-west corner;
-				# doors at the drawing's doorway columns 3 and 4 ([3, 4] for W' >= 7, [3] for W' == 6);
-				# rest of the footprint is a row-major rubble lot of L tiles with max(2, floor(L / 8)) decals.
+				# Ruined block_l -> Place whole ruined blocks by size (Item 38, Decision 52, §14.1.5):
+				# Consider every chosen whole drawing with w <= W and h <= H, plus Item 33c's cropped section min(W, 8) x min(H, 7).
+				# Take the largest area; on a tie, prefer a whole drawing over the section, then the wider one.
 				var sec_w: int = mini(b_w, 8)
 				var sec_h: int = mini(b_h, 7)
+				var best_area: int = sec_w * sec_h
+				var best_is_whole := false
+				var best_sid_a := 42
+				var best_sid_b := 42
+				var whole_specs: Array = [
+					{"w": 8, "h": 7, "sid_a": 42, "sid_b": 60},
+					{"w": 6, "h": 11, "sid_a": 61, "sid_b": 62},
+					{"w": 9, "h": 9, "sid_a": 63, "sid_b": 64},
+					{"w": 11, "h": 13, "sid_a": 65, "sid_b": 66},
+					{"w": 16, "h": 14, "sid_a": 67, "sid_b": 68},
+					{"w": 23, "h": 14, "sid_a": 69, "sid_b": 70},
+				]
+				for ws in whole_specs:
+					var ww: int = int(ws["w"])
+					var wh: int = int(ws["h"])
+					if ww <= b_w and wh <= b_h:
+						var w_area: int = ww * wh
+						var better := false
+						if w_area > best_area:
+							better = true
+						elif w_area == best_area:
+							if not best_is_whole or ww > sec_w:
+								better = true
+						if better:
+							sec_w = ww
+							sec_h = wh
+							best_area = w_area
+							best_is_whole = true
+							best_sid_a = int(ws["sid_a"])
+							best_sid_b = int(ws["sid_b"])
+
+				var chosen_sid: int = 42
+				if best_is_whole:
+					var is_design_a: bool = u_rand(gx0, gy0, world_seed, SALT_BLOCK_DESIGN) < 0.50
+					chosen_sid = best_sid_a if is_design_a else best_sid_b
 				var sec_row0: int = b_row0 + (b_h - sec_h)
-				var new_door_cols: Array[int] = [3]
-				if sec_w >= 7:
-					new_door_cols.append(4)
+				var new_door_cols: Array[int] = []
+				if best_is_whole:
+					var def_dcols: Array = STAMP_TABLE[chosen_sid].get("door_cols", [])
+					for dc_val in def_dcols:
+						new_door_cols.append(int(dc_val))
+				else:
+					new_door_cols = [3]
+					if sec_w >= 7:
+						new_door_cols.append(4)
 				for old_d_col in b["door_cols"]:
 					all_doors.erase(Vector2i(b_col0 + old_d_col, b_row0 + b_h - 1))
 				for nd_col in new_door_cols:
@@ -2089,10 +2141,10 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 							if tr == b_h - 1 and tc in new_door_cols:
 								grid_class[idx] = TILE_DOOR
 								grid_variant[idx] = 16 + roof_col
-								grid_mask[idx] = 42
+								grid_mask[idx] = chosen_sid
 							else:
 								grid_class[idx] = TILE_STAMP
-								grid_variant[idx] = 42
+								grid_variant[idx] = chosen_sid
 								grid_mask[idx] = STAMP_FLAG_SOLID
 						else:
 							var gx: int = cx * 32 + (c - 4)
@@ -2108,7 +2160,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 
 				if b_col0 + sec_w > WORK_CELL_START and b_col0 < WORK_CELL_END and sec_row0 + sec_h > WORK_CELL_START and sec_row0 < WORK_CELL_END:
 					stamps_list.append({
-						"stamp_id": 42,
+						"stamp_id": chosen_sid,
 						"anchor_gx": cx * 32 + (b_col0 - 4),
 						"anchor_gy": _cell_row0(cy) + (sec_row0 - 4),
 						"w": sec_w,
