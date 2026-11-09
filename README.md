@@ -4,7 +4,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 
 **The setting:** a generation after a collapse. Half the houses have fallen in, grass grows through the streets, the cities stand empty, and the Ghost types have moved in. The fog over the unexplored world is the Distortion — reality only holds where people still walk. Cemeteries, ruins, and abandoned hospitals are thick with Ghost Pokémon; at night they are everywhere. Hauntings spread outward if left alone. Nine Wardens hold the line across the nine regions of the USA, and the Distortion has started learning *you*: at the end, you face the Echo — the fog wearing your face, leading a stronger copy of your own team. The full backstory is `docs/design_story_and_world.md`.
 
-**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. Like PokeMMO, the game asks you to import Pokémon ROMs **dumped from cartridges you own** — Pokémon Black or White for the Pokémon sprites, and Pokémon Emerald for the map's tiles — and reads them on your own machine.
+**How the Pokémon content works — read this first.** This is a non-commercial fan project. It contains **no Nintendo assets**. The world map runs out of the box with Tenth Spring's own recoloured public-domain (CC0) terrain and original building, ruin, landmark, and foliage sprites (`CREDITS.md`) — no GBA Emerald ROM is needed. Like PokeMMO, the game asks you to import a Pokémon Black or White ROM **dumped from a cartridge you own** for the Pokémon and trainer sprites, and reads it on your own machine.
 
 **All 905 Pokémon of Generations 1–8 are included:**
 - #650–905 use the [Smogon Sprite Project](https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/)'s Black/White-style fan sprites (credited in-game and in `CREDITS.md`);
@@ -93,7 +93,7 @@ python3 game/tests/test_runner.py --only <test_name>
 ```
 
 ### Run the PC game
-Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. The game opens at the home hub; **Distort** opens the Town Map of the places you can reach, and **Pair Companion** links your phone. The map is built from Pokémon-style pieces over your real streets (slice 2), drawn with original placeholder tiles; the real Pokémon tiles arrive once you import your own Emerald ROM.
+Install **Godot 4.3** (stable, standard build — not .NET) from the official Godot site, and check the download against the release's `SHA512-SUMS.txt`. Open `game/project.godot` and press Play. The game opens at the home hub; **Distort** opens the Town Map of the places you can reach, and **Pair Companion** links your phone. The map is built from RPG-style pieces over your real streets (slice 2), drawn out of the box with Tenth Spring's own recoloured CC0 terrain (`original_v1.{png,json}`) and original building, ruin, landmark, and tree sprites (`game/assets/original/`).
 
 ### Install the companion on an iPhone (development build)
 Needs a Mac with Xcode and Flutter.

@@ -357,7 +357,7 @@ def validate_landmark_art(repo_root, places, landmark_art_path):
     if len(site_struct_ids) != 16:
         raise ValueError(f"Expected 16 Tier 3 site structures in famous_places.json, got {len(site_struct_ids)}")
 
-    # Load provenance.json and emerald_tile_map.json
+    # Load provenance.json (Decision 53 retires emerald_tile_map.json; only 'original' and 'gilded' sources are allowed)
     original_dir = os.path.join(repo_root, "game", "assets", "original")
     prov_path = os.path.join(original_dir, "provenance.json")
     if not os.path.isfile(prov_path):
@@ -365,14 +365,6 @@ def validate_landmark_art(repo_root, places, landmark_art_path):
     with open(prov_path, "r", encoding="utf-8") as f:
         prov_list = json.load(f)
     prov_assets = {entry.get("asset") for entry in prov_list if isinstance(entry, dict) and entry.get("asset")}
-
-    emerald_map_path = os.path.join(repo_root, "game", "config", "emerald_tile_map.json")
-    emerald_compositions = set()
-    if os.path.isfile(emerald_map_path):
-        with open(emerald_map_path, "r", encoding="utf-8") as f:
-            em_map = json.load(f)
-        if isinstance(em_map.get("compositions"), dict):
-            emerald_compositions = set(em_map["compositions"].keys())
 
     def _check_entry(entry_id, spec, section_name):
         if not isinstance(spec, dict):
@@ -386,10 +378,6 @@ def validate_landmark_art(repo_root, places, landmark_art_path):
                 raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] references unknown stamp '{stamp_id}' (not in provenance.json)")
             if _find_original_png(original_dir, stamp_id) is None:
                 raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] stamp '{stamp_id}' PNG missing under game/assets/original/")
-        elif src == "emerald":
-            comp_id = spec.get("composition", "")
-            if not isinstance(comp_id, str) or not comp_id or comp_id not in emerald_compositions:
-                raise ValueError(f"landmark_art.json {section_name}['{entry_id}'] references unknown emerald composition '{comp_id}'")
         elif src == "gilded":
             pass
         else:
