@@ -12,7 +12,7 @@ const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf
 const TEST_DB_PATH: String = "user://test/map_data/tile_synth2_test.db"
 
 # Final Golden hash (§8 a, §10.7, §14.5.3) — proven identical on Linux and macOS CI
-const GOLDEN_HASH: String = "3de91e0055a73022e25fcaf6f7e0fa09236447529ccd5d31f3e7a4e1f297caa8"
+const GOLDEN_HASH: String = "43ec89dbf186bb157ba56ef3e4f66c313d55a640f2db35723e2ddc600c1aa4a5"
 
 func run_test() -> bool:
 	_cleanup()
@@ -932,24 +932,22 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	var u_roof_rows := {}
-	var u_wall_rows := {}
+	var u_bldg_rows := {}
+	var u_bldg_tiles := 0
 	var u_door := Vector2i(-1, -1)
 	var u_doors := 0
 	for r in 32:
 		for c in 32:
 			var cls: int = u_tiles[(r * 32 + c) * 3]
-			if cls == TileSynth2.TILE_ROOF:
-				u_roof_rows[r] = true
-			elif cls == TileSynth2.TILE_WALL:
-				u_wall_rows[r] = true
+			if cls == TileSynth2.TILE_ROOF or cls == TileSynth2.TILE_WALL or cls == TileSynth2.TILE_STAMP:
+				u_bldg_rows[r] = true
+				u_bldg_tiles += 1
 			elif cls == TileSynth2.TILE_DOOR:
 				u_doors += 1
 				u_door = Vector2i(c, r)
-	# The door sits in the bottom wall row, so with two wall rows the wall rows above it hold only WALL tiles
-	# and the door row itself holds the DOOR: 2 roof rows, 1 WALL-only row, and the door row.
-	if u_doors != 1 or u_roof_rows.size() != 2 or u_wall_rows.size() != 2:
-		push_error("(u) House: %d door(s), %d roof row(s), %d WALL row(s) (expected 1, 2, and 2: the door row also holds WALL tiles beside the door)" % [u_doors, u_roof_rows.size(), u_wall_rows.size()])
+	# The 4x4 house has 4 rows (15 building/stamp tiles + 1 door tile in the bottom row).
+	if u_doors != 1 or u_bldg_rows.size() != 4 or u_bldg_tiles != 15:
+		push_error("(u) House: %d door(s), %d building row(s), %d building tiles (expected 1, 4, and 15)" % [u_doors, u_bldg_rows.size(), u_bldg_tiles])
 		store.close()
 		_cleanup()
 		return false
@@ -1794,6 +1792,74 @@ func run_test() -> bool:
 			count_b += 1
 	if count_a < 80 or count_a > 120 or count_b < 80 or count_b > 120:
 		push_error("(z.3) SALT_BLOCK_DESIGN=21 over 200 lots out of 40%%..60%% range: a=%d b=%d" % [count_a, count_b])
+		store.close()
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (aa) Item 43 (Decision 53, docs/implementation_plan_original_tiles.md §6.2):
+	#      Ordinary standing houses (house_s, house_m) and standing big blocks (block_l)
+	#      emit TILE_STAMP (21) with stamp_id in 71..97 and TILE_DOOR (14, mask=stamp_id),
+	#      with 0 TILE_ROOF or TILE_WALL tiles.
+	#      FALSIFYING: fails on pre-Item 43 code where standing buildings emit TILE_ROOF/TILE_WALL.
+	# -------------------------------------------------------------
+	for sid in range(71, 98):
+		var s_def: Dictionary = TileSynth2.get_stamp_def(sid)
+		if s_def.is_empty():
+			push_error("(aa) Missing STAMP_TABLE[%d]" % sid)
+			store.close()
+			_cleanup()
+			return false
+		var s_path: String = str(s_def.get("path", ""))
+		var s_w: int = int(s_def.get("w", 0))
+		var s_h: int = int(s_def.get("h", 0))
+		var img := Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/" + s_path))
+		if img == null or img.is_empty() or img.get_width() != s_w * 16 or img.get_height() != s_h * 16:
+			push_error("(aa) Stamp %d (%s) missing or wrong dimensions (expected %dx%d)" % [sid, s_path, s_w * 16, s_h * 16])
+			store.close()
+			_cleanup()
+			return false
+
+	var aa_area := _build_empty_area()
+	# house_s (4x4, church -> always standing), house_m (5x4, church -> always standing), and block_l (16x14, church -> always standing)
+	var aa_hs_ring := PackedVector2Array([
+		Vector2(1.0, 12.0), Vector2(2.0, 12.0), Vector2(2.0, 13.0), Vector2(1.0, 13.0)
+	])
+	var aa_hm_ring := PackedVector2Array([
+		Vector2(1.0, 2.0), Vector2(3.0, 2.0), Vector2(3.0, 3.5), Vector2(1.0, 3.5)
+	])
+	var aa_bl_ring := PackedVector2Array([
+		Vector2(5.0, 5.0), Vector2(13.0, 5.0), Vector2(13.0, 12.0), Vector2(5.0, 12.0)
+	])
+	aa_area[Vector2i.ZERO]["polys"] = [
+		{"kind": "building", "subkind": "church", "geom_rings": [aa_hs_ring], "name": ""},
+		{"kind": "building", "subkind": "church", "geom_rings": [aa_hm_ring], "name": ""},
+		{"kind": "building", "subkind": "church", "geom_rings": [aa_bl_ring], "name": "Standing Hall"}
+	]
+	var aa_res := TileSynth2.synthesize_cell(4, 4, aa_area, 0)
+	var aa_tiles: PackedByteArray = aa_res["tiles"]
+	var aa_stamps: Array = aa_res.get("stamps", [])
+	var aa_roof_or_wall := 0
+	for i in range(0, aa_tiles.size(), 3):
+		if aa_tiles[i] == TileSynth2.TILE_ROOF or aa_tiles[i] == TileSynth2.TILE_WALL:
+			aa_roof_or_wall += 1
+	var aa_found_hs := false
+	var aa_found_hm := false
+	var aa_found_bl := false
+	for st in aa_stamps:
+		var sid: int = int(st.get("stamp_id", -1))
+		var sw: int = int(st.get("w", 0))
+		var sh: int = int(st.get("h", 0))
+		if sid >= 71 and sid <= 80 and sw == 4 and sh == 4:
+			aa_found_hs = true
+		elif sid >= 81 and sid <= 85 and sw == 5 and sh == 4:
+			aa_found_hm = true
+		elif (sid == 94 or sid == 95) and sw == 16 and sh == 14:
+			aa_found_bl = true
+	if aa_roof_or_wall != 0 or aa_stamps.size() != 3 or not aa_found_hs or not aa_found_hm or not aa_found_bl:
+		push_error("(aa) [falsifier] Ordinary standing buildings expected 0 ROOF/WALL tiles and 3 stamps (house_s 71..80, house_m 81..85, block_l 94..95); got roof_wall=%d stamps=%s" % [
+			aa_roof_or_wall, str(aa_stamps)
+		])
 		store.close()
 		_cleanup()
 		return false

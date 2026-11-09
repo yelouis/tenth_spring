@@ -68,7 +68,7 @@ const SALT_DECAL_DOORSTEP := 19
 const SALT_DECAL_POS := 20
 const SALT_BLOCK_DESIGN := 21
 
-# Stamp metadata table 1..70 (0 reserved; §14.2.1, §14.3.2, F68 b-c, Item 38)
+# Stamp metadata table 1..97 (0 reserved; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43)
 const STAMP_TABLE: Dictionary = {
 	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
 	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
@@ -139,7 +139,34 @@ const STAMP_TABLE: Dictionary = {
 	67: {"id": "ruined_block_16x14_a", "kind": "block", "path": "ruins/ruined_block_16x14_a.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
 	68: {"id": "ruined_block_16x14_b", "kind": "block", "path": "ruins/ruined_block_16x14_b.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
 	69: {"id": "ruined_block_23x14_a", "kind": "block", "path": "ruins/ruined_block_23x14_a.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
-	70: {"id": "ruined_block_23x14_b", "kind": "block", "path": "ruins/ruined_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]}
+	70: {"id": "ruined_block_23x14_b", "kind": "block", "path": "ruins/ruined_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
+	71: {"id": "standing_house_s_door1", "kind": "house", "path": "buildings/standing_house_s_door1.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	72: {"id": "standing_house_s_door1__teal", "kind": "house", "path": "buildings/standing_house_s_door1__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	73: {"id": "standing_house_s_door1__green", "kind": "house", "path": "buildings/standing_house_s_door1__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	74: {"id": "standing_house_s_door1__purple", "kind": "house", "path": "buildings/standing_house_s_door1__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	75: {"id": "standing_house_s_door1__blue", "kind": "house", "path": "buildings/standing_house_s_door1__blue.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
+	76: {"id": "standing_house_s_door2", "kind": "house", "path": "buildings/standing_house_s_door2.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	77: {"id": "standing_house_s_door2__teal", "kind": "house", "path": "buildings/standing_house_s_door2__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	78: {"id": "standing_house_s_door2__green", "kind": "house", "path": "buildings/standing_house_s_door2__green.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	79: {"id": "standing_house_s_door2__purple", "kind": "house", "path": "buildings/standing_house_s_door2__purple.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	80: {"id": "standing_house_s_door2__blue", "kind": "house", "path": "buildings/standing_house_s_door2__blue.png", "w": 4, "h": 4, "base_rows": 4, "door": [2, 3]},
+	81: {"id": "standing_house_m", "kind": "house", "path": "buildings/standing_house_m.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	82: {"id": "standing_house_m__teal", "kind": "house", "path": "buildings/standing_house_m__teal.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	83: {"id": "standing_house_m__green", "kind": "house", "path": "buildings/standing_house_m__green.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	84: {"id": "standing_house_m__purple", "kind": "house", "path": "buildings/standing_house_m__purple.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	85: {"id": "standing_house_m__blue", "kind": "house", "path": "buildings/standing_house_m__blue.png", "w": 5, "h": 4, "base_rows": 4, "door": [2, 3]},
+	86: {"id": "standing_block_8x7_a", "kind": "block", "path": "buildings/standing_block_8x7_a.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4]},
+	87: {"id": "standing_block_8x7_b", "kind": "block", "path": "buildings/standing_block_8x7_b.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4]},
+	88: {"id": "standing_block_6x11_a", "kind": "block", "path": "buildings/standing_block_6x11_a.png", "w": 6, "h": 11, "base_rows": 11, "door": [2, 10], "door_cols": [2, 3]},
+	89: {"id": "standing_block_6x11_b", "kind": "block", "path": "buildings/standing_block_6x11_b.png", "w": 6, "h": 11, "base_rows": 11, "door": [2, 10], "door_cols": [2, 3]},
+	90: {"id": "standing_block_9x9_a", "kind": "block", "path": "buildings/standing_block_9x9_a.png", "w": 9, "h": 9, "base_rows": 9, "door": [4, 8], "door_cols": [4]},
+	91: {"id": "standing_block_9x9_b", "kind": "block", "path": "buildings/standing_block_9x9_b.png", "w": 9, "h": 9, "base_rows": 9, "door": [4, 8], "door_cols": [4]},
+	92: {"id": "standing_block_11x13_a", "kind": "block", "path": "buildings/standing_block_11x13_a.png", "w": 11, "h": 13, "base_rows": 13, "door": [5, 12], "door_cols": [5]},
+	93: {"id": "standing_block_11x13_b", "kind": "block", "path": "buildings/standing_block_11x13_b.png", "w": 11, "h": 13, "base_rows": 13, "door": [5, 12], "door_cols": [5]},
+	94: {"id": "standing_block_16x14_a", "kind": "block", "path": "buildings/standing_block_16x14_a.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
+	95: {"id": "standing_block_16x14_b", "kind": "block", "path": "buildings/standing_block_16x14_b.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
+	96: {"id": "standing_block_23x14_a", "kind": "block", "path": "buildings/standing_block_23x14_a.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
+	97: {"id": "standing_block_23x14_b", "kind": "block", "path": "buildings/standing_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]}
 }
 
 static var _landmark_art_loaded := false
@@ -1870,6 +1897,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			"w": w,
 			"h": h,
 			"door_cols": b["door_cols"],
+			"roof_color": b["roof_color"],
 			"template": b["template"],
 			"subkind": b["subkind"],
 			"is_landmark": false
@@ -1966,6 +1994,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 						"w": 4,
 						"h": 4,
 						"door_cols": [door_col],
+						"roof_color": roof_color,
 						"template": "house_s",
 						"subkind": p_kind,
 						"is_landmark": false
@@ -2057,6 +2086,121 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		if fate == "standing":
 			ordinary_standing += 1
 			surviving_buildings.append(b)
+			var s_roof_col: int = int(b.get("roof_color", 0))
+			if b_t == "block_l":
+				# Standing block_l -> Place whole standing blocks by size (Item 43, Decision 52 & 53, §6.2):
+				var sec_w: int = 5 if (b_w >= 5 and b_h >= 4) else 4
+				var sec_h: int = 4
+				var best_area: int = sec_w * sec_h
+				var best_is_block := false
+				var best_sid_a: int = (81 + (s_roof_col % 5)) if sec_w == 5 else (71 + (s_roof_col % 5))
+				var best_sid_b: int = best_sid_a
+				var standing_specs: Array = [
+					{"w": 8, "h": 7, "sid_a": 86, "sid_b": 87},
+					{"w": 6, "h": 11, "sid_a": 88, "sid_b": 89},
+					{"w": 9, "h": 9, "sid_a": 90, "sid_b": 91},
+					{"w": 11, "h": 13, "sid_a": 92, "sid_b": 93},
+					{"w": 16, "h": 14, "sid_a": 94, "sid_b": 95},
+					{"w": 23, "h": 14, "sid_a": 96, "sid_b": 97},
+				]
+				for ws in standing_specs:
+					var ww: int = int(ws["w"])
+					var wh: int = int(ws["h"])
+					if ww <= b_w and wh <= b_h:
+						var w_area: int = ww * wh
+						var better := false
+						if w_area > best_area:
+							better = true
+						elif w_area == best_area:
+							if not best_is_block or ww > sec_w:
+								better = true
+						if better:
+							sec_w = ww
+							sec_h = wh
+							best_area = w_area
+							best_is_block = true
+							best_sid_a = int(ws["sid_a"])
+							best_sid_b = int(ws["sid_b"])
+
+				var is_design_a: bool = u_rand(gx0, gy0, world_seed, SALT_BLOCK_DESIGN) < 0.50
+				var chosen_sid: int = best_sid_a if is_design_a else best_sid_b
+				var sec_row0: int = b_row0 + (b_h - sec_h)
+				var new_door_cols: Array[int] = []
+				var def_dcols: Array = STAMP_TABLE[chosen_sid].get("door_cols", [])
+				if not def_dcols.is_empty():
+					for dc_val in def_dcols:
+						new_door_cols.append(int(dc_val))
+				else:
+					var d_arr: Array = STAMP_TABLE[chosen_sid].get("door", [2, sec_h - 1])
+					new_door_cols.append(int(d_arr[0]))
+				for old_d_col in b["door_cols"]:
+					all_doors.erase(Vector2i(b_col0 + old_d_col, b_row0 + b_h - 1))
+				for nd_col in new_door_cols:
+					var bl_door_pos := Vector2i(b_col0 + nd_col, b_row0 + b_h - 1)
+					if not all_doors.has(bl_door_pos):
+						all_doors.append(bl_door_pos)
+				b["door_cols"] = new_door_cols
+
+				for tr in b_h:
+					var r: int = b_row0 + tr
+					for tc in b_w:
+						var c: int = b_col0 + tc
+						var idx: int = r * WORK_SIZE + c
+						if tc < sec_w and tr >= b_h - sec_h:
+							if tr == b_h - 1 and tc in new_door_cols:
+								grid_class[idx] = TILE_DOOR
+								grid_variant[idx] = s_roof_col % 8
+								grid_mask[idx] = chosen_sid
+							else:
+								grid_class[idx] = TILE_STAMP
+								grid_variant[idx] = chosen_sid
+								grid_mask[idx] = STAMP_FLAG_SOLID
+						else:
+							grid_class[idx] = TILE_GRASS
+							grid_variant[idx] = 0
+							grid_mask[idx] = 0
+
+				if b_col0 + sec_w > WORK_CELL_START and b_col0 < WORK_CELL_END and sec_row0 + sec_h > WORK_CELL_START and sec_row0 < WORK_CELL_END:
+					stamps_list.append({
+						"stamp_id": chosen_sid,
+						"anchor_gx": cx * 32 + (b_col0 - 4),
+						"anchor_gy": _cell_row0(cy) + (sec_row0 - 4),
+						"w": sec_w,
+						"h": sec_h
+					})
+			else:
+				var d_col: int = int(b["door_cols"][0]) if not b["door_cols"].is_empty() else 1
+				var stamp_id := 71
+				if b_t == "house_m":
+					stamp_id = 81 + (s_roof_col % 5)
+					d_col = 2
+				else:
+					if d_col == 2:
+						stamp_id = 76 + (s_roof_col % 5)
+					else:
+						stamp_id = 71 + (s_roof_col % 5)
+
+				for tr in b_h:
+					var r: int = b_row0 + tr
+					for tc in b_w:
+						var c: int = b_col0 + tc
+						var idx: int = r * WORK_SIZE + c
+						if tc == d_col and tr == b_h - 1:
+							grid_class[idx] = TILE_DOOR
+							grid_variant[idx] = s_roof_col % 8
+							grid_mask[idx] = stamp_id
+						else:
+							grid_class[idx] = TILE_STAMP
+							grid_variant[idx] = stamp_id
+							grid_mask[idx] = STAMP_FLAG_SOLID
+				if b_col0 + b_w > WORK_CELL_START and b_col0 < WORK_CELL_END and b_row0 + b_h > WORK_CELL_START and b_row0 < WORK_CELL_END:
+					stamps_list.append({
+						"stamp_id": stamp_id,
+						"anchor_gx": cx * 32 + (b_col0 - 4),
+						"anchor_gy": _cell_row0(cy) + (b_row0 - 4),
+						"w": b_w,
+						"h": b_h
+					})
 		elif fate == "ruined":
 			ordinary_ruined += 1
 			surviving_buildings.append(b)

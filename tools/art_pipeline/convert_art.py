@@ -27,7 +27,12 @@ EXCLUDE = {
     "house": ("roof1", "roof2", "roof3", "roof4", "roof5", "roof6", "gold roof", "water", "marsh", "flower pink"),
     "nature": ("roof", "gold roof"),
 }
-ROOF_COLOURWAYS = {"teal": (58, 154, 154), "green": (90, 154, 74), "purple": (138, 90, 176)}
+ROOF_COLOURWAYS = {
+    "teal": (58, 154, 154),
+    "green": (90, 154, 74),
+    "purple": (138, 90, 176),
+    "blue": (74, 120, 200),
+}
 
 
 def master_palette(palette_set):
@@ -87,7 +92,10 @@ def main():
                 record["outputs"][mode] = {"file": os.path.basename(out), "report": rep}
                 if args.variants and spec.get("variants") and mode == "free":
                     roof = (0, spec["roof_rows"] * al.TILE) if spec.get("roof_rows") else None
-                    for name, rgb in ROOF_COLOURWAYS.items():
+                    for name in spec["variants"]:
+                        if name not in ROOF_COLOURWAYS:
+                            continue
+                        rgb = ROOF_COLOURWAYS[name]
                         v = al.recolour_hue(sprite, 3, rgb, rows=roof)
                         vout = "%s__%s__%s.png" % (base, mode, name)
                         al.write_png(vout, v)
