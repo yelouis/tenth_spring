@@ -109,6 +109,8 @@ var _camera: Camera2D = null
 var _background_layer: ColorRect = null
 var _world_known: TileMapLayer = null
 var _world_cleared: TileMapLayer = null
+var _tree_top_known: TileMapLayer = null
+var _tree_top_cleared: TileMapLayer = null
 var _fog_layer: TileMapLayer = null
 var _overview_layer: Node2D = null
 var _stamp_base_layer: Node2D = null
@@ -227,6 +229,24 @@ func _ready() -> void:
 		_stamp_overhang_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(_stamp_overhang_layer)
 	_stamp_overhang_layer.y_sort_enabled = true
+
+	_tree_top_known = get_node_or_null("TreeTopKnown") as TileMapLayer
+	if _tree_top_known == null:
+		_tree_top_known = TileMapLayer.new()
+		_tree_top_known.name = "TreeTopKnown"
+		_tree_top_known.z_index = 2
+		_tree_top_known.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if _world_known != null:
+			_tree_top_known.material = _world_known.material
+		add_child(_tree_top_known)
+
+	_tree_top_cleared = get_node_or_null("TreeTopCleared") as TileMapLayer
+	if _tree_top_cleared == null:
+		_tree_top_cleared = TileMapLayer.new()
+		_tree_top_cleared.name = "TreeTopCleared"
+		_tree_top_cleared.z_index = 2
+		_tree_top_cleared.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(_tree_top_cleared)
 
 	_demo_badge = get_node_or_null("AttributionUI/DemoBadge") as Label
 	_attribution_label = get_node_or_null("AttributionUI/AttributionLabel") as Label
@@ -353,6 +373,10 @@ func _clear_rendered_layers() -> void:
 		_world_known.clear()
 	if _world_cleared != null:
 		_world_cleared.clear()
+	if _tree_top_known != null:
+		_tree_top_known.clear()
+	if _tree_top_cleared != null:
+		_tree_top_cleared.clear()
 	if _fog_layer != null:
 		_fog_layer.clear()
 	for cell_k in _cell_stamp_sprites.keys():
@@ -453,6 +477,10 @@ func _init_tile_sets() -> void:
 		_world_known.tile_set = tileset
 	if _world_cleared != null:
 		_world_cleared.tile_set = tileset
+	if _tree_top_known != null:
+		_tree_top_known.tile_set = tileset
+	if _tree_top_cleared != null:
+		_tree_top_cleared.tile_set = tileset
 	if _fog_layer != null:
 		_fog_layer.tile_set = tileset
 
@@ -469,7 +497,7 @@ func get_atlas_coords(cls: int, variant: int, mask: int) -> Vector2i:
 	elif _class_variant_to_row.has(Vector2i(cls, 0)):
 		row = _class_variant_to_row[Vector2i(cls, 0)]
 
-	var col := mask if _masked_classes.get(cls, false) else 0
+	var col := (mask & 7) if cls == TileSynth2.TILE_TREE else (mask if _masked_classes.get(cls, false) else 0)
 	return Vector2i(col, row)
 
 func set_map_data_dir(dir_path: String) -> void:
@@ -1025,6 +1053,10 @@ func _set_zoom_step(zoom_val: float) -> void:
 		_world_known.visible = not show_overview
 	if _world_cleared != null:
 		_world_cleared.visible = not show_overview
+	if _tree_top_known != null:
+		_tree_top_known.visible = not show_overview
+	if _tree_top_cleared != null:
+		_tree_top_cleared.visible = not show_overview
 	if _fog_layer != null:
 		_fog_layer.visible = not show_overview
 	if _stamp_base_layer != null:
@@ -1249,6 +1281,8 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 		else:
 			var target_layer: TileMapLayer = _world_cleared if (_preview_cleared or reveal_state >= 2) else _world_known
 			var other_layer: TileMapLayer = _world_known if target_layer == _world_cleared else _world_cleared
+			var target_top_layer: TileMapLayer = _tree_top_cleared if (_preview_cleared or reveal_state >= 2) else _tree_top_known
+			var other_top_layer: TileMapLayer = _tree_top_known if target_top_layer == _tree_top_cleared else _tree_top_cleared
 
 			for ty in 32:
 				for tx in 32:
@@ -1257,8 +1291,20 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 					var v: int = tile_buf[idx + 1]
 					var mask: int = tile_buf[idx + 2]
 					var st := _screen_tile(cx, cy, tx, ty)
-					target_layer.set_cell(st, 0, get_atlas_coords(cls, v, mask))
+					var base_coord := get_atlas_coords(cls, v, mask)
+					target_layer.set_cell(st, 0, base_coord)
 					other_layer.erase_cell(st)
+					var top_st := st + Vector2i(0, -1)
+					if cls == TileSynth2.TILE_TREE:
+						if target_top_layer != null:
+							target_top_layer.set_cell(top_st, 0, Vector2i(base_coord.x + 8, base_coord.y))
+						if other_top_layer != null:
+							other_top_layer.erase_cell(top_st)
+					else:
+						if target_top_layer != null:
+							target_top_layer.erase_cell(top_st)
+						if other_top_layer != null:
+							other_top_layer.erase_cell(top_st)
 
 			# Inward feathering on FogLayer (§6)
 			var n_hidden := _is_cell_hidden(cx, cy + 1)
@@ -1481,12 +1527,17 @@ func _render_solid_fog(cx: int, cy: int) -> void:
 	for ty in 32:
 		for tx in 32:
 			var st := _screen_tile(cx, cy, tx, ty)
+			var top_st := st + Vector2i(0, -1)
 			if _fog_layer != null:
 				_fog_layer.set_cell(st, 0, Vector2i(0, solid_fog_row))
 			if _world_known != null:
 				_world_known.erase_cell(st)
 			if _world_cleared != null:
 				_world_cleared.erase_cell(st)
+			if _tree_top_known != null:
+				_tree_top_known.erase_cell(top_st)
+			if _tree_top_cleared != null:
+				_tree_top_cleared.erase_cell(top_st)
 
 func _unrender_cell(cx: int, cy: int) -> void:
 	var cell := Vector2i(cx, cy)
@@ -1495,10 +1546,15 @@ func _unrender_cell(cx: int, cy: int) -> void:
 	for ty in 32:
 		for tx in 32:
 			var coord := _screen_tile(cx, cy, tx, ty)
+			var top_coord := coord + Vector2i(0, -1)
 			if _world_known != null:
 				_world_known.erase_cell(coord)
 			if _world_cleared != null:
 				_world_cleared.erase_cell(coord)
+			if _tree_top_known != null:
+				_tree_top_known.erase_cell(top_coord)
+			if _tree_top_cleared != null:
+				_tree_top_cleared.erase_cell(top_coord)
 			if _fog_layer != null:
 				_fog_layer.erase_cell(coord)
 

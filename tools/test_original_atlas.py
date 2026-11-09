@@ -76,7 +76,11 @@ class TestOriginalAtlas(unittest.TestCase):
                 seen_hashes = set()
                 for m in range(16):
                     tm = atlas_img.crop(m * 32, r_idx * 32, (m + 1) * 32, (r_idx + 1) * 32)
-                    self.assertEqual(tm.opaque_count(), 1024, f"Masked row {r_idx} col {m} must be fully opaque")
+                    if r_idx in (6, 7) and m >= 8:
+                        self.assertGreater(tm.opaque_count(), 0, f"Tree row {r_idx} top-crown col {m} must have opaque foliage")
+                        self.assertLess(tm.opaque_count(), 1024, f"Tree row {r_idx} top-crown col {m} must have transparent overhang corners")
+                    else:
+                        self.assertEqual(tm.opaque_count(), 1024, f"Masked row {r_idx} col {m} must be fully opaque")
                     h = hashlib.sha256(bytes(tm.px)).hexdigest()
                     seen_hashes.add(h)
                 self.assertEqual(len(seen_hashes), 16, f"Masked row {r_idx} must have 16 pairwise-distinct mask tiles, got {len(seen_hashes)}")
@@ -132,6 +136,27 @@ class TestOriginalAtlas(unittest.TestCase):
 
         self.assertIn("Kenney", cr_text, "CREDITS.md must credit Kenney for the CC0 Roguelike/RPG Pack")
         self.assertIn("CC0", cr_text, "CREDITS.md must name CC0")
+
+    def test_tier4_terrain_sprites_and_tree_canopy_layers(self):
+        """Assert Tier 4 16x32 trees and 16x16 small objects exist in game/assets/original/terrain/ and map_view.gd has TreeTopKnown/Cleared."""
+        terrain_dir = os.path.join(self.repo_root, "game", "assets", "original", "terrain")
+        for tree_name in ("tree_round.png", "tree_conifer.png"):
+            p = os.path.join(terrain_dir, tree_name)
+            self.assertTrue(os.path.isfile(p), f"Missing {p}")
+            im = al.read_png(p)
+            self.assertEqual((im.w, im.h), (16, 32), f"{tree_name} must be 16x32 px (1x2 tiles)")
+
+        for obj_name in ("obj_flowers.png", "obj_sign.png", "obj_crop.png", "obj_bush.png"):
+            p = os.path.join(terrain_dir, obj_name)
+            self.assertTrue(os.path.isfile(p), f"Missing {p}")
+            im = al.read_png(p)
+            self.assertEqual((im.w, im.h), (16, 16), f"{obj_name} must be 16x16 px (1x1 tile)")
+
+        mv_path = os.path.join(self.repo_root, "game", "world", "map_view.gd")
+        with open(mv_path, "r", encoding="utf-8") as f:
+            mv_text = f.read()
+        self.assertIn("TreeTopKnown", mv_text)
+        self.assertIn("TreeTopCleared", mv_text)
 
 
 if __name__ == "__main__":

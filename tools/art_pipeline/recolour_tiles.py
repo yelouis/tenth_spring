@@ -573,38 +573,30 @@ def generate_original_atlas(pack_sheet_path=None):
                 tg_m.set(15, y, grass0.get(15, y) if y % 3 != 2 else TS_TERRAIN_PALETTE["tall_upper"])
         put_16(mask, idx["tall_grass"], tg_m)
 
-    # Rows 6..7: TREE 0 (round) and TREE 1 (conifer) over grass0
-    tree_round_fg = recolour_rgba(src[(13, 9)])
-    tree_conifer_fg = recolour_rgba(src[(16, 9)])
-    # Add short brown trunk from (16, 11) to conifer base so it sits cleanly on the ground
-    trunk_src = recolour_rgba(src[(16, 11)])
-    for ty in range(13, 16):
-        for tx in range(5, 11):
-            c = trunk_src.get(tx, ty)
-            if c[3] >= 128:
-                tree_conifer_fg.set(tx, ty, c)
-    for v, base_fg in enumerate([tree_round_fg, tree_conifer_fg]):
-        for mask in range(16):
-            t_m = grass0.copy()
-            t_m.paste(base_fg, 0, 0, only_opaque=True)
-            # Subtle crown leaf highlights per cardinal neighbour so all 16 masks are distinct without border bars
-            if mask & 1:
-                t_m.set(7, 2, TS_TERRAIN_PALETTE["tall_tip"])
-            else:
-                t_m.set(7, 2, TS_TERRAIN_PALETTE["tall_mid"])
-            if mask & 2:
-                t_m.set(12, 7, TS_TERRAIN_PALETTE["tall_tip"])
-            else:
-                t_m.set(12, 7, TS_TERRAIN_PALETTE["tall_deep"])
-            if mask & 4:
-                t_m.set(8, 11, TS_TERRAIN_PALETTE["tall_mid"])
-            else:
-                t_m.set(8, 11, TS_TERRAIN_PALETTE["tall_deep"])
-            if mask & 8:
-                t_m.set(4, 7, TS_TERRAIN_PALETTE["tall_tip"])
-            else:
-                t_m.set(4, 7, TS_TERRAIN_PALETTE["tall_mid"])
-            put_16(mask, idx["tree"][v], t_m)
+    # Rows 6..7: TREE 0 (round) and TREE 1 (conifer) — 2-block-tall (16x32 px) Tier 4 sprites (§3.2, §6.3)
+    # Columns 0..7 store the bottom 16x16 half (trunk + lower crown) composited over grass0;
+    # columns 8..15 store the top 16x16 half (upper crown with transparent background) for the canopy overhang layer.
+    terrain_dir = os.path.join(repo_root, "game", "assets", "original", "terrain")
+    tree_round_img = al.read_png(os.path.join(terrain_dir, "tree_round.png"))
+    tree_conifer_img = al.read_png(os.path.join(terrain_dir, "tree_conifer.png"))
+    for v, tree_img in enumerate([tree_round_img, tree_conifer_img]):
+        top_16 = tree_img.crop(0, 0, 16, 16)
+        bot_16 = tree_img.crop(0, 16, 16, 32)
+        for m in range(8):
+            # Bottom half (cols 0..7): composited over grass0 (100% opaque)
+            b_m = grass0.copy()
+            b_m.paste(bot_16, 0, 0, only_opaque=True)
+            b_m.set(6, 3, TS_TERRAIN_PALETTE["tall_tip"] if (m & 1) else TS_TERRAIN_PALETTE["tall_mid"])
+            b_m.set(7, 3, TS_TERRAIN_PALETTE["tall_tip"] if (m & 2) else TS_TERRAIN_PALETTE["tall_deep"])
+            b_m.set(8, 3, TS_TERRAIN_PALETTE["tall_upper"] if (m & 4) else TS_TERRAIN_PALETTE["tall_mid"])
+            put_16(m, idx["tree"][v], b_m)
+
+            # Top half (cols 8..15): transparent background around upper crown
+            t_m = top_16.copy()
+            t_m.set(6, 10, TS_TERRAIN_PALETTE["tall_tip"] if (m & 1) else TS_TERRAIN_PALETTE["tall_mid"])
+            t_m.set(7, 10, TS_TERRAIN_PALETTE["tall_tip"] if (m & 2) else TS_TERRAIN_PALETTE["tall_deep"])
+            t_m.set(8, 10, TS_TERRAIN_PALETTE["tall_upper"] if (m & 4) else TS_TERRAIN_PALETTE["tall_mid"])
+            put_16(8 + m, idx["tree"][v], t_m)
 
     # Row 8: WATER 0 (0..15 via Rule B from (2..4, 0..2) and center (0, 0))
     w_nw = recolour_rgba(src[(2, 0)])
@@ -864,31 +856,24 @@ def generate_original_atlas(pack_sheet_path=None):
                 fm.set(8, y, TS_TERRAIN_PALETTE["wood_seam"])
         put_16(mask, idx["fence"], fm)
 
-    # Row 54: FLOWERS 0
-    flowers0 = recolour_rgba(src[(25, 11)], bg_tile=grass0)
+    # Row 54: FLOWERS 0 (Tier 4 obj_flowers.png over grass0)
+    flowers0 = grass0.copy()
+    flowers0.paste(al.read_png(os.path.join(terrain_dir, "obj_flowers.png")), 0, 0, only_opaque=True)
     put_16(0, idx["flowers"], flowers0)
 
-    # Row 55: GRAVE 0
+    # Row 55: GRAVE 0 (pack headstone (51, 9) over grass0, §3.2)
     grave0 = recolour_rgba(src[(51, 9)], bg_tile=grass0)
     put_16(0, idx["grave"], grave0)
 
-    # Row 56: SIGN 0
-    sign0 = recolour_rgba(src[(20, 0)], bg_tile=grass0)
+    # Row 56: SIGN 0 (Tier 4 obj_sign.png over grass0)
+    sign0 = grass0.copy()
+    sign0.paste(al.read_png(os.path.join(terrain_dir, "obj_sign.png")), 0, 0, only_opaque=True)
     put_16(0, idx["sign"], sign0)
 
-    # Row 57: CROP 0 (tilled furrows (13, 19) over path_pebble/rim with green crop sprouts)
+    # Row 57: CROP 0 (Tier 4 obj_crop.png over path_pebble soil base)
     crop0 = al.Image(16, 16)
     crop0.fill(TS_TERRAIN_PALETTE["path_pebble"])
-    crop_furrow = recolour_rgba(src[(13, 19)], cmap={
-        al.hexc("#908570"): TS_TERRAIN_PALETTE["path_rim"],
-        al.hexc("#d9caa9"): TS_TERRAIN_PALETTE["path_pebble"],
-        al.hexc("#e6dabf"): TS_TERRAIN_PALETTE["path_base"],
-    })
-    crop0.paste(crop_furrow, 0, 0, only_opaque=True)
-    for cy in (2, 6, 10, 14):
-        for cx in (3, 4, 8, 9, 12):
-            crop0.set(cx, cy, TS_TERRAIN_PALETTE["tall_mid"])
-            crop0.set(cx, cy - 1, TS_TERRAIN_PALETTE["grass_hi"])
+    crop0.paste(al.read_png(os.path.join(terrain_dir, "obj_crop.png")), 0, 0, only_opaque=True)
     put_16(0, idx["crop"], crop0)
 
     # Rows 60..91 & Row 93: Retired broken building rows + RUBBLE v=1 copied from placeholder_v1.png

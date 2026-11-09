@@ -670,6 +670,39 @@ func run_test() -> bool:
 	map_view._clear_cell_stamps(Vector2i(0, 0))
 	map_view._clear_cell_stamps(Vector2i(0, 1))
 
+	# 14. Item 42 (§6.3): Two-block-tall (1x2) tree canopy layer (TreeTopKnown / TreeTopCleared)
+	var tree_top_known := map_view.get_node_or_null("TreeTopKnown") as TileMapLayer
+	var tree_top_cleared := map_view.get_node_or_null("TreeTopCleared") as TileMapLayer
+	if tree_top_known == null or tree_top_cleared == null or tree_top_known.z_index != 2 or tree_top_cleared.z_index != 2:
+		push_error("(42) TreeTopKnown / TreeTopCleared missing or wrong z_index: known=%s cleared=%s" % [str(tree_top_known), str(tree_top_cleared)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var tree_test_tiles := PackedByteArray()
+	tree_test_tiles.resize(32 * 32 * 3)
+	tree_test_tiles.fill(0)
+	var tree_idx := (10 * 32 + 8) * 3
+	tree_test_tiles[tree_idx] = TileSynth2.TILE_TREE
+	tree_test_tiles[tree_idx + 1] = 0 # tree_round (row 6)
+	tree_test_tiles[tree_idx + 2] = 13 # mask 13 -> col (13 & 7) = 5 on base, col 5 + 8 = 13 on canopy
+	DB.upsert_map_cell(14, 14, 1, 0)
+	map_view.get_lru_cache().put(Vector2i(14, 14), {
+		"buf": tree_test_tiles, "signs": [], "stamps": [], "reveal_state": 1
+	})
+	map_view._render_cell(14, 14)
+	var tree_st: Vector2i = map_view._screen_tile(14, 14, 8, 10)
+	var tree_top_st: Vector2i = tree_st + Vector2i(0, -1)
+	var got_base_tree: Vector2i = world_known.get_cell_atlas_coords(tree_st)
+	var got_top_tree: Vector2i = tree_top_known.get_cell_atlas_coords(tree_top_st)
+	if got_base_tree != Vector2i(5, 6) or got_top_tree != Vector2i(13, 6):
+		push_error("(42) Expected TILE_TREE (v=0, m=13) to place base Vector2i(5, 6) at st and canopy Vector2i(13, 6) at st+(0,-1), got base=%s top=%s" % [str(got_base_tree), str(got_top_tree)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._unrender_cell(14, 14)
+	if tree_top_known.get_cell_atlas_coords(tree_top_st) != Vector2i(-1, -1):
+		push_error("(42) _unrender_cell did not erase tree canopy tile at st+(0,-1)")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")
 	return true
