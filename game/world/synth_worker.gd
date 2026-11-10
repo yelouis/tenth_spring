@@ -6,6 +6,7 @@ extends RefCounted
 
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
+const CellClassifier := preload("res://world/cell_classifier.gd")
 
 ## At most this many requests are queued at once, nearest to the camera first (§10.5 rule 2).
 const MAX_QUEUED_REQUESTS := 64
@@ -109,6 +110,7 @@ const MAP_COLORS := {
 	19: Color("#92d472"), # CROP
 	20: Color("#948674"), # RUBBLE
 	21: Color("#948674"), # STAMP
+	22: Color("#4c8e40"), # LEDGE
 }
 
 const ROOF_BASE_COLORS := [
@@ -124,6 +126,7 @@ func _init() -> void:
 func start(store_paths: Array[String] = []) -> void:
 	if _running:
 		return
+	CellClassifier._ensure_regions_loaded()
 	_store_paths = store_paths.duplicate()
 	_store_paths_changed = true
 	_running = true

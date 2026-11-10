@@ -855,6 +855,40 @@ class AtlasBuilder:
             self.set_pixel(col, row, tx + 1, ty, PALETTE["tall_blades"])
             self.set_pixel(col, row, tx, ty - 1, PALETTE["tall_tips"])
 
+    def draw_ledge(self, row: int, col: int, variant: int):
+        """Draws one-way jumpable ledge (class 22, variant 0=south, 1=east, 2=west)."""
+        self.draw_grass(row, col, 0)
+        if variant == 0:
+            # South-facing ledge lip (horizontal across y=18..25)
+            for x in range(TILE_SIZE):
+                self.set_pixel(col, row, x, 18, PALETTE["tall_tips"])
+                self.set_pixel(col, row, x, 19, PALETTE["grass_tuft"])
+                for y in range(20, 24):
+                    c = PALETTE["path_edge"] if (x + y) % 3 != 0 else PALETTE["tree_trunk"]
+                    self.set_pixel(col, row, x, y, c)
+                self.set_pixel(col, row, x, 24, PALETTE["tree_trunk"])
+                self.set_pixel(col, row, x, 25, PALETTE["ink_outline"])
+        elif variant == 1:
+            # East-facing ledge lip (vertical across x=18..25)
+            for y in range(TILE_SIZE):
+                self.set_pixel(col, row, 18, y, PALETTE["tall_tips"])
+                self.set_pixel(col, row, 19, y, PALETTE["grass_tuft"])
+                for x in range(20, 24):
+                    c = PALETTE["path_edge"] if (x + y) % 3 != 0 else PALETTE["tree_trunk"]
+                    self.set_pixel(col, row, x, y, c)
+                self.set_pixel(col, row, 24, y, PALETTE["tree_trunk"])
+                self.set_pixel(col, row, 25, y, PALETTE["ink_outline"])
+        else:
+            # West-facing ledge lip (vertical across x=6..13)
+            for y in range(TILE_SIZE):
+                self.set_pixel(col, row, 13, y, PALETTE["tall_tips"])
+                self.set_pixel(col, row, 12, y, PALETTE["grass_tuft"])
+                for x in range(8, 12):
+                    c = PALETTE["path_edge"] if (x + y) % 3 != 0 else PALETTE["tree_trunk"]
+                    self.set_pixel(col, row, x, y, c)
+                self.set_pixel(col, row, 7, y, PALETTE["tree_trunk"])
+                self.set_pixel(col, row, 6, y, PALETTE["ink_outline"])
+
     def draw_fog(self, row: int, coverage_pct: int):
         # Draw across all columns
         threshold_map = {
@@ -952,6 +986,7 @@ def build_atlas():
     r_wall_broken = [add_row(13, 16 + v, True) for v in range(16)]
     r_door_broken = [add_row(14, 16 + v, False) for v in range(8)]
     r_rubble = [add_row(20, v, False) for v in range(2)]
+    r_ledge = [add_row(22, v, False) for v in range(3)]
 
     # Fog rows (§5.2)
     fog_solid = current_row; current_row += 1
@@ -1059,6 +1094,10 @@ def build_atlas():
     # Render RUBBLE
     for v in range(2):
         builder.draw_rubble(r_rubble[v], 0, v)
+
+    # Render LEDGE
+    for v in range(3):
+        builder.draw_ledge(r_ledge[v], 0, v)
 
     # Render FOG rows
     builder.draw_fog(fog_solid, 100)

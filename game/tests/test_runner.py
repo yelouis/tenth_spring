@@ -143,6 +143,7 @@ def main():
 		"reveal_engine_test",
 		"rom_importer_test",
 		"screenshot_args_test",
+		"slice3_encounters_test",
 		"sync_ingest_isolation_test",
 		"sync_session_test",
 		"tile_synth2_test",

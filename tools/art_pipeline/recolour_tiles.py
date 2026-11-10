@@ -222,6 +222,7 @@ EXPECTED_MAP_COLORS_HEX = {
     19: "#92d472",  # CROP -> grass_hi
     20: "#948674",  # RUBBLE -> rail_ballast
     21: "#948674",  # STAMP -> rail_ballast
+    22: "#4c8e40",  # LEDGE -> grass_shade
 }
 
 # Exact deterministic mapping from Kenney Roguelike/RPG Pack RGB colours to TS_TERRAIN_PALETTE
@@ -475,6 +476,7 @@ def _build_row_specs():
     r_wall_broken = [add_row(13, 16 + v, True) for v in range(16)]
     r_door_broken = [add_row(14, 16 + v, False) for v in range(8)]
     r_rubble = [add_row(20, v, False) for v in range(2)]
+    r_ledge = [add_row(22, v, False) for v in range(3)]
 
     fog_rows = {
         "solid": current_row,
@@ -514,6 +516,7 @@ def _build_row_specs():
         "wall_broken": r_wall_broken,
         "door_broken": r_door_broken,
         "rubble": r_rubble,
+        "ledge": r_ledge,
         "fog": fog_rows,
         "total_rows": total_rows,
     }
@@ -892,6 +895,37 @@ def generate_original_atlas(pack_sheet_path=None):
         dr_img = al.read_png(decal_rubble_path)
         rubble0.paste(dr_img, 0, 0, only_opaque=True)
     put_16(0, idx["rubble"][0], rubble0)
+
+    # Rows 94..96: LEDGE 0..2 (one-way jumpable cliff lip over grass0: 0=south, 1=east, 2=west)
+    ledge_s = grass0.copy()
+    for x in range(16):
+        ledge_s.set(x, 8, TS_TERRAIN_PALETTE["grass_hi"])
+        ledge_s.set(x, 9, TS_TERRAIN_PALETTE["grass_shade"])
+        ledge_s.set(x, 10, TS_TERRAIN_PALETTE["path_rim"] if x % 3 != 0 else TS_TERRAIN_PALETTE["wood_seam"])
+        ledge_s.set(x, 11, TS_TERRAIN_PALETTE["wood_seam"] if x % 2 == 0 else TS_TERRAIN_PALETTE["wood_shadow"])
+        ledge_s.set(x, 12, TS_TERRAIN_PALETTE["wood_shadow"])
+        ledge_s.set(x, 13, TS_TERRAIN_PALETTE["tall_deep"])
+    put_16(0, idx["ledge"][0], ledge_s)
+
+    ledge_e = grass0.copy()
+    for y in range(16):
+        ledge_e.set(8, y, TS_TERRAIN_PALETTE["grass_hi"])
+        ledge_e.set(9, y, TS_TERRAIN_PALETTE["grass_shade"])
+        ledge_e.set(10, y, TS_TERRAIN_PALETTE["path_rim"] if y % 3 != 0 else TS_TERRAIN_PALETTE["wood_seam"])
+        ledge_e.set(11, y, TS_TERRAIN_PALETTE["wood_seam"] if y % 2 == 0 else TS_TERRAIN_PALETTE["wood_shadow"])
+        ledge_e.set(12, y, TS_TERRAIN_PALETTE["wood_shadow"])
+        ledge_e.set(13, y, TS_TERRAIN_PALETTE["tall_deep"])
+    put_16(0, idx["ledge"][1], ledge_e)
+
+    ledge_w = grass0.copy()
+    for y in range(16):
+        ledge_w.set(7, y, TS_TERRAIN_PALETTE["grass_hi"])
+        ledge_w.set(6, y, TS_TERRAIN_PALETTE["grass_shade"])
+        ledge_w.set(5, y, TS_TERRAIN_PALETTE["path_rim"] if y % 3 != 0 else TS_TERRAIN_PALETTE["wood_seam"])
+        ledge_w.set(4, y, TS_TERRAIN_PALETTE["wood_seam"] if y % 2 == 0 else TS_TERRAIN_PALETTE["wood_shadow"])
+        ledge_w.set(3, y, TS_TERRAIN_PALETTE["wood_shadow"])
+        ledge_w.set(2, y, TS_TERRAIN_PALETTE["tall_deep"])
+    put_16(0, idx["ledge"][2], ledge_w)
 
     # Rows 94..97: fog_rows (solid, d75, d50, d25 across all 16 columns)
     for key, thresh in [("solid", 16), ("d75", 12), ("d50", 8), ("d25", 4)]:

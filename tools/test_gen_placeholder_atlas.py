@@ -109,6 +109,7 @@ class TestGenPlaceholderAtlas(unittest.TestCase):
         for v in range(16): expected_pairs.append((18, v))  # SIGN 0..15
         expected_pairs.append((19, 0))  # CROP
         for v in range(2): expected_pairs.append((20, v))  # RUBBLE 0..1
+        for v in range(3): expected_pairs.append((22, v))  # LEDGE 0..2
 
         for c, v in expected_pairs:
             if c in any_variant_classes:

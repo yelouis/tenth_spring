@@ -5,7 +5,7 @@ extends Node
 # Uses WAL journal mode, synchronous FULL, bound parameters on all queries,
 # and one-time legacy JSON import without runtime fallback.
 
-const CURRENT_SCHEMA_VERSION: int = 3
+const CURRENT_SCHEMA_VERSION: int = 4
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
@@ -33,6 +33,11 @@ const MIGRATIONS: Array = [
 		"version": 3,
 		"statements": [],
 		"custom": "_apply_migration_3"
+	},
+	{
+		"version": 4,
+		"statements": [],
+		"custom": "_apply_migration_4"
 	}
 ]
 
@@ -235,6 +240,26 @@ func _apply_migration_3() -> bool:
 		return false
 	if not _q("UPDATE place_node SET visit_count = 0, last_real_visit_at = NULL;"):
 		return false
+	return true
+
+func _apply_migration_4() -> bool:
+	var cols: Array = _rows("PRAGMA table_info(map_cell);")
+	var existing: Dictionary = {}
+	for col in cols:
+		if col is Dictionary:
+			existing[str(col.get("name", ""))] = true
+	if not existing.has("zone"):
+		if not _q("ALTER TABLE map_cell ADD COLUMN zone TEXT NOT NULL DEFAULT 'wilds';"):
+			return false
+	if not existing.has("biome"):
+		if not _q("ALTER TABLE map_cell ADD COLUMN biome TEXT NOT NULL DEFAULT 'plains';"):
+			return false
+	if not existing.has("region"):
+		if not _q("ALTER TABLE map_cell ADD COLUMN region TEXT NOT NULL DEFAULT 'South Atlantic';"):
+			return false
+	if not existing.has("haunt_stage"):
+		if not _q("ALTER TABLE map_cell ADD COLUMN haunt_stage INTEGER NOT NULL DEFAULT 0;"):
+			return false
 	return true
 
 func _detect_and_rotate_legacy_store() -> bool:
@@ -475,11 +500,14 @@ func _run_legacy_import() -> void:
 	if not _apply_migration_3():
 		_fail_legacy_import(last_error)
 		return
+	if not _apply_migration_4():
+		_fail_legacy_import(last_error)
+		return
 
 	commit_transaction()
 
 func get_map_cell(cell_x: int, cell_y: int) -> Dictionary:
-	var rows = _rows("SELECT cell_x, cell_y, reveal_state, first_revealed_at, cell_seed FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cell_x, cell_y])
+	var rows = _rows("SELECT cell_x, cell_y, reveal_state, first_revealed_at, cell_seed, zone, biome, region, haunt_stage FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cell_x, cell_y])
 	return rows[0] if not rows.is_empty() else {}
 
 func upsert_map_cell(cell_x: int, cell_y: int, reveal_state: int, cell_seed: int = 0) -> void:
@@ -487,6 +515,13 @@ func upsert_map_cell(cell_x: int, cell_y: int, reveal_state: int, cell_seed: int
 	var now = int(Time.get_unix_time_from_system())
 	_q("INSERT INTO map_cell (cell_x, cell_y, reveal_state, first_revealed_at, cell_seed) VALUES (?, ?, ?, ?, ?) ON CONFLICT(cell_x, cell_y) DO UPDATE SET reveal_state = MAX(map_cell.reveal_state, excluded.reveal_state);", [
 		cell_x, cell_y, reveal_state, now, cell_seed
+	])
+
+func upsert_map_cell_metadata(cell_x: int, cell_y: int, zone: String, biome: String, region: String, haunt_stage: int = 0) -> bool:
+	last_error = ""
+	var now = int(Time.get_unix_time_from_system())
+	return _q("INSERT INTO map_cell (cell_x, cell_y, reveal_state, first_revealed_at, cell_seed, zone, biome, region, haunt_stage) VALUES (?, ?, 0, ?, 0, ?, ?, ?, ?) ON CONFLICT(cell_x, cell_y) DO UPDATE SET zone = excluded.zone, biome = excluded.biome, region = excluded.region, haunt_stage = MAX(0, excluded.haunt_stage);", [
+		cell_x, cell_y, now, zone, biome, region, maxi(0, haunt_stage)
 	])
 
 func get_place_node(id: String) -> Dictionary:

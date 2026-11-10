@@ -14,9 +14,25 @@
   "partySize": 6,
   "bagCacheDecayGameDays": 3,
   "hauntGrowthTickGameDays": 1,
+  "distortionFieldIntervalGameDays": 3,
+  "distortionFieldIntervalEscalatedGameDays": 2,
+  "distortionFieldDurationGameDays": 1,
+  "distortionFieldRadiusMiles": 10.0,
+  "distortionFieldSizeCells": 5,
+  "distortionFieldForeignShare": 0.40,
+  "ultraBeastFieldShare": 0.02,
   "familiarityTiers": {
     "1": "known",
     "3": "familiar",
     "10": "mastered"
-  }
+  },
+  "levelBandsByMiles": [
+    {"maxMiles": 2.0, "minLevel": 2, "maxLevel": 10},
+    {"maxMiles": 10.0, "minLevel": 8, "maxLevel": 22},
+    {"maxMiles": 50.0, "minLevel": 18, "maxLevel": 38},
+    {"maxMiles": 300.0, "minLevel": 30, "maxLevel": 50},
+    {"maxMiles": 1000.0, "minLevel": 42, "maxLevel": 62},
+    {"maxMiles": 2000.0, "minLevel": 55, "maxLevel": 75},
+    {"maxMiles": 999999.0, "minLevel": 65, "maxLevel": 85}
+  ]
 }

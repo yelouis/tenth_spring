@@ -46,6 +46,7 @@ const MAP_COLORS := {
 	19: Color("#92d472"), # CROP
 	20: Color("#948674"), # RUBBLE
 	21: Color("#948674"), # STAMP
+	22: Color("#4c8e40"), # LEDGE
 }
 
 const ROOF_BASE_COLORS := [
@@ -135,6 +136,10 @@ var _install_label: Label = null
 var _cancel_button: Button = null
 var _sign_tooltip: Label = null
 var _return_home_button: Button = null
+var _distortion_field_layer: Node2D = null
+var _distortion_field_rect: ColorRect = null
+var _distortion_field_chip: Label = null
+var _active_distortion_field: Dictionary = {}
 var _active_place_id: String = ""
 var _active_waypost_cell: Vector2i = Vector2i.ZERO
 var _active_waypost_wm: Vector2 = Vector2.ZERO
@@ -271,6 +276,31 @@ func _ready() -> void:
 	_return_home_button = get_node_or_null("AttributionUI/ReturnHomeButton") as Button
 	if _return_home_button != null:
 		_return_home_button.pressed.connect(_on_return_home_pressed)
+
+	_distortion_field_layer = get_node_or_null("DistortionFieldLayer") as Node2D
+	if _distortion_field_layer == null:
+		_distortion_field_layer = Node2D.new()
+		_distortion_field_layer.name = "DistortionFieldLayer"
+		_distortion_field_layer.z_index = 15
+		add_child(_distortion_field_layer)
+	_distortion_field_rect = _distortion_field_layer.get_node_or_null("FieldRect") as ColorRect
+	if _distortion_field_rect == null:
+		_distortion_field_rect = ColorRect.new()
+		_distortion_field_rect.name = "FieldRect"
+		_distortion_field_rect.color = Color(0.68, 0.22, 0.85, 0.22)
+		_distortion_field_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_distortion_field_rect.visible = false
+		_distortion_field_layer.add_child(_distortion_field_rect)
+
+	var attr_ui := get_node_or_null("AttributionUI")
+	if attr_ui != null:
+		_distortion_field_chip = attr_ui.get_node_or_null("DistortionFieldChip") as Label
+		if _distortion_field_chip == null:
+			_distortion_field_chip = Label.new()
+			_distortion_field_chip.name = "DistortionFieldChip"
+			_distortion_field_chip.position = Vector2(16.0, 52.0)
+			_distortion_field_chip.visible = false
+			attr_ui.add_child(_distortion_field_chip)
 
 	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
@@ -2020,6 +2050,40 @@ func trigger_update_map_data() -> Dictionary:
 		_clear_rendered_layers()
 		_update_frustum_culling()
 	return res
+
+func set_active_distortion_field(field_info: Dictionary) -> void:
+	_active_distortion_field = field_info.duplicate(true)
+	if not bool(field_info.get("active", false)):
+		if _distortion_field_rect != null:
+			_distortion_field_rect.visible = false
+		if _distortion_field_chip != null:
+			_distortion_field_chip.visible = false
+			_distortion_field_chip.text = ""
+		return
+
+	var min_cell: Vector2i = field_info.get("min_cell", Vector2i.ZERO)
+	var max_cell: Vector2i = field_info.get("max_cell", Vector2i.ZERO)
+	var width_cells: int = maxi(1, max_cell.x - min_cell.x + 1)
+	var height_cells: int = maxi(1, max_cell.y - min_cell.y + 1)
+	if _distortion_field_rect != null:
+		# Screen Y grows south, so northmost cell max_cell.y has top Y = (-max_cell.y - 1) * CELL_SIZE_PX
+		_distortion_field_rect.position = Vector2(
+			float(min_cell.x) * CELL_SIZE_PX,
+			float(-max_cell.y - 1) * CELL_SIZE_PX
+		)
+		_distortion_field_rect.size = Vector2(
+			float(width_cells) * CELL_SIZE_PX,
+			float(height_cells) * CELL_SIZE_PX
+		)
+		_distortion_field_rect.visible = true
+	if _distortion_field_chip != null:
+		_distortion_field_chip.text = str(field_info.get("chip_text", ""))
+		_distortion_field_chip.visible = not _distortion_field_chip.text.is_empty()
+
+func get_distortion_field_chip_text() -> String:
+	if _distortion_field_chip != null and _distortion_field_chip.visible:
+		return _distortion_field_chip.text
+	return ""
 
 func _exit_tree() -> void:
 	if _synth_worker != null:

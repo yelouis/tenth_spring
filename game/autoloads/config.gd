@@ -15,7 +15,23 @@ var legendary_respawn_game_days: int = 30
 var party_size: int = 6
 var bag_cache_decay_game_days: int = 3
 var haunt_growth_tick_game_days: int = 1
+var distortion_field_interval_game_days: int = 3
+var distortion_field_interval_escalated_game_days: int = 2
+var distortion_field_duration_game_days: int = 1
+var distortion_field_radius_miles: float = 10.0
+var distortion_field_size_cells: int = 5
+var distortion_field_foreign_share: float = 0.40
+var ultra_beast_field_share: float = 0.02
 var familiarity_tiers: Dictionary = {1: "known", 3: "familiar", 10: "mastered"}
+var level_bands_by_miles: Array = [
+	{"maxMiles": 2.0, "minLevel": 2, "maxLevel": 10},
+	{"maxMiles": 10.0, "minLevel": 8, "maxLevel": 22},
+	{"maxMiles": 50.0, "minLevel": 18, "maxLevel": 38},
+	{"maxMiles": 300.0, "minLevel": 30, "maxLevel": 50},
+	{"maxMiles": 1000.0, "minLevel": 42, "maxLevel": 62},
+	{"maxMiles": 2000.0, "minLevel": 55, "maxLevel": 75},
+	{"maxMiles": 999999.0, "minLevel": 65, "maxLevel": 85}
+]
 
 func _ready() -> void:
 	load_tuning_config("res://config/tuning.json")
@@ -45,5 +61,14 @@ func load_tuning_config(path: String) -> void:
 		party_size = json.get("partySize", party_size)
 		bag_cache_decay_game_days = json.get("bagCacheDecayGameDays", bag_cache_decay_game_days)
 		haunt_growth_tick_game_days = json.get("hauntGrowthTickGameDays", haunt_growth_tick_game_days)
+		distortion_field_interval_game_days = int(json.get("distortionFieldIntervalGameDays", distortion_field_interval_game_days))
+		distortion_field_interval_escalated_game_days = int(json.get("distortionFieldIntervalEscalatedGameDays", distortion_field_interval_escalated_game_days))
+		distortion_field_duration_game_days = int(json.get("distortionFieldDurationGameDays", distortion_field_duration_game_days))
+		distortion_field_radius_miles = float(json.get("distortionFieldRadiusMiles", distortion_field_radius_miles))
+		distortion_field_size_cells = int(json.get("distortionFieldSizeCells", distortion_field_size_cells))
+		distortion_field_foreign_share = float(json.get("distortionFieldForeignShare", distortion_field_foreign_share))
+		ultra_beast_field_share = float(json.get("ultraBeastFieldShare", ultra_beast_field_share))
 		if json.has("familiarityTiers"):
 			familiarity_tiers = json["familiarityTiers"]
+		if json.has("levelBandsByMiles") and json["levelBandsByMiles"] is Array:
+			level_bands_by_miles = json["levelBandsByMiles"]

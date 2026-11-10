@@ -41,8 +41,8 @@ func run_test() -> bool:
 		return false
 
 	var version = DB.get_schema_version()
-	if version != 3:
-		push_error("FAIL: Expected schema_version 3, got %d" % version)
+	if version != 4:
+		push_error("FAIL: Expected schema_version 4, got %d" % version)
 		_cleanup_test_files()
 		return false
 

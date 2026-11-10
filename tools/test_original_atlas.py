@@ -63,9 +63,9 @@ class TestOriginalAtlas(unittest.TestCase):
         self.assertEqual(orig_data, ph_data, "original_v1.json schema must match placeholder_v1.json")
 
         atlas_img = al.read_png(self.png_path)
-        self.assertEqual((atlas_img.w, atlas_img.h), (512, 3136))
+        self.assertEqual((atlas_img.w, atlas_img.h), (512, 3232))
 
-        active_rows = set(range(0, 17)) | {25, 42, 43, 52, 53, 54, 55, 56, 57, 58, 59, 92}
+        active_rows = set(range(0, 17)) | {25, 42, 43, 52, 53, 54, 55, 56, 57, 58, 59, 92, 94, 95, 96}
         for entry in orig_data["rows"]:
             r_idx = entry["row"]
             masked = entry["masked"]

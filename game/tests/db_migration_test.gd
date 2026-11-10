@@ -41,8 +41,8 @@ func run_test() -> bool:
 	PlacesPack.set_active_pack_path(PlacesPack.FIXTURE_PACK_PATH)
 	DB.init_db()
 
-	if DB.get_schema_version() != 3:
-		push_error("FAIL: Expected initial schema_version 3 on fresh DB, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 4:
+		push_error("FAIL: Expected initial schema_version 4 on fresh DB, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -122,12 +122,12 @@ func run_test() -> bool:
 	var dl_before := DB.get_all_distort_entries()
 
 	# -------------------------------------------------------------
-	# 2. Run migration v2 -> v3
+	# 2. Run migration v2 -> v3 -> v4
 	# -------------------------------------------------------------
 	DB._run_migrations(DB.MIGRATIONS)
 
-	if DB.get_schema_version() != 3:
-		push_error("FAIL: Expected schema_version 3 after migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 4:
+		push_error("FAIL: Expected schema_version 4 after migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -220,17 +220,17 @@ func run_test() -> bool:
 			_cleanup_test_files()
 			return false
 
-	# 3. Re-running migration v3 is a no-op
+	# 3. Re-running migration v4 is a no-op
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 3:
-		push_error("FAIL: Expected schema_version to remain 3 on idempotent re-run")
+	if DB.get_schema_version() != 4:
+		push_error("FAIL: Expected schema_version to remain 4 on idempotent re-run")
 		_cleanup_test_files()
 		return false
 
-	# 4. Failing migration statement rolls back and leaves version at 3
+	# 4. Failing migration statement rolls back and leaves version at 4
 	var mig_fail = [
 		{
-			"version": 4,
+			"version": 5,
 			"statements": [
 				"ALTER TABLE map_cell ADD COLUMN valid_col INTEGER;",
 				"SYNTAX ERROR INVALID SQL STATEMENT;"
@@ -240,8 +240,8 @@ func run_test() -> bool:
 	DB._run_migrations(mig_fail)
 	DB.init_db()
 
-	if DB.get_schema_version() != 3:
-		push_error("FAIL: Expected schema_version to remain 3 after failed migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 4:
+		push_error("FAIL: Expected schema_version to remain 4 after failed migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 

@@ -79,6 +79,8 @@ class DataPackSpikeTests(unittest.TestCase):
             dps.DATA_PACK_MANIFEST_PATH,
             dps.FAN_SPRITE_MANIFEST_PATH,
             dps.FAN_SPRITE_CREDITS_PATH,
+            REPO_ROOT / "game" / "config" / "spawn_tables.json",
+            REPO_ROOT / "game" / "config" / "regions.json",
         ]
         self.assertEqual(dps.verify_no_species_names_in_files(committed, sample_names), [])
 

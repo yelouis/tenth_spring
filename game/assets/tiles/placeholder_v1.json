@@ -565,12 +565,30 @@
       "variant": 1,
       "row": 93,
       "masked": false
+    },
+    {
+      "class": 22,
+      "variant": 0,
+      "row": 94,
+      "masked": false
+    },
+    {
+      "class": 22,
+      "variant": 1,
+      "row": 95,
+      "masked": false
+    },
+    {
+      "class": 22,
+      "variant": 2,
+      "row": 96,
+      "masked": false
     }
   ],
   "fog_rows": {
-    "solid": 94,
-    "d75": 95,
-    "d50": 96,
-    "d25": 97
+    "solid": 97,
+    "d75": 98,
+    "d50": 99,
+    "d25": 100
   }
 }

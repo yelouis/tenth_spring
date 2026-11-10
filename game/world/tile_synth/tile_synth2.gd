@@ -7,8 +7,9 @@ extends RefCounted
 const MapStore := preload("res://world/region_import/map_store.gd")
 const Grid := preload("res://world/grid.gd")
 const MapConstants := preload("res://world/map_constants.gd")
+const CellClassifier := preload("res://world/cell_classifier.gd")
 
-# Tile Vocabulary (§3)
+# Tile Vocabulary (§3, Slice 3 §2)
 const TILE_VOID := 0
 const TILE_GRASS := 1
 const TILE_TALL_GRASS := 2
@@ -31,6 +32,7 @@ const TILE_SIGN := 18
 const TILE_CROP := 19
 const TILE_RUBBLE := 20
 const TILE_STAMP := 21
+const TILE_LEDGE := 22
 
 # Stamp flags in mask_id for TILE_STAMP (§14.2.2)
 const STAMP_FLAG_SOLID := 1
@@ -67,6 +69,7 @@ const SALT_DECAL_COUNT := 18
 const SALT_DECAL_DOORSTEP := 19
 const SALT_DECAL_POS := 20
 const SALT_BLOCK_DESIGN := 21
+const SALT_LEDGE := 22
 
 # Stamp metadata table 1..97 (0 reserved; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43)
 const STAMP_TABLE: Dictionary = {
@@ -237,13 +240,29 @@ static func compute_stamp_tiles_from_image(img: Image, w: int, h: int, base_rows
 static func get_stamp_def(stamp_id: int) -> Dictionary:
 	return STAMP_TABLE.get(stamp_id, {})
 
-## Walkability function home (§14.2.4, Decision 27)
-static func is_walkable(cls: int, _variant: int, mask: int) -> bool:
+## Walkability function home (§14.2.4, Decision 27, Slice 3 §2.3)
+static func is_walkable(cls: int, _variant: int = 0, mask: int = 0) -> bool:
 	if cls == TILE_STAMP:
 		return (mask & STAMP_FLAG_SOLID) == 0
-	if cls == TILE_VOID or cls == TILE_TREE or cls == TILE_WATER or cls == TILE_ROOF or cls == TILE_WALL or cls == TILE_FENCE or cls == TILE_SIGN:
+	if cls == TILE_VOID or cls == TILE_TREE or cls == TILE_WATER or cls == TILE_ROOF or cls == TILE_WALL or cls == TILE_FENCE or cls == TILE_SIGN or cls == TILE_LEDGE:
 		return false
 	return true
+
+## One-way ledge jump check (Slice 3 §2.3):
+## Returns true iff ledge_class == TILE_LEDGE, landing tile is walkable, and step_dir matches the ledge's jump direction
+## (variant 0 = south Vector2i(0, 1), variant 1 = east Vector2i(1, 0), variant 2 = west Vector2i(-1, 0)).
+static func can_jump_ledge(ledge_class: int, ledge_variant: int, landing_class: int, landing_mask: int, step_dir: Vector2i) -> bool:
+	if ledge_class != TILE_LEDGE:
+		return false
+	if not is_walkable(landing_class, 0, landing_mask):
+		return false
+	if ledge_variant == 0 and step_dir == Vector2i(0, 1):
+		return true
+	if ledge_variant == 1 and step_dir == Vector2i(1, 0):
+		return true
+	if ledge_variant == 2 and step_dir == Vector2i(-1, 0):
+		return true
+	return false
 
 static func is_tile_walkable_in_buffer(tiles: PackedByteArray, lx: int, ly: int) -> bool:
 	if lx < 0 or lx >= 32 or ly < 0 or ly >= 32:
@@ -2835,6 +2854,42 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					if not blocked:
 						grid_class[idx] = TILE_TREE
 
+	# 8c. One-way jumpable ledges along terrain contours in scrub / open wilds cells (Slice 3 §2.2)
+	var center_dict: Dictionary = area.get(Vector2i.ZERO, {})
+	var enable_ledges: bool = bool(center_dict.get("enable_ledges", false))
+	var has_scrub_poly: bool = not polys_by_order["scrub"].is_empty()
+	if enable_ledges or has_scrub_poly:
+		for r: int in [10, 18, 26]:
+			var c: int = 7
+			while c <= 29:
+				var gx: int = cx * 32 + (c - 4)
+				var gy: int = cy * 32 + (35 - r)
+				var u_ledge := u_rand(gx, gy, world_seed, SALT_LEDGE)
+				if enable_ledges or u_ledge < 0.45:
+					var run_len := 3 + floori(u_rand(gx + 1, gy, world_seed, SALT_LEDGE) * 3.0)
+					if c + run_len > 33:
+						run_len = 33 - c
+					var can_place := (run_len >= 3)
+					if can_place:
+						for dc in range(-1, run_len + 1):
+							for dr in range(-1, 2):
+								var nr: int = r + dr
+								var nc: int = c + dc
+								var n_cls: int = grid_class[nr * WORK_SIZE + nc]
+								if n_cls != TILE_GRASS and n_cls != TILE_TALL_GRASS:
+									can_place = false
+									break
+							if not can_place:
+								break
+					if can_place:
+						for dc in range(run_len):
+							var l_idx: int = r * WORK_SIZE + (c + dc)
+							grid_class[l_idx] = TILE_LEDGE
+							grid_variant[l_idx] = 0 # south-facing jumpable ledge
+						c += run_len + 4 # minimum 4-tile walkable gap so no area is walled off
+						continue
+				c += 1
+
 	# -------------------------------------------------------------
 	# 9. Signs (§4.1 step 9, §4.4)
 	# -------------------------------------------------------------
@@ -3078,7 +3133,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < road_v1_thresh else 0
 				TILE_TREE:
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_TREE_VARIANT) < 0.30 else 0
-				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE, TILE_STAMP:
+				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE, TILE_STAMP, TILE_LEDGE:
 					variant = grid_variant[idx]
 				_:
 					variant = 0
@@ -3158,10 +3213,19 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 		return int(a["stamp_id"]) < int(b["stamp_id"])
 	)
 
+	var cell_meta: Dictionary = CellClassifier.classify_cell(cx, cy, area, {
+		"tiles": output,
+		"stamps": stamps_list,
+	})
+
 	return {
 		"tiles": output,
 		"signs": PackedStringArray(signs_list),
 		"stamps": stamps_list,
+		"zone": str(cell_meta.get("zone", "wilds")),
+		"biome": str(cell_meta.get("biome", "plains")),
+		"region": str(cell_meta.get("region", "South Atlantic")),
+		"ghost_base": float(cell_meta.get("ghost_base", 0.06)),
 		"stats": {
 			"building_candidates": total_building_candidates,
 			"buildings_placed": buildings_placed_count,
