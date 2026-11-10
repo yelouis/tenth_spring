@@ -53,7 +53,7 @@ static func load_installed_stores(map_data_dir: String = "") -> Dictionary:
 			var s := MapStore.new(store_path)
 			if s.open_store(false):
 				var schema_v: String = s.get_state("schema_version", "")
-				if schema_v == "4":
+				if schema_v == "4" or schema_v == "5":
 					var pid: String = s.get_state("place_id", "")
 					if pid.is_empty():
 						pid = f.trim_suffix(".db")

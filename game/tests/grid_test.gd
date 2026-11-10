@@ -83,4 +83,40 @@ func run_test() -> bool:
 		push_error("grid_test (f): player should not be stranded at 500m (measured %f)" % dist_home)
 		return false
 
+	# (g) Shared cross-language golden vectors (tools/testdata/grid_vectors.json, §1.1)
+	var vec_path := ProjectSettings.globalize_path("res://").path_join("../tools/testdata/grid_vectors.json").simplify_path()
+	if not FileAccess.file_exists(vec_path):
+		push_error("grid_test (g): grid_vectors.json not found at %s" % vec_path)
+		return false
+	var vec_txt := FileAccess.get_file_as_string(vec_path)
+	var vec_arr: Variant = JSON.parse_string(vec_txt)
+	if not (vec_arr is Array) or (vec_arr as Array).size() < 40:
+		push_error("grid_test (g): expected >= 40 vectors in grid_vectors.json")
+		return false
+	for item in vec_arr:
+		var v: Dictionary = item
+		var v_name: String = str(v.get("name", ""))
+		var v_lat: float = float(v.get("lat", 0.0))
+		var v_lon: float = float(v.get("lon", 0.0))
+		var exp_wmx: float = float(v.get("wm_x", 0.0))
+		var exp_wmy: float = float(v.get("wm_y", 0.0))
+		var exp_cx: int = int(v.get("cell_x", 0))
+		var exp_cy: int = int(v.get("cell_y", 0))
+
+		var got_cell := Grid.latlon_to_cell(v_lat, v_lon)
+		if got_cell.x != exp_cx or got_cell.y != exp_cy:
+			push_error("grid_test (g): cell mismatch on %s: expected (%d, %d), got (%d, %d)" % [
+				v_name, exp_cx, exp_cy, got_cell.x, got_cell.y
+			])
+			return false
+
+		var got_wm := Grid.latlon_to_wm(v_lat, v_lon)
+		var tol_x := maxf(1e-3, absf(exp_wmx) * 2e-6)
+		var tol_y := maxf(1e-3, absf(exp_wmy) * 2e-6)
+		if absf(got_wm.x - exp_wmx) > tol_x or absf(got_wm.y - exp_wmy) > tol_y:
+			push_error("grid_test (g): wm mismatch on %s: expected (%f, %f), got (%f, %f)" % [
+				v_name, exp_wmx, exp_wmy, got_wm.x, got_wm.y
+			])
+			return false
+
 	return true

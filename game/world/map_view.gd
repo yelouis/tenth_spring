@@ -527,8 +527,8 @@ func _load_map_stores() -> void:
 				var store := MapStore.new(p)
 				if store.open_store(true):
 					var schema_ver := store.get_state("schema_version", "")
-					if schema_ver != "4":
-						print("map: skipping %s — store schema %s, need 4" % [f, schema_ver])
+					if schema_ver != "5":
+						print("map: skipping %s — store schema %s, need 5" % [f, schema_ver])
 						store.close()
 					else:
 						_map_stores.append(store)

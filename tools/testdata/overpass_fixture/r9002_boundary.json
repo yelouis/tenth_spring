@@ -1,0 +1,43 @@
+{
+  "version": 0.6,
+  "elements": [
+    {
+      "type": "relation",
+      "id": 9002,
+      "tags": {
+        "type": "boundary",
+        "boundary": "national_park",
+        "name": "Fixture Park"
+      },
+      "members": [
+        {
+          "type": "way",
+          "ref": 9204,
+          "role": "outer",
+          "geometry": [
+            {
+              "lat": 0.0068991,
+              "lon": 0.0206972
+            },
+            {
+              "lat": 0.0068991,
+              "lon": 0.0298959
+            },
+            {
+              "lat": 0.0160978,
+              "lon": 0.0298959
+            },
+            {
+              "lat": 0.0160978,
+              "lon": 0.0206972
+            },
+            {
+              "lat": 0.0068991,
+              "lon": 0.0206972
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

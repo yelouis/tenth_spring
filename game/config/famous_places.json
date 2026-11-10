@@ -69,7 +69,7 @@
     "name": "Providence",
     "region": "New England",
     "geofabrik": "north-america/us/rhode-island",
-    "osm_boundary": "r393527",
+    "osm_boundary": "r191210",
     "waypost": {
       "name": "Providence City Hall",
       "lat": 41.82404,
@@ -114,7 +114,7 @@
     "name": "Portland (Maine)",
     "region": "New England",
     "geofabrik": "north-america/us/maine",
-    "osm_boundary": "r134954",
+    "osm_boundary": "r132500",
     "waypost": {
       "name": "Portland City Hall",
       "lat": 43.66012,
@@ -288,7 +288,7 @@
     "name": "Pittsburgh",
     "region": "Middle Atlantic",
     "geofabrik": "north-america/us/pennsylvania",
-    "osm_boundary": "r1202244",
+    "osm_boundary": "r188553",
     "waypost": {
       "name": "Pittsburgh City-County Building",
       "lat": 40.43852,
@@ -388,7 +388,7 @@
     "name": "Atlanta",
     "region": "South Atlantic",
     "geofabrik": "north-america/us/georgia",
-    "osm_boundary": "r119572",
+    "osm_boundary": "r119557",
     "waypost": {
       "name": "Atlanta City Hall",
       "lat": 33.748995,
@@ -442,7 +442,7 @@
     "name": "Miami",
     "region": "South Atlantic",
     "geofabrik": "north-america/us/florida",
-    "osm_boundary": "r1216744",
+    "osm_boundary": "r1216769",
     "waypost": {
       "name": "Miami City Hall",
       "lat": 25.72892,
@@ -477,7 +477,7 @@
     "name": "Nashville",
     "region": "East South Central",
     "geofabrik": "north-america/us/tennessee",
-    "osm_boundary": "r195977",
+    "osm_boundary": "r197472",
     "waypost": {
       "name": "Metropolitan Courthouse",
       "lat": 36.1667,
@@ -522,7 +522,7 @@
     "name": "Memphis",
     "region": "East South Central",
     "geofabrik": "north-america/us/tennessee",
-    "osm_boundary": "r195954",
+    "osm_boundary": "r197239",
     "waypost": {
       "name": "Memphis City Hall",
       "lat": 35.15,
@@ -566,7 +566,7 @@
     "name": "Louisville",
     "region": "East South Central",
     "geofabrik": "north-america/us/kentucky",
-    "osm_boundary": "r195982",
+    "osm_boundary": "r1804307",
     "waypost": {
       "name": "Louisville Metro Hall",
       "lat": 38.2542,
@@ -780,7 +780,7 @@
     "name": "Detroit",
     "region": "East North Central",
     "geofabrik": "north-america/us/michigan",
-    "osm_boundary": "r134590",
+    "osm_boundary": "r134591",
     "waypost": {
       "name": "Coleman A. Young Municipal Center",
       "lat": 42.3293,
@@ -825,7 +825,7 @@
     "name": "Cleveland",
     "region": "East North Central",
     "geofabrik": "north-america/us/ohio",
-    "osm_boundary": "r182103",
+    "osm_boundary": "r182130",
     "waypost": {
       "name": "Cleveland City Hall",
       "lat": 41.5036,
@@ -914,7 +914,7 @@
     "name": "St. Louis",
     "region": "West North Central",
     "geofabrik": "north-america/us/missouri",
-    "osm_boundary": "r182743",
+    "osm_boundary": "r1180533",
     "waypost": {
       "name": "St. Louis City Hall",
       "lat": 38.627,
@@ -959,7 +959,7 @@
     "name": "Kansas City",
     "region": "West North Central",
     "geofabrik": "north-america/us/missouri",
-    "osm_boundary": "r134731",
+    "osm_boundary": "r141008",
     "waypost": {
       "name": "Kansas City City Hall",
       "lat": 39.1,
@@ -1122,7 +1122,7 @@
     "name": "Phoenix",
     "region": "Mountain",
     "geofabrik": "north-america/us/arizona",
-    "osm_boundary": "r111494",
+    "osm_boundary": "r111257",
     "waypost": {
       "name": "Phoenix City Hall",
       "lat": 33.4484,
@@ -1291,7 +1291,7 @@
     "name": "Acadia National Park (ME)",
     "region": "New England",
     "geofabrik": "north-america/us/maine",
-    "osm_boundary": "r1257404",
+    "osm_boundary": "r2176999",
     "waypost": {
       "name": "Hulls Cove Visitor Center",
       "lat": 44.4093,
@@ -1317,7 +1317,7 @@
     "name": "Mount Washington State Park (NH)",
     "region": "New England",
     "geofabrik": "north-america/us/new-hampshire",
-    "osm_boundary": "r6676239",
+    "osm_boundary": "r2050444",
     "waypost": {
       "name": "Sherman Adams Visitor Center",
       "lat": 44.2705,
@@ -1353,7 +1353,7 @@
     "name": "Walden Pond State Reservation (MA)",
     "region": "New England",
     "geofabrik": "north-america/us/massachusetts",
-    "osm_boundary": "r11976077",
+    "osm_boundary": "r6826906",
     "waypost": {
       "name": "Walden Pond Visitor Center",
       "lat": 42.4385,
@@ -1379,7 +1379,7 @@
     "name": "Cape Cod National Seashore (MA)",
     "region": "New England",
     "geofabrik": "north-america/us/massachusetts",
-    "osm_boundary": "r1257523",
+    "osm_boundary": "r14382488",
     "waypost": {
       "name": "Salt Pond Visitor Center",
       "lat": 41.8383,
@@ -1405,7 +1405,7 @@
     "name": "Niagara Falls State Park (NY)",
     "region": "Middle Atlantic",
     "geofabrik": "north-america/us/new-york",
-    "osm_boundary": "r6685002",
+    "osm_boundary": "r6490643",
     "waypost": {
       "name": "Niagara Falls State Park Visitor Center",
       "lat": 43.0828,
@@ -1441,7 +1441,7 @@
     "name": "Thomas Edison National Historical Park (NJ)",
     "region": "Middle Atlantic",
     "geofabrik": "north-america/us/new-jersey",
-    "osm_boundary": "r1257482",
+    "osm_boundary": "r6360118",
     "waypost": {
       "name": "Laboratory Complex Visitor Center",
       "lat": 40.7831,
@@ -1477,7 +1477,7 @@
     "name": "Great Smoky Mountains National Park (NC/TN)",
     "region": "South Atlantic",
     "geofabrik": "north-america/us/north-carolina",
-    "osm_boundary": "r1257492",
+    "osm_boundary": "r2131838",
     "waypost": {
       "name": "Sugarlands Visitor Center",
       "lat": 35.6858,
@@ -1503,7 +1503,7 @@
     "name": "Cape Hatteras National Seashore (NC)",
     "region": "South Atlantic",
     "geofabrik": "north-america/us/north-carolina",
-    "osm_boundary": "r1257524",
+    "osm_boundary": "r1140927",
     "waypost": {
       "name": "Cape Hatteras Visitor Center",
       "lat": 35.2514,
@@ -1546,7 +1546,7 @@
     "name": "Wright Brothers National Memorial (NC)",
     "region": "South Atlantic",
     "geofabrik": "north-america/us/north-carolina",
-    "osm_boundary": "r1257493",
+    "osm_boundary": "w32929677",
     "waypost": {
       "name": "Wright Brothers Visitor Center",
       "lat": 36.015,
@@ -1588,7 +1588,7 @@
     "name": "Biscayne National Park (FL)",
     "region": "South Atlantic",
     "geofabrik": "north-america/us/florida",
-    "osm_boundary": "r1257494",
+    "osm_boundary": "r9107419",
     "waypost": {
       "name": "Dante Fascell Visitor Center",
       "lat": 25.4642,
@@ -1614,7 +1614,7 @@
     "name": "Reelfoot Lake State Park (TN)",
     "region": "East South Central",
     "geofabrik": "north-america/us/tennessee",
-    "osm_boundary": "r6685013",
+    "osm_boundary": "r11788388",
     "waypost": {
       "name": "Reelfoot Lake Visitor Center",
       "lat": 36.3586,
@@ -1640,7 +1640,7 @@
     "name": "Mammoth Cave National Park (KY)",
     "region": "East South Central",
     "geofabrik": "north-america/us/kentucky",
-    "osm_boundary": "r1257496",
+    "osm_boundary": "r9615817",
     "waypost": {
       "name": "Mammoth Cave Visitor Center",
       "lat": 37.187,
@@ -1676,7 +1676,7 @@
     "name": "Big Bend National Park (TX)",
     "region": "West South Central",
     "geofabrik": "north-america/us/texas",
-    "osm_boundary": "r1257497",
+    "osm_boundary": "r16056592",
     "waypost": {
       "name": "Panther Junction Visitor Center",
       "lat": 29.3283,
@@ -1702,7 +1702,7 @@
     "name": "Hot Springs National Park (AR)",
     "region": "West South Central",
     "geofabrik": "north-america/us/arkansas",
-    "osm_boundary": "r1257498",
+    "osm_boundary": "r3136144",
     "waypost": {
       "name": "Fordyce Bathhouse Visitor Center",
       "lat": 34.5139,
@@ -1728,7 +1728,7 @@
     "name": "Padre Island National Seashore (TX)",
     "region": "West South Central",
     "geofabrik": "north-america/us/texas",
-    "osm_boundary": "r1257525",
+    "osm_boundary": "w614279786",
     "waypost": {
       "name": "Malaquite Visitor Center",
       "lat": 27.4397,
@@ -1754,7 +1754,7 @@
     "name": "Buffalo National River (AR)",
     "region": "West South Central",
     "geofabrik": "north-america/us/arkansas",
-    "osm_boundary": "r1257499",
+    "osm_boundary": "r2380104",
     "waypost": {
       "name": "Tyler Bend Visitor Center",
       "lat": 35.9897,
@@ -1780,7 +1780,7 @@
     "name": "Cuyahoga Valley National Park (OH)",
     "region": "East North Central",
     "geofabrik": "north-america/us/ohio",
-    "osm_boundary": "r1257500",
+    "osm_boundary": "r1286297",
     "waypost": {
       "name": "Boston Mill Visitor Center",
       "lat": 41.2625,
@@ -1806,7 +1806,7 @@
     "name": "Isle Royale National Park (MI)",
     "region": "East North Central",
     "geofabrik": "north-america/us/michigan",
-    "osm_boundary": "r1257501",
+    "osm_boundary": "r1870066",
     "waypost": {
       "name": "Rock Harbor Visitor Center",
       "lat": 48.1464,
@@ -1832,7 +1832,7 @@
     "name": "Sleeping Bear Dunes National Lakeshore (MI)",
     "region": "East North Central",
     "geofabrik": "north-america/us/michigan",
-    "osm_boundary": "r1257526",
+    "osm_boundary": "r812810",
     "waypost": {
       "name": "Philip A. Hart Visitor Center",
       "lat": 44.8608,
@@ -1865,7 +1865,7 @@
     "name": "Theodore Roosevelt National Park (ND)",
     "region": "West North Central",
     "geofabrik": "north-america/us/north-dakota",
-    "osm_boundary": "r1257503",
+    "osm_boundary": "r13235948",
     "waypost": {
       "name": "South Unit Visitor Center",
       "lat": 46.9242,
@@ -1891,7 +1891,7 @@
     "name": "Voyageurs National Park (MN)",
     "region": "West North Central",
     "geofabrik": "north-america/us/minnesota",
-    "osm_boundary": "r1257504",
+    "osm_boundary": "r11116441",
     "waypost": {
       "name": "Rainy Lake Visitor Center",
       "lat": 48.6142,
@@ -1917,7 +1917,7 @@
     "name": "Badlands National Park (SD)",
     "region": "West North Central",
     "geofabrik": "north-america/us/south-dakota",
-    "osm_boundary": "r1257505",
+    "osm_boundary": "r5731065",
     "waypost": {
       "name": "Ben Reifel Visitor Center",
       "lat": 43.7497,
@@ -1943,7 +1943,7 @@
     "name": "Tallgrass Prairie National Preserve (KS)",
     "region": "West North Central",
     "geofabrik": "north-america/us/kansas",
-    "osm_boundary": "r1257506",
+    "osm_boundary": "r11200948",
     "waypost": {
       "name": "Tallgrass Prairie Visitor Center",
       "lat": 38.4339,
@@ -1969,7 +1969,7 @@
     "name": "Yellowstone National Park (WY)",
     "region": "Mountain",
     "geofabrik": "north-america/us/wyoming",
-    "osm_boundary": "r1257507",
+    "osm_boundary": "r1453306",
     "waypost": {
       "name": "Albright Visitor Center",
       "lat": 44.9767,
@@ -2002,7 +2002,7 @@
     "name": "Grand Canyon National Park (AZ)",
     "region": "Mountain",
     "geofabrik": "north-america/us/arizona",
-    "osm_boundary": "r1257508",
+    "osm_boundary": "r183377",
     "waypost": {
       "name": "Grand Canyon Visitor Center",
       "lat": 36.0592,
@@ -2028,7 +2028,7 @@
     "name": "Arches National Park (UT)",
     "region": "Mountain",
     "geofabrik": "north-america/us/utah",
-    "osm_boundary": "r1257509",
+    "osm_boundary": "r5868384",
     "waypost": {
       "name": "Arches Visitor Center",
       "lat": 38.6167,
@@ -2054,7 +2054,7 @@
     "name": "Carlsbad Caverns National Park (NM)",
     "region": "Mountain",
     "geofabrik": "north-america/us/new-mexico",
-    "osm_boundary": "r1257510",
+    "osm_boundary": "r5953459",
     "waypost": {
       "name": "Carlsbad Caverns Visitor Center",
       "lat": 32.1753,
@@ -2096,7 +2096,7 @@
     "name": "Craters of the Moon National Monument (ID)",
     "region": "Mountain",
     "geofabrik": "north-america/us/idaho",
-    "osm_boundary": "r1257511",
+    "osm_boundary": "r904337",
     "waypost": {
       "name": "Robert Limbert Visitor Center",
       "lat": 43.4619,
@@ -2132,7 +2132,7 @@
     "name": "White Sands National Park (NM)",
     "region": "Mountain",
     "geofabrik": "north-america/us/new-mexico",
-    "osm_boundary": "r1257512",
+    "osm_boundary": "r18288647",
     "waypost": {
       "name": "White Sands Visitor Center",
       "lat": 32.7797,
@@ -2158,7 +2158,7 @@
     "name": "Redwood National Park (CA)",
     "region": "Pacific",
     "geofabrik": "north-america/us/california",
-    "osm_boundary": "r1257513",
+    "osm_boundary": "r215231",
     "waypost": {
       "name": "Thomas H. Kuchel Visitor Center",
       "lat": 41.2858,
@@ -2184,7 +2184,7 @@
     "name": "Hawaiʻi Volcanoes National Park (HI)",
     "region": "Pacific",
     "geofabrik": "north-america/us/hawaii",
-    "osm_boundary": "r1257514",
+    "osm_boundary": "r2819618",
     "waypost": {
       "name": "Kīlauea Visitor Center",
       "lat": 19.4297,
@@ -2220,7 +2220,7 @@
     "name": "Mount Rainier National Park (WA)",
     "region": "Pacific",
     "geofabrik": "north-america/us/washington",
-    "osm_boundary": "r1257515",
+    "osm_boundary": "r1399219",
     "waypost": {
       "name": "Henry M. Jackson Memorial Visitor Center",
       "lat": 46.7861,
@@ -2249,7 +2249,7 @@
     "name": "Glacier Bay National Park (AK)",
     "region": "Pacific",
     "geofabrik": "north-america/us/alaska",
-    "osm_boundary": "r1257516",
+    "osm_boundary": "r6077677",
     "waypost": {
       "name": "Glacier Bay Visitor Center",
       "lat": 58.455,
@@ -2281,7 +2281,7 @@
     "name": "Yosemite National Park (CA)",
     "region": "Pacific",
     "geofabrik": "north-america/us/california",
-    "osm_boundary": "r1257517",
+    "osm_boundary": "r1643367",
     "waypost": {
       "name": "Yosemite Valley Visitor Center",
       "lat": 37.7486,

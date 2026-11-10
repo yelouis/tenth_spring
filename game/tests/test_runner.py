@@ -332,6 +332,57 @@ def main():
 		sys.exit(1)
 	print("[FAMOUS PLACES TESTS OK] Famous places configuration and unit tests passed.\n")
 
+	# Shared Web-Mercator Grid & Places Pack Builder Test Suite (Item 26)
+	grid_py_test_path = os.path.join(repo_root, "tools", "test_grid.py")
+	pack_builder_test_path = os.path.join(repo_root, "tools", "test_build_places_pack.py")
+	if not os.path.exists(grid_py_test_path) or not os.path.exists(pack_builder_test_path):
+		print("\n[PLACES PACK ERROR] Grid or places pack builder test suite missing")
+		sys.exit(1)
+	print("=== Shared Grid & Places Pack Builder Test Suite (Item 26) ===")
+	grid_py_res = subprocess.run([sys.executable, "-I", grid_py_test_path], cwd=repo_root)
+	if grid_py_res.returncode != 0:
+		print("\n[GRID PYTHON TEST FAIL] tools/test_grid.py failed.")
+		sys.exit(1)
+	pack_test_res = subprocess.run([sys.executable, "-I", pack_builder_test_path], cwd=repo_root)
+	if pack_test_res.returncode != 0:
+		print("\n[PLACES PACK TEST FAIL] tools/test_build_places_pack.py failed.")
+		sys.exit(1)
+
+	import gzip, hashlib, json
+	game_pack_path = os.path.join(game_dir, "data", "places_pack_v1.json.gz")
+	game_sha_path = os.path.join(game_dir, "data", "places_pack_v1.sha256")
+	comp_pack_path = os.path.join(repo_root, "companion", "assets", "places_pack_v1.json.gz")
+	fp_cfg_path = os.path.join(game_dir, "config", "famous_places.json")
+	if not (os.path.isfile(game_pack_path) and os.path.isfile(game_sha_path) and os.path.isfile(comp_pack_path)):
+		print("\n[PLACES PACK FAIL] Bundled places_pack_v1.json.gz or .sha256 missing")
+		sys.exit(1)
+	with open(game_pack_path, "rb") as pf:
+		game_pack_bytes = pf.read()
+	with open(comp_pack_path, "rb") as cpf:
+		comp_pack_bytes = cpf.read()
+	with open(game_sha_path, "r", encoding="utf-8") as sf:
+		recorded_pack_sha = sf.read().strip().split()[0]
+	actual_pack_sha = hashlib.sha256(game_pack_bytes).hexdigest()
+	if actual_pack_sha != recorded_pack_sha:
+		print(f"\n[PLACES PACK FAIL] SHA-256 mismatch: expected {recorded_pack_sha}, got {actual_pack_sha}")
+		sys.exit(1)
+	if comp_pack_bytes != game_pack_bytes:
+		print("\n[PLACES PACK FAIL] companion/assets/places_pack_v1.json.gz does not match game/data/places_pack_v1.json.gz")
+		sys.exit(1)
+	if len(game_pack_bytes) >= 4 * 1024 * 1024:
+		print(f"\n[PLACES PACK FAIL] Pack size {len(game_pack_bytes)} bytes exceeds 4 MiB limit")
+		sys.exit(1)
+	pack_doc = json.loads(gzip.decompress(game_pack_bytes).decode("utf-8"))
+	with open(fp_cfg_path, "r", encoding="utf-8") as fpf:
+		fp_raw = json.load(fpf)
+	fp_list = fp_raw["places"] if isinstance(fp_raw, dict) else fp_raw
+	expected_place_ids = {p["id"] for p in fp_list if p.get("kind") in ("city", "site")}
+	actual_place_ids = {p["id"] for p in pack_doc.get("places", [])}
+	if actual_place_ids != expected_place_ids or len(actual_place_ids) != 87:
+		print(f"\n[PLACES PACK FAIL] Place ID set mismatch: got {len(actual_place_ids)} places, expected 87")
+		sys.exit(1)
+	print(f"[PLACES PACK OK] places_pack_v1.json.gz verified ({len(actual_place_ids)} places, {len(game_pack_bytes)} bytes, sha256={actual_pack_sha}).\n")
+
 	# Art Pipeline Test Suite (Item 31)
 	art_pipeline_test_path = os.path.join(repo_root, "tools", "art_pipeline", "test_art_pipeline.py")
 	if not os.path.exists(art_pipeline_test_path):

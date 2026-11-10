@@ -22,15 +22,19 @@ static func wm_to_latlon(p: Vector2) -> Vector2:
 	return Vector2(lat, lon)
 
 static func latlon_to_cell(lat: float, lon: float) -> Vector2i:
-	var wm := latlon_to_wm(lat, lon)
-	return wm_to_cell(wm.x, wm.y)
+	var clamped_lat := clampf(lat, -MAX_LAT, MAX_LAT)
+	var x := WM_R * deg_to_rad(lon)
+	var y := WM_R * log(tan(PI / 4.0 + deg_to_rad(clamped_lat) / 2.0))
+	return wm_to_cell(x, y)
 
 static func wm_to_cell(wm_x: float, wm_y: float) -> Vector2i:
 	return Vector2i(int(floor(wm_x / CELL_WM)), int(floor(wm_y / CELL_WM)))
 
 static func latlon_to_tile(lat: float, lon: float) -> Vector2i:
-	var wm := latlon_to_wm(lat, lon)
-	return wm_to_tile(wm.x, wm.y)
+	var clamped_lat := clampf(lat, -MAX_LAT, MAX_LAT)
+	var x := WM_R * deg_to_rad(lon)
+	var y := WM_R * log(tan(PI / 4.0 + deg_to_rad(clamped_lat) / 2.0))
+	return wm_to_tile(x, y)
 
 static func wm_to_tile(wm_x: float, wm_y: float) -> Vector2i:
 	return Vector2i(int(floor(wm_x / TILE_WM)), int(floor(wm_y / TILE_WM)))

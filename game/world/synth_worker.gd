@@ -297,7 +297,7 @@ func _open_worker_stores() -> void:
 		var store := MapStore.new(p)
 		if store.open_store(true):
 			var schema_ver := store.get_state("schema_version", "")
-			if schema_ver == "4":
+			if schema_ver == "5":
 				_worker_stores.append(store)
 			else:
 				store.close()

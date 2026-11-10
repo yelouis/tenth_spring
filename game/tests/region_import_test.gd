@@ -8,6 +8,7 @@ const MapStore := preload("res://world/region_import/map_store.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const Grid := preload("res://world/grid.gd")
 const MapConstants := preload("res://world/map_constants.gd")
+const PlacesPack := preload("res://world/places_pack.gd")
 
 const GOLDEN_CANONICAL_HASH: String = "fb7d26d6189721ed0b0652e9a69a0a92d0b4e105e904d5a303d8b34544bb368e"
 const FIXTURE_PBF: String = "res://tests/fixtures/synthetic_neighborhood.osm.pbf"
@@ -34,9 +35,9 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# Verify schema version 4
-	if store.get_state("schema_version") != "4":
-		push_error("Expected schema_version '4', got '%s'" % store.get_state("schema_version"))
+	# Verify schema version 5
+	if store.get_state("schema_version") != "5":
+		push_error("Expected schema_version '5', got '%s'" % store.get_state("schema_version"))
 		store.close()
 		_cleanup()
 		return false
@@ -391,7 +392,7 @@ func run_test() -> bool:
 	_cleanup()
 
 	# ---------------------------------------------------------
-	# 7. Schema v4 Place Stores Verification (Fixture Places)
+	# 7. Schema v5 Place Stores Verification (Fixture Places + Pack)
 	# ---------------------------------------------------------
 	var city_db := TEST_DB_PATH + "_city.db"
 	_cleanup_path(city_db)
@@ -408,8 +409,14 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	if city_store.get_state("schema_version") != "4":
-		push_error("Expected city store schema_version '4', got '%s'" % city_store.get_state("schema_version"))
+	if city_store.get_state("schema_version") != "5":
+		push_error("Expected city store schema_version '5', got '%s'" % city_store.get_state("schema_version"))
+		city_store.close()
+		_cleanup()
+		return false
+
+	if city_store.get_state("pack_version") != "1":
+		push_error("Expected city store pack_version '1', got '%s'" % city_store.get_state("pack_version"))
 		city_store.close()
 		_cleanup()
 		return false
@@ -426,6 +433,13 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	var fixture_pack := PlacesPack.for_config(FIXTURE_CONFIG)
+	if fixture_pack == null:
+		push_error("Failed to load fixture PlacesPack")
+		city_store.close()
+		_cleanup()
+		return false
+
 	var city_areas := city_store.get_areas()
 	var city_areas_map := {}
 	for a in city_areas:
@@ -437,10 +451,17 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	# F55 falsifier: admin_level=9 relation r9009 ('First Ward') must NOT be in areas
+	if city_areas_map.has("osm:r9009"):
+		push_error("[falsifier] F55: admin_level=9 ward osm:r9009 should not be an area")
+		city_store.close()
+		_cleanup()
+		return false
+
 	var expected_neighbourhoods := {
-		"osm:n9103": {"name": "North End", "cell_count": 10},
+		"osm:n9103": {"name": "North End", "cell_count": 11},
 		"osm:n9104": {"name": "Old Town", "cell_count": 12},
-		"osm:n9105": {"name": "Riverside", "cell_count": 10},
+		"osm:n9105": {"name": "Riverside", "cell_count": 9},
 		"osm:r9010": {"name": "Mill District", "cell_count": 4}
 	}
 	for k in expected_neighbourhoods.keys():
@@ -455,6 +476,20 @@ func run_test() -> bool:
 			city_store.close()
 			_cleanup()
 			return false
+		# Verify store area_cells match PlacesPack.cells_of(k) cell-for-cell
+		var pack_cells: PackedVector2Array = fixture_pack.inst_cells_of(k)
+		var db_cells := city_store._rows("SELECT cell_x, cell_y FROM area_cells WHERE area_key = '%s' ORDER BY cell_y, cell_x;" % k)
+		if db_cells.size() != pack_cells.size():
+			push_error("Area %s cell count mismatch vs pack: db=%d, pack=%d" % [k, db_cells.size(), pack_cells.size()])
+			city_store.close()
+			_cleanup()
+			return false
+		for i in pack_cells.size():
+			if int(db_cells[i]["cell_x"]) != int(pack_cells[i].x) or int(db_cells[i]["cell_y"]) != int(pack_cells[i].y):
+				push_error("Area %s cell %d mismatch vs pack" % [k, i])
+				city_store.close()
+				_cleanup()
+				return false
 
 	var city_ac_count: int = int(city_store._rows("SELECT count(*) as c FROM area_cells;")[0]["c"])
 	if city_ac_count != 36:
@@ -478,6 +513,12 @@ func run_test() -> bool:
 	var site_store := MapStore.new(site_db)
 	if not site_store.open_store(false):
 		push_error("Failed to open fixture site store: %s" % site_store.last_error)
+		_cleanup()
+		return false
+
+	if site_store.get_state("schema_version") != "5" or site_store.get_state("pack_version") != "1":
+		push_error("Expected site store schema_version=5 and pack_version=1")
+		site_store.close()
 		_cleanup()
 		return false
 
@@ -505,19 +546,19 @@ func run_test() -> bool:
 	_cleanup_path(det_a_db)
 	_cleanup_path(det_b_db)
 
-	# Clip A matches --place fixed unit (cx in 1..10, cy in 1..10)
-	var clip_a := Rect2(256.0, 256.0, 2560.0, 2560.0)
+	# Clip A matches --place fixed unit from pack bbox [2, 2, 7, 7] + 2 cells -> [0, 0, 9, 9]
+	var clip_a := Rect2(0.0, 0.0, 2560.0, 2560.0)
 	var conv_a := RegionConverter.new()
-	var res_a := conv_a.convert(FIXTURE_PBF, det_a_db, clip_a, [1, 1, 10, 10], "city:fixture-city", FIXTURE_CONFIG)
+	var res_a := conv_a.convert(FIXTURE_PBF, det_a_db, clip_a, [0, 0, 9, 9], "city:fixture-city", FIXTURE_CONFIG)
 	if not res_a.get("ok", false):
 		push_error("Determinism clip A failed: %s" % res_a.get("error", "unknown"))
 		_cleanup()
 		return false
 
-	# Clip B is a larger rectangle covering distant coastline (cx in 1..15, cy in 1..10)
-	var clip_b := Rect2(256.0, 256.0, 3840.0, 2560.0)
+	# Clip B is a larger rectangle covering distant coastline (cx in 0..15, cy in 0..9)
+	var clip_b := Rect2(0.0, 0.0, 4096.0, 2560.0)
 	var conv_b := RegionConverter.new()
-	var res_b := conv_b.convert(FIXTURE_PBF, det_b_db, clip_b, [1, 1, 15, 10])
+	var res_b := conv_b.convert(FIXTURE_PBF, det_b_db, clip_b, [0, 0, 15, 9])
 	if not res_b.get("ok", false):
 		push_error("Determinism clip B failed: %s" % res_b.get("error", "unknown"))
 		_cleanup()
@@ -542,8 +583,8 @@ func run_test() -> bool:
 		return false
 
 	# Every cell inside the city has byte-identical tile_synth2 buffers between --place and Clip B
-	for cy in range(3, 9):
-		for cx in range(3, 9):
+	for cy in range(2, 8):
+		for cx in range(2, 8):
 			var area_p := _build_area(s_place, cx, cy)
 			var area_b := _build_area(s_b, cx, cy)
 			var synth_p := TileSynth2.synthesize_cell(cx, cy, area_p)
@@ -556,28 +597,51 @@ func run_test() -> bool:
 				_cleanup()
 				return false
 
-	# Falsification check (§2.5): before Rule 3, dropping distant coastline outside Clip A changes cell (10, 4) sea flag
-	var flag_with_rule3: int = s_a.get_cell_sea(10, 4)
+	# Falsification check (§2.5): on a clip [1, 1, 10, 10] where distant coastline at cell 14 is outside the clip,
+	# Rule 3 retains the distant coastline so cell (10, 4) gets sea flag 0; dropping it flips cell (10, 4) to 1.
+	var det_c_db := TEST_DB_PATH + "_det_c.db"
+	_cleanup_path(det_c_db)
+	var clip_c := Rect2(256.0, 256.0, 2560.0, 2560.0)
+	var conv_c := RegionConverter.new()
+	var res_c := conv_c.convert(FIXTURE_PBF, det_c_db, clip_c, [1, 1, 10, 10])
+	if not res_c.get("ok", false):
+		push_error("Determinism clip C failed: %s" % res_c.get("error", "unknown"))
+		s_place.close()
+		s_a.close()
+		s_b.close()
+		_cleanup()
+		return false
+	var s_c := MapStore.new(det_c_db)
+	s_c.open_store(false)
+
+	var flag_with_rule3: int = s_c.get_cell_sea(10, 4)
 	if flag_with_rule3 != 0:
 		push_error("Expected cell (10, 4) sea flag 0 with Rule 3, got %d" % flag_with_rule3)
 		s_place.close()
 		s_a.close()
 		s_b.close()
+		s_c.close()
+		_cleanup_path(det_c_db)
 		_cleanup()
 		return false
 
-	s_a._q("DELETE FROM features_line WHERE kind = 'coastline' AND cell_x = 14;")
-	s_a._q("DELETE FROM cell_flags;")
+	s_c._q("DELETE FROM features_line WHERE kind = 'coastline' AND cell_x = 14;")
+	s_c._q("DELETE FROM cell_flags;")
 	var conv_falsify := RegionConverter.new()
-	conv_falsify._compute_and_write_sea_flags(s_a, Rect2i(1, 1, 10, 10))
-	var flag_without_rule3: int = s_a.get_cell_sea(10, 4)
+	conv_falsify._compute_and_write_sea_flags(s_c, Rect2i(1, 1, 10, 10))
+	var flag_without_rule3: int = s_c.get_cell_sea(10, 4)
 	if flag_without_rule3 != 1:
 		push_error("Falsifier failed: expected cell (10, 4) sea flag 1 without Rule 3, got %d" % flag_without_rule3)
 		s_place.close()
 		s_a.close()
 		s_b.close()
+		s_c.close()
+		_cleanup_path(det_c_db)
 		_cleanup()
 		return false
+
+	s_c.close()
+	_cleanup_path(det_c_db)
 
 	s_place.close()
 	s_a.close()

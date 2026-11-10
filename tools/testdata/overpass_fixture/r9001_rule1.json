@@ -1,0 +1,83 @@
+{
+  "version": 0.6,
+  "elements": [
+    {
+      "type": "relation",
+      "id": 9009,
+      "tags": {
+        "type": "boundary",
+        "boundary": "administrative",
+        "admin_level": "9",
+        "name": "First Ward"
+      },
+      "members": [
+        {
+          "type": "way",
+          "ref": 9200,
+          "role": "outer",
+          "geometry": [
+            {
+              "lat": 0.0045994,
+              "lon": 0.0045994
+            },
+            {
+              "lat": 0.0045994,
+              "lon": 0.0183975
+            },
+            {
+              "lat": 0.0183975,
+              "lon": 0.0183975
+            },
+            {
+              "lat": 0.0183975,
+              "lon": 0.0045994
+            },
+            {
+              "lat": 0.0045994,
+              "lon": 0.0045994
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "relation",
+      "id": 9010,
+      "tags": {
+        "type": "boundary",
+        "boundary": "administrative",
+        "admin_level": "10",
+        "name": "Mill District"
+      },
+      "members": [
+        {
+          "type": "way",
+          "ref": 9203,
+          "role": "outer",
+          "geometry": [
+            {
+              "lat": 0.0045994,
+              "lon": 0.0045994
+            },
+            {
+              "lat": 0.0045994,
+              "lon": 0.0091987
+            },
+            {
+              "lat": 0.0091987,
+              "lon": 0.0091987
+            },
+            {
+              "lat": 0.0091987,
+              "lon": 0.0045994
+            },
+            {
+              "lat": 0.0045994,
+              "lon": 0.0045994
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

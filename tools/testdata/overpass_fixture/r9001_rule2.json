@@ -1,0 +1,35 @@
+{
+  "version": 0.6,
+  "elements": [
+    {
+      "type": "node",
+      "id": 9103,
+      "lat": 0.01724765319461509,
+      "lon": 0.010348592073056887,
+      "tags": {
+        "place": "neighbourhood",
+        "name": "North End"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9104,
+      "lat": 0.010348592016796226,
+      "lon": 0.010348592073056887,
+      "tags": {
+        "place": "neighbourhood",
+        "name": "Old Town"
+      }
+    },
+    {
+      "type": "node",
+      "id": 9105,
+      "lat": 0.010348592016796226,
+      "lon": 0.017247653455094814,
+      "tags": {
+        "place": "neighbourhood",
+        "name": "Riverside"
+      }
+    }
+  ]
+}

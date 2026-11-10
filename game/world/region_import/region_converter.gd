@@ -8,6 +8,7 @@ const MapStore := preload("res://world/region_import/map_store.gd")
 const Grid := preload("res://world/grid.gd")
 const PoiMapping := preload("res://config/poi_mapping.gd")
 const MapConstants := preload("res://world/map_constants.gd")
+const PlacesPack := preload("res://world/places_pack.gd")
 
 # Injectable memory reader: Callable returning Dictionary with "available" and "physical" in bytes
 var memory_reader: Callable = Callable(self, "_default_memory_reader")
@@ -588,7 +589,7 @@ static func extract_relation_polygon_from_pbf(pbf_path: String, rel_id: int) -> 
 func _cleanup_cancel(out_db_path: String, store: Object) -> Dictionary:
 	if store != null:
 		store.close()
-	for p in [out_db_path + ".nodes.tmp", out_db_path + ".rels.tmp", out_db_path + ".coords.tmp", out_db_path + ".nbrs.tmp", out_db_path + ".poly.tmp"]:
+	for p in [out_db_path + ".nodes.tmp", out_db_path + ".rels.tmp", out_db_path + ".coords.tmp"]:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
 	for sfx in ["", "-wal", "-shm"]:
@@ -621,83 +622,29 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			"time_ms": Time.get_ticks_msec() - t0
 		}
 
-	# Check for place-based fixed conversion unit
-	var temp_poly_path := out_db_path + ".poly.tmp"
-	var place_poly := PackedVector2Array()
+	# Check for place-based fixed conversion unit from the PlacesPack (Item 26, §2.2)
 	var place_kind := ""
 	var place_name := ""
+	var pack: RefCounted = null
 
 	if not place_id.is_empty():
-		var place_info := lookup_place(place_id, config_path)
-		if place_info.is_empty():
+		pack = PlacesPack.for_config(config_path)
+		if pack == null or not pack.inst_has_place(place_id):
 			store.close()
-			return {"ok": false, "error": "Place not found in configuration: " + place_id}
-		var boundary_val: Variant = place_info.get("osm_boundary", null)
-		var rel_id := 0
-		if boundary_val is Dictionary:
-			rel_id = int(boundary_val.get("relation_id", 0))
-		elif boundary_val is String:
-			var s: String = (boundary_val as String).strip_edges()
-			if s.begins_with("r"):
-				rel_id = int(s.substr(1))
-			else:
-				rel_id = int(s)
-		elif boundary_val is int:
-			rel_id = boundary_val
-		if rel_id == 0:
-			store.close()
-			return {"ok": false, "error": "Place %s has no osm_boundary relation id" % place_id}
+			return {"ok": false, "error": "Place not found in places pack: " + place_id}
 
+		var place_info: Dictionary = pack.inst_place_info(place_id)
 		place_kind = str(place_info.get("kind", "city"))
 		place_name = str(place_info.get("name", ""))
+		var bbox: Array = pack.inst_bbox_of(place_id)
+		if bbox.size() < 4:
+			store.close()
+			return {"ok": false, "error": "Place %s has invalid bbox in places pack" % place_id}
 
-		if FileAccess.file_exists(temp_poly_path):
-			var pf := FileAccess.open(temp_poly_path, FileAccess.READ)
-			if pf:
-				var p_txt := pf.get_as_text()
-				var p_parsed: Variant = JSON.parse_string(p_txt)
-				if p_parsed is Dictionary:
-					place_kind = str(p_parsed.get("kind", place_kind))
-					place_name = str(p_parsed.get("name", place_name))
-					var pts_arr: Array = p_parsed.get("pts", [])
-					place_poly = PackedVector2Array()
-					for pt in pts_arr:
-						place_poly.append(Vector2(float(pt[0]), float(pt[1])))
-				pf.close()
-
-		if place_poly.is_empty():
-			var poly_res := extract_relation_polygon_from_pbf(pbf_path, rel_id)
-			if not poly_res.get("ok", false):
-				store.close()
-				return poly_res
-
-			place_poly = poly_res["polygon"]
-			var pf := FileAccess.open(temp_poly_path, FileAccess.WRITE)
-			if pf:
-				var pts_arr: Array = []
-				for p in place_poly:
-					pts_arr.append([p.x, p.y])
-				pf.store_string(JSON.stringify({
-					"kind": place_kind,
-					"name": place_name,
-					"pts": pts_arr
-				}))
-				pf.close()
-
-		var min_x := INF
-		var min_y := INF
-		var max_x := -INF
-		var max_y := -INF
-		for p in place_poly:
-			min_x = minf(min_x, p.x)
-			min_y = minf(min_y, p.y)
-			max_x = maxf(max_x, p.x)
-			max_y = maxf(max_y, p.y)
-
-		var p_min_cx := int(floor(min_x / Grid.CELL_WM))
-		var p_min_cy := int(floor(min_y / Grid.CELL_WM))
-		var p_max_cx := int(floor(max_x / Grid.CELL_WM))
-		var p_max_cy := int(floor(max_y / Grid.CELL_WM))
+		var p_min_cx := int(bbox[0])
+		var p_min_cy := int(bbox[1])
+		var p_max_cx := int(bbox[2])
+		var p_max_cy := int(bbox[3])
 
 		var c_min_cx := p_min_cx - 2
 		var c_min_cy := p_min_cy - 2
@@ -718,14 +665,11 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 	var node_lons := PackedInt32Array()
 	var kept_relations := []
 	var relation_way_ids := {}
-	var neighbourhood_nodes: Array = []
-	var admin_neighbourhood_relations: Array = []
 
 	# Intermediate binary files for checkpoint resume across process restarts
 	var temp_nodes_path := out_db_path + ".nodes.tmp"
 	var temp_coords_path := out_db_path + ".coords.tmp"
 	var temp_rels_path := out_db_path + ".rels.tmp"
-	var temp_nbr_nodes_path := out_db_path + ".nbrs.tmp"
 
 	var start_pass := cur_state_pass.to_int()
 
@@ -961,9 +905,8 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 
 							var is_multi: bool = (tags.get("type", "") == "multipolygon")
 							var is_boundary: bool = (tags.get("type", "") == "boundary" or tags.has("boundary"))
-							var is_admin_sub: bool = (tags.get("boundary", "") == "administrative" and str(tags.get("admin_level", "")) in ["9", "10"])
 
-							if is_multi or is_boundary or is_admin_sub:
+							if is_multi or is_boundary:
 								var members := []
 								for m_i in r_memids.size():
 									var m_type: int = r_types[m_i] if m_i < r_types.size() else 0
@@ -1333,22 +1276,6 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 											var name := str(tags.get("name", ""))
 											store.insert_place(cur_id, cell.x, cell.y, name, cat, lat_f, lon_f)
 											poi_count += 1
-
-									var place_tag := str(tags.get("place", ""))
-									if place_tag in ["neighbourhood", "suburb", "quarter"]:
-										var lat_f := float(cur_lat) * 1e-7
-										var lon_f := float(cur_lon) * 1e-7
-										var name := str(tags.get("name", ""))
-										var wm_pt := Grid.latlon_to_wm(lat_f, lon_f)
-										neighbourhood_nodes.append({
-											"id": cur_id,
-											"name": name,
-											"lat": lat_f,
-											"lon": lon_f,
-											"wm": wm_pt,
-											"wm_x": wm_pt.x,
-											"wm_y": wm_pt.y
-										})
 						elif gwt == 2:
 							pr.skip(pr.read_varint())
 						elif gwt == 0:
@@ -1370,11 +1297,6 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 				cf.store_32(node_lons[i])
 			cf.close()
 
-		var nbf := FileAccess.open(temp_nbr_nodes_path, FileAccess.WRITE)
-		if nbf:
-			nbf.store_string(JSON.stringify(neighbourhood_nodes))
-			nbf.close()
-
 		store.set_state("pass", "2")
 		print("Pass 2 finished: resolved coords, %d POIs inserted" % poi_count)
 
@@ -1392,21 +1314,6 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 					node_lats[i] = cf.get_32()
 					node_lons[i] = cf.get_32()
 				cf.close()
-		if FileAccess.file_exists(temp_nbr_nodes_path):
-			var nbf := FileAccess.open(temp_nbr_nodes_path, FileAccess.READ)
-			if nbf:
-				var parsed_nbrs = JSON.parse_string(nbf.get_as_text())
-				if typeof(parsed_nbrs) == TYPE_ARRAY:
-					neighbourhood_nodes = []
-					for item in parsed_nbrs:
-						neighbourhood_nodes.append({
-							"id": int(item.get("id", 0)),
-							"name": str(item.get("name", "")),
-							"lat": float(item.get("lat", 0.0)),
-							"lon": float(item.get("lon", 0.0)),
-							"wm": Vector2(float(item.get("wm_x", 0.0)), float(item.get("wm_y", 0.0)))
-						})
-				nbf.close()
 
 	# =========================================================
 	# PASS 3: Assemble way geometries, rings & multipolygons
@@ -1569,14 +1476,6 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 		if outer_rings.is_empty():
 			continue
 
-		var is_admin_sub: bool = (tags.get("boundary", "") == "administrative" and str(tags.get("admin_level", "")) in ["9", "10"])
-		if is_admin_sub:
-			admin_neighbourhood_relations.append({
-				"id": int(rel.get("id", 0)),
-				"name": str(tags.get("name", "")),
-				"poly": outer_rings[0]
-			})
-
 		var poly_info := classify_polygon(tags)
 		if poly_info.is_empty():
 			continue
@@ -1637,86 +1536,31 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 			cov_rect = Rect2i(0, 0, 1, 1)
 		store.set_state("clip", "0")
 
-	# Populate areas and area_cells (schema v4)
-	if not place_id.is_empty() and not place_poly.is_empty():
-		var city_neighbourhood_nodes: Array = []
-		for nn in neighbourhood_nodes:
-			if ring_contains_point(place_poly, nn["wm"]):
-				city_neighbourhood_nodes.append(nn)
-		city_neighbourhood_nodes.sort_custom(func(a, b): return a["id"] < b["id"])
-		admin_neighbourhood_relations.sort_custom(func(a, b): return a["id"] < b["id"])
-
-		var neighbourhood_counts: Dictionary = {}
-		var neighbourhood_names: Dictionary = {}
-		var assigned_cells: Dictionary = {}
-		var total_inside_cells := 0
-
-		var cov_min_cx := cov_rect.position.x
-		var cov_min_cy := cov_rect.position.y
-		var cov_max_cx := cov_rect.position.x + cov_rect.size.x - 1
-		var cov_max_cy := cov_rect.position.y + cov_rect.size.y - 1
-
-		for cy in range(cov_min_cy, cov_max_cy + 1):
-			for cx in range(cov_min_cx, cov_max_cx + 1):
-				var c_center := Vector2((float(cx) + 0.5) * Grid.CELL_WM, (float(cy) + 0.5) * Grid.CELL_WM)
-				if not ring_contains_point(place_poly, c_center):
-					continue
-
-				total_inside_cells += 1
-
-				if place_kind == "site":
-					assigned_cells[Vector2i(cx, cy)] = place_id
-				else: # city
-					var assigned_key := ""
-					var assigned_name := ""
-
-					# (a) Admin 9 or 10 relation containing it (lower id first)
-					for ar in admin_neighbourhood_relations:
-						if ring_contains_point(ar["poly"], c_center):
-							assigned_key = "osm:r%d" % ar["id"]
-							assigned_name = ar["name"]
-							break
-
-					# (b) Else nearest neighbourhood node inside city (WM-m distance; ties to lower id)
-					if assigned_key == "" and not city_neighbourhood_nodes.is_empty():
-						var best_dist_sq := INF
-						var best_id := -1
-						var best_name := ""
-						for nn in city_neighbourhood_nodes:
-							var d2: float = (nn["wm"] - c_center).length_squared()
-							if d2 < best_dist_sq or (is_equal_approx(d2, best_dist_sq) and (best_id == -1 or nn["id"] < best_id)):
-								best_dist_sq = d2
-								best_id = nn["id"]
-								best_name = nn["name"]
-						if best_id != -1:
-							assigned_key = "osm:n%d" % best_id
-							assigned_name = best_name
-
-					# (c) Else grid fallback: grid:<city_id>:<floor(cx/4)>:<floor(cy/4)>
-					if assigned_key == "":
-						var gx := floori(float(cx) / 4.0)
-						var gy := floori(float(cy) / 4.0)
-						assigned_key = "grid:%s:%d:%d" % [place_id, gx, gy]
-						assigned_name = ""
-
-					assigned_cells[Vector2i(cx, cy)] = assigned_key
-					neighbourhood_counts[assigned_key] = int(neighbourhood_counts.get(assigned_key, 0)) + 1
-					neighbourhood_names[assigned_key] = assigned_name
-
+	# Populate areas and area_cells straight from the PlacesPack (schema v5, §2.2)
+	if not place_id.is_empty() and pack != null:
 		store.begin_transaction()
 		if place_kind == "site":
-			store.insert_area(place_id, "site", place_name, total_inside_cells)
-			for c in assigned_cells.keys():
-				store.insert_area_cell(c.x, c.y, place_id)
+			var site_cells: PackedVector2Array = pack.inst_cells_of(place_id)
+			store.insert_area(place_id, "site", place_name, site_cells.size())
+			for c in site_cells:
+				store.insert_area_cell(int(c.x), int(c.y), place_id)
 		else: # city
+			var area_entries: Array = pack.inst_areas_of(place_id)
+			var total_inside_cells := 0
+			for a_entry in area_entries:
+				var a_key := str(a_entry.get("key", "")) if a_entry is Dictionary else str(a_entry)
+				var a_info: Dictionary = pack.inst_area(a_key)
+				var a_name := str(a_info.get("name", ""))
+				var a_cells: PackedVector2Array = pack.inst_cells_of(a_key)
+				total_inside_cells += a_cells.size()
+				store.insert_area(a_key, "neighbourhood", a_name, a_cells.size())
+				for c in a_cells:
+					store.insert_area_cell(int(c.x), int(c.y), a_key)
 			store.insert_area(place_id, "city", place_name, total_inside_cells)
-			for a_key in neighbourhood_counts.keys():
-				store.insert_area(a_key, "neighbourhood", neighbourhood_names.get(a_key, ""), neighbourhood_counts[a_key])
-			for c in assigned_cells.keys():
-				store.insert_area_cell(c.x, c.y, assigned_cells[c])
 		store.commit()
+		store.set_state("pack_version", str(pack.inst_pack_version()))
 
-	store.set_state("schema_version", "4")
+	store.set_state("schema_version", "5")
 	if not place_id.is_empty():
 		store.set_state("place_id", place_id)
 		store.set_state("snapshot", MapConstants.MAP_SNAPSHOT)
@@ -1730,10 +1574,6 @@ func convert(pbf_path: String, out_db_path: String, clip_rect: Variant = null, c
 		DirAccess.remove_absolute(temp_coords_path)
 	if FileAccess.file_exists(temp_rels_path):
 		DirAccess.remove_absolute(temp_rels_path)
-	if FileAccess.file_exists(temp_nbr_nodes_path):
-		DirAccess.remove_absolute(temp_nbr_nodes_path)
-	if FileAccess.file_exists(temp_poly_path):
-		DirAccess.remove_absolute(temp_poly_path)
 
 	var h := store.canonical_dump_sha256()
 	var elapsed := Time.get_ticks_msec() - t0

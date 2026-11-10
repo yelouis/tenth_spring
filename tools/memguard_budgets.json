@@ -126,5 +126,12 @@
     "machine": "darwin arm64",
     "status": "measured",
     "measured_by": "available"
+  },
+  "build_places_pack": {
+    "budget_gib": 1.0,
+    "peak_gib": 0.701,
+    "date": "2026-11-09",
+    "machine": "darwin arm64",
+    "status": "measured"
   }
 }
