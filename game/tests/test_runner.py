@@ -141,6 +141,7 @@ def main():
 		"region_import_test",
 		"region_select_test",
 		"reveal_engine_test",
+		"rom_importer_test",
 		"screenshot_args_test",
 		"sync_ingest_isolation_test",
 		"sync_session_test",

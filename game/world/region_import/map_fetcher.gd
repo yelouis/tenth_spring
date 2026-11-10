@@ -772,3 +772,57 @@ static func _parse_url(url: String) -> Dictionary:
 		port = int(host.substr(colon_idx + 1))
 		host = host.substr(0, colon_idx)
 	return {"host": host, "port": port, "path": path, "tls": tls}
+
+func download_https_url(url: String, max_bytes: int = 16777216) -> Dictionary:
+	if fake_transport != null:
+		return _fake_http_step(url, HTTPClient.METHOD_GET, null)
+	var parsed := _parse_url(url)
+	var host: String = str(parsed.get("host", ""))
+	var path: String = str(parsed.get("path", "/"))
+	var port: int = int(parsed.get("port", 443))
+	var use_tls: bool = bool(parsed.get("tls", true))
+	if not use_tls or host != "raw.githubusercontent.com":
+		return {"ok": false, "error": "Disallowed host %s" % host}
+	var client := HTTPClient.new()
+	client.read_chunk_size = 262144
+	var err := client.connect_to_host(host, port, _get_client_tls_options())
+	if err != OK:
+		return {"ok": false, "error": "Cannot connect to %s" % host}
+	var start_ms := Time.get_ticks_msec()
+	while client.get_status() == HTTPClient.STATUS_CONNECTING or client.get_status() == HTTPClient.STATUS_RESOLVING:
+		client.poll()
+		OS.delay_msec(10)
+		if Time.get_ticks_msec() - start_ms > 15000:
+			client.close()
+			return {"ok": false, "error": "Connection timeout"}
+	if client.get_status() != HTTPClient.STATUS_CONNECTED:
+		client.close()
+		return {"ok": false, "error": "Connection failed"}
+	var headers := PackedStringArray(["User-Agent: TenthSpring/1.0", "Accept: */*"])
+	err = client.request(HTTPClient.METHOD_GET, path, headers)
+	if err != OK:
+		client.close()
+		return {"ok": false, "error": "Request failed"}
+	while client.get_status() == HTTPClient.STATUS_REQUESTING:
+		client.poll()
+		OS.delay_msec(10)
+		if Time.get_ticks_msec() - start_ms > 30000:
+			client.close()
+			return {"ok": false, "error": "Request timeout"}
+	var code := client.get_response_code()
+	if code < 200 or code >= 300:
+		client.close()
+		return {"ok": false, "code": code, "error": "HTTP %d" % code}
+	var body := PackedByteArray()
+	while client.get_status() == HTTPClient.STATUS_BODY:
+		client.poll()
+		var chunk := client.read_response_body_chunk()
+		if chunk.size() > 0:
+			if body.size() + chunk.size() > max_bytes:
+				client.close()
+				return {"ok": false, "error": "Response exceeds max_bytes"}
+			body.append_array(chunk)
+		else:
+			OS.delay_msec(5)
+	client.close()
+	return {"ok": true, "code": code, "body": body}
