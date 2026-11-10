@@ -55,6 +55,13 @@
     "machine": "darwin arm64",
     "status": "measured"
   },
+  "data_spike": {
+    "budget_gib": 0.5,
+    "peak_gib": 0.258,
+    "date": "2026-11-09",
+    "machine": "darwin arm64",
+    "status": "measured"
+  },
   "rom_spike_gba": {
     "budget_gib": 0.5,
     "peak_gib": 0.096,

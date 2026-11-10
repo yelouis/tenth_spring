@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "pinned_at": "2026-11-09",
+  "pokeapi": {
+    "repository": "https://github.com/PokeAPI/pokeapi",
+    "commit": "5cbeb3f3eb55a9b86da52c4869336f9d61fdd6d7",
+    "commit_date": "2026-11-09T10:37:34Z",
+    "csv_path": "data/v2/csv",
+    "licence": "BSD 3-Clause (Copyright (c) Paul Hallett and PokeAPI contributors)"
+  },
+  "fan_sprites": {
+    "repository": "https://github.com/PokeAPI/sprites",
+    "commit": "1b3b7c0a538dd2226ae08d0d2f8955125075bbd4",
+    "commit_date": "2026-11-03T16:45:53Z",
+    "sprite_path": "sprites/pokemon/versions/generation-v/black-white",
+    "scope": "National Dex #650-905 and 48 Gen 6 Mega Evolution forms (pokemon_id 10033..10090) only; never #1-649",
+    "project": "Smogon Sprite Project (Generations 6-8)",
+    "threads": [
+      "https://www.smogon.com/forums/threads/smogon-sprite-project.3647722/",
+      "https://www.smogon.com/forums/threads/sun-moon-sprite-project.3577711/",
+      "https://www.smogon.com/forums/threads/x-y-sprite-project.3486712/"
+    ],
+    "credit_sheets": {
+      "gen6_and_megas": "https://docs.google.com/spreadsheets/d/1Gn0UORn-unvcbUeQhQdEBz0ADNcH49BZZqQ1dpXm9eo/export?format=csv",
+      "gen7": "https://docs.google.com/spreadsheets/d/1FMcHbSKEWZc7v2Ur4cyJjT_NhO0gqXyU9kDhsOQhlBQ/export?format=csv",
+      "gen8": "https://docs.google.com/spreadsheets/d/1acgzAjh0dnFRQnjZu8kSjS177rKCzpFfEHRLtwuuXRU/export?format=csv"
+    },
+    "terms": [
+      "All sprites are free for use as long as the spriter or the project itself is credited.",
+      "All sprites here are free for non-profit use.",
+      "PokéAPI: the sprites with IDs greater than 650 are thus not official; we would like to thank the Smogon community for allowing us to use and serve their custom B&W-style sprites for the Pokemon with IDs greater than 650."
+    ]
+  }
+}

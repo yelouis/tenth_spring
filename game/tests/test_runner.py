@@ -394,6 +394,23 @@ def main():
 		sys.exit(1)
 	print("[ART PIPELINE TESTS OK] 52 art pipeline tests passed.\n")
 
+	# Black/White Sprite & Gen 8 Data Pack Spike Test Suites (Items 10 & 29)
+	bw_spike_test_path = os.path.join(repo_root, "tools", "rom_spike", "test_bw_sprite_spike.py")
+	data_spike_test_path = os.path.join(repo_root, "tools", "rom_spike", "test_data_pack_spike.py")
+	if not os.path.exists(bw_spike_test_path) or not os.path.exists(data_spike_test_path):
+		print("\n[ROM/DATA SPIKE ERROR] ROM or Data Pack spike test suite missing")
+		sys.exit(1)
+	print("=== Black/White Sprite & Data Pack Spike Test Suite (Items 10 & 29) ===")
+	bw_res = subprocess.run([sys.executable, "-I", bw_spike_test_path], cwd=repo_root)
+	if bw_res.returncode != 0:
+		print("\n[BW SPIKE TEST FAIL] tools/rom_spike/test_bw_sprite_spike.py failed.")
+		sys.exit(1)
+	dp_res = subprocess.run([sys.executable, "-I", data_spike_test_path], cwd=repo_root)
+	if dp_res.returncode != 0:
+		print("\n[DATA SPIKE TEST FAIL] tools/rom_spike/test_data_pack_spike.py failed.")
+		sys.exit(1)
+	print("[ROM & DATA SPIKE TESTS OK] Black/White sprite and Gen 8 data pack spike tests passed.\n")
+
 	# Vendored GDExtension Integrity Check (Decision 7)
 	print("=== Vendored GDExtension Integrity Check ===")
 	check_vendored_checksums(game_dir)
