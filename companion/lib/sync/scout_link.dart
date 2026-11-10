@@ -11,6 +11,30 @@ import 'transport.dart';
 
 sealed class ReportResult {
   const ReportResult();
+
+  String get userMessage {
+    final self = this;
+    switch (self) {
+      case ReportOk(:final sent):
+        return sent == 0
+            ? 'Reported to PC — no new discoveries waiting.'
+            : 'Reported $sent ${sent == 1 ? "discovery" : "discoveries"} to your PC.';
+      case ReportPackMismatch():
+        return 'Your companion and game have different map versions — update both.';
+      case ReportBadRow():
+        return 'Report failed — update both apps.';
+      case ReportSchemaMismatch():
+        return 'Your companion and game have different versions — update both.';
+      case ReportUnpaired():
+        return 'Your PC no longer recognises this phone — scan the pairing code on your PC.';
+      case ReportUnreachable():
+        return "Can't reach your PC — open the scout report on your PC and try again.";
+      case ReportPcStorageError():
+        return "Your PC couldn't save the report — try again.";
+      case ReportProtocolError(:final message):
+        return 'Report error: ${message ?? "protocol failure"}';
+    }
+  }
 }
 
 class ReportOk extends ReportResult {
@@ -29,6 +53,14 @@ class ReportUnpaired extends ReportResult {
 
 class ReportSchemaMismatch extends ReportResult {
   const ReportSchemaMismatch();
+}
+
+class ReportPackMismatch extends ReportResult {
+  const ReportPackMismatch();
+}
+
+class ReportBadRow extends ReportResult {
+  const ReportBadRow();
 }
 
 class ReportPcStorageError extends ReportResult {
@@ -80,7 +112,11 @@ class ScoutLink {
   }
 
   /// Connects to host:port over TLS with strict pinned self-signed certificate.
-  Future<SecureSocket> connectPinned(String host, int port, String fpHex) async {
+  Future<SecureSocket> connectPinned(
+    String host,
+    int port,
+    String fpHex,
+  ) async {
     var rejectedByPin = false;
     try {
       final socket = await SecureSocket.connect(
@@ -100,9 +136,12 @@ class ScoutLink {
 
       // Re-check peerCertificate after connect
       final peerCert = socket.peerCertificate;
-      if (peerCert == null || certFingerprintHex(peerCert).toLowerCase() != fpHex.toLowerCase()) {
+      if (peerCert == null ||
+          certFingerprintHex(peerCert).toLowerCase() != fpHex.toLowerCase()) {
         socket.destroy();
-        throw const HandshakeException('Peer certificate fingerprint mismatch on post-connect verification');
+        throw const HandshakeException(
+          'Peer certificate fingerprint mismatch on post-connect verification',
+        );
       }
 
       return socket;
@@ -214,8 +253,25 @@ class ScoutLink {
     }
   }
 
-  /// Reports pending scout outbox rows to PC.
-  Future<ReportResult> report({required AppDatabase db, Map<String, dynamic>? bodyFix}) async {
+  Future<ReportResult> _mapErrorResp(Map<String, dynamic> resp) async {
+    final code = resp['code'];
+    if (code == 'unpaired') {
+      await store.clearDeviceToken();
+      return const ReportUnpaired();
+    }
+    if (code == 'schema_mismatch') return const ReportSchemaMismatch();
+    if (code == 'pack_mismatch') return const ReportPackMismatch();
+    if (code == 'bad_row') return const ReportBadRow();
+    if (code == 'storage') return const ReportPcStorageError();
+    return ReportProtocolError(code?.toString());
+  }
+
+  /// Reports pending scout outbox rows to PC using protocol v3.
+  Future<ReportResult> report({
+    required AppDatabase db,
+    int schemaVersion = 3,
+    int packVersion = 1,
+  }) async {
     final pcId = await store.getPcId();
     final fp = await store.getFp();
     final phoneId = await store.getPhoneId();
@@ -223,7 +279,13 @@ class ScoutLink {
     final port = await store.getPort();
     final addrs = await store.getAddrs();
 
-    if (pcId == null || fp == null || phoneId == null || deviceToken == null || port == null || addrs == null || addrs.isEmpty) {
+    if (pcId == null ||
+        fp == null ||
+        phoneId == null ||
+        deviceToken == null ||
+        port == null ||
+        addrs == null ||
+        addrs.isEmpty) {
       return const ReportUnreachable();
     }
 
@@ -259,8 +321,13 @@ class ScoutLink {
     final framed = FramedSocket(socket);
 
     try {
-      // 1. Send HELLO
-      final helloPayload = transport.buildHelloPayload(phoneId, 1, deviceToken);
+      // 1. Send HELLO (protocol v3)
+      final helloPayload = transport.buildHelloPayload(
+        phoneId,
+        schemaVersion,
+        deviceToken,
+        packVersion: packVersion,
+      );
       await framed.send(helloPayload);
 
       final helloResp = await framed.nextFrame();
@@ -271,14 +338,7 @@ class ScoutLink {
 
       if (helloResp['type'] == 'ERROR') {
         await framed.close();
-        final code = helloResp['code'];
-        if (code == 'unpaired') {
-          await store.clearDeviceToken();
-          return const ReportUnpaired();
-        }
-        if (code == 'schema_mismatch') return const ReportSchemaMismatch();
-        if (code == 'storage') return const ReportPcStorageError();
-        return ReportProtocolError(code?.toString());
+        return await _mapErrorResp(helloResp);
       }
 
       if (helloResp['type'] != 'HELLO_OK') {
@@ -291,8 +351,10 @@ class ScoutLink {
       int totalAcked = 0;
 
       while (true) {
-        final pendingRows = await (db.select(db.visitOutbox)
-              ..orderBy([(t) => OrderingTerm(expression: t.seq, mode: OrderingMode.asc)])
+        final pendingRows = await (db.select(db.exploreOutbox)
+              ..orderBy([
+                (t) => OrderingTerm(expression: t.seq, mode: OrderingMode.asc),
+              ])
               ..limit(500))
             .get();
 
@@ -300,7 +362,7 @@ class ScoutLink {
           break;
         }
 
-        final batchPayload = transport.buildBatchPayload(pendingRows, bodyFix);
+        final batchPayload = transport.buildBatchPayload(pendingRows);
         await framed.send(batchPayload);
 
         final ackResp = await framed.nextFrame();
@@ -311,14 +373,7 @@ class ScoutLink {
 
         if (ackResp['type'] == 'ERROR') {
           await framed.close();
-          final code = ackResp['code'];
-          if (code == 'unpaired') {
-            await store.clearDeviceToken();
-            return const ReportUnpaired();
-          }
-          if (code == 'schema_mismatch') return const ReportSchemaMismatch();
-          if (code == 'storage') return const ReportPcStorageError();
-          return ReportProtocolError(code?.toString());
+          return await _mapErrorResp(ackResp);
         }
 
         if (ackResp['type'] != 'ACK') {
@@ -333,7 +388,8 @@ class ScoutLink {
 
         final ackedSeq = await transport.handleAckResponse(ackResp, db);
         totalSent += pendingRows.length;
-        final applied = ackResp['appliedCount'] as int? ?? (ackedSeq > 0 ? pendingRows.length : 0);
+        final applied = ackResp['appliedCount'] as int? ??
+            (ackedSeq > 0 ? pendingRows.length : 0);
         totalAcked += applied;
 
         // If server acknowledged less than the batch's max seq, break to avoid looping
@@ -343,6 +399,10 @@ class ScoutLink {
       }
 
       await store.setLastGoodAddr(activeAddr);
+      await db.setMeta(
+        'last_report_ms',
+        DateTime.now().toUtc().millisecondsSinceEpoch.toString(),
+      );
       await framed.close();
       return ReportOk(sent: totalSent, acked: totalAcked);
     } catch (e) {
@@ -395,7 +455,9 @@ class FramedSocket {
     await socket.flush();
   }
 
-  Future<Map<String, dynamic>?> nextFrame({Duration timeout = const Duration(seconds: 10)}) async {
+  Future<Map<String, dynamic>?> nextFrame({
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
     if (_incoming.isNotEmpty) {
       return _incoming.removeAt(0);
     }

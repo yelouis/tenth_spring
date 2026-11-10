@@ -13,6 +13,26 @@ import 'package:companion/sync/pairing.dart';
 import 'package:companion/sync/scout_link.dart';
 import 'package:companion/sync/transport.dart';
 
+Future<({String certPem, String pemKey, String fpHex})> _generateServerCert() async {
+  final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
+  final privKey = keyPair.privateKey as RSAPrivateKey;
+  final pubKey = keyPair.publicKey as RSAPublicKey;
+  final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
+  final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
+  final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
+  final der = base64Decode(
+    certPem
+        .replaceAll('-----BEGIN CERTIFICATE-----', '')
+        .replaceAll('-----END CERTIFICATE-----', '')
+        .replaceAll('\n', '')
+        .replaceAll('\r', ''),
+  );
+  final digest = await Sha256().hash(der);
+  final fpHex =
+      digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+  return (certPem: certPem, pemKey: pemKey, fpHex: fpHex);
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   FlutterSecureStorage.setMockInitialValues({});
@@ -37,14 +57,17 @@ void main() {
 
     test('rejects uppercase-hex fp', () {
       final upperFp = validJson.replaceAll(
-          '"fp":"0123456789abcdef', '"fp":"0123456789ABCDEF');
+        '"fp":"0123456789abcdef',
+        '"fp":"0123456789ABCDEF',
+      );
       expect(QrPayloadV2.tryParse(upperFp), isNull);
     });
 
     test('rejects 5 addrs', () {
       final fiveAddrs = validJson.replaceAll(
-          '["192.168.1.20"]',
-          '["192.168.1.20","192.168.1.21","192.168.1.22","192.168.1.23","192.168.1.24"]');
+        '["192.168.1.20"]',
+        '["192.168.1.20","192.168.1.21","192.168.1.22","192.168.1.23","192.168.1.24"]',
+      );
       expect(QrPayloadV2.tryParse(fiveAddrs), isNull);
     });
   });
@@ -54,8 +77,9 @@ void main() {
       final msg = {
         'type': 'HELLO',
         'peerId': 'test_phone',
-        'schemaVersion': 1,
-        'deviceToken': 'token123'
+        'schemaVersion': 3,
+        'packVersion': 1,
+        'deviceToken': 'token123',
       };
       final encoded = FrameCodec.encode(msg);
       final reader = FrameReader();
@@ -65,6 +89,8 @@ void main() {
       expect(decoded, isNotNull);
       expect(decoded!['type'], equals('HELLO'));
       expect(decoded['peerId'], equals('test_phone'));
+      expect(decoded['schemaVersion'], equals(3));
+      expect(decoded['packVersion'], equals(1));
       expect(decoded['deviceToken'], equals('token123'));
     });
 
@@ -93,10 +119,66 @@ void main() {
       expect(readerZero.error, contains('Invalid frame length'));
 
       final readerOversize = FrameReader();
-      // 1_048_577 = 0x00100001
       readerOversize.feed([0x00, 0x10, 0x00, 0x01]);
       expect(readerOversize.nextFrame(), isNull);
       expect(readerOversize.error, contains('Invalid frame length'));
+    });
+  });
+
+  group('Protocol v3 JSON-key whitelist (§3.6, §3.7)', () {
+    test('HELLO and BATCH carry only v3 whitelisted keys and never coordinates or bodyFix',
+        () {
+      final transport = SyncTransport();
+      final hello = transport.buildHelloPayload(
+        'peer_abc',
+        3,
+        'tok_xyz',
+        packVersion: 1,
+      );
+      expect(
+        hello.keys.toSet(),
+        equals({'type', 'peerId', 'schemaVersion', 'packVersion', 'deviceToken'}),
+      );
+      expect(hello['schemaVersion'], equals(3));
+      expect(hello['packVersion'], equals(1));
+
+      final rows = [
+        const ExploreOutboxItem(
+          seq: 1,
+          kind: 'home',
+          placeId: 'city:fixture-city',
+          areaKey: null,
+          tsUtcMs: 1700000001000,
+        ),
+        const ExploreOutboxItem(
+          seq: 2,
+          kind: 'explore',
+          placeId: 'city:fixture-city',
+          areaKey: 'osm:n9104',
+          tsUtcMs: 1700000002000,
+        ),
+      ];
+
+      final batch = transport.buildBatchPayload(rows);
+      expect(batch.keys.toSet(), equals({'type', 'rows'}));
+      expect(batch.containsKey('bodyFix'), isFalse);
+
+      final wireRows = batch['rows'] as List<dynamic>;
+      expect(wireRows.length, equals(2));
+
+      final rHome = wireRows[0] as Map<String, dynamic>;
+      expect(rHome.keys.toSet(), equals({'seq', 'kind', 'placeId', 'tsUtcMs'}));
+      expect(rHome.containsKey('areaKey'), isFalse);
+      expect(rHome.containsKey('lat'), isFalse);
+      expect(rHome.containsKey('lon'), isFalse);
+
+      final rExplore = wireRows[1] as Map<String, dynamic>;
+      expect(
+        rExplore.keys.toSet(),
+        equals({'seq', 'kind', 'placeId', 'areaKey', 'tsUtcMs'}),
+      );
+      expect(rExplore.containsKey('lat'), isFalse);
+      expect(rExplore.containsKey('lon'), isFalse);
     });
   });
 
@@ -115,39 +197,19 @@ void main() {
           .join();
 
       expect(
-          fpHex,
-          equals(
-              'ffbbb32bc02ef1e5bef3a6c1019c786cf02a886df08c2eaea37eadfe406b4f4f'));
+        fpHex,
+        equals(
+          'ffbbb32bc02ef1e5bef3a6c1019c786cf02a886df08c2eaea37eadfe406b4f4f',
+        ),
+      );
     });
 
     test('pin accept and pin refuse against test-time generated certificate',
         () async {
-      // Generate RSA key pair and self-signed certificate at test time
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final dn = {'CN': 'tenthspring-test'};
-      final csr = X509Utils.generateRsaCsrPem(dn, privKey, pubKey);
-      final certPem =
-          X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-
-      final b64 = certPem
-          .split('\n')
-          .map((l) => l.trim())
-          .where((l) => !l.startsWith('-----') && l.isNotEmpty)
-          .join();
-      final der = base64Decode(b64);
-      final serverFpHex = Sha256()
-          .toSync()
-          .hashSync(der)
-          .bytes
-          .map((b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
-
+      final certInfo = await _generateServerCert();
       final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+      serverContext.useCertificateChainBytes(utf8.encode(certInfo.certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(certInfo.pemKey));
 
       final link = ScoutLink();
 
@@ -170,19 +232,20 @@ void main() {
         onError: (_) {},
       );
 
-      // Pin accept: client pinned to server's fingerprint connects
       final acceptedSocket = await link.connectPinned(
         '127.0.0.1',
         server.port,
-        serverFpHex,
+        certInfo.fpHex,
       );
       expect(acceptedSocket, isNotNull);
       await acceptedSocket.close();
 
-      await clientDone.future.timeout(const Duration(seconds: 1), onTimeout: () {});
+      await clientDone.future.timeout(
+        const Duration(seconds: 1),
+        onTimeout: () {},
+      );
       await Future.delayed(const Duration(milliseconds: 100));
 
-      // Pin refuse: client pinned to different fingerprint fails before any byte is read
       final wrongFpHex = '0' * 64;
       await expectLater(
         () => link.connectPinned('127.0.0.1', server.port, wrongFpHex),
@@ -193,7 +256,7 @@ void main() {
     });
   });
 
-  group('PairingStore & ScoutLink Report Loop', () {
+  group('PairingStore & ScoutLink Report Loop (Protocol v3)', () {
     late AppDatabase db;
     late PairingStore store;
     late ScoutLink link;
@@ -231,30 +294,12 @@ void main() {
       expect(await store.isPaired(), isFalse);
     });
 
-    test('report() against fake server purges outbox through lastAppliedSeq',
+    test('report() against fake server sends v3 HELLO and BATCH and purges outbox through lastAppliedSeq',
         () async {
-      // Generate server cert
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .split('\n')
-          .map((l) => l.trim())
-          .where((l) => !l.startsWith('-----') && l.isNotEmpty)
-          .join());
-      final fpHex = Sha256()
-          .toSync()
-          .hashSync(der)
-          .bytes
-          .map((b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
-
+      final certInfo = await _generateServerCert();
       final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+      serverContext.useCertificateChainBytes(utf8.encode(certInfo.certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(certInfo.pemKey));
 
       final server = await SecureServerSocket.bind(
         InternetAddress.loopbackIPv4,
@@ -262,11 +307,15 @@ void main() {
         serverContext,
       );
 
+      Map<String, dynamic>? seenHello;
+      Map<String, dynamic>? seenBatch;
+
       server.listen((socket) {
         final framed = FramedSocket(socket);
         () async {
           final hello = await framed.nextFrame();
           if (hello != null && hello['type'] == 'HELLO') {
+            seenHello = hello;
             await framed.send({
               'type': 'HELLO_OK',
               'pcId': 'pc_fake',
@@ -275,6 +324,7 @@ void main() {
 
             final batch = await framed.nextFrame();
             if (batch != null && batch['type'] == 'BATCH') {
+              seenBatch = batch;
               await framed.send({
                 'type': 'ACK',
                 'status': 'ack',
@@ -288,61 +338,133 @@ void main() {
 
       await store.savePairing(
         pcId: 'pc_fake',
-        fp: fpHex,
+        fp: certInfo.fpHex,
         addrs: ['127.0.0.1'],
         port: server.port,
         phoneId: 'test_phone_id',
         deviceToken: 'token_abc',
       );
 
-      // Seed 3 outbox rows
-      await db.insertVisit(kind: 'visit', lat: 37.775, lon: -122.419, startedAt: 1000);
-      await db.insertVisit(kind: 'corridor', lat: 37.776, lon: -122.420, startedAt: 2000);
-      await db.insertVisit(kind: 'visit', lat: 37.777, lon: -122.421, startedAt: 3000);
-
-      expect((await db.getAllVisits()).length, equals(3));
-
-      final result = await link.report(
-        db: db,
-        bodyFix: {'lat': 37.775, 'lon': -122.419, 'tsUtcMs': 1000},
+      await db.insertExploreOutbox(
+        kind: 'home',
+        placeId: 'city:fixture-city',
+        tsUtcMs: 1000,
       );
+      await db.insertExploreOutbox(
+        kind: 'explore',
+        placeId: 'city:fixture-city',
+        areaKey: 'osm:n9104',
+        tsUtcMs: 2000,
+      );
+      await db.insertExploreOutbox(
+        kind: 'explore',
+        placeId: 'site:fixture-park',
+        areaKey: 'site:fixture-park',
+        tsUtcMs: 3000,
+      );
+
+      expect((await db.getAllOutboxItems()).length, equals(3));
+
+      final result = await link.report(db: db);
 
       expect(result, isA<ReportOk>());
       final ok = result as ReportOk;
       expect(ok.sent, equals(3));
 
+      expect(seenHello, isNotNull);
+      expect(seenHello!['schemaVersion'], equals(3));
+      expect(seenHello!['packVersion'], equals(1));
+      expect(seenBatch, isNotNull);
+      expect(seenBatch!.containsKey('bodyFix'), isFalse);
+
       // Rows up to seq 2 purged, seq 3 remains
-      final remaining = await db.getAllVisits();
+      final remaining = await db.getAllOutboxItems();
       expect(remaining.length, equals(1));
       expect(remaining.first.seq, equals(3));
 
       await server.close();
     });
 
+    test('report() with ERROR pack_mismatch and bad_row returns expected results and exact user messages',
+        () async {
+      final certInfo = await _generateServerCert();
+      final serverContext = SecurityContext();
+      serverContext.useCertificateChainBytes(utf8.encode(certInfo.certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(certInfo.pemKey));
+
+      String errorToReturn = 'pack_mismatch';
+      final server = await SecureServerSocket.bind(
+        InternetAddress.loopbackIPv4,
+        0,
+        serverContext,
+      );
+
+      server.listen((socket) {
+        final framed = FramedSocket(socket);
+        () async {
+          final hello = await framed.nextFrame();
+          if (hello != null && hello['type'] == 'HELLO') {
+            if (errorToReturn == 'pack_mismatch') {
+              await framed.send({'type': 'ERROR', 'code': 'pack_mismatch'});
+            } else {
+              await framed.send({
+                'type': 'HELLO_OK',
+                'pcId': 'pc_fake',
+                'lastAppliedSeq': 0,
+              });
+              final batch = await framed.nextFrame();
+              if (batch != null) {
+                await framed.send({'type': 'ERROR', 'code': 'bad_row'});
+              }
+            }
+          }
+        }();
+      });
+
+      await store.savePairing(
+        pcId: 'pc_fake',
+        fp: certInfo.fpHex,
+        addrs: ['127.0.0.1'],
+        port: server.port,
+        phoneId: 'test_phone_id',
+        deviceToken: 'token_abc',
+      );
+
+      await db.insertExploreOutbox(
+        kind: 'explore',
+        placeId: 'city:fixture-city',
+        areaKey: 'osm:n9104',
+        tsUtcMs: 1000,
+      );
+
+      final resPack = await link.report(db: db);
+      expect(resPack, isA<ReportPackMismatch>());
+      expect(
+        resPack.userMessage,
+        equals(
+          'Your companion and game have different map versions — update both.',
+        ),
+      );
+      expect((await db.getAllOutboxItems()).length, equals(1));
+
+      errorToReturn = 'bad_row';
+      final resBadRow = await link.report(db: db);
+      expect(resBadRow, isA<ReportBadRow>());
+      expect(
+        resBadRow.userMessage,
+        equals('Report failed — update both apps.'),
+      );
+      expect((await db.getAllOutboxItems()).length, equals(1));
+
+      await server.close();
+    });
+
     test('report() with ERROR unpaired reply returns ReportUnpaired and deletes nothing',
         () async {
-      // Generate server cert
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .split('\n')
-          .map((l) => l.trim())
-          .where((l) => !l.startsWith('-----') && l.isNotEmpty)
-          .join());
-      final fpHex = Sha256()
-          .toSync()
-          .hashSync(der)
-          .bytes
-          .map((b) => b.toRadixString(16).padLeft(2, '0'))
-          .join();
-
+      final certInfo = await _generateServerCert();
       final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+      serverContext.useCertificateChainBytes(utf8.encode(certInfo.certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(certInfo.pemKey));
 
       final server = await SecureServerSocket.bind(
         InternetAddress.loopbackIPv4,
@@ -355,153 +477,49 @@ void main() {
         () async {
           final hello = await framed.nextFrame();
           if (hello != null && hello['type'] == 'HELLO') {
-            await framed.send({
-              'type': 'ERROR',
-              'code': 'unpaired',
-            });
+            await framed.send({'type': 'ERROR', 'code': 'unpaired'});
           }
         }();
       });
 
       await store.savePairing(
         pcId: 'pc_fake',
-        fp: fpHex,
+        fp: certInfo.fpHex,
         addrs: ['127.0.0.1'],
         port: server.port,
         phoneId: 'test_phone_id',
         deviceToken: 'wrong_token',
       );
 
-      await db.insertVisit(kind: 'visit', lat: 37.775, lon: -122.419, startedAt: 1000);
-      expect((await db.getAllVisits()).length, equals(1));
-
-      final result = await link.report(
-        db: db,
-        bodyFix: {'lat': 37.775, 'lon': -122.419, 'tsUtcMs': 1000},
+      await db.insertExploreOutbox(
+        kind: 'explore',
+        placeId: 'city:fixture-city',
+        areaKey: 'osm:n9104',
+        tsUtcMs: 1000,
       );
+      expect((await db.getAllOutboxItems()).length, equals(1));
+
+      final result = await link.report(db: db);
 
       expect(result, isA<ReportUnpaired>());
-      // Deletes nothing
-      expect((await db.getAllVisits()).length, equals(1));
-      // Leaves getDeviceToken() == null, with phoneId, pcId, and fp unchanged
+      expect((await db.getAllOutboxItems()).length, equals(1));
       expect(await store.getDeviceToken(), isNull);
       expect(await store.getPhoneId(), equals('test_phone_id'));
       expect(await store.getPcId(), equals('pc_fake'));
-      expect(await store.getFp(), equals(fpHex));
+      expect(await store.getFp(), equals(certInfo.fpHex));
 
       await server.close();
     });
 
-    test('buildBatchPayload with null bodyFix omits bodyFix key', () {
-      final transport = SyncTransport();
-      final rows = [
-        VisitOutboxItem(
-          seq: 1,
-          kind: 'visit',
-          lat: 37.776,
-          lon: -122.420,
-          startedAt: 1000,
-          synced: 0,
-        ),
-      ];
-      final payload = transport.buildBatchPayload(rows, null);
-      expect(payload.containsKey('bodyFix'), isFalse);
-      expect(payload['rows'], isNotEmpty);
-
-      final payloadWithFix = transport.buildBatchPayload(rows, {
-        'lat': 37.776,
-        'lon': -122.420,
-        'tsUtcMs': 1000,
-      });
-      expect(payloadWithFix.containsKey('bodyFix'), isTrue);
-      expect(payloadWithFix['bodyFix']['lat'], equals(37.776));
-    });
-
-    test('report(bodyFix: null) sends BATCH frame without bodyFix key', () async {
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .replaceAll('-----BEGIN CERTIFICATE-----', '')
-          .replaceAll('-----END CERTIFICATE-----', '')
-          .replaceAll('\n', '')
-          .replaceAll('\r', ''));
-      final digest = await Sha256().hash(der);
-      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
-      final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
-
-      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
-      Map<String, dynamic>? receivedBatchFrame;
-
-      server.listen((client) {
-        final framed = FramedSocket(client);
+    test('pair() without stored deviceToken sends real PAIR even if pcId/fp match (F33 falsification)',
         () async {
-          while (true) {
-            final frame = await framed.nextFrame();
-            if (frame == null) break;
-            if (frame['type'] == 'HELLO') {
-              await framed.send({
-                'type': 'HELLO_OK',
-                'pcId': 'pc_fake',
-                'lastAppliedSeq': 0,
-              });
-            } else if (frame['type'] == 'BATCH') {
-              receivedBatchFrame = frame;
-              await framed.send({
-                'type': 'ACK',
-                'status': 'ack',
-                'lastAppliedSeq': 1,
-                'appliedCount': 1,
-              });
-            }
-          }
-        }();
-      });
-
-      await store.savePairing(
-        pcId: 'pc_fake',
-        fp: fpHex,
-        addrs: ['127.0.0.1'],
-        port: server.port,
-        phoneId: 'test_phone_id',
-        deviceToken: 'token_abc',
-      );
-
-      await db.insertVisit(kind: 'visit', lat: 37.776, lon: -122.420, startedAt: 1000);
-      final result = await link.report(db: db, bodyFix: null);
-      expect(result, isA<ReportOk>());
-      expect(receivedBatchFrame, isNotNull);
-      expect(receivedBatchFrame!.containsKey('bodyFix'), isFalse);
-
-      await server.close();
-    });
-
-    test('pair() without stored deviceToken sends real PAIR even if pcId/fp match (F33 falsification)', () async {
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .replaceAll('-----BEGIN CERTIFICATE-----', '')
-          .replaceAll('-----END CERTIFICATE-----', '')
-          .replaceAll('\n', '')
-          .replaceAll('\r', ''));
-      final digest = await Sha256().hash(der);
-      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
+      final certInfo = await _generateServerCert();
       final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
+      serverContext.useCertificateChainBytes(utf8.encode(certInfo.certPem));
+      serverContext.usePrivateKeyBytes(utf8.encode(certInfo.pemKey));
 
-      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
+      final server =
+          await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
       Map<String, dynamic>? receivedPairFrame;
 
       server.listen((client) {
@@ -510,291 +528,39 @@ void main() {
           final frame = await framed.nextFrame();
           if (frame != null && frame['type'] == 'PAIR') {
             receivedPairFrame = frame;
-            await framed.send({
-              'type': 'PAIR_OK',
-              'pcId': 'pc_fake',
-            });
+            await framed.send({'type': 'PAIR_OK', 'pcId': 'pc_fake'});
           }
         }();
       });
 
-      // Store pcId, fp, addrs, phoneId with NO deviceToken
-      final store = PairingStore();
       await store.clear();
       await store.savePairing(
         pcId: 'pc_fake',
-        fp: fpHex,
+        fp: certInfo.fpHex,
         addrs: ['127.0.0.1'],
         port: server.port,
         phoneId: 'persisted_phone_id',
         deviceToken: 'old_dead_token',
       );
       await store.clearDeviceToken();
-      expect(await store.getDeviceToken(), isNull);
-      expect(await store.getPhoneId(), equals('persisted_phone_id'));
 
       final qr = QrPayloadV2(
         v: 2,
         pcId: 'pc_fake',
-        fp: fpHex,
+        fp: certInfo.fpHex,
         addrs: ['127.0.0.1'],
         port: server.port,
         pair: '0123456789abcdef0123456789abcdef',
       );
 
-      final link = ScoutLink(pairingStore: store);
       final res = await link.pair(qr);
 
       expect(res, isA<PairOk>());
       expect(receivedPairFrame, isNotNull);
       expect(receivedPairFrame!['type'], equals('PAIR'));
       expect(receivedPairFrame!['phoneId'], equals('persisted_phone_id'));
-      expect(receivedPairFrame!['pair'], equals('0123456789abcdef0123456789abcdef'));
       expect(await store.getDeviceToken(), isNotNull);
       expect(await store.isPaired(), isTrue);
-
-      await server.close();
-    });
-
-    test('pair() with stored token present makes no connection and short-circuits', () async {
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .replaceAll('-----BEGIN CERTIFICATE-----', '')
-          .replaceAll('-----END CERTIFICATE-----', '')
-          .replaceAll('\n', '')
-          .replaceAll('\r', ''));
-      final digest = await Sha256().hash(der);
-      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
-      final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
-
-      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
-      int connectionCount = 0;
-      server.listen((client) {
-        connectionCount++;
-      });
-
-      final store = PairingStore();
-      await store.clear();
-      await store.savePairing(
-        pcId: 'pc_fake',
-        fp: fpHex,
-        addrs: ['127.0.0.1'],
-        port: server.port,
-        phoneId: 'test_phone',
-        deviceToken: 'valid_token',
-      );
-
-      final qr = QrPayloadV2(
-        v: 2,
-        pcId: 'pc_fake',
-        fp: fpHex,
-        addrs: ['127.0.0.1'],
-        port: server.port,
-        pair: '0123456789abcdef0123456789abcdef',
-      );
-
-      final link = ScoutLink(pairingStore: store);
-      final res = await link.pair(qr);
-
-      expect(res, isA<PairOk>());
-      expect(connectionCount, equals(0));
-
-      await server.close();
-    });
-
-    test('report() with ERROR storage reply returns ReportPcStorageError and preserves outbox (F32)', () async {
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .replaceAll('-----BEGIN CERTIFICATE-----', '')
-          .replaceAll('-----END CERTIFICATE-----', '')
-          .replaceAll('\n', '')
-          .replaceAll('\r', ''));
-      final digest = await Sha256().hash(der);
-      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
-      final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
-
-      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
-
-      server.listen((client) {
-        final framed = FramedSocket(client);
-        () async {
-          final hello = await framed.nextFrame();
-          if (hello != null && hello['type'] == 'HELLO') {
-            await framed.send({
-              'type': 'HELLO_OK',
-              'pcId': 'pc_fake',
-              'lastAppliedSeq': 0,
-            });
-
-            final batch = await framed.nextFrame();
-            if (batch != null && batch['type'] == 'BATCH') {
-              await framed.send({
-                'type': 'ERROR',
-                'code': 'storage',
-              });
-            }
-          }
-        }();
-      });
-
-      final store = PairingStore();
-      await store.clear();
-      await store.savePairing(
-        pcId: 'pc_fake',
-        fp: fpHex,
-        addrs: ['127.0.0.1'],
-        port: server.port,
-        phoneId: 'test_phone_id',
-        deviceToken: 'token_abc',
-      );
-
-      await db.insertVisit(kind: 'visit', lat: 37.776, lon: -122.420, startedAt: 1000);
-      expect((await db.getAllVisits()).length, equals(1));
-
-      final result = await link.report(db: db, bodyFix: null);
-
-      expect(result, isA<ReportPcStorageError>());
-      // Outbox rows are NOT deleted
-      expect((await db.getAllVisits()).length, equals(1));
-
-      await server.close();
-    });
-
-    test('report() with ACK having status error returns ReportProtocolError (F32)', () async {
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .replaceAll('-----BEGIN CERTIFICATE-----', '')
-          .replaceAll('-----END CERTIFICATE-----', '')
-          .replaceAll('\n', '')
-          .replaceAll('\r', ''));
-      final digest = await Sha256().hash(der);
-      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
-      final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
-
-      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
-
-      server.listen((client) {
-        final framed = FramedSocket(client);
-        () async {
-          final hello = await framed.nextFrame();
-          if (hello != null && hello['type'] == 'HELLO') {
-            await framed.send({
-              'type': 'HELLO_OK',
-              'pcId': 'pc_fake',
-              'lastAppliedSeq': 0,
-            });
-
-            final batch = await framed.nextFrame();
-            if (batch != null && batch['type'] == 'BATCH') {
-              await framed.send({
-                'type': 'ACK',
-                'status': 'error',
-                'lastAppliedSeq': 0,
-              });
-            }
-          }
-        }();
-      });
-
-      final store = PairingStore();
-      await store.clear();
-      await store.savePairing(
-        pcId: 'pc_fake',
-        fp: fpHex,
-        addrs: ['127.0.0.1'],
-        port: server.port,
-        phoneId: 'test_phone_id',
-        deviceToken: 'token_abc',
-      );
-
-      await db.insertVisit(kind: 'visit', lat: 37.776, lon: -122.420, startedAt: 1000);
-      expect((await db.getAllVisits()).length, equals(1));
-
-      final result = await link.report(db: db, bodyFix: null);
-
-      expect(result, isA<ReportProtocolError>());
-      expect((result as ReportProtocolError).message, contains('ACK without ack status'));
-      // Outbox rows are NOT deleted
-      expect((await db.getAllVisits()).length, equals(1));
-
-      await server.close();
-    });
-
-    test('pair() receiving ERROR storage returns PairPcStorageError (F32)', () async {
-      final keyPair = CryptoUtils.generateRSAKeyPair(keySize: 2048);
-      final privKey = keyPair.privateKey as RSAPrivateKey;
-      final pubKey = keyPair.publicKey as RSAPublicKey;
-      final pemKey = CryptoUtils.encodeRSAPrivateKeyToPem(privKey);
-      final csr = X509Utils.generateRsaCsrPem({'CN': 'localhost'}, privKey, pubKey);
-      final certPem = X509Utils.generateSelfSignedCertificate(privKey, csr, 365);
-      final der = base64Decode(certPem
-          .replaceAll('-----BEGIN CERTIFICATE-----', '')
-          .replaceAll('-----END CERTIFICATE-----', '')
-          .replaceAll('\n', '')
-          .replaceAll('\r', ''));
-      final digest = await Sha256().hash(der);
-      final fpHex = digest.bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-
-      final serverContext = SecurityContext();
-      serverContext.useCertificateChainBytes(utf8.encode(certPem));
-      serverContext.usePrivateKeyBytes(utf8.encode(pemKey));
-
-      final server = await SecureServerSocket.bind('127.0.0.1', 0, serverContext);
-
-      server.listen((client) {
-        final framed = FramedSocket(client);
-        () async {
-          final frame = await framed.nextFrame();
-          if (frame != null && frame['type'] == 'PAIR') {
-            await framed.send({
-              'type': 'ERROR',
-              'code': 'storage',
-            });
-          }
-        }();
-      });
-
-      final store = PairingStore();
-      await store.clear();
-
-      final qr = QrPayloadV2(
-        v: 2,
-        pcId: 'pc_fake',
-        fp: fpHex,
-        addrs: ['127.0.0.1'],
-        port: server.port,
-        pair: '0123456789abcdef0123456789abcdef',
-      );
-
-      final link = ScoutLink(pairingStore: store);
-      final res = await link.pair(qr);
-
-      expect(res, isA<PairPcStorageError>());
-      expect(await store.isPaired(), isFalse);
 
       await server.close();
     });

@@ -1,26 +1,37 @@
 import 'package:flutter/material.dart';
-import 'capture/os_location_source.dart';
+import 'explore/explore_service.dart';
+import 'explore/places_pack.dart';
 import 'outbox/database.dart';
-import 'ui/scout_ledger_screen.dart';
+import 'sync/scout_link.dart';
+import 'ui/explore_screen.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final database = AppDatabase();
-  final locationSource = OsLocationSource();
-  runApp(CompanionApp(
-    database: database,
-    locationSource: locationSource,
-  ));
+  PlacesPack? pack;
+  try {
+    pack = await PlacesPack.loadAsset();
+  } catch (_) {}
+  runApp(
+    CompanionApp(
+      database: database,
+      initialPack: pack,
+    ),
+  );
 }
 
 class CompanionApp extends StatelessWidget {
   final AppDatabase database;
-  final OsLocationSource? locationSource;
+  final PlacesPack? initialPack;
+  final PositionSource? positionSource;
+  final ScoutLink? scoutLink;
 
   const CompanionApp({
     super.key,
     required this.database,
-    this.locationSource,
+    this.initialPack,
+    this.positionSource,
+    this.scoutLink,
   });
 
   @override
@@ -34,9 +45,11 @@ class CompanionApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: ScoutLedgerScreen(
+      home: ExploreScreen(
         database: database,
-        locationSource: locationSource,
+        initialPack: initialPack,
+        positionSource: positionSource,
+        scoutLink: scoutLink,
       ),
     );
   }
