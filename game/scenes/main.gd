@@ -35,11 +35,11 @@ func _ready() -> void:
 				)
 			return
 
-		var boot_place_id := get_boot_place_id()
+		var resume_place_id := get_resume_place_id()
 		var map_view = open_map_view()
 		if map_view != null:
-			if not boot_place_id.is_empty() and map_view.has_method("load_place"):
-				map_view.load_place(boot_place_id, false)
+			if not resume_place_id.is_empty() and map_view.has_method("load_place"):
+				map_view.load_place(resume_place_id, false)
 			if map_view.has_method("setup_screenshot"):
 				map_view.screenshot_timeout_sec = float(s_cfg.get("timeout", 120))
 				map_view.setup_screenshot(
@@ -55,36 +55,26 @@ func _ready() -> void:
 	SyncServer.configure_identity(identity)
 	SyncServer.start_server()
 
-	# Item 20 boot routing (plan §5):
-	# - with a bodyFix inside a famous place, open that place's map view;
-	# - otherwise open the home hub;
-	# - pairing screen stays reachable from the hub.
-	var boot_place_id := get_boot_place_id()
-	if not boot_place_id.is_empty():
-		open_map_view_for_place(boot_place_id)
+	# Boot and resume (explore plan §4.4):
+	# - if last_place is set and its store is installed, open that place's map view at its Waypost;
+	# - otherwise open the home hub.
+	var resume_place_id := get_resume_place_id()
+	if not resume_place_id.is_empty():
+		open_map_view_for_place(resume_place_id)
 	else:
 		open_home_hub()
 
-func get_boot_place_id(custom_stores: Dictionary = {}) -> String:
+func get_resume_place_id(custom_stores: Dictionary = {}) -> String:
 	if not DB.is_open():
 		return ""
-	var peer_rows = DB._rows("SELECT last_body_lat, last_body_lon FROM sync_peer WHERE last_body_lat IS NOT NULL AND last_body_lon IS NOT NULL ORDER BY last_body_ts DESC LIMIT 1;")
-	if peer_rows.is_empty():
+	var last_place: String = DB.get_db_meta("last_place", "")
+	if last_place.is_empty():
 		return ""
-	var b_lat := float(peer_rows[0].get("last_body_lat", 0.0))
-	var b_lon := float(peer_rows[0].get("last_body_lon", 0.0))
-	var body_cell := Grid.latlon_to_cell(b_lat, b_lon)
-
 	var stores: Dictionary = custom_stores
 	if stores.is_empty():
 		stores = RevealEngine.load_installed_stores()
-
-	for pid in stores.keys():
-		var s: MapStore = stores[pid]
-		if s.covers_cell(body_cell.x, body_cell.y):
-			var ca := s.get_cell_area(body_cell.x, body_cell.y)
-			if not ca.is_empty():
-				return pid
+	if stores.has(last_place):
+		return last_place
 	return ""
 
 func clear_current_view() -> void:
@@ -104,6 +94,8 @@ func open_map_view() -> Node:
 	return null
 
 func open_map_view_for_place(place_id: String) -> Node:
+	if DB.is_open() and not place_id.is_empty():
+		DB.set_db_meta("last_place", place_id)
 	clear_current_view()
 	var map_view_scene = load("res://world/map_view.tscn")
 	if map_view_scene != null:

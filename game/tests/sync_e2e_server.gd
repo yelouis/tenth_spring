@@ -93,11 +93,38 @@ func _print_state_and_quit() -> void:
 	if not peer_rows.is_empty() and peer_rows[0].get("s") != null:
 		last_seq = int(peer_rows[0].get("s"))
 
+	var kind_rows = DB._rows("SELECT kind, count(*) as c FROM visit_log GROUP BY kind ORDER BY kind;")
+	var visit_kinds := {}
+	for kr in kind_rows:
+		visit_kinds[str(kr.get("kind", ""))] = int(kr.get("c", 0))
+
+	var ar_rows = DB.get_all_area_reveals()
+	var area_keys: Array[String] = []
+	for ar in ar_rows:
+		area_keys.append(str(ar.get("area_key", "")))
+
+	# Scan every table in sqlite_master and every REAL column for non-NULL values
+	var non_null_real_count := 0
+	var tables = DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';")
+	for t in tables:
+		var t_name := str(t.get("name", ""))
+		var cols = DB._rows("PRAGMA table_info(" + t_name + ");")
+		for col in cols:
+			var col_type := str(col.get("type", "")).to_upper()
+			if col_type.contains("REAL"):
+				var col_name := str(col.get("name", ""))
+				var cnt_rows = DB._rows("SELECT count(*) as c FROM " + t_name + " WHERE " + col_name + " IS NOT NULL;")
+				if not cnt_rows.is_empty():
+					non_null_real_count += int(cnt_rows[0].get("c", 0))
+
 	var state = {
 		"visit_log": v_cnt,
+		"visit_log_kinds": visit_kinds,
+		"area_reveal": area_keys,
 		"map_cell": m_cnt,
 		"place_node": p_cnt,
-		"last_applied_seq": last_seq
+		"last_applied_seq": last_seq,
+		"non_null_real_count": non_null_real_count
 	}
 	print("E2E_STATE " + JSON.stringify(state))
 	SyncServer.stop_server()

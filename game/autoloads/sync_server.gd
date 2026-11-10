@@ -3,12 +3,15 @@ extends Node
 # SyncServer Autoload for PC Game (Phase 1 / Decision 11 / §B3-B4)
 # TLS transport server, pairing state, frame codec, and dispatch.
 
-const PROTOCOL_VERSION: int = 1
+const PROTOCOL_VERSION: int = 3
 const DEFAULT_PORT: int = 7350
-const CORRIDOR_REVEAL_METERS: float = 60.0
 
 const Grid := preload("res://world/grid.gd")
+const PlacesPack := preload("res://world/places_pack.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
+
+const EXPLORE_ROW_KEYS: Array[String] = ["seq", "kind", "placeId", "areaKey", "tsUtcMs"]
+const HOME_ROW_KEYS: Array[String] = ["seq", "kind", "placeId", "tsUtcMs"]
 
 signal sync_completed(peer_id: String, applied_count: int)
 signal peer_paired(phone_id: String)
@@ -118,17 +121,92 @@ func latlon_to_tile(lat: float, lon: float) -> Vector2i:
 func handle_hello(payload: Dictionary) -> Dictionary:
 	var peer_id = payload.get("peerId", "")
 	var client_version = int(payload.get("schemaVersion", 0))
-
 	if client_version != PROTOCOL_VERSION:
-		return {"status": "error", "message": "Schema version mismatch"}
-
+		return {"status": "error", "code": "schema_mismatch", "message": "Schema version mismatch"}
+	if not payload.has("packVersion") or int(payload.get("packVersion", 0)) != PlacesPack.pack_version():
+		return {"status": "error", "code": "pack_mismatch", "message": "Pack version mismatch"}
 	return {"status": "ok", "peerId": peer_id}
 
-func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
-	if not DB.begin_transaction():
-		return {"status": "error", "message": "storage error"}
+static func _is_valid_int(val: Variant) -> bool:
+	if val == null:
+		return false
+	return typeof(val) == TYPE_INT or (typeof(val) == TYPE_FLOAT and float(val) == round(float(val)))
 
-	var rows = batch_data.get("rows", [])
+static func validate_batch_frame(frame: Dictionary) -> String:
+	var rows = frame.get("rows", null)
+	if rows == null or typeof(rows) != TYPE_ARRAY:
+		return "protocol"
+	if rows.size() > 500:
+		return "protocol"
+	if frame.has("bodyFix"):
+		return "bad_row"
+
+	for row in rows:
+		if typeof(row) != TYPE_DICTIONARY:
+			return "bad_row"
+		var kind_v = row.get("kind", null)
+		if kind_v == null or typeof(kind_v) != TYPE_STRING:
+			return "bad_row"
+		var kind: String = str(kind_v)
+		var whitelist: Array[String]
+		if kind == "explore":
+			whitelist = EXPLORE_ROW_KEYS
+		elif kind == "home":
+			whitelist = HOME_ROW_KEYS
+		else:
+			return "bad_row"
+
+		for k in row.keys():
+			if not whitelist.has(str(k)):
+				return "bad_row"
+		for req_k in whitelist:
+			if not row.has(req_k):
+				return "bad_row"
+
+		var seq_v = row.get("seq", null)
+		if not _is_valid_int(seq_v) or int(seq_v) < 1:
+			return "bad_row"
+
+		var ts_v = row.get("tsUtcMs", null)
+		if not _is_valid_int(ts_v) or int(ts_v) <= 0:
+			return "bad_row"
+
+		var pid_v = row.get("placeId", null)
+		if pid_v == null or typeof(pid_v) != TYPE_STRING or str(pid_v) == "":
+			return "bad_row"
+		var place_id: String = str(pid_v)
+		var p_info: Dictionary = PlacesPack.place_info(place_id)
+		if p_info.is_empty():
+			return "bad_row"
+
+		if kind == "explore":
+			var akey_v = row.get("areaKey", null)
+			if akey_v == null or typeof(akey_v) != TYPE_STRING or str(akey_v) == "":
+				return "bad_row"
+			var area_key: String = str(akey_v)
+			var a_info: Dictionary = PlacesPack.area(area_key)
+			if a_info.is_empty():
+				return "bad_row"
+			if str(a_info.get("place_id", "")) != place_id:
+				return "bad_row"
+			var a_kind: String = str(a_info.get("kind", ""))
+			if a_kind != "neighbourhood" and a_kind != "site":
+				return "bad_row"
+		else:
+			if str(p_info.get("kind", "")) != "city":
+				return "bad_row"
+
+	return ""
+
+func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
+	var v_err: String = SyncServer.validate_batch_frame(batch_data)
+	if v_err != "":
+		return {"status": "error", "code": v_err, "message": v_err}
+
+	if not DB.begin_transaction():
+		return {"status": "error", "code": "storage", "message": "storage error"}
+
+	var rows: Array = batch_data.get("rows", [])
 
 	var peer_info = DB.get_sync_peer(peer_id)
 	var last_applied_seq = int(peer_info.get("last_applied_seq", 0))
@@ -138,84 +216,43 @@ func process_batch(peer_id: String, batch_data: Dictionary) -> Dictionary:
 
 	for row in rows:
 		var seq = int(row.get("seq", 0))
-		if seq < 0:
-			DB.rollback_transaction()
-			return {"status": "error", "message": "Transaction failed and was rolled back"}
-
 		if seq <= last_applied_seq:
 			continue # Idempotent skip for already applied rows
 
-		var kind = str(row.get("kind", "visit"))
-		var lat = float(row.get("lat", 0.0))
-		var lon = float(row.get("lon", 0.0))
-		var started_at = int(row.get("startedAt", 0))
-		var dwell_seconds = int(row.get("dwellSeconds", 0))
+		var kind = str(row.get("kind", ""))
+		var place_id = str(row.get("placeId", ""))
+		var target_id = str(row.get("areaKey", "")) if kind == "explore" else place_id
+		var ts_utc_ms = int(row.get("tsUtcMs", 0))
 
 		var log_entry = {
 			"peer_id": peer_id,
 			"seq": seq,
-			"kind": kind,
-			"lat": lat,
-			"lon": lon,
-			"started_at": started_at,
-			"dwell_seconds": dwell_seconds
+			"place_id": target_id,
+			"lat": null,
+			"lon": null,
+			"started_at": ts_utc_ms,
+			"dwell_seconds": 0,
+			"kind": kind
 		}
 
 		var inserted = DB.insert_visit_log(log_entry)
 		if DB.last_error != "":
 			DB.rollback_transaction()
-			return {"status": "error", "message": "storage error"}
+			return {"status": "error", "code": "storage", "message": "storage error"}
 
 		if inserted:
 			applied_count += 1
 			if seq > max_seq:
 				max_seq = seq
 
-			# Reveal map cell(s)
-			if kind == "corridor":
-				var cells = Grid.cells_within_ground_radius(lat, lon, CORRIDOR_REVEAL_METERS)
-				for c in cells:
-					DB.upsert_map_cell(c.x, c.y, 1) # 1 = Known
-					if DB.last_error != "":
-						DB.rollback_transaction()
-						return {"status": "error", "message": "storage error"}
-			else:
-				var cell = latlon_to_cell(lat, lon)
-				DB.upsert_map_cell(cell.x, cell.y, 1) # 1 = Known
-				if DB.last_error != "":
-					DB.rollback_transaction()
-					return {"status": "error", "message": "storage error"}
-
-				if kind == "visit":
-					var place_id = "place_%d_%d" % [cell.x, cell.y]
-					DB.upsert_place_node({
-						"id": place_id,
-						"name": "Scouted Location",
-						"category": 1,
-						"cell_x": cell.x,
-						"cell_y": cell.y,
-						"reveal_state": 1,
-						"visit_count": 1,
-						"last_real_visit_at": started_at
-					})
-					if DB.last_error != "":
-						DB.rollback_transaction()
-						return {"status": "error", "message": "storage error"}
-
-	# Save last body position for relocation
-	var body_fix = batch_data.get("bodyFix", null)
-	if body_fix != null and typeof(body_fix) == TYPE_DICTIONARY and not body_fix.is_empty():
-		var body_lat = float(body_fix["lat"])
-		var body_lon = float(body_fix["lon"])
-		var body_ts = int(body_fix["tsUtcMs"])
-		DB.update_sync_peer(peer_id, max_seq, body_lat, body_lon, body_ts)
-	else:
-		DB.update_sync_peer_seq(peer_id, max_seq)
+	DB.update_sync_peer_seq(peer_id, max_seq)
 	if DB.last_error != "":
 		DB.rollback_transaction()
-		return {"status": "error", "message": "storage error"}
+		return {"status": "error", "code": "storage", "message": "storage error"}
 
-	DB.commit_transaction()
+	if not DB.commit_transaction():
+		DB.rollback_transaction()
+		return {"status": "error", "code": "storage", "message": "storage error"}
 
 	RevealEngine.apply(DB)
 
@@ -315,6 +352,9 @@ class SessionDispatcher extends RefCounted:
 		if client_version != SyncServer.PROTOCOL_VERSION:
 			return {"type": "ERROR", "code": "schema_mismatch"}
 
+		if not frame.has("packVersion") or not SyncServer._is_valid_int(frame.get("packVersion", null)) or int(frame.get("packVersion", 0)) != PlacesPack.pack_version():
+			return {"type": "ERROR", "code": "pack_mismatch"}
+
 		authenticated_peer_id = peer_id
 		var last_applied_seq = int(peer_info.get("last_applied_seq", 0))
 
@@ -328,62 +368,15 @@ class SessionDispatcher extends RefCounted:
 		if authenticated_peer_id == "":
 			return {"type": "ERROR", "code": "protocol"}
 
-		var rows = frame.get("rows", null)
-		if rows == null or typeof(rows) != TYPE_ARRAY:
-			return {"type": "ERROR", "code": "protocol"}
-		if rows.size() > 500:
-			return {"type": "ERROR", "code": "protocol"}
-
-		for row in rows:
-			if typeof(row) != TYPE_DICTIONARY:
-				return {"type": "ERROR", "code": "protocol"}
-			var seq = row.get("seq", null)
-			if seq == null or not (typeof(seq) == TYPE_INT or (typeof(seq) == TYPE_FLOAT and seq == round(seq))):
-				return {"type": "ERROR", "code": "protocol"}
-			if int(seq) < 1:
-				return {"type": "ERROR", "code": "protocol"}
-
-			var kind = str(row.get("kind", ""))
-			if kind != "visit" and kind != "corridor":
-				return {"type": "ERROR", "code": "protocol"}
-
-			var lat = row.get("lat", null)
-			var lon = row.get("lon", null)
-			if lat == null or lon == null or not (typeof(lat) in [TYPE_FLOAT, TYPE_INT]) or not (typeof(lon) in [TYPE_FLOAT, TYPE_INT]):
-				return {"type": "ERROR", "code": "protocol"}
-			var flat = float(lat)
-			var flon = float(lon)
-			if flat < -90.0 or flat > 90.0 or flon < -180.0 or flon > 180.0:
-				return {"type": "ERROR", "code": "protocol"}
-			if not SyncServer.is_fuzzed_coord(flat) or not SyncServer.is_fuzzed_coord(flon):
-				return {"type": "ERROR", "code": "protocol"}
-
-		if frame.has("bodyFix"):
-			var body_fix = frame.get("bodyFix")
-			if typeof(body_fix) != TYPE_DICTIONARY:
-				return {"type": "ERROR", "code": "protocol"}
-			var b_lat = body_fix.get("lat", null)
-			var b_lon = body_fix.get("lon", null)
-			var b_ts = body_fix.get("tsUtcMs", null)
-			if b_lat == null or b_lon == null or b_ts == null:
-				return {"type": "ERROR", "code": "protocol"}
-			if not (typeof(b_lat) in [TYPE_FLOAT, TYPE_INT]) or not (typeof(b_lon) in [TYPE_FLOAT, TYPE_INT]):
-				return {"type": "ERROR", "code": "protocol"}
-			var fb_lat = float(b_lat)
-			var fb_lon = float(b_lon)
-			if fb_lat < -90.0 or fb_lat > 90.0 or fb_lon < -180.0 or fb_lon > 180.0:
-				return {"type": "ERROR", "code": "protocol"}
-			if not SyncServer.is_fuzzed_coord(fb_lat) or not SyncServer.is_fuzzed_coord(fb_lon):
-				return {"type": "ERROR", "code": "protocol"}
-			if not (typeof(b_ts) == TYPE_INT or (typeof(b_ts) == TYPE_FLOAT and b_ts == round(b_ts))):
-				return {"type": "ERROR", "code": "protocol"}
-			if int(b_ts) <= 0:
-				return {"type": "ERROR", "code": "protocol"}
+		var v_err: String = SyncServer.validate_batch_frame(frame)
+		if v_err != "":
+			return {"type": "ERROR", "code": v_err}
 
 		# Apply batch using the authenticated session peer id
 		var result = SyncServer.process_batch(authenticated_peer_id, frame)
 		if result.get("status") != "ack":
-			return {"type": "ERROR", "code": "storage"}
+			var err_code: String = str(result.get("code", "storage"))
+			return {"type": "ERROR", "code": err_code}
 		result["type"] = "ACK"
 		return result
 

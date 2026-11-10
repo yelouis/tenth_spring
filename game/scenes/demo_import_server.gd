@@ -1,112 +1,124 @@
 extends Node
 
-# Demo Import Server Scene (Item 6 / plan §2)
-# Headless Godot receiver listening on dedicated demo port 7352 (or custom port).
-# Receives companion scout reports and commits to demo profile.
+# Demo Import Server Scene (Items 6, 28 / explore plan §4.5)
+# Headless Godot importer for demo explore points (--points <file.json>).
+# Looks up each point in PlacesPack and writes v3 explore/home rows with NULL coordinates.
 
+const Grid := preload("res://world/grid.gd")
+const PlacesPack := preload("res://world/places_pack.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
 
-var total_elapsed: float = 0.0
-var no_session_elapsed: float = 0.0
-var had_sync: bool = false
-var finished: bool = false
-var total_applied: int = 0
-var import_port: int = 7352
-
 func _ready() -> void:
-	# 1. Resolve demo profile paths
 	var profile = ProfilePaths.resolve_from_cmdline()
 	if not profile.ok:
-		printerr("Failed to resolve profile paths: " + profile.error)
+		printerr("Failed to resolve profile paths: " + str(profile.error))
 		get_tree().quit(1)
 		return
 
 	if not profile.is_demo:
-		# Default to demo profile if not explicitly specified on cmdline
 		profile = ProfilePaths.resolve(["--demo"])
 
-	# Ensure demo directories exist
 	DirAccess.make_dir_recursive_absolute(profile.identity_dir)
 
-	# Configure DB and Identity for demo profile
 	DB.configure_paths(profile.db_path, profile.db_tmp_path)
 	DB.init_db()
 
-	var identity = PcIdentity.new()
-	identity.configure_dir(profile.identity_dir)
-	if not identity.load_or_create():
-		printerr("Failed to load or create identity for demo import")
-		get_tree().quit(1)
-		return
-	SyncServer.configure_identity(identity)
-
-	# Configure pairing code
-	var now_unix = int(Time.get_unix_time_from_system())
-	var pair_code = SyncServer.pairing_codes.new_code(now_unix)
-
-	# Connect signal for sync completion
-	SyncServer.sync_completed.connect(_on_sync_completed)
-
-	# Parse port if provided in cmdline (--port <num> or --port=<num>)
+	var points_path := ""
 	var args = OS.get_cmdline_user_args()
 	if args.is_empty():
 		args = OS.get_cmdline_args()
-	var i = 0
+	var i := 0
 	while i < args.size():
-		var arg = str(args[i]).strip_edges()
-		if arg == "--port" and i + 1 < args.size():
-			import_port = int(args[i + 1])
+		var arg := str(args[i]).strip_edges()
+		if arg == "--points" and i + 1 < args.size():
+			points_path = str(args[i + 1]).strip_edges()
 			i += 1
-		elif arg.begins_with("--port="):
-			import_port = int(arg.substr(7))
+		elif arg.begins_with("--points="):
+			points_path = arg.substr(9).strip_edges()
 		i += 1
 
-	# Start SyncServer on demo port
-	var err = SyncServer.start_server(import_port)
-	if err != OK:
-		printerr("Failed to start sync server on port %d: %d" % [import_port, err])
+	if points_path.is_empty() or not FileAccess.file_exists(points_path):
+		printerr("demo_import_server: missing or unreadable --points file: " + points_path)
+		DB.close()
 		get_tree().quit(1)
 		return
 
-	# Readiness line
-	var ready_payload = {
-		"port": import_port,
-		"fp": identity.fingerprint_hex(),
-		"pair": pair_code,
-		"pcId": identity.pc_id
-	}
-	print("DEMO_READY " + JSON.stringify(ready_payload))
-
-func _on_sync_completed(_peer_id: String, applied_count: int) -> void:
-	had_sync = true
-	total_applied += applied_count
-	no_session_elapsed = 0.0
-
-func _process(delta: float) -> void:
-	total_elapsed += delta
-	if total_elapsed >= 120.0:
-		print("DEMO_TIMEOUT")
+	var json_txt := FileAccess.get_file_as_string(points_path)
+	var parsed: Variant = JSON.parse_string(json_txt)
+	if parsed == null:
+		printerr("demo_import_server: invalid JSON in " + points_path)
+		DB.close()
 		get_tree().quit(1)
 		return
 
-	if had_sync and not finished:
-		if SyncServer._current_session != null and SyncServer._current_session.state != SyncServer.ActiveSession.State.CLOSED:
-			no_session_elapsed = 0.0
-		else:
-			no_session_elapsed += delta
-			if no_session_elapsed >= 3.0:
-				finished = true
-				_finish_and_quit()
+	var point_items: Array = []
+	var home_dict: Dictionary = {}
 
-func _finish_and_quit() -> void:
-	if DB.is_open():
-		if DB.get_db_meta("home_cell", "").is_empty():
-			var place_rows = DB._rows("SELECT cell_x, cell_y FROM place_node WHERE cell_x IS NOT NULL ORDER BY visit_count DESC LIMIT 1;")
-			if not place_rows.is_empty():
-				var hc = Vector2i(int(place_rows[0]["cell_x"]), int(place_rows[0]["cell_y"]))
-				RevealEngine.designate_home(DB, {}, [], hc)
+	if parsed is Array:
+		for entry in parsed:
+			if entry is Dictionary:
+				if entry.has("home") and entry["home"] is Dictionary:
+					home_dict = entry["home"]
+				elif entry.has("lat") and entry.has("lon"):
+					point_items.append(entry)
+	elif parsed is Dictionary:
+		if parsed.has("home") and parsed["home"] is Dictionary:
+			home_dict = parsed["home"]
+		if parsed.has("points") and parsed["points"] is Array:
+			for entry in parsed["points"]:
+				if entry is Dictionary and entry.has("lat") and entry.has("lon"):
+					point_items.append(entry)
+
+	var peer_id := "demo_peer"
+	var peer_info := DB.get_sync_peer(peer_id)
+	var seq: int = int(peer_info.get("last_applied_seq", 0))
+	var ts_base: int = int(Time.get_unix_time_from_system()) * 1000
+	var batch_rows: Array = []
+
+	if not home_dict.is_empty() and home_dict.has("lat") and home_dict.has("lon"):
+		var h_lat := float(home_dict["lat"])
+		var h_lon := float(home_dict["lon"])
+		var nearest_city_id: String = PlacesPack.nearest_city(h_lat, h_lon)
+		if not nearest_city_id.is_empty():
+			seq += 1
+			batch_rows.append({
+				"seq": seq,
+				"kind": "home",
+				"placeId": nearest_city_id,
+				"tsUtcMs": ts_base + seq
+			})
+
+	for pt in point_items:
+		var p_lat := float(pt["lat"])
+		var p_lon := float(pt["lon"])
+		var cell: Vector2i = Grid.latlon_to_cell(p_lat, p_lon)
+		var hit: Dictionary = PlacesPack.lookup_cell(cell.x, cell.y)
+		if not hit.is_empty():
+			var pid: String = str(hit.get("place_id", ""))
+			var akey: String = str(hit.get("area_key", ""))
+			if not pid.is_empty() and not akey.is_empty():
+				seq += 1
+				batch_rows.append({
+					"seq": seq,
+					"kind": "explore",
+					"placeId": pid,
+					"areaKey": akey,
+					"tsUtcMs": ts_base + seq
+				})
+
+	var applied_count := 0
+	if not batch_rows.is_empty():
+		var res := SyncServer.process_batch(peer_id, {"rows": batch_rows})
+		if res.get("status") != "ack":
+			printerr("demo_import_server: process_batch failed: " + str(res))
+			DB.close()
+			get_tree().quit(1)
+			return
+		applied_count = int(res.get("appliedCount", 0))
+	else:
 		RevealEngine.apply(DB)
-	print("DEMO_IMPORT_COMPLETE applied %d rows" % total_applied)
+
+	print("DEMO_IMPORT_COMPLETE applied %d rows" % applied_count)
 	DB.close()
 	get_tree().quit(0)

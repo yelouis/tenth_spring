@@ -125,7 +125,6 @@ def main():
 	godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
 	EXPECTED = [
-		"corridor_reveal_radius_test",
 		"db_legacy_import_test",
 		"db_migration_test",
 		"db_test",

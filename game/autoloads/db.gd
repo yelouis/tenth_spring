@@ -5,10 +5,13 @@ extends Node
 # Uses WAL journal mode, synchronous FULL, bound parameters on all queries,
 # and one-time legacy JSON import without runtime fallback.
 
-const CURRENT_SCHEMA_VERSION: int = 2
+const CURRENT_SCHEMA_VERSION: int = 3
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
+
+const Grid := preload("res://world/grid.gd")
+const PlacesPack := preload("res://world/places_pack.gd")
 
 var DB_PATH: String = DEFAULT_DB_PATH
 var DB_TMP_PATH: String = DEFAULT_DB_TMP_PATH
@@ -25,6 +28,11 @@ const MIGRATIONS: Array = [
 			"CREATE TABLE IF NOT EXISTS area_reveal (area_key TEXT PRIMARY KEY, kind TEXT NOT NULL, unlocked_at INTEGER NOT NULL);",
 			"CREATE TABLE IF NOT EXISTS distort_list (place_id TEXT PRIMARY KEY, unlocked_at INTEGER NOT NULL, reason TEXT NOT NULL);"
 		]
+	},
+	{
+		"version": 3,
+		"statements": [],
+		"custom": "_apply_migration_3"
 	}
 ]
 
@@ -171,6 +179,14 @@ func _run_migrations(migrations: Array = MIGRATIONS) -> void:
 					print("storage: UNAVAILABLE — migration " + str(v) + " failed: " + err)
 					close()
 					return
+			var custom_fn: String = str(mig.get("custom", ""))
+			if custom_fn != "":
+				if not has_method(custom_fn) or not call(custom_fn):
+					var err = last_error if last_error != "" else ("custom migration failed: " + custom_fn)
+					rollback_transaction()
+					print("storage: UNAVAILABLE — migration " + str(v) + " failed: " + err)
+					close()
+					return
 			if not _q("UPDATE meta SET value = ? WHERE key = 'schema_version';", [str(v)]):
 				var err = last_error
 				rollback_transaction()
@@ -179,6 +195,47 @@ func _run_migrations(migrations: Array = MIGRATIONS) -> void:
 				return
 			commit_transaction()
 			current_version = v
+
+func _apply_migration_3() -> bool:
+	var v_rows: Array = _rows("SELECT peer_id, seq, lat, lon FROM visit_log WHERE lat IS NOT NULL AND lon IS NOT NULL;")
+	for r in v_rows:
+		var r_lat = float(r.get("lat", 0.0))
+		var r_lon = float(r.get("lon", 0.0))
+		var cell: Vector2i = Grid.latlon_to_cell(r_lat, r_lon)
+		var hit: Variant = PlacesPack.lookup_cell(cell.x, cell.y)
+		if hit != null and typeof(hit) == TYPE_DICTIONARY and not hit.is_empty():
+			var area_key: String = str(hit.get("area_key", ""))
+			if area_key != "":
+				if not _q("UPDATE visit_log SET kind = 'explore', place_id = ? WHERE peer_id = ? AND seq = ?;", [
+					area_key, str(r.get("peer_id", "")), int(r.get("seq", 0))
+				]):
+					return false
+	if not _q("UPDATE visit_log SET lat = NULL, lon = NULL;"):
+		return false
+	if not _q("UPDATE sync_peer SET last_body_lat = NULL, last_body_lon = NULL, last_body_ts = NULL;"):
+		return false
+
+	var hc_rows: Array = _rows("SELECT value FROM meta WHERE key = 'home_cell';")
+	if not hc_rows.is_empty():
+		var hc_val: String = str(hc_rows[0].get("value", ""))
+		var parts: PackedStringArray = hc_val.split(",")
+		if parts.size() == 2:
+			var p0 := parts[0].strip_edges()
+			var p1 := parts[1].strip_edges()
+			if p0.is_valid_int() and p1.is_valid_int():
+				var center: Vector2 = Grid.cell_center_latlon(Vector2i(int(p0), int(p1)))
+				var starter_id: String = PlacesPack.nearest_city(center.x, center.y)
+				if starter_id != "":
+					if not _q("INSERT INTO meta (key, value) VALUES ('starter_place', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value;", [starter_id]):
+						return false
+		if not _q("DELETE FROM meta WHERE key = 'home_cell';"):
+			return false
+
+	if not _q("UPDATE base_state SET home_cell_x = NULL, home_cell_y = NULL;"):
+		return false
+	if not _q("UPDATE place_node SET visit_count = 0, last_real_visit_at = NULL;"):
+		return false
+	return true
 
 func _detect_and_rotate_legacy_store() -> bool:
 	_active_bak_path = ""
@@ -415,6 +472,10 @@ func _run_legacy_import() -> void:
 		_fail_legacy_import(reason)
 		return
 
+	if not _apply_migration_3():
+		_fail_legacy_import(last_error)
+		return
+
 	commit_transaction()
 
 func get_map_cell(cell_x: int, cell_y: int) -> Dictionary:
@@ -459,8 +520,10 @@ func insert_visit_log(row: Dictionary) -> bool:
 	if is_visit_logged(peer_id, seq):
 		return false
 	var place_id = row.get("place_id", null)
-	var lat = float(row.get("lat", 0.0))
-	var lon = float(row.get("lon", 0.0))
+	var raw_lat = row.get("lat", null)
+	var raw_lon = row.get("lon", null)
+	var lat = float(raw_lat) if raw_lat != null else null
+	var lon = float(raw_lon) if raw_lon != null else null
 	var started_at = int(row.get("started_at", 0))
 	var dwell_seconds = int(row.get("dwell_seconds", 0))
 	var kind = str(row.get("kind", "visit"))
@@ -478,11 +541,8 @@ func update_sync_peer_seq(peer_id: String, last_applied_seq: int) -> void:
 		peer_id, last_applied_seq
 	])
 
-func update_sync_peer(peer_id: String, last_applied_seq: int, body_lat: float, body_lon: float, body_ts: int) -> void:
-	last_error = ""
-	_q("INSERT INTO sync_peer (peer_id, last_applied_seq, last_body_lat, last_body_lon, last_body_ts) VALUES (?, ?, ?, ?, ?) ON CONFLICT(peer_id) DO UPDATE SET last_applied_seq = MAX(sync_peer.last_applied_seq, excluded.last_applied_seq), last_body_lat = CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0) THEN excluded.last_body_lat ELSE sync_peer.last_body_lat END, last_body_lon = CASE WHEN excluded.last_body_ts >= COALESCE(sync_peer.last_body_ts, 0) THEN excluded.last_body_lon ELSE sync_peer.last_body_lon END, last_body_ts = MAX(COALESCE(sync_peer.last_body_ts, 0), excluded.last_body_ts);", [
-		peer_id, last_applied_seq, body_lat, body_lon, body_ts
-	])
+func update_sync_peer(peer_id: String, last_applied_seq: int) -> void:
+	update_sync_peer_seq(peer_id, last_applied_seq)
 
 func set_peer_token_hash(peer_id: String, token_hash: PackedByteArray) -> bool:
 	last_error = ""
@@ -519,6 +579,10 @@ func get_db_meta(key: String, default_val: String = "") -> String:
 func set_db_meta(key: String, val: String) -> bool:
 	last_error = ""
 	return _q("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value;", [key, val])
+
+func delete_db_meta(key: String) -> bool:
+	last_error = ""
+	return _q("DELETE FROM meta WHERE key = ?;", [key])
 
 func get_area_reveal(area_key: String) -> Dictionary:
 	if _db == null:

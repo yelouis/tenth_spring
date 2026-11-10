@@ -167,10 +167,19 @@ def main():
     errors = []
     if state_data.get("visit_log") != sent_data.get("rows"):
         errors.append(f"visit_log ({state_data.get('visit_log')}) != rows ({sent_data.get('rows')})")
+    if state_data.get("visit_log_kinds") != {"explore": 2, "home": 1}:
+        errors.append(f"visit_log_kinds ({state_data.get('visit_log_kinds')}) != {{'explore': 2, 'home': 1}}")
+    area_reveal = state_data.get("area_reveal", [])
+    if "osm:r4638652" not in area_reveal or "site:acadia" not in area_reveal or len(area_reveal) < 3:
+        errors.append(f"area_reveal ({area_reveal}) missing expected areas (osm:r4638652, site:acadia, plus DC Waypost neighbourhood)")
     if state_data.get("last_applied_seq") != sent_data.get("maxSeq"):
         errors.append(f"last_applied_seq ({state_data.get('last_applied_seq')}) != maxSeq ({sent_data.get('maxSeq')})")
     if state_data.get("map_cell", 0) < 1:
         errors.append(f"map_cell ({state_data.get('map_cell')}) < 1")
+    if state_data.get("non_null_real_count", -1) != 0:
+        errors.append(f"non_null_real_count ({state_data.get('non_null_real_count')}) != 0")
+    if "E2E_BAD_ROW_OK" not in flutter_res.stdout:
+        errors.append("E2E_BAD_ROW_OK missing from Flutter stdout")
 
     if errors:
         for err in errors:

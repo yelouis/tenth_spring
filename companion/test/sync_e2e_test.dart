@@ -43,7 +43,7 @@ void main() {
 
       // 2. Seed v3 explore & home rows in ExploreOutbox (matching places_pack_v1.json.gz)
       // - home row for city:washington-dc
-      // - explore row for Dupont Circle (osm:r2919449) in city:washington-dc
+      // - explore row for Dupont Circle (osm:r4638652) in city:washington-dc
       // - explore row for site:acadia
       await db.insertExploreOutbox(
         kind: 'home',
@@ -53,7 +53,7 @@ void main() {
       await db.insertExploreOutbox(
         kind: 'explore',
         placeId: 'city:washington-dc',
-        areaKey: 'osm:r2919449',
+        areaKey: 'osm:r4638652',
         tsUtcMs: 1700000002000,
       );
       await db.insertExploreOutbox(
@@ -141,7 +141,7 @@ void main() {
             'seq': 99,
             'kind': 'explore',
             'placeId': 'city:washington-dc',
-            'areaKey': 'osm:r2919449',
+            'areaKey': 'osm:r4638652',
             'lat': 38.9096,
             'tsUtcMs': 1700000099000,
           },

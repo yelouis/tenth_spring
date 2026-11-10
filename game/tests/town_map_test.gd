@@ -319,32 +319,39 @@ func run_test() -> bool:
 	hub.queue_free()
 
 	# -------------------------------------------------------------
-	# 6. Boot Routing in main.gd:
-	# - with a bodyFix inside a famous place -> open place's map view;
-	# - otherwise -> open home hub.
+	# 6. Boot and Resume in main.gd (explore plan §4.4 & §4.6):
+	# - last_place set and installed -> returns place_id;
+	# - last_place not set -> returns empty.
 	# -------------------------------------------------------------
 	var main_node = load("res://scenes/main.gd").new()
 
-	# Case A: bodyFix inside Fixture City (node 9104 at WM (1152, 1152))
-	var ot_ll := Grid.wm_to_latlon(Vector2(1152.0, 1152.0))
-	DB.update_sync_peer("test_peer", 1, ot_ll.x, ot_ll.y, now)
-
-	var boot_place_a: String = main_node.get_boot_place_id(stores)
-	if boot_place_a != "city:fixture-city":
-		push_error("FAIL (boot routing A): Expected city:fixture-city, got '%s'" % boot_place_a)
+	# Case A: last_place set and installed (set by mv.load_place("city:fixture-city") earlier)
+	DB.set_db_meta("last_place", "city:fixture-city")
+	var resume_place_a: String = main_node.get_resume_place_id(stores)
+	if resume_place_a != "city:fixture-city":
+		push_error("FAIL (boot resume A): Expected city:fixture-city, got '%s'" % resume_place_a)
 		main_node.free()
 		city_store.close()
 		site_store.close()
 		_cleanup()
 		return false
 
-	# Case B: bodyFix outside famous places (e.g. far out point)
-	var out_ll := Grid.wm_to_latlon(Vector2(5248.0, 5248.0))
-	DB.update_sync_peer("test_peer", 2, out_ll.x, out_ll.y, now + 10)
+	# Case B: last_place not set (deleted by Return home) -> returns empty
+	DB.delete_db_meta("last_place")
+	var resume_place_b: String = main_node.get_resume_place_id(stores)
+	if not resume_place_b.is_empty():
+		push_error("FAIL (boot resume B): Expected empty resume_place_id when last_place not set, got '%s'" % resume_place_b)
+		main_node.free()
+		city_store.close()
+		site_store.close()
+		_cleanup()
+		return false
 
-	var boot_place_b: String = main_node.get_boot_place_id(stores)
-	if not boot_place_b.is_empty():
-		push_error("FAIL (boot routing B): Expected empty boot_place_id for outside fix, got '%s'" % boot_place_b)
+	# Case C: last_place set to an uninstalled store -> returns empty
+	DB.set_db_meta("last_place", "city:uninstalled")
+	var resume_place_c: String = main_node.get_resume_place_id(stores)
+	if not resume_place_c.is_empty():
+		push_error("FAIL (boot resume C): Expected empty resume_place_id when store not installed, got '%s'" % resume_place_c)
 		main_node.free()
 		city_store.close()
 		site_store.close()

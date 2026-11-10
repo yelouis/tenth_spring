@@ -41,8 +41,8 @@ func run_test() -> bool:
 		return false
 
 	var version = DB.get_schema_version()
-	if version != 2:
-		push_error("FAIL: Expected schema_version 2, got %d" % version)
+	if version != 3:
+		push_error("FAIL: Expected schema_version 3, got %d" % version)
 		_cleanup_test_files()
 		return false
 
@@ -130,16 +130,24 @@ func run_test() -> bool:
 		return false
 
 	# 5c. sync_peer last_applied_seq 5 then 3 -> stays 5
-	DB.update_sync_peer("seq_peer", 5, 0.0, 0.0, 100)
+	DB.update_sync_peer("seq_peer", 5)
 	var sp1 = DB.get_sync_peer("seq_peer")
 	if sp1.get("last_applied_seq", 0) != 5:
 		push_error("FAIL: Expected initial last_applied_seq 5")
 		_cleanup_test_files()
 		return false
-	DB.update_sync_peer("seq_peer", 3, 0.0, 0.0, 100)
+	DB.update_sync_peer("seq_peer", 3)
 	var sp2 = DB.get_sync_peer("seq_peer")
 	if sp2.get("last_applied_seq", 0) != 5:
 		push_error("FAIL: last_applied_seq went backwards from 5 to 3!")
+		_cleanup_test_files()
+		return false
+
+	# 5d. insert_visit_log binds SQL NULL when lat/lon are omitted or null
+	DB.insert_visit_log({"seq": 40, "peer_id": "null_peer", "place_id": "osm:n9104", "lat": null, "lon": null, "started_at": 100, "dwell_seconds": 0, "kind": "explore"})
+	var rows_null = DB._rows("SELECT lat, lon FROM visit_log WHERE peer_id = 'null_peer' AND seq = 40;")
+	if rows_null.is_empty() or rows_null[0].get("lat") != null or rows_null[0].get("lon") != null:
+		push_error("FAIL: insert_visit_log did not bind SQL NULL for missing/null lat/lon: " + str(rows_null))
 		_cleanup_test_files()
 		return false
 

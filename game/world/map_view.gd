@@ -578,12 +578,10 @@ func _focus_initial_cell() -> void:
 			target_cell = Vector2i(int(place_rows[0]["cell_x"]), int(place_rows[0]["cell_y"]))
 			found = true
 
-		# 2. Check base_state home cell
-		if not found:
-			var base_rows = db.query_rows("SELECT home_cell_x, home_cell_y FROM base_state WHERE home_cell_x != 0 OR home_cell_y != 0 LIMIT 1;")
-			if not base_rows.is_empty():
-				target_cell = Vector2i(int(base_rows[0]["home_cell_x"]), int(base_rows[0]["home_cell_y"]))
-				found = true
+		# 2. Check active Waypost cell
+		if not found and _has_active_waypost:
+			target_cell = _active_waypost_cell
+			found = true
 
 		# 3. Fall back to any revealed map_cell
 		if not found:
@@ -604,6 +602,9 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 	for p in places:
 		if str(p.get("id", "")) == place_id:
 			_active_place_id = place_id
+			var db = _get_db()
+			if db != null and db.is_open():
+				db.set_db_meta("last_place", place_id)
 			var wp: Dictionary = p.get("waypost", {})
 			var w_lat := float(wp.get("lat", 0.0))
 			var w_lon := float(wp.get("lon", 0.0))
@@ -637,6 +638,9 @@ func _update_return_home_visibility() -> void:
 	_return_home_button.visible = (dist_x <= 1 and dist_y <= 1)
 
 func _on_return_home_pressed() -> void:
+	var db = _get_db()
+	if db != null and db.is_open():
+		db.delete_db_meta("last_place")
 	var main_node = get_parent()
 	if main_node != null and main_node.has_method("open_home_hub"):
 		main_node.open_home_hub()
