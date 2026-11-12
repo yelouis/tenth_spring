@@ -126,6 +126,7 @@ def main():
 
 	EXPECTED = [
 		"caricature_check_test",
+		"caricature_dc_test",
 		"caricature_map_test",
 		"db_legacy_import_test",
 		"db_migration_test",

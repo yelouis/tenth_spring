@@ -1,0 +1,77 @@
+{
+  "schema": 1,
+  "id": "camp:washington-dc",
+  "rows": [
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTT..........................TTT",
+    "TTT.T......................T.TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT.T......................T.TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT..........................TTT",
+    "TTT..**..................**..TTT",
+    "TTT..........................TTT",
+    "TTT......##############......TTT",
+    "TTT.....*##############*.....TTT",
+    "TTT......##############......TTT",
+    "TTT.....*##############*.....TTT",
+    "TTT......##############......TTT",
+    "TTT.....*##############*.....TTT",
+    "TTT.-----##############-----.TTT",
+    "TTT......**....-#-...**......TTT",
+    "TTT............-#-...........TTT",
+    "TTT............-#-...........TTT",
+    "TTT.T..........-#-.........T.TTT",
+    "TTT............-#-...........TTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "kind": "block_16x14",
+      "at": [
+        8,
+        3
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_s",
+      "at": [
+        4,
+        19
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_s",
+      "at": [
+        24,
+        19
+      ],
+      "fate": "standing"
+    }
+  ],
+  "lamp": [
+    16,
+    26
+  ],
+  "signs": [
+    {
+      "at": [
+        18,
+        18
+      ],
+      "text": "Waypost Notice Board"
+    }
+  ]
+}
