@@ -41,8 +41,8 @@ func run_test() -> bool:
 	PlacesPack.set_active_pack_path(PlacesPack.FIXTURE_PACK_PATH)
 	DB.init_db()
 
-	if DB.get_schema_version() != 4:
-		push_error("FAIL: Expected initial schema_version 4 on fresh DB, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 5:
+		push_error("FAIL: Expected initial schema_version 5 on fresh DB, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -122,12 +122,12 @@ func run_test() -> bool:
 	var dl_before := DB.get_all_distort_entries()
 
 	# -------------------------------------------------------------
-	# 2. Run migration v2 -> v3 -> v4
+	# 2. Run migration v2 -> v3 -> v4 -> v5
 	# -------------------------------------------------------------
 	DB._run_migrations(DB.MIGRATIONS)
 
-	if DB.get_schema_version() != 4:
-		push_error("FAIL: Expected schema_version 4 after migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 5:
+		push_error("FAIL: Expected schema_version 5 after migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -220,17 +220,72 @@ func run_test() -> bool:
 			_cleanup_test_files()
 			return false
 
-	# 3. Re-running migration v4 is a no-op
+	# -------------------------------------------------------------
+	# 2b. Explicit v4 -> v5 migration check (Item 50 / plan §7.1 & §9):
+	# Drop neighbourhood_state, set schema_version = '4', seed map_cell + area_reveal + distort_list,
+	# run migrations -> version 5, neighbourhood_state exists, every earlier row intact.
+	# -------------------------------------------------------------
+	DB.execute_query("DROP TABLE IF EXISTS neighbourhood_state;")
+	DB.execute_query("UPDATE meta SET value = '4' WHERE key = 'schema_version';")
+	DB.upsert_map_cell(4, 4, 2, 777)
+	DB.upsert_map_cell_metadata(4, 4, "downtown", "city", "South Atlantic", 0)
+	var v4_ar := DB.get_all_area_reveals()
+	var v4_dl := DB.get_all_distort_entries()
+	var v4_mc := DB.get_map_cell(4, 4)
+
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 4:
-		push_error("FAIL: Expected schema_version to remain 4 on idempotent re-run")
+	if DB.get_schema_version() != 5:
+		push_error("FAIL: Expected schema_version 5 after v4 -> v5 migration, got %d" % DB.get_schema_version())
+		_cleanup_test_files()
+		return false
+	var v5_tbl := DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'neighbourhood_state';")
+	if v5_tbl.is_empty():
+		push_error("FAIL: neighbourhood_state table missing after v4 -> v5 migration")
+		_cleanup_test_files()
+		return false
+	if DB.get_all_area_reveals() != v4_ar or DB.get_all_distort_entries() != v4_dl or DB.get_map_cell(4, 4) != v4_mc:
+		push_error("FAIL: Earlier rows altered during v4 -> v5 migration")
 		_cleanup_test_files()
 		return false
 
-	# 4. Failing migration statement rolls back and leaves version at 4
+	# Verify upsert_neighbourhood_state monotonic & timestamp invariants (§7.1)
+	if not DB.upsert_neighbourhood_state("hood:fixture-city:north-end", "city:fixture-city", 1, "first_pick", 1000):
+		push_error("FAIL: initial upsert_neighbourhood_state failed")
+		_cleanup_test_files()
+		return false
+	var ns1 := DB.get_neighbourhood_state("hood:fixture-city:north-end")
+	if int(ns1.get("state", 0)) != 1 or int(ns1.get("opened_at", 0)) != 1000 or str(ns1.get("opened_by", "")) != "first_pick" or ns1.get("entered_at") != null or ns1.get("finished_at") != null:
+		push_error("FAIL: ns1 mismatch: %s" % str(ns1))
+		_cleanup_test_files()
+		return false
+	# Entering sets entered_at once and preserves opened_at / opened_by
+	DB.upsert_neighbourhood_state("hood:fixture-city:north-end", "city:fixture-city", 2, "pick", 2500)
+	DB.upsert_neighbourhood_state("hood:fixture-city:north-end", "city:fixture-city", 2, "pick", 2900)
+	var ns2 := DB.get_neighbourhood_state("hood:fixture-city:north-end")
+	if int(ns2.get("state", 0)) != 2 or int(ns2.get("opened_at", 0)) != 1000 or str(ns2.get("opened_by", "")) != "first_pick" or int(ns2.get("entered_at", 0)) != 2500 or ns2.get("finished_at") != null:
+		push_error("FAIL: ns2 mismatch: %s" % str(ns2))
+		_cleanup_test_files()
+		return false
+	# Finishing sets finished_at once, and lowering state to 1 is a no-op on state
+	DB.upsert_neighbourhood_state("hood:fixture-city:north-end", "city:fixture-city", 3, "finale", 4000)
+	DB.upsert_neighbourhood_state("hood:fixture-city:north-end", "city:fixture-city", 1, "demo", 9999)
+	var ns3 := DB.get_neighbourhood_state("hood:fixture-city:north-end")
+	if int(ns3.get("state", 0)) != 3 or int(ns3.get("opened_at", 0)) != 1000 or str(ns3.get("opened_by", "")) != "first_pick" or int(ns3.get("entered_at", 0)) != 2500 or int(ns3.get("finished_at", 0)) != 4000:
+		push_error("FAIL: ns3 monotonic/timestamp check failed: %s" % str(ns3))
+		_cleanup_test_files()
+		return false
+
+	# 3. Re-running migration v5 is a no-op (idempotent)
+	DB._run_migrations(DB.MIGRATIONS)
+	if DB.get_schema_version() != 5 or DB.get_neighbourhood_states("city:fixture-city").size() != 1:
+		push_error("FAIL: Expected schema_version to remain 5 with rows intact on idempotent re-run")
+		_cleanup_test_files()
+		return false
+
+	# 4. Failing migration statement rolls back and leaves version at 5
 	var mig_fail = [
 		{
-			"version": 5,
+			"version": 6,
 			"statements": [
 				"ALTER TABLE map_cell ADD COLUMN valid_col INTEGER;",
 				"SYNTAX ERROR INVALID SQL STATEMENT;"
@@ -240,8 +295,8 @@ func run_test() -> bool:
 	DB._run_migrations(mig_fail)
 	DB.init_db()
 
-	if DB.get_schema_version() != 4:
-		push_error("FAIL: Expected schema_version to remain 4 after failed migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 5:
+		push_error("FAIL: Expected schema_version to remain 5 after failed migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 

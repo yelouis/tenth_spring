@@ -358,6 +358,45 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	# Case D (Item 50 / plan §7.4): last_place set to a ready caricature city (Washington DC) with NO store -> returns city:washington-dc
+	DB.set_db_meta("last_place", "city:washington-dc")
+	var resume_place_d: String = main_node.get_resume_place_id({})
+	if resume_place_d != "city:washington-dc":
+		push_error("FAIL (boot resume D): Expected ready caricature city city:washington-dc with no store, got '%s'" % resume_place_d)
+		main_node.free()
+		city_store.close()
+		site_store.close()
+		_cleanup()
+		return false
+
+	# Case E (Item 50 / plan §7.4): Town Map rings caricature city only when city_complete, with 'Status: City Complete'
+	var tm_dc = town_map_scene.instantiate()
+	add_child(tm_dc)
+	DB.insert_distort_entry("city:washington-dc", now, "starter")
+	# Even an old area_reveal('city:washington-dc') must not ring a ready caricature city before city_complete
+	DB.insert_area_reveal("city:washington-dc", "city", now)
+	tm_dc.load_places_from_config()
+	if not tm_dc.is_place_lit("city:washington-dc") or tm_dc.is_place_ringed("city:washington-dc"):
+		push_error("FAIL (TownMap DC): Expected DC lit and NOT ringed before Lincoln Memorial finished")
+		tm_dc.queue_free()
+		main_node.free()
+		city_store.close()
+		site_store.close()
+		_cleanup()
+		return false
+	DB.upsert_neighbourhood_state("hood:washington-dc:lincoln-memorial", "city:washington-dc", 3, "finale", now)
+	tm_dc.refresh_markers()
+	var dc_btn = tm_dc.get_marker("city:washington-dc")
+	if not tm_dc.is_place_ringed("city:washington-dc") or dc_btn == null or not dc_btn.tooltip_text.contains("Status: City Complete"):
+		push_error("FAIL (TownMap DC): Expected DC ringed with 'Status: City Complete' once finale is finished, got '%s'" % (dc_btn.tooltip_text if dc_btn != null else "null"))
+		tm_dc.queue_free()
+		main_node.free()
+		city_store.close()
+		site_store.close()
+		_cleanup()
+		return false
+	tm_dc.queue_free()
+
 	main_node.free()
 
 	# Cleanup

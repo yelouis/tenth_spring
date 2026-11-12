@@ -8,6 +8,8 @@ signal back_requested()
 
 const Grid := preload("res://world/grid.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 
 var _places: Array = []
 var _places_by_id: Dictionary = {}
@@ -45,7 +47,15 @@ func refresh_markers() -> void:
 		var area_reveals = db_inst.get_all_area_reveals()
 		for a in area_reveals:
 			if str(a.get("kind", "")) == "city":
-				_ringed_set[str(a.get("area_key", ""))] = true
+				var a_pid := str(a.get("area_key", ""))
+				if not Neighbourhoods.is_ready(a_pid):
+					_ringed_set[a_pid] = true
+
+		for p_chk in _places:
+			if p_chk is Dictionary:
+				var c_pid := str((p_chk as Dictionary).get("id", ""))
+				if Neighbourhoods.is_ready(c_pid) and NeighbourhoodProgress.city_complete(db_inst, c_pid):
+					_ringed_set[c_pid] = true
 
 	# Clear previous markers
 	if markers_container != null:
@@ -78,7 +88,8 @@ func refresh_markers() -> void:
 			btn.disabled = false
 			if is_ringed:
 				btn.text = "◎"
-				btn.tooltip_text = "%s (%s)\nStatus: City Unlocked\nWaypost: %s" % [pname, pkind.capitalize(), w_name]
+				var ringed_status := "City Complete" if Neighbourhoods.is_ready(pid) else "City Unlocked"
+				btn.tooltip_text = "%s (%s)\nStatus: %s\nWaypost: %s" % [pname, pkind.capitalize(), ringed_status, w_name]
 			else:
 				btn.text = "●"
 				btn.tooltip_text = "%s (%s)\nStatus: Distort Available\nWaypost: %s" % [pname, pkind.capitalize(), w_name]
@@ -143,7 +154,7 @@ func _on_marker_hovered(place_id: String) -> void:
 
 	var status_str := "Locked"
 	if is_ringed:
-		status_str = "City Unlocked (Ringed)"
+		status_str = "City Complete (Ringed)" if Neighbourhoods.is_ready(place_id) else "City Unlocked (Ringed)"
 	elif is_lit:
 		status_str = "Distort Available (Lit)"
 

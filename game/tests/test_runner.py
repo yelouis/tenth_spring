@@ -135,6 +135,7 @@ def main():
 		"grid_test",
 		"idempotent_sync_test",
 		"map_view_test",
+		"neighbourhood_progress_test",
 		"neighbourhoods_test",
 		"pairing_codes_test",
 		"pc_identity_test",
@@ -563,7 +564,7 @@ def main():
 	if os.path.exists(sync_server_path):
 		with open(sync_server_path, 'r', encoding='utf-8') as f:
 			content = f.read()
-		forbidden = ["inventory_item", "base_state", "item_id", "qty"]
+		forbidden = ["inventory_item", "base_state", "item_id", "qty", "neighbourhood_state"]
 		for token in forbidden:
 			if token in content:
 				print(f"\n[GOLDEN INVARIANT VIOLATION] sync_server.gd contains illegal token '{token}'")

@@ -12,8 +12,8 @@ func run_test() -> bool:
 	var code = file.get_as_text()
 	file.close()
 
-	# Static capability audit: code must NOT mention inventory_item or base_state
-	var illegal_tokens = ["inventory_item", "base_state", "item_id", "qty", "add_item"]
+	# Static capability audit: code must NOT mention inventory_item, base_state, or neighbourhood_state
+	var illegal_tokens = ["inventory_item", "base_state", "item_id", "qty", "add_item", "neighbourhood_state"]
 	for token in illegal_tokens:
 		if code.contains(token):
 			push_error("GOLDEN INVARIANT 1 VIOLATION: SyncServer contains reference to '%s'" % token)

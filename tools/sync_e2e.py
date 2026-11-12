@@ -170,8 +170,14 @@ def main():
     if state_data.get("visit_log_kinds") != {"explore": 2, "home": 1}:
         errors.append(f"visit_log_kinds ({state_data.get('visit_log_kinds')}) != {{'explore': 2, 'home': 1}}")
     area_reveal = state_data.get("area_reveal", [])
-    if "osm:r4638652" not in area_reveal or "site:acadia" not in area_reveal or len(area_reveal) < 3:
-        errors.append(f"area_reveal ({area_reveal}) missing expected areas (osm:r4638652, site:acadia, plus DC Waypost neighbourhood)")
+    if area_reveal != ["site:acadia"]:
+        errors.append(f"area_reveal ({area_reveal}) != ['site:acadia']")
+    distort_list = state_data.get("distort_list", [])
+    if sorted(distort_list) != ["city:washington-dc", "site:acadia"]:
+        errors.append(f"distort_list ({distort_list}) != ['city:washington-dc', 'site:acadia']")
+    neighbourhood_state = state_data.get("neighbourhood_state", [])
+    if neighbourhood_state != ["camp:washington-dc"]:
+        errors.append(f"neighbourhood_state ({neighbourhood_state}) != ['camp:washington-dc']")
     if state_data.get("last_applied_seq") != sent_data.get("maxSeq"):
         errors.append(f"last_applied_seq ({state_data.get('last_applied_seq')}) != maxSeq ({sent_data.get('maxSeq')})")
     if state_data.get("map_cell", 0) < 1:

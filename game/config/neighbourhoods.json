@@ -3,7 +3,7 @@
   "cities": [
     {
       "place_id": "city:washington-dc",
-      "ready": false,
+      "ready": true,
       "camp": {
         "id": "camp:washington-dc",
         "name": "Wilson Building Waypost",

@@ -116,6 +116,11 @@ func run_test() -> bool:
 		push_error("town_map config test failed: %s" % str(r_town_map))
 		return false
 
+	var r_board: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--screen=board"], false, repo_root)
+	if not r_board.get("ok", false) or r_board.get("screen", "") != "board":
+		push_error("board screen config test failed: %s" % str(r_board))
+		return false
+
 	# Default zoom=1, frames=10, focus=most_visited, timeout=120 (Item 25b)
 	var r_default: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png"], false, repo_root)
 	if not r_default.get("ok", false) or r_default.get("zoom", 0) != 1 or r_default.get("frames", 0) != 10 or r_default.get("focus", "") != "most_visited" or r_default.get("timeout", 0) != 120:

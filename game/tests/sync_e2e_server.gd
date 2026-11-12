@@ -103,6 +103,18 @@ func _print_state_and_quit() -> void:
 	for ar in ar_rows:
 		area_keys.append(str(ar.get("area_key", "")))
 
+	var dl_rows = DB.get_all_distort_entries()
+	var distort_ids: Array[String] = []
+	for dr in dl_rows:
+		distort_ids.append(str(dr.get("place_id", "")))
+
+	var ns_ids: Array[String] = []
+	var ns_tbl = DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'neighbourhood_state';")
+	if not ns_tbl.is_empty():
+		var ns_rows = DB._rows("SELECT area_id FROM neighbourhood_state ORDER BY area_id;")
+		for nr in ns_rows:
+			ns_ids.append(str(nr.get("area_id", "")))
+
 	# Scan every table in sqlite_master and every REAL column for non-NULL values
 	var non_null_real_count := 0
 	var tables = DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';")
@@ -121,6 +133,8 @@ func _print_state_and_quit() -> void:
 		"visit_log": v_cnt,
 		"visit_log_kinds": visit_kinds,
 		"area_reveal": area_keys,
+		"distort_list": distort_ids,
+		"neighbourhood_state": ns_ids,
 		"map_cell": m_cnt,
 		"place_node": p_cnt,
 		"last_applied_seq": last_seq,

@@ -652,8 +652,8 @@ func _test_db_migration_4_cell_metadata() -> bool:
 		push_error("DB.assert_test_safe failed in slice3_encounters_test")
 		return false
 	DB.init_db()
-	if DB.get_schema_version() != 4:
-		push_error("Expected schema version 4, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != DB.CURRENT_SCHEMA_VERSION or DB.get_schema_version() < 4:
+		push_error("Expected schema version %d (>= 4), got %d" % [DB.CURRENT_SCHEMA_VERSION, DB.get_schema_version()])
 		DB.close()
 		DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 		return false

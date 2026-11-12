@@ -306,6 +306,107 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	# -------------------------------------------------------------
+	# (h) Falsifying (Item 50): Washington DC explore report opens the city
+	# (distort_list + camp:washington-dc) and NEVER writes area_reveal (osm:r4638652).
+	# -------------------------------------------------------------
+	PlacesPack.reset_active_pack_path()
+	DB.execute_query("DELETE FROM map_cell;")
+	DB.execute_query("DELETE FROM area_reveal;")
+	DB.execute_query("DELETE FROM distort_list;")
+	DB.execute_query("DELETE FROM visit_log;")
+	DB.execute_query("DELETE FROM meta WHERE key = 'starter_place';")
+	var ns_tbl_h := DB.query_rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'neighbourhood_state';")
+	if not ns_tbl_h.is_empty():
+		DB.execute_query("DELETE FROM neighbourhood_state;")
+
+	DB.insert_visit_log({
+		"seq": 1,
+		"peer_id": "p_dc",
+		"place_id": "osm:r4638652",
+		"lat": null,
+		"lon": null,
+		"started_at": 5000,
+		"dwell_seconds": 0,
+		"kind": "explore"
+	})
+	var r_h := RevealEngine.apply(DB)
+	if not r_h.get("ok", false):
+		push_error("FAIL: RevealEngine.apply failed on (h): %s" % str(r_h))
+		_cleanup()
+		return false
+
+	var ar_h := DB.get_all_area_reveals()
+	if not ar_h.is_empty():
+		push_error("FAIL (h) [falsifier]: DC explore row wrote area_reveal (expected [], got %s)" % str(ar_h))
+		_cleanup()
+		return false
+
+	var dl_dc := DB.get_distort_entry("city:washington-dc")
+	if dl_dc.is_empty() or str(dl_dc.get("reason", "")) != "visited":
+		push_error("FAIL (h): Expected city:washington-dc in distort_list with reason 'visited', got %s" % str(dl_dc))
+		_cleanup()
+		return false
+
+	if ns_tbl_h.is_empty():
+		push_error("FAIL (h) [falsifier]: neighbourhood_state table missing; camp:washington-dc not opened")
+		_cleanup()
+		return false
+	var ns_rows_h := DB.query_rows("SELECT area_id, state, opened_by FROM neighbourhood_state ORDER BY area_id;")
+	if ns_rows_h.size() != 1 or str(ns_rows_h[0].get("area_id", "")) != "camp:washington-dc" or str(ns_rows_h[0].get("opened_by", "")) != "camp":
+		push_error("FAIL (h): Expected only camp:washington-dc in neighbourhood_state, got %s" % str(ns_rows_h))
+		_cleanup()
+		return false
+
+	# -------------------------------------------------------------
+	# (i) Item 50 (§7.3 rules 2 & 3): DC home row sets starter_place + camp with no area_reveal,
+	# and a pre-existing DC area_reveal row in an older save is skipped without deletion.
+	# -------------------------------------------------------------
+	DB.execute_query("DELETE FROM map_cell;")
+	DB.execute_query("DELETE FROM area_reveal;")
+	DB.execute_query("DELETE FROM distort_list;")
+	DB.execute_query("DELETE FROM visit_log;")
+	DB.execute_query("DELETE FROM neighbourhood_state;")
+	DB.execute_query("DELETE FROM meta WHERE key = 'starter_place';")
+
+	# Seed an old street-accurate DC area_reveal row from before Item 50
+	DB.insert_area_reveal("osm:r4638652", "neighbourhood", 4000)
+	var dupont_pack_cells: PackedVector2Array = PlacesPack.get_default().inst_cells_of("osm:r4638652")
+
+	DB.insert_visit_log({
+		"seq": 2,
+		"peer_id": "p_dc",
+		"place_id": "city:washington-dc",
+		"lat": null,
+		"lon": null,
+		"started_at": 6000,
+		"dwell_seconds": 0,
+		"kind": "home"
+	})
+	var r_i := RevealEngine.apply(DB)
+	if not r_i.get("ok", false):
+		push_error("FAIL: RevealEngine.apply failed on (i): %s" % str(r_i))
+		_cleanup()
+		return false
+
+	if DB.get_db_meta("starter_place", "") != "city:washington-dc":
+		push_error("FAIL (i): Expected starter_place == city:washington-dc")
+		_cleanup()
+		return false
+	var ar_i := DB.get_all_area_reveals()
+	if ar_i.size() != 1 or str(ar_i[0].get("area_key", "")) != "osm:r4638652":
+		push_error("FAIL (i): Pre-existing DC area_reveal row must be preserved without adding new DC rows, got %s" % str(ar_i))
+		_cleanup()
+		return false
+	# Verify none of osm:r4638652's street-accurate cells were written to map_cell (only camp cell 9393, 3678 was)
+	for dpt in dupont_pack_cells:
+		if Vector2i(int(dpt.x), int(dpt.y)) == Vector2i(9393, 3678):
+			continue
+		if not DB.get_map_cell(int(dpt.x), int(dpt.y)).is_empty():
+			push_error("FAIL (i): Final loop revealed old street-accurate DC cell %s" % str(dpt))
+			_cleanup()
+			return false
+
 	_cleanup()
 	print("PASS: reveal_engine_test")
 	return true

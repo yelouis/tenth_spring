@@ -6,6 +6,7 @@ const RevealEngine := preload("res://world/reveal_engine.gd")
 const Grid := preload("res://world/grid.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
@@ -36,18 +37,49 @@ func _ready() -> void:
 				)
 			return
 
+		if s_cfg.get("screen", "map") == "board":
+			var board_place_id := get_resume_place_id()
+			if board_place_id.is_empty():
+				var starter := DB.get_db_meta("starter_place", "")
+				if Neighbourhoods.is_ready(starter):
+					board_place_id = starter
+				else:
+					for de in DB.get_all_distort_entries():
+						if de is Dictionary:
+							var cand_pid := str((de as Dictionary).get("place_id", ""))
+							if Neighbourhoods.is_ready(cand_pid):
+								board_place_id = cand_pid
+								break
+			if board_place_id.is_empty():
+				printerr("[FAIL] --screen=board found no ready caricature city in save")
+				get_tree().quit(1)
+				return
+			var map_view_board = open_map_view()
+			if map_view_board != null:
+				if not map_view_board.load_place(board_place_id, true):
+					get_tree().quit(1)
+					return
+				if map_view_board.has_method("open_board"):
+					map_view_board.open_board()
+				if map_view_board.has_method("setup_screenshot"):
+					map_view_board.screenshot_timeout_sec = float(s_cfg.get("timeout", 120))
+					map_view_board.setup_screenshot(
+						str(s_cfg.get("screenshot_path", "")),
+						float(s_cfg.get("zoom", 1.0)),
+						int(s_cfg.get("frames", 10)),
+						"waypost"
+					)
+			return
+
 		var area_id := str(s_cfg.get("area", ""))
 		if not area_id.is_empty():
 			var area_dict: Dictionary = Neighbourhoods.area(area_id)
 			var area_place_id := str(area_dict.get("place_id", ""))
-			# Before Item 50's demo_force_open exists, reveal the area's block cells directly in this demo DB (§4.3)
-			var b_origin: Vector2i = Neighbourhoods.block_origin(area_dict)
-			var b_cells: Array = area_dict.get("cells", [1, 1])
-			var b_cols: int = int(b_cells[0]) if b_cells.size() >= 1 else 1
-			var b_rows: int = int(b_cells[1]) if b_cells.size() >= 2 else 1
-			for dy in range(b_rows):
-				for dx in range(b_cols):
-					DB.upsert_map_cell(b_origin.x + dx, b_origin.y + dy, 2)
+			var force_res := NeighbourhoodProgress.demo_force_open(DB, area_id)
+			if not bool(force_res.get("ok", false)):
+				printerr("[FAIL] demo_force_open failed for %s: %s" % [area_id, str(force_res.get("error", ""))])
+				get_tree().quit(1)
+				return
 			var map_view_area = open_map_view()
 			if map_view_area != null:
 				if map_view_area.has_method("force_caricature_area"):
@@ -101,6 +133,8 @@ func get_resume_place_id(custom_stores: Dictionary = {}) -> String:
 	var last_place: String = DB.get_db_meta("last_place", "")
 	if last_place.is_empty():
 		return ""
+	if Neighbourhoods.is_ready(last_place):
+		return last_place
 	var stores: Dictionary = custom_stores
 	if stores.is_empty():
 		stores = RevealEngine.load_installed_stores()

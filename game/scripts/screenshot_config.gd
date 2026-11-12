@@ -16,7 +16,7 @@ const ERR_UNKNOWN_AREA: String = "[FAIL] unknown area %s"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
 const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
-const SUPPORTED_SCREENS: Array = ["map", "town_map"]
+const SUPPORTED_SCREENS: Array = ["map", "town_map", "board"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""

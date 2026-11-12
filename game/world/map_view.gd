@@ -94,6 +94,7 @@ class LruCache:
 var _synth_cache := LruCache.new(MAX_SYNTH_CELLS)
 var _store_cache := LruCache.new(MAX_STORE_CELLS)
 var _rendered_cells: Dictionary = {} # Vector2i -> bool
+var _rendered_reveal_state: Dictionary = {} # Vector2i -> int
 
 var _synth_worker: SynthWorker = null
 var _pending_blit_cells: Array[Vector2i] = []
@@ -140,6 +141,7 @@ var _sign_tooltip: Label = null
 var _return_home_button: Button = null
 var _board_button: Button = null
 var _back_to_camp_button: Button = null
+var _waypost_board: Control = null
 var _distortion_field_layer: Node2D = null
 var _distortion_field_rect: ColorRect = null
 var _distortion_field_chip: Label = null
@@ -439,6 +441,7 @@ func _clear_rendered_layers() -> void:
 	_overview_chunks.clear()
 	_dirty_overview_chunks.clear()
 	_rendered_cells.clear()
+	_rendered_reveal_state.clear()
 	_pending_blit_cells.clear()
 	_requested_cells.clear()
 
@@ -690,16 +693,25 @@ func focus_on_area(area_id: String, whole: bool = false) -> void:
 			)
 	_update_return_home_visibility()
 
-func _caricature_reveal_state(cell: Vector2i, db_reveal_override: int = -1) -> int:
+func _caricature_reveal_state(cell: Vector2i, states_by_area: Dictionary = {}) -> int:
 	if not _caricature_cells.has(cell):
 		return 0
-	if db_reveal_override >= 0:
-		return db_reveal_override
+	var entry: Dictionary = _caricature_cells[cell]
+	var area_dict: Dictionary = entry.get("area", {}) if entry.get("area") is Dictionary else {}
+	var aid := str(area_dict.get("id", ""))
+	if str(area_dict.get("kind", "")) == "camp" or aid.begins_with("camp:"):
+		return 2
+	if not states_by_area.is_empty():
+		if not states_by_area.has(aid):
+			return 0
+		var st_val := int(states_by_area[aid])
+		return 2 if st_val >= 2 else (1 if st_val == 1 else 0)
 	var db = _get_db()
 	if db != null and db.is_open():
-		var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cell.x, cell.y])
-		if not rows.is_empty():
-			return int(rows[0].get("reveal_state", 0))
+		var ns_row: Dictionary = db.get_neighbourhood_state(aid)
+		if not ns_row.is_empty():
+			var st_val := int(ns_row.get("state", 0))
+			return 2 if st_val >= 2 else (1 if st_val == 1 else 0)
 	return 0
 
 func load_place(place_id: String, center_waypost: bool = true) -> bool:
@@ -856,14 +868,15 @@ func _update_return_home_visibility() -> void:
 		if _return_home_button != null:
 			_return_home_button.visible = in_camp
 		if _board_button != null:
-			# Hidden until Item 50 adds waypost_board.tscn
-			_board_button.visible = false
+			_board_button.visible = in_camp
 		if _back_to_camp_button != null:
 			_back_to_camp_button.visible = not in_camp
 		return
 
 	if _board_button != null:
 		_board_button.visible = false
+	if _waypost_board != null:
+		_waypost_board.visible = false
 	if _back_to_camp_button != null:
 		_back_to_camp_button.visible = false
 	if _return_home_button == null:
@@ -876,8 +889,37 @@ func _update_return_home_visibility() -> void:
 	var dist_y: int = abs(cam_cell.y - _active_waypost_cell.y)
 	_return_home_button.visible = (dist_x <= 1 and dist_y <= 1)
 
+func open_board() -> Control:
+	if not _is_caricature_place or _active_place_id.is_empty():
+		return null
+	if _waypost_board == null or not is_instance_valid(_waypost_board):
+		var board_scene := load("res://scenes/waypost_board.tscn") as PackedScene
+		if board_scene == null:
+			return null
+		_waypost_board = board_scene.instantiate() as Control
+		_waypost_board.name = "WaypostBoard"
+		var attr_ui := get_node_or_null("AttributionUI")
+		if attr_ui != null:
+			attr_ui.add_child(_waypost_board)
+		else:
+			add_child(_waypost_board)
+		if _waypost_board.has_signal("go_requested"):
+			_waypost_board.connect("go_requested", Callable(self, "_on_board_go_requested"))
+		if _waypost_board.has_signal("state_changed"):
+			_waypost_board.connect("state_changed", Callable(self, "_on_board_state_changed"))
+	if _waypost_board.has_method("open_for_place"):
+		_waypost_board.open_for_place(_active_place_id, _get_db())
+	return _waypost_board
+
+func _on_board_go_requested(area_id: String) -> void:
+	focus_on_area(area_id, false)
+	_update_frustum_culling()
+
+func _on_board_state_changed(_place_id: String) -> void:
+	_update_frustum_culling()
+
 func _on_board_pressed() -> void:
-	pass
+	open_board()
 
 func _on_back_to_camp_pressed() -> void:
 	if not _caricature_camp_id.is_empty():
@@ -1053,6 +1095,9 @@ func _focus_far_buildings() -> void:
 		_focus_most_buildings()
 
 func _focus_waypost() -> void:
+	if _is_caricature_place and not _caricature_camp_id.is_empty():
+		focus_on_area(_caricature_camp_id, false)
+		return
 	if _has_active_waypost:
 		focus_on_cell(_active_waypost_cell.x, _active_waypost_cell.y)
 		return
@@ -1299,6 +1344,7 @@ func _set_zoom_step(zoom_val: float) -> void:
 	var show_overview := (_current_zoom_step < 0.5)
 	if was_overview != show_overview:
 		_rendered_cells.clear()
+		_rendered_reveal_state.clear()
 		_pending_blit_cells.clear()
 		_requested_cells.clear()
 	if _overview_layer != null:
@@ -1343,12 +1389,20 @@ func _update_frustum_culling() -> void:
 	var db = _get_db()
 	var db_open: bool = (db != null and db.is_open())
 	var revealed_cells_in_view: Dictionary = {}
+	var caricature_states_by_area: Dictionary = {}
 	if db_open:
-		var q_sql := "SELECT cell_x, cell_y, reveal_state FROM map_cell WHERE cell_x >= ? AND cell_x <= ? AND cell_y >= ? AND cell_y <= ? AND reveal_state > 0;"
-		var rows: Array = db.query_rows(q_sql, [min_cx, max_cx, min_cy, max_cy])
-		for r in rows:
-			var r_cell := Vector2i(int(r["cell_x"]), int(r["cell_y"]))
-			revealed_cells_in_view[r_cell] = int(r["reveal_state"])
+		if _is_caricature_place:
+			caricature_states_by_area["__loaded__"] = -1
+			for ns_var in db.get_neighbourhood_states(_active_place_id):
+				if ns_var is Dictionary:
+					var ns_d: Dictionary = ns_var
+					caricature_states_by_area[str(ns_d.get("area_id", ""))] = int(ns_d.get("state", 0))
+		else:
+			var q_sql := "SELECT cell_x, cell_y, reveal_state FROM map_cell WHERE cell_x >= ? AND cell_x <= ? AND cell_y >= ? AND cell_y <= ? AND reveal_state > 0;"
+			var rows: Array = db.query_rows(q_sql, [min_cx, max_cx, min_cy, max_cy])
+			for r in rows:
+				var r_cell := Vector2i(int(r["cell_x"]), int(r["cell_y"]))
+				revealed_cells_in_view[r_cell] = int(r["reveal_state"])
 
 	var is_overview := (_current_zoom_step < 0.5)
 
@@ -1358,17 +1412,35 @@ func _update_frustum_culling() -> void:
 			visible_cell_set[cell] = true
 
 			var reveal_state: int = (
-				_caricature_reveal_state(cell, int(revealed_cells_in_view.get(cell, 0)))
+				_caricature_reveal_state(cell, caricature_states_by_area)
 				if _is_caricature_place
 				else int(revealed_cells_in_view.get(cell, 0))
 			)
+
+			if _rendered_cells.has(cell) and int(_rendered_reveal_state.get(cell, -1)) != reveal_state:
+				_unrender_cell(cx, cy)
+				_rendered_cells.erase(cell)
+				if _synth_cache.has(cell):
+					var c_item: Dictionary = _synth_cache.get_item(cell)
+					c_item["reveal_state"] = reveal_state
+					c_item["image"] = null
+				for nbr in [Vector2i(cx + 1, cy), Vector2i(cx - 1, cy), Vector2i(cx, cy + 1), Vector2i(cx, cy - 1)]:
+					if _rendered_cells.has(nbr) and int(_rendered_reveal_state.get(nbr, 0)) > 0 and _synth_cache.has(nbr):
+						_rendered_cells.erase(nbr)
+						if not _pending_blit_cells.has(nbr):
+							_pending_blit_cells.append(nbr)
 
 			if reveal_state == 0:
 				if not _rendered_cells.has(cell):
 					_render_unknown_cell(cx, cy)
 					_rendered_cells[cell] = true
+					_rendered_reveal_state[cell] = 0
 			else:
 				if _synth_cache.has(cell):
+					var cached_item: Dictionary = _synth_cache.get_item(cell)
+					if int(cached_item.get("reveal_state", 1)) != reveal_state:
+						cached_item["reveal_state"] = reveal_state
+						cached_item["image"] = null
 					if not _rendered_cells.has(cell) and not _pending_blit_cells.has(cell):
 						_pending_blit_cells.append(cell)
 				elif _rendered_cells.has(cell):
@@ -1464,6 +1536,7 @@ func _blit_pending_cells() -> void:
 		var item: Dictionary = _synth_cache.get_item(cell)
 		_blit_cell(cell.x, cell.y, item)
 		_rendered_cells[cell] = true
+		_rendered_reveal_state[cell] = int(item.get("reveal_state", 1))
 		blits_this_frame += 1
 
 	if not is_overview:
@@ -1820,6 +1893,7 @@ func _render_solid_fog(cx: int, cy: int) -> void:
 
 func _unrender_cell(cx: int, cy: int) -> void:
 	var cell := Vector2i(cx, cy)
+	_rendered_reveal_state.erase(cell)
 	_unmapped_revealed_cells.erase(cell)
 	_clear_cell_stamps(cell)
 	for ty in 32:

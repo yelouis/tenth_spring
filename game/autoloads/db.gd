@@ -5,7 +5,7 @@ extends Node
 # Uses WAL journal mode, synchronous FULL, bound parameters on all queries,
 # and one-time legacy JSON import without runtime fallback.
 
-const CURRENT_SCHEMA_VERSION: int = 4
+const CURRENT_SCHEMA_VERSION: int = 5
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
@@ -38,6 +38,12 @@ const MIGRATIONS: Array = [
 		"version": 4,
 		"statements": [],
 		"custom": "_apply_migration_4"
+	},
+	{
+		"version": 5,
+		"statements": [
+			"CREATE TABLE IF NOT EXISTS neighbourhood_state (area_id TEXT PRIMARY KEY, place_id TEXT NOT NULL, state INTEGER NOT NULL, opened_at INTEGER NOT NULL, opened_by TEXT NOT NULL, entered_at INTEGER, finished_at INTEGER);"
+		]
 	}
 ]
 
@@ -648,6 +654,25 @@ func get_all_distort_entries() -> Array:
 	if _db == null:
 		return []
 	return _rows("SELECT place_id, unlocked_at, reason FROM distort_list ORDER BY place_id;")
+
+func get_neighbourhood_state(area_id: String) -> Dictionary:
+	if _db == null:
+		return {}
+	var rows = _rows("SELECT area_id, place_id, state, opened_at, opened_by, entered_at, finished_at FROM neighbourhood_state WHERE area_id = ?;", [area_id])
+	return rows[0] if not rows.is_empty() else {}
+
+func get_neighbourhood_states(place_id: String) -> Array:
+	if _db == null:
+		return []
+	return _rows("SELECT area_id, place_id, state, opened_at, opened_by, entered_at, finished_at FROM neighbourhood_state WHERE place_id = ? ORDER BY area_id;", [place_id])
+
+func upsert_neighbourhood_state(area_id: String, place_id: String, state: int, opened_by: String, ts: int) -> bool:
+	last_error = ""
+	var entered_val: Variant = ts if state >= 2 else null
+	var finished_val: Variant = ts if state >= 3 else null
+	return _q("INSERT INTO neighbourhood_state (area_id, place_id, state, opened_at, opened_by, entered_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(area_id) DO UPDATE SET state = MAX(neighbourhood_state.state, excluded.state), entered_at = COALESCE(neighbourhood_state.entered_at, excluded.entered_at), finished_at = COALESCE(neighbourhood_state.finished_at, excluded.finished_at);", [
+		area_id, place_id, state, ts, opened_by, entered_val, finished_val
+	])
 
 func close() -> void:
 	if _db != null:

@@ -7,6 +7,8 @@ const Grid := preload("res://world/grid.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const PlacesPack := preload("res://world/places_pack.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 
 static func load_places(config_path: String = "") -> Array:
 	if not config_path.is_empty():
@@ -79,10 +81,14 @@ static func _reveal_starter_waypost(
 	current_reveals: Dictionary,
 	current_distort: Dictionary,
 	city_unlocked_nbrs: Dictionary
-) -> void:
+) -> bool:
 	if not current_distort.has(city_id):
-		db_inst.insert_distort_entry(city_id, ts, "starter")
+		if not db_inst.insert_distort_entry(city_id, ts, "starter"):
+			return false
 		current_distort[city_id] = {"place_id": city_id, "unlocked_at": ts, "reason": "starter"}
+
+	if Neighbourhoods.is_ready(city_id):
+		return NeighbourhoodProgress.ensure_camp(db_inst, city_id)
 
 	var wp: Dictionary = pack.inst_waypost(city_id)
 	if not wp.is_empty():
@@ -100,6 +106,7 @@ static func _reveal_starter_waypost(
 			if city_unlocked_nbrs[city_id].size() >= T_home and not current_reveals.has(city_id):
 				db_inst.insert_area_reveal(city_id, "city", ts)
 				current_reveals[city_id] = {"area_key": city_id, "kind": "city", "unlocked_at": ts}
+	return true
 
 static func apply(db_inst = null, _stores = {}, _places: Array = []) -> Dictionary:
 	if db_inst == null:
@@ -134,10 +141,12 @@ static func apply(db_inst = null, _stores = {}, _places: Array = []) -> Dictiona
 	var existing_starter: String = db_inst.get_db_meta("starter_place", "")
 	if not existing_starter.is_empty() and pack.inst_has_place(existing_starter):
 		var now_ts := int(Time.get_unix_time_from_system())
-		_reveal_starter_waypost(
+		if not _reveal_starter_waypost(
 			db_inst, pack, existing_starter, now_ts,
 			current_reveals, current_distort, city_unlocked_nbrs
-		)
+		):
+			db_inst.rollback_transaction()
+			return {"ok": false, "error": "Failed to reveal starter waypost: " + db_inst.last_error}
 
 	var visit_rows: Array = db_inst._rows("SELECT seq, peer_id, place_id, started_at, kind FROM visit_log WHERE kind IN ('explore', 'home') ORDER BY started_at ASC, peer_id ASC, seq ASC;")
 
@@ -156,22 +165,32 @@ static func apply(db_inst = null, _stores = {}, _places: Array = []) -> Dictiona
 			var pid: String = str(a_info.get("place_id", ""))
 
 			if a_kind == "neighbourhood":
-				if not current_reveals.has(r_target):
-					db_inst.insert_area_reveal(r_target, "neighbourhood", r_ts)
-					current_reveals[r_target] = {"area_key": r_target, "kind": "neighbourhood", "unlocked_at": r_ts}
+				if Neighbourhoods.is_ready(pid):
+					if not current_distort.has(pid):
+						if not db_inst.insert_distort_entry(pid, r_ts, "visited"):
+							db_inst.rollback_transaction()
+							return {"ok": false, "error": "Failed to insert distort entry: " + db_inst.last_error}
+						current_distort[pid] = {"place_id": pid, "unlocked_at": r_ts, "reason": "visited"}
+					if not NeighbourhoodProgress.ensure_camp(db_inst, pid):
+						db_inst.rollback_transaction()
+						return {"ok": false, "error": "Failed to ensure camp: " + db_inst.last_error}
+				else:
+					if not current_reveals.has(r_target):
+						db_inst.insert_area_reveal(r_target, "neighbourhood", r_ts)
+						current_reveals[r_target] = {"area_key": r_target, "kind": "neighbourhood", "unlocked_at": r_ts}
 
-				if not city_unlocked_nbrs.has(pid):
-					city_unlocked_nbrs[pid] = {}
-				city_unlocked_nbrs[pid][r_target] = true
+					if not city_unlocked_nbrs.has(pid):
+						city_unlocked_nbrs[pid] = {}
+					city_unlocked_nbrs[pid][r_target] = true
 
-				if not current_distort.has(pid):
-					db_inst.insert_distort_entry(pid, r_ts, "visited")
-					current_distort[pid] = {"place_id": pid, "unlocked_at": r_ts, "reason": "visited"}
+					if not current_distort.has(pid):
+						db_inst.insert_distort_entry(pid, r_ts, "visited")
+						current_distort[pid] = {"place_id": pid, "unlocked_at": r_ts, "reason": "visited"}
 
-				var T: int = pack.inst_threshold(pid)
-				if city_unlocked_nbrs[pid].size() >= T and not current_reveals.has(pid):
-					db_inst.insert_area_reveal(pid, "city", r_ts)
-					current_reveals[pid] = {"area_key": pid, "kind": "city", "unlocked_at": r_ts}
+					var T: int = pack.inst_threshold(pid)
+					if city_unlocked_nbrs[pid].size() >= T and not current_reveals.has(pid):
+						db_inst.insert_area_reveal(pid, "city", r_ts)
+						current_reveals[pid] = {"area_key": pid, "kind": "city", "unlocked_at": r_ts}
 
 			elif a_kind == "site":
 				if not current_reveals.has(r_target):
@@ -185,15 +204,21 @@ static func apply(db_inst = null, _stores = {}, _places: Array = []) -> Dictiona
 			var p_info: Dictionary = pack.inst_place_info(r_target)
 			if p_info.is_empty() or str(p_info.get("kind", "")) != "city":
 				continue
-			_reveal_starter_waypost(
+			if not _reveal_starter_waypost(
 				db_inst, pack, r_target, r_ts,
 				current_reveals, current_distort, city_unlocked_nbrs
-			)
+			):
+				db_inst.rollback_transaction()
+				return {"ok": false, "error": "Failed to reveal home starter: " + db_inst.last_error}
 			db_inst.set_db_meta("starter_place", r_target)
 
 	var all_reveals: Array = db_inst.get_all_area_reveals()
 	for a_row in all_reveals:
 		var a_key: String = str(a_row.get("area_key", ""))
+		var a_chk_info: Dictionary = pack.inst_area(a_key)
+		var a_chk_pid: String = str(a_chk_info.get("place_id", "")) if not a_chk_info.is_empty() else a_key
+		if Neighbourhoods.is_ready(a_chk_pid):
+			continue
 		var cells: PackedVector2Array = pack.inst_cells_of(a_key)
 		for pt in cells:
 			db_inst.upsert_map_cell(int(pt.x), int(pt.y), 1)

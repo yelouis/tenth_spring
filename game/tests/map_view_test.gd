@@ -9,6 +9,7 @@ const ProfilePathsClass := preload("res://scripts/profile_paths.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const SynthWorkerScript := preload("res://world/synth_worker.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 const ScreenshotConfig := preload("res://scripts/screenshot_config.gd")
 
@@ -817,6 +818,76 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# Item 50 falsifier (§7.4): With map_cell reveal_state 1 written for every cell of
+	# hood:fixture-city:north-end (6..7, 6..7) and NO neighbourhood_state row,
+	# the map view must draw it as fog (0), NOT known grey, and _is_cell_hidden must be true.
+	var north_end_cells := [Vector2i(6, 6), Vector2i(7, 6), Vector2i(6, 7), Vector2i(7, 7)]
+	for nec in north_end_cells:
+		DB.upsert_map_cell(nec.x, nec.y, 1)
+	map_view._set_zoom_step(1.0)
+	map_view.focus_on_area("hood:fixture-city:north-end", true)
+	var wait_50_start := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - wait_50_start < 5000:
+		map_view._process(0.0)
+		if map_view.pending_cell_count() == 0:
+			break
+		OS.delay_msec(5)
+	map_view._process(0.0)
+
+	var known_tiles_locked := 0
+	for nec in north_end_cells:
+		for ty_k in 32:
+			for tx_k in 32:
+				if map_view._world_known.get_cell_source_id(map_view._screen_tile(nec.x, nec.y, tx_k, ty_k)) != -1:
+					known_tiles_locked += 1
+
+	for nec in north_end_cells:
+		var crs: int = map_view._caricature_reveal_state(nec)
+		var hidden_flag: bool = map_view._is_cell_hidden(nec.x, nec.y)
+		if crs != 0 or not hidden_flag or known_tiles_locked > 0:
+			push_error(
+				"(50) [falsifier] Locked neighbourhood cell %s with map_cell=1 and no neighbourhood_state row drew in grey instead of fog: _caricature_reveal_state=%d _is_cell_hidden=%s known_tiles=%d" % [
+					str(nec), crs, str(hidden_flag), known_tiles_locked
+				]
+			)
+			Neighbourhoods.set_config_path_for_tests("")
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
+
+	# After NeighbourhoodProgress.open, the same cells draw as known (1) (§9)
+	var open_ne_res := NeighbourhoodProgress.open(DB, "hood:fixture-city:north-end")
+	if not bool(open_ne_res.get("ok", false)):
+		push_error("(50) NeighbourhoodProgress.open failed for hood:fixture-city:north-end: %s" % str(open_ne_res))
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	map_view._process(0.0)
+	var wait_50_open := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - wait_50_open < 5000:
+		map_view._process(0.0)
+		if map_view.pending_cell_count() == 0:
+			break
+		OS.delay_msec(5)
+	map_view._process(0.0)
+
+	var known_tiles_opened := 0
+	for nec2 in north_end_cells:
+		if map_view._caricature_reveal_state(nec2) != 1 or map_view._is_cell_hidden(nec2.x, nec2.y):
+			push_error("(50) Opened neighbourhood cell %s did not transition to reveal_state 1 / unhidden" % str(nec2))
+			Neighbourhoods.set_config_path_for_tests("")
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
+		for ty_k2 in 32:
+			for tx_k2 in 32:
+				if map_view._world_known.get_cell_source_id(map_view._screen_tile(nec2.x, nec2.y, tx_k2, ty_k2)) != -1:
+					known_tiles_opened += 1
+	if known_tiles_opened != 4096:
+		push_error("(50) Expected 4096 known tiles drawn after opening north-end, got %d" % known_tiles_opened)
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
 	map_view.focus_on_area("hood:fixture-city:north-end", true)
 	var back_btn := map_view.get_node_or_null("AttributionUI/BackToCampButton") as Button
 	var board_btn := map_view.get_node_or_null("AttributionUI/BoardButton") as Button
@@ -827,8 +898,8 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 	map_view._on_back_to_camp_pressed()
-	if not ret_btn.visible or back_btn.visible or board_btn.visible:
-		push_error("(48b) After BackToCamp, ReturnHomeButton must be visible and BackToCamp/Board hidden")
+	if not ret_btn.visible or back_btn.visible or not board_btn.visible:
+		push_error("(50) After BackToCamp, ReturnHomeButton and BoardButton must be visible and BackToCamp hidden")
 		Neighbourhoods.set_config_path_for_tests("")
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
