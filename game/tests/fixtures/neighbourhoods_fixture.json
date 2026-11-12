@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "cities": [
+    {
+      "place_id": "city:fixture-city",
+      "ready": false,
+      "camp": {
+        "id": "camp:fixture-city",
+        "name": "Fixture Town Hall Camp",
+        "anchor": {"lat": 0.0103486, "lon": 0.0080489},
+        "cells": [1, 1],
+        "ruin_level": "camp",
+        "map": "fixture-city/camp.json"
+      },
+      "neighbourhoods": [
+        {
+          "id": "hood:fixture-city:north-end",
+          "name": "North End",
+          "role": "gateway",
+          "anchor": {"lat": 0.01495, "lon": 0.01495},
+          "cells": [2, 2],
+          "zone": "parkland",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": ["hood:fixture-city:south-gate"],
+          "landmarks": [
+            {"name": "Fixture Parthenon", "stamp": "parthenon", "interior": "fixture-city:town-hall"},
+            {"name": "Fixture Pending Tower", "stamp": "fixture_pending_tower", "art": "pending"},
+            {"name": "Fixture Pond", "feature": "pool", "sign": "Fixture Pond"}
+          ],
+          "main_quest": {
+            "title": "North Clearing",
+            "pattern": "famous_building",
+            "source": "roster",
+            "pays": "items",
+            "summary": "Clear the north hall."
+          },
+          "map": "res://tests/fixtures/caricature_fixture_map.json"
+        },
+        {
+          "id": "hood:fixture-city:south-gate",
+          "name": "South Gate",
+          "role": "finale",
+          "anchor": {"lat": 0.00575, "lon": 0.01495},
+          "cells": [2, 2],
+          "zone": "residential",
+          "ruin_level": "mid",
+          "haunt_site": "",
+          "borders": ["hood:fixture-city:north-end"],
+          "landmarks": [
+            {"name": "South Light", "stamp": "boston_light"},
+            {"name": "South Green", "feature": "lawn", "sign": "South Green"}
+          ],
+          "main_quest": {
+            "title": "Gate Watch",
+            "pattern": "keeper",
+            "source": "new",
+            "pays": "items",
+            "summary": "Hold the south gate."
+          },
+          "map": "fixture-city/south-gate.json"
+        }
+      ]
+    }
+  ]
+}

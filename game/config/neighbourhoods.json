@@ -1,0 +1,234 @@
+{
+  "version": 1,
+  "cities": [
+    {
+      "place_id": "city:washington-dc",
+      "ready": false,
+      "camp": {
+        "id": "camp:washington-dc",
+        "name": "Wilson Building Waypost",
+        "anchor": {"lat": 38.8951, "lon": -77.0315},
+        "cells": [1, 1],
+        "ruin_level": "camp",
+        "map": "washington-dc/camp.json"
+      },
+      "neighbourhoods": [
+        {
+          "id": "hood:washington-dc:national-mall",
+          "name": "National Mall",
+          "role": "gateway",
+          "anchor": {"lat": 38.8895, "lon": -77.0353},
+          "cells": [3, 2],
+          "zone": "parkland",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": [
+            "hood:washington-dc:tidal-basin",
+            "hood:washington-dc:capitol-hill",
+            "hood:washington-dc:lincoln-memorial"
+          ],
+          "landmarks": [
+            {"name": "Washington Monument", "stamp": "obelisk", "interior": "dc:washington-monument"},
+            {"name": "Smithsonian Castle", "stamp": "dc_castle", "art": "pending"},
+            {"name": "National Air and Space Museum", "stamp": "dc_air_and_space", "art": "pending", "interior": "dc:air-and-space"}
+          ],
+          "main_quest": {
+            "title": "Above the Mall",
+            "pattern": "famous_building",
+            "source": "roster",
+            "pays": "items",
+            "summary": "Climb the Washington Monument through the wind in its shaft."
+          },
+          "map": "washington-dc/national-mall.json"
+        },
+        {
+          "id": "hood:washington-dc:tidal-basin",
+          "name": "Tidal Basin",
+          "role": "gateway",
+          "anchor": {"lat": 38.8822, "lon": -77.0377},
+          "cells": [2, 2],
+          "zone": "waterfront",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": [
+            "hood:washington-dc:national-mall",
+            "hood:washington-dc:lincoln-memorial"
+          ],
+          "landmarks": [
+            {"name": "Jefferson Memorial", "stamp": "dc_jefferson", "art": "pending"},
+            {"name": "the cherry trees", "feature": "trees", "sign": "Tidal Basin Cherry Trees"}
+          ],
+          "main_quest": {
+            "title": "The Tenth Bloom",
+            "pattern": "time_of_day",
+            "source": "roster",
+            "pays": "a rare berry",
+            "summary": "Tend the cherry trees round the basin at dawn."
+          },
+          "map": "washington-dc/tidal-basin.json"
+        },
+        {
+          "id": "hood:washington-dc:dupont-circle",
+          "name": "Dupont Circle",
+          "role": "gateway",
+          "anchor": {"lat": 38.9096, "lon": -77.0434},
+          "cells": [2, 2],
+          "zone": "residential",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": [
+            "hood:washington-dc:georgetown",
+            "hood:washington-dc:woodley-park",
+            "hood:washington-dc:union-station"
+          ],
+          "landmarks": [
+            {"name": "Dupont Circle Fountain", "stamp": "dc_dupont_fountain", "art": "pending"},
+            {"name": "the circle", "feature": "circle", "sign": "Dupont Circle"}
+          ],
+          "main_quest": {
+            "title": "The Keeper of the Circle",
+            "pattern": "keeper",
+            "source": "new",
+            "pays": "a held item",
+            "summary": "Beat Theo Vasquez, who keeps the fountain running, on the circle."
+          },
+          "map": "washington-dc/dupont-circle.json"
+        },
+        {
+          "id": "hood:washington-dc:capitol-hill",
+          "name": "Capitol Hill",
+          "role": "gateway",
+          "anchor": {"lat": 38.8898, "lon": -77.0088},
+          "cells": [3, 2],
+          "zone": "institutional",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": [
+            "hood:washington-dc:national-mall",
+            "hood:washington-dc:union-station"
+          ],
+          "landmarks": [
+            {"name": "United States Capitol", "stamp": "dc_capitol", "art": "pending"},
+            {"name": "Library of Congress", "stamp": "library_of_congress", "interior": "dc:library-of-congress"}
+          ],
+          "main_quest": {
+            "title": "Night Rounds",
+            "pattern": "night_only",
+            "source": "roster",
+            "pays": "a TM",
+            "summary": "Walk Marcus Bell's gallery rounds with him, in order."
+          },
+          "map": "washington-dc/capitol-hill.json"
+        },
+        {
+          "id": "hood:washington-dc:union-station",
+          "name": "Union Station",
+          "role": "inner",
+          "anchor": {"lat": 38.8973, "lon": -77.0063},
+          "cells": [2, 2],
+          "zone": "industrial",
+          "ruin_level": "mid",
+          "haunt_site": "",
+          "borders": [
+            "hood:washington-dc:capitol-hill",
+            "hood:washington-dc:dupont-circle"
+          ],
+          "landmarks": [
+            {"name": "Union Station", "stamp": "dc_union_station", "art": "pending"},
+            {"name": "the rail yard", "feature": "rail yard", "sign": "Union Station Rail Yard"}
+          ],
+          "main_quest": {
+            "title": "Last Departure",
+            "pattern": "switches",
+            "source": "new",
+            "pays": "a TM",
+            "summary": "Throw the yard's three signal levers in the order the departure board shows."
+          },
+          "map": "washington-dc/union-station.json"
+        },
+        {
+          "id": "hood:washington-dc:georgetown",
+          "name": "Georgetown",
+          "role": "inner",
+          "anchor": {"lat": 38.9073, "lon": -77.0727},
+          "cells": [2, 2],
+          "zone": "retail",
+          "ruin_level": "mid",
+          "haunt_site": "ruins",
+          "borders": [
+            "hood:washington-dc:dupont-circle",
+            "hood:washington-dc:woodley-park",
+            "hood:washington-dc:lincoln-memorial"
+          ],
+          "landmarks": [
+            {"name": "Healy Hall", "stamp": "dc_healy_hall", "art": "pending"},
+            {"name": "the C&O Canal", "feature": "canal", "sign": "C&O Canal"},
+            {"name": "Key Bridge", "feature": "bridge", "sign": "Key Bridge"}
+          ],
+          "main_quest": {
+            "title": "The Towpath",
+            "pattern": "escort",
+            "source": "new",
+            "pays": "items",
+            "summary": "Walk the lock-keeper along the canal to the last lock before dusk."
+          },
+          "map": "washington-dc/georgetown.json"
+        },
+        {
+          "id": "hood:washington-dc:woodley-park",
+          "name": "Woodley Park",
+          "role": "inner",
+          "anchor": {"lat": 38.9296, "lon": -77.0498},
+          "cells": [2, 2],
+          "zone": "wilds",
+          "ruin_level": "far",
+          "haunt_site": "hospital",
+          "borders": [
+            "hood:washington-dc:dupont-circle",
+            "hood:washington-dc:georgetown"
+          ],
+          "landmarks": [
+            {"name": "National Zoo Gate", "stamp": "dc_zoo_gate", "art": "pending"},
+            {"name": "Great Aviary", "stamp": "dc_aviary", "art": "pending"},
+            {"name": "Rock Creek", "feature": "creek", "sign": "Rock Creek"}
+          ],
+          "main_quest": {
+            "title": "The Empty Paddocks",
+            "pattern": "show",
+            "source": "new",
+            "pays": "a rare ball",
+            "summary": "Show the last zookeeper three Pokémon caught in the old paddocks."
+          },
+          "map": "washington-dc/woodley-park.json"
+        },
+        {
+          "id": "hood:washington-dc:lincoln-memorial",
+          "name": "Lincoln Memorial",
+          "role": "finale",
+          "anchor": {"lat": 38.8893, "lon": -77.0502},
+          "cells": [3, 2],
+          "zone": "parkland",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": [
+            "hood:washington-dc:national-mall",
+            "hood:washington-dc:tidal-basin",
+            "hood:washington-dc:georgetown"
+          ],
+          "landmarks": [
+            {"name": "Lincoln Memorial", "stamp": "lincoln", "interior": "dc:lincoln-memorial"},
+            {"name": "the Reflecting Pool", "feature": "pool", "sign": "Reflecting Pool"}
+          ],
+          "main_quest": {
+            "title": "Fair Fights",
+            "pattern": "famous_building",
+            "source": "lair",
+            "pays": "a legendary's battle",
+            "summary": "Win three fair battles in the undercroft to reach the lair."
+          },
+          "map": "washington-dc/lincoln-memorial.json"
+        }
+      ]
+    }
+  ]
+}

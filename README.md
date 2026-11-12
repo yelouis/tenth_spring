@@ -1,6 +1,6 @@
 # Tenth Spring
 
-A Pokémon game in the Diamond/Pearl style where **your map is the places you have actually been.** When you're somewhere new in real life, you open the phone companion and tap **Explore Here**. That reveals the neighbourhood (or park) on a fog-covered overworld built from real geography, which you then explore on PC — catching Pokémon in main-series turn-based battles. The phone never tracks you. Real life draws the map; everything on it is earned by playing.
+A Pokémon game in the Diamond/Pearl style where **your map is the places you have actually been.** When you're somewhere new in real life, you open the phone companion and tap **Explore Here**. That opens the famous city or park you're standing in, on a fog-covered map of real places, which you then explore on PC — catching Pokémon in main-series turn-based battles. Inside a city you open its neighbourhoods one by one by playing. The phone never tracks you. Real life opens the doors; everything behind them is earned by playing.
 
 **The setting:** a generation after a collapse. Half the houses have fallen in, grass grows through the streets, the cities stand empty, and the Ghost types have moved in. The fog over the unexplored world is the Distortion — reality only holds where people still walk. Cemeteries, ruins, and abandoned hospitals are thick with Ghost Pokémon; at night they are everywhere. Hauntings spread outward if left alone. Nine Wardens hold the line across the nine regions of the USA, and the Distortion has started learning *you*: at the end, you face the Echo — the fog wearing your face, leading a stronger copy of your own team. The full backstory is `docs/design_story_and_world.md`.
 
@@ -15,10 +15,10 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 
 ## Design pillars (settled — do not re-litigate)
 
-1. **Two-fog model** — exploring a place in real life (Explore Here) turns it Unknown → Known (grey silhouette). You must then travel there *in-game* to explore it.
+1. **Two-fog model** — a real visit (Explore Here) opens a famous city or park. Inside a city, a neighbourhood turns Unknown → Known (grey silhouette) when you pick it at the Waypost's board, and you must then go there *in-game* to explore it (Decision 54).
 2. **Real movement unlocks access, never cargo** — walking around never grants items or Pokémon. It reveals places, landmarks, and events, which must still be explored and won in play.
 3. **Intel, never inventory** — places you explore on many days in real life are easier to explore in-game (pre-mapped interiors, fewer encounters), never richer.
-4. **Your real footsteps open the doors** — the map is made of famous places, and you can **Distort** from home only to places you've explored in real life (plus the famous city nearest home).
+4. **Your real footsteps open the doors** — the map is made of famous places, and you can **Distort** from home only to places you've explored in real life (plus the famous city nearest home). One visit opens a whole city: nobody has to tour its neighbourhoods on foot.
 5. **Stranded** — your **PC box** and healing are at home. In a famous place you fight with the six you brought, and the only way home is that place's Waypost (or blacking out).
 6. **Blackout drops the bag** — if your whole party faints you wake at home and your items stay where you fell, recoverable for a few days. Pokémon, the map, and the Pokédex are never lost.
 7. **The world pushes back** — Ghost types own the night; hauntings spread from cemeteries and ruins and, ignored, will seal your PC.
@@ -32,6 +32,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 | `docs/agent_execution_guide.md` | **Start here** — how an engineering agent picks up this project |
 | `docs/master_implementation_plan.md` | Phase order + tuning constants |
 | `docs/design_famous_places.md` | **What the map contains** — the 27 cities, 60 parks and wonders, 78 legendary places, Warden landmarks; unlocking, Distort travel, the same map for everyone |
+| `docs/design_neighbourhoods_and_caricature.md` | **Inside a city** — one visit opens it, its eight neighbourhoods open by play, and each is a small caricature map sized for play (Decisions 54–57) |
 | `docs/design_interiors_and_quests.md` | **Enterable famous buildings** (each with a purpose), Pokémon-style puzzles, the 78 legendary challenges, and the 270+ side quests that reveal what happened |
 | `docs/content_quest_roster.md` | The 110 city quests and 60 park quests, each revealing part of the story |
 | `docs/design_story_and_world.md` | **The backstory and theme** — the Stillness, the Distortion, the nine Wardens, the Echo; every scene and system follows it |
@@ -52,6 +53,7 @@ A Pokémon game in the Diamond/Pearl style where **your map is the places you ha
 | `docs/implementation_plan_explore_here.md` | The places pack, the companion's Explore Here, and the PC's unlocks |
 | `docs/implementation_plan_famous_places.md` | The place list, the same map for everyone, unlocking, Distort |
 | `docs/implementation_plan_world_generation_slice2.md` | The walkable Pokémon-style map, landmarks, and the ruin pass |
+| `docs/implementation_plan_dc_trial.md` | The Washington DC trial of neighbourhoods, caricature maps, picks, and the board |
 | `docs/e2e_testing_journeys.md` | Manual end-to-end test journeys |
 | `docs/ongoing_general_errors.md` | Decisions, findings, engineering history |
 
@@ -113,4 +115,4 @@ Demo point files, demo saves, and ROM dumps all live **outside** this repository
 
 ## Status
 
-Phases 0–1 (the companion with Explore Here, pairing, protocol v3 sync, and persistence) are built and CI-verified (Decision 29; awaiting the real-phone check). The map — famous places, real streets in Pokémon pieces, unlocking, Distort, the ruined look (Decision 30), and Tenth Spring's own CC0 terrain and original building, ruin, landmark, and foliage art (Decisions 38–53) — is built. Everything Pokémon-specific is designed but not yet built. All `design_*.md` docs are contracts: implement exactly as specified, and file disagreements in `docs/ongoing_general_errors.md` as Decision blocks rather than silently deviating.
+Phases 0–1 (the companion with Explore Here, pairing, protocol v3 sync, and persistence) are built and CI-verified (Decision 29; awaiting the real-phone check). The map — famous places, real streets in Pokémon pieces, unlocking, Distort, the ruined look (Decision 30), and Tenth Spring's own CC0 terrain and original building, ruin, landmark, and foliage art (Decisions 38–53) — is built. Everything Pokémon-specific is designed but not yet built. **Decisions 54–57 (2026-11-10) change the inside of cities:** one visit opens a city, its eight neighbourhoods open by play, and each is a small caricature map you know from its landmarks. That is being tried on Washington DC first (`docs/implementation_plan_dc_trial.md`); every other place still uses the street-accurate map until the trial is approved. All `design_*.md` docs are contracts: implement exactly as specified, and file disagreements in `docs/ongoing_general_errors.md` as Decision blocks rather than silently deviating.

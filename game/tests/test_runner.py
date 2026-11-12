@@ -132,6 +132,7 @@ def main():
 		"grid_test",
 		"idempotent_sync_test",
 		"map_view_test",
+		"neighbourhoods_test",
 		"pairing_codes_test",
 		"pc_identity_test",
 		"profile_paths_test",
@@ -332,6 +333,23 @@ def main():
 		print("\n[FAMOUS PLACES TEST FAIL] Famous places unit tests failed.")
 		sys.exit(1)
 	print("[FAMOUS PLACES TESTS OK] Famous places configuration and unit tests passed.\n")
+
+	# Neighbourhoods Roster Check & Unit Test Suite (Item 47)
+	neighbourhoods_check_path = os.path.join(repo_root, "tools", "check_neighbourhoods.py")
+	neighbourhoods_test_path = os.path.join(repo_root, "tools", "test_check_neighbourhoods.py")
+	if not os.path.exists(neighbourhoods_check_path) or not os.path.exists(neighbourhoods_test_path):
+		print("\n[NEIGHBOURHOODS ERROR] Neighbourhoods validator or test suite missing")
+		sys.exit(1)
+	print("=== Neighbourhoods Configuration Check & Unit Tests (Item 47) ===")
+	nh_check_res = subprocess.run([sys.executable, "-I", neighbourhoods_check_path], cwd=repo_root)
+	if nh_check_res.returncode != 0:
+		print("\n[NEIGHBOURHOODS FAIL] neighbourhoods.json validation failed.")
+		sys.exit(1)
+	nh_test_res = subprocess.run([sys.executable, "-I", neighbourhoods_test_path], cwd=repo_root)
+	if nh_test_res.returncode != 0:
+		print("\n[NEIGHBOURHOODS TEST FAIL] Neighbourhoods unit tests failed.")
+		sys.exit(1)
+	print("[NEIGHBOURHOODS TESTS OK] Neighbourhoods configuration and unit tests passed.\n")
 
 	# Shared Web-Mercator Grid & Places Pack Builder Test Suite (Item 26)
 	grid_py_test_path = os.path.join(repo_root, "tools", "test_grid.py")

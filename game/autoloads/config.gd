@@ -22,6 +22,10 @@ var distortion_field_radius_miles: float = 10.0
 var distortion_field_size_cells: int = 5
 var distortion_field_foreign_share: float = 0.40
 var ultra_beast_field_share: float = 0.02
+var neighbourhoods_per_city: int = 8
+var gateway_count: int = 4
+var first_picks: int = 2
+var finale_requires_finished: int = 5
 var familiarity_tiers: Dictionary = {1: "known", 3: "familiar", 10: "mastered"}
 var level_bands_by_miles: Array = [
 	{"maxMiles": 2.0, "minLevel": 2, "maxLevel": 10},
@@ -68,6 +72,10 @@ func load_tuning_config(path: String) -> void:
 		distortion_field_size_cells = int(json.get("distortionFieldSizeCells", distortion_field_size_cells))
 		distortion_field_foreign_share = float(json.get("distortionFieldForeignShare", distortion_field_foreign_share))
 		ultra_beast_field_share = float(json.get("ultraBeastFieldShare", ultra_beast_field_share))
+		neighbourhoods_per_city = int(json.get("neighbourhoodsPerCity", neighbourhoods_per_city))
+		gateway_count = int(json.get("gatewayCount", gateway_count))
+		first_picks = int(json.get("firstPicks", first_picks))
+		finale_requires_finished = int(json.get("finaleRequiresFinished", finale_requires_finished))
 		if json.has("familiarityTiers"):
 			familiarity_tiers = json["familiarityTiers"]
 		if json.has("levelBandsByMiles") and json["levelBandsByMiles"] is Array:

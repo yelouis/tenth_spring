@@ -21,6 +21,10 @@
   "distortionFieldSizeCells": 5,
   "distortionFieldForeignShare": 0.40,
   "ultraBeastFieldShare": 0.02,
+  "neighbourhoodsPerCity": 8,
+  "gatewayCount": 4,
+  "firstPicks": 2,
+  "finaleRequiresFinished": 5,
   "familiarityTiers": {
     "1": "known",
     "3": "familiar",
