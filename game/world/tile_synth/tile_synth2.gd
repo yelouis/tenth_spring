@@ -3113,6 +3113,46 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 	# -------------------------------------------------------------
 	# 10. Variants & Masks (§4.1 step 10)
 	# -------------------------------------------------------------
+	var output := finalize_cell_output(cx, cy, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh)
+
+	stamps_list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		var ay: int = int(a["anchor_gy"]) + int(a["h"])
+		var by: int = int(b["anchor_gy"]) + int(b["h"])
+		if ay != by:
+			return ay < by
+		if int(a["anchor_gx"]) != int(b["anchor_gx"]):
+			return int(a["anchor_gx"]) < int(b["anchor_gx"])
+		return int(a["stamp_id"]) < int(b["stamp_id"])
+	)
+
+	var cell_meta: Dictionary = CellClassifier.classify_cell(cx, cy, area, {
+		"tiles": output,
+		"stamps": stamps_list,
+	})
+
+	return {
+		"tiles": output,
+		"signs": PackedStringArray(signs_list),
+		"stamps": stamps_list,
+		"zone": str(cell_meta.get("zone", "wilds")),
+		"biome": str(cell_meta.get("biome", "plains")),
+		"region": str(cell_meta.get("region", "South Atlantic")),
+		"ghost_base": float(cell_meta.get("ghost_base", 0.06)),
+		"stats": {
+			"building_candidates": total_building_candidates,
+			"buildings_placed": buildings_placed_count,
+			"fallback_placed": fallback_placed_count,
+			"landmarks_placed": landmarks_placed_count,
+			"landmarks_sign_only": landmarks_sign_only_count,
+			"landmark_ids_placed": landmark_ids_placed,
+			"ordinary_standing": ordinary_standing,
+			"ordinary_ruined": ordinary_ruined,
+			"ordinary_gone": ordinary_gone
+		}
+	}
+
+## Finalize 32x32 cell output buffer (variants & 4-neighbour masks) from 40x40 work grids (§4.1 step 10, dc_trial §3.8)
+static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, grid_variant: PackedByteArray, grid_mask: PackedByteArray, world_seed: int, road_v1_thresh: float) -> PackedByteArray:
 	var output := PackedByteArray()
 	output.resize(OUTPUT_BUFFER_SIZE)
 	var out_idx := 0
@@ -3203,41 +3243,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 			output[out_idx + 2] = mask
 			out_idx += 3
 
-	stamps_list.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		var ay: int = int(a["anchor_gy"]) + int(a["h"])
-		var by: int = int(b["anchor_gy"]) + int(b["h"])
-		if ay != by:
-			return ay < by
-		if int(a["anchor_gx"]) != int(b["anchor_gx"]):
-			return int(a["anchor_gx"]) < int(b["anchor_gx"])
-		return int(a["stamp_id"]) < int(b["stamp_id"])
-	)
-
-	var cell_meta: Dictionary = CellClassifier.classify_cell(cx, cy, area, {
-		"tiles": output,
-		"stamps": stamps_list,
-	})
-
-	return {
-		"tiles": output,
-		"signs": PackedStringArray(signs_list),
-		"stamps": stamps_list,
-		"zone": str(cell_meta.get("zone", "wilds")),
-		"biome": str(cell_meta.get("biome", "plains")),
-		"region": str(cell_meta.get("region", "South Atlantic")),
-		"ghost_base": float(cell_meta.get("ghost_base", 0.06)),
-		"stats": {
-			"building_candidates": total_building_candidates,
-			"buildings_placed": buildings_placed_count,
-			"fallback_placed": fallback_placed_count,
-			"landmarks_placed": landmarks_placed_count,
-			"landmarks_sign_only": landmarks_sign_only_count,
-			"landmark_ids_placed": landmark_ids_placed,
-			"ordinary_standing": ordinary_standing,
-			"ordinary_ruined": ordinary_ruined,
-			"ordinary_gone": ordinary_gone
-		}
-	}
+	return output
 
 ## Mask family for 4-neighbour connectivity (§3 table)
 static func _get_mask_family(cls: int) -> Array:
