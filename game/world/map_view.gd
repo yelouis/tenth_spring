@@ -11,6 +11,8 @@ const AssetDB := preload("res://rom/asset_db.gd")
 const SynthWorker := preload("res://world/synth_worker.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
 const Grid := preload("res://world/grid.gd")
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 
 const CELL_SIZE_PX := 1024.0
 const TILE_SIZE_PX := 32
@@ -21,7 +23,7 @@ const MAX_SYNTH_CELLS := 1024
 const MAX_STORE_CELLS := 256
 const SYNTH_BUDGET_USEC := 8000 # 8 ms budget per frame
 
-const ZOOM_STEPS: Array = [0.0625, 0.25, 1.0, 2.0]
+const ZOOM_STEPS: Array = [0.0625, 0.25, 0.5, 1.0, 2.0]
 
 # Palette colors for overview texture (§5.3)
 const MAP_COLORS := {
@@ -136,6 +138,8 @@ var _install_label: Label = null
 var _cancel_button: Button = null
 var _sign_tooltip: Label = null
 var _return_home_button: Button = null
+var _board_button: Button = null
+var _back_to_camp_button: Button = null
 var _distortion_field_layer: Node2D = null
 var _distortion_field_rect: ColorRect = null
 var _distortion_field_chip: Label = null
@@ -144,6 +148,16 @@ var _active_place_id: String = ""
 var _active_waypost_cell: Vector2i = Vector2i.ZERO
 var _active_waypost_wm: Vector2 = Vector2.ZERO
 var _has_active_waypost: bool = false
+var _is_caricature_place: bool = false
+var _excluded_store_place_id: String = ""
+var _forced_caricature_area_id: String = ""
+var _forced_caricature_place_id: String = ""
+var _caricature_cells: Dictionary = {} # Vector2i -> {compiled: Dictionary, area: Dictionary}
+var _caricature_compiled_by_area: Dictionary = {} # area_id -> compiled Dictionary
+var _caricature_camp_id: String = ""
+var _focused_area_id: String = ""
+var _focused_area_tiles: Vector2i = Vector2i.ZERO
+var _screenshot_area_id: String = ""
 
 var _map_fetcher = MapFetcher.new()
 var _pending_region: Dictionary = {}
@@ -276,6 +290,12 @@ func _ready() -> void:
 	_return_home_button = get_node_or_null("AttributionUI/ReturnHomeButton") as Button
 	if _return_home_button != null:
 		_return_home_button.pressed.connect(_on_return_home_pressed)
+	_board_button = get_node_or_null("AttributionUI/BoardButton") as Button
+	if _board_button != null:
+		_board_button.pressed.connect(_on_board_pressed)
+	_back_to_camp_button = get_node_or_null("AttributionUI/BackToCampButton") as Button
+	if _back_to_camp_button != null:
+		_back_to_camp_button.pressed.connect(_on_back_to_camp_pressed)
 
 	_distortion_field_layer = get_node_or_null("DistortionFieldLayer") as Node2D
 	if _distortion_field_layer == null:
@@ -561,9 +581,14 @@ func _load_map_stores() -> void:
 						print("map: skipping %s — store schema %s, need 5" % [f, schema_ver])
 						store.close()
 					else:
+						var s_place_id := store.get_state("place_id", "")
+						if s_place_id.is_empty() and "district-of-columbia" in f:
+							s_place_id = "city:washington-dc"
+						if not _excluded_store_place_id.is_empty() and s_place_id == _excluded_store_place_id:
+							store.close()
+							continue
 						_map_stores.append(store)
 						store_paths.append(p)
-						var s_place_id := store.get_state("place_id", "")
 						if not s_place_id.is_empty() and _active_place_id.is_empty():
 							_active_place_id = s_place_id
 	_resolve_active_waypost()
@@ -574,6 +599,7 @@ func _load_map_stores() -> void:
 		_synth_worker.set_store_paths(store_paths)
 	if _synth_worker != null:
 		_synth_worker.set_landmarks(_landmarks_by_cell)
+		_synth_worker.set_caricature(_caricature_cells)
 		_synth_worker.set_waypost_wm(_active_waypost_wm if _has_active_waypost else null)
 
 func _resolve_active_waypost() -> void:
@@ -623,11 +649,178 @@ func _focus_initial_cell() -> void:
 	focus_on_cell(target_cell.x, target_cell.y)
 
 func focus_on_cell(cx: int, cy: int) -> void:
+	_focused_area_id = ""
+	_focused_area_tiles = Vector2i.ZERO
 	if _camera != null:
 		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
 	_update_return_home_visibility()
 
+func force_caricature_area(area_id: String) -> void:
+	_forced_caricature_area_id = area_id
+	_screenshot_area_id = area_id
+	var a_dict: Dictionary = Neighbourhoods.area(area_id)
+	_forced_caricature_place_id = str(a_dict.get("place_id", ""))
+
+func focus_on_area(area_id: String, whole: bool = false) -> void:
+	var a_dict: Dictionary = Neighbourhoods.area(area_id)
+	if a_dict.is_empty():
+		return
+	var origin: Vector2i = Neighbourhoods.block_origin(a_dict)
+	var cells_arr: Array = a_dict.get("cells", [1, 1])
+	var cols: int = int(cells_arr[0]) if cells_arr.size() >= 1 else 1
+	var rows: int = int(cells_arr[1]) if cells_arr.size() >= 2 else 1
+	_focused_area_id = area_id
+	_focused_area_tiles = Vector2i(cols * 32, rows * 32)
+	if _camera != null:
+		if whole:
+			_camera.position = Vector2(
+				(float(origin.x) + float(cols) * 0.5) * CELL_SIZE_PX,
+				-(float(origin.y) + float(rows) * 0.5) * CELL_SIZE_PX
+			)
+		elif _caricature_compiled_by_area.has(area_id):
+			var comp: Dictionary = _caricature_compiled_by_area[area_id]
+			var arr: Vector2i = comp.get("arrival", Vector2i(16, 16))
+			var gx: int = origin.x * 32 + arr.x
+			var gy: int = (-(origin.y + rows - 1) - 1) * 32 + arr.y
+			_camera.position = Vector2((float(gx) + 0.5) * float(TILE_SIZE_PX), (float(gy) + 0.5) * float(TILE_SIZE_PX))
+		else:
+			_camera.position = Vector2(
+				(float(origin.x) + float(cols) * 0.5) * CELL_SIZE_PX,
+				-(float(origin.y) + float(rows) * 0.5) * CELL_SIZE_PX
+			)
+	_update_return_home_visibility()
+
+func _caricature_reveal_state(cell: Vector2i, db_reveal_override: int = -1) -> int:
+	if not _caricature_cells.has(cell):
+		return 0
+	if db_reveal_override >= 0:
+		return db_reveal_override
+	var db = _get_db()
+	if db != null and db.is_open():
+		var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cell.x, cell.y])
+		if not rows.is_empty():
+			return int(rows[0].get("reveal_state", 0))
+	return 0
+
 func load_place(place_id: String, center_waypost: bool = true) -> bool:
+	var use_caricature: bool = Neighbourhoods.is_ready(place_id) or (
+		_forced_caricature_place_id == place_id and Neighbourhoods.has_city(place_id)
+	)
+	if use_caricature:
+		_active_place_id = place_id
+		var db = _get_db()
+		if db != null and db.is_open():
+			db.set_db_meta("last_place", place_id)
+
+		var require_all := Neighbourhoods.is_ready(place_id)
+		var new_cells: Dictionary = {}
+		var new_compiled: Dictionary = {}
+		var new_lms_by_cell: Dictionary = {}
+		var new_lm_names: Dictionary = {}
+		var camp_id := ""
+		var camp_origin := Vector2i.ZERO
+		var camp_wm := Vector2.ZERO
+
+		for a_var in Neighbourhoods.areas_of(place_id):
+			var a: Dictionary = a_var
+			var aid := str(a.get("id", ""))
+			if str(a.get("kind", "")) == "camp" or aid.begins_with("camp:"):
+				camp_id = aid
+				camp_origin = Neighbourhoods.block_origin(a)
+				var c_anch: Dictionary = a.get("anchor", {})
+				camp_wm = Grid.latlon_to_wm(float(c_anch.get("lat", 0.0)), float(c_anch.get("lon", 0.0)))
+			var map_path := CaricatureMap.resolve_map_path(str(a.get("map", "")))
+			var must_exist := require_all or (aid == _forced_caricature_area_id)
+			if not FileAccess.file_exists(map_path):
+				if must_exist:
+					printerr("[FAIL] caricature %s: missing map" % aid)
+					if _screenshot_mode:
+						get_tree().quit(1)
+					return false
+				continue
+			var raw_map := CaricatureMap.load_map(map_path)
+			if raw_map.is_empty():
+				printerr("[FAIL] caricature %s: invalid map json" % aid)
+				if _screenshot_mode:
+					get_tree().quit(1)
+				return false
+			var compiled := CaricatureMap.compile(a, raw_map)
+			if not bool(compiled.get("ok", false)):
+				var errs: Array = compiled.get("errors", [])
+				var err_msg := ", ".join(PackedStringArray(errs)) if not errs.is_empty() else "compile error"
+				printerr("[FAIL] caricature %s: %s" % [aid, err_msg])
+				if _screenshot_mode:
+					get_tree().quit(1)
+				return false
+			new_compiled[aid] = compiled
+			var b_orig: Vector2i = compiled["origin"]
+			var b_cols: int = int(compiled["cols"])
+			var b_rows: int = int(compiled["rows"])
+			for dy in range(b_rows):
+				for dx in range(b_cols):
+					new_cells[Vector2i(b_orig.x + dx, b_orig.y + dy)] = {
+						"compiled": compiled,
+						"area": a
+					}
+			var doors_arr: Array = compiled.get("doors", [])
+			for d_var in doors_arr:
+				var d: Dictionary = d_var
+				var iid := str(d.get("interior", ""))
+				if iid.is_empty():
+					continue
+				var d_name := str(d.get("name", ""))
+				var dx_t: int = int(d["x"])
+				var dy_t: int = int(d["y"])
+				var d_cell := Vector2i(b_orig.x + int(dx_t / 32), b_orig.y + b_rows - 1 - int(dy_t / 32))
+				var d_st := Vector2i(b_orig.x * 32 + dx_t, (-(b_orig.y + b_rows - 1) - 1) * 32 + dy_t)
+				if not new_lms_by_cell.has(d_cell):
+					new_lms_by_cell[d_cell] = []
+				new_lms_by_cell[d_cell].append({
+					"id": iid,
+					"name": d_name,
+					"door_st": d_st
+				})
+				if not d_name.is_empty():
+					new_lm_names[d_name] = true
+
+		_is_caricature_place = true
+		_caricature_cells = new_cells
+		_caricature_compiled_by_area = new_compiled
+		_caricature_camp_id = camp_id
+		_landmarks_by_cell = new_lms_by_cell
+		_landmark_names = new_lm_names
+		_active_waypost_cell = camp_origin
+		_active_waypost_wm = camp_wm
+		_has_active_waypost = true
+		if _excluded_store_place_id != place_id:
+			_excluded_store_place_id = place_id
+			_load_map_stores()
+		elif _synth_worker != null:
+			_synth_worker.set_landmarks(_landmarks_by_cell)
+			_synth_worker.set_caricature(_caricature_cells)
+			_synth_worker.set_waypost_wm(_active_waypost_wm)
+		# Re-ensure camp waypost cell after _load_map_stores (whose _resolve_active_waypost checks famous_places)
+		_active_waypost_cell = camp_origin
+		_active_waypost_wm = camp_wm
+		_has_active_waypost = true
+		_synth_cache.clear()
+		_clear_rendered_layers()
+		if center_waypost and not camp_id.is_empty():
+			focus_on_area(camp_id, false)
+		_update_return_home_visibility()
+		return true
+
+	if _is_caricature_place:
+		_is_caricature_place = false
+		_excluded_store_place_id = ""
+		_caricature_cells.clear()
+		_caricature_compiled_by_area.clear()
+		_caricature_camp_id = ""
+		_load_landmarks()
+		_load_map_stores()
+		_synth_cache.clear()
+		_clear_rendered_layers()
+
 	var places: Array = RevealEngine.load_places()
 	for p in places:
 		if str(p.get("id", "")) == place_id:
@@ -657,6 +850,22 @@ func get_camera_cell() -> Vector2i:
 	return Vector2i(cx, cy)
 
 func _update_return_home_visibility() -> void:
+	if _is_caricature_place:
+		var cam_cell := get_camera_cell()
+		var in_camp: bool = _has_active_waypost and (cam_cell == _active_waypost_cell)
+		if _return_home_button != null:
+			_return_home_button.visible = in_camp
+		if _board_button != null:
+			# Hidden until Item 50 adds waypost_board.tscn
+			_board_button.visible = false
+		if _back_to_camp_button != null:
+			_back_to_camp_button.visible = not in_camp
+		return
+
+	if _board_button != null:
+		_board_button.visible = false
+	if _back_to_camp_button != null:
+		_back_to_camp_button.visible = false
 	if _return_home_button == null:
 		return
 	if not _has_active_waypost:
@@ -666,6 +875,13 @@ func _update_return_home_visibility() -> void:
 	var dist_x: int = abs(cam_cell.x - _active_waypost_cell.x)
 	var dist_y: int = abs(cam_cell.y - _active_waypost_cell.y)
 	_return_home_button.visible = (dist_x <= 1 and dist_y <= 1)
+
+func _on_board_pressed() -> void:
+	pass
+
+func _on_back_to_camp_pressed() -> void:
+	if not _caricature_camp_id.is_empty():
+		focus_on_area(_caricature_camp_id, false)
 
 func _on_return_home_pressed() -> void:
 	var db = _get_db()
@@ -967,6 +1183,10 @@ func _update_sign_tooltip() -> void:
 					var lm_name := "Landmark"
 					if not cell_lms.is_empty():
 						lm_name = str(cell_lms[0].get("name", "Landmark"))
+						for lm_item in cell_lms:
+							if lm_item is Dictionary and lm_item.has("door_st") and lm_item["door_st"] == st:
+								lm_name = str(lm_item.get("name", lm_name))
+								break
 					_sign_tooltip.text = "%s — can be entered (interiors arrive in a later update)" % lm_name
 					_sign_tooltip.global_position = get_viewport().get_mouse_position() + Vector2(12, 12)
 					_sign_tooltip.visible = true
@@ -1062,7 +1282,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			print_p95_frame_time()
 
 func _step_zoom(direction: int) -> void:
-	var curr_idx := 2
+	var curr_idx := 3
 	for i in range(ZOOM_STEPS.size()):
 		if is_equal_approx(_current_zoom_step, float(ZOOM_STEPS[i])):
 			curr_idx = i
@@ -1071,12 +1291,12 @@ func _step_zoom(direction: int) -> void:
 	_set_zoom_step(float(ZOOM_STEPS[next_idx]))
 
 func _set_zoom_step(zoom_val: float) -> void:
-	var was_overview := (_current_zoom_step < 1.0)
+	var was_overview := (_current_zoom_step < 0.5)
 	_current_zoom_step = zoom_val
 	if _camera != null:
 		_camera.zoom = Vector2(zoom_val, zoom_val)
 
-	var show_overview := (_current_zoom_step < 1.0)
+	var show_overview := (_current_zoom_step < 0.5)
 	if was_overview != show_overview:
 		_rendered_cells.clear()
 		_pending_blit_cells.clear()
@@ -1130,14 +1350,18 @@ func _update_frustum_culling() -> void:
 			var r_cell := Vector2i(int(r["cell_x"]), int(r["cell_y"]))
 			revealed_cells_in_view[r_cell] = int(r["reveal_state"])
 
-	var is_overview := (_current_zoom_step < 1.0)
+	var is_overview := (_current_zoom_step < 0.5)
 
 	for cy in range(min_cy, max_cy + 1):
 		for cx in range(min_cx, max_cx + 1):
 			var cell := Vector2i(cx, cy)
 			visible_cell_set[cell] = true
 
-			var reveal_state: int = revealed_cells_in_view.get(cell, 0)
+			var reveal_state: int = (
+				_caricature_reveal_state(cell, int(revealed_cells_in_view.get(cell, 0)))
+				if _is_caricature_place
+				else int(revealed_cells_in_view.get(cell, 0))
+			)
 
 			if reveal_state == 0:
 				if not _rendered_cells.has(cell):
@@ -1230,7 +1454,7 @@ func _drain_worker_results() -> void:
 
 func _blit_pending_cells() -> void:
 	var blits_this_frame := 0
-	var is_overview := (_current_zoom_step < 1.0)
+	var is_overview := (_current_zoom_step < 0.5)
 	var max_blits := 64 if is_overview else 2
 
 	while not _pending_blit_cells.is_empty() and blits_this_frame < max_blits:
@@ -1307,7 +1531,7 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
 	var reveal_state: int = item.get("reveal_state", 1)
 	var has_map_data: bool = item.get("has_data", false)
-	var is_overview := (_current_zoom_step < 1.0)
+	var is_overview := (_current_zoom_step < 0.5)
 
 	if not is_overview:
 		if reveal_state == 0:
@@ -1389,7 +1613,7 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 		_unmapped_revealed_cells.erase(cell)
 
 func _render_unknown_cell(cx: int, cy: int) -> void:
-	if _current_zoom_step >= 1.0:
+	if _current_zoom_step >= 0.5:
 		_render_solid_fog(cx, cy)
 	if _overview_layer != null:
 		_blit_cell_to_overview_chunk(cx, cy, _get_unknown_overview_image())
@@ -1436,6 +1660,8 @@ func _screen_tile(cx: int, cy: int, tx: int, ty: int) -> Vector2i:
 	return Vector2i(cx * 32 + tx, (-cy - 1) * 32 + ty)
 
 func _is_cell_hidden(cx: int, cy: int) -> bool:
+	if _is_caricature_place:
+		return _caricature_reveal_state(Vector2i(cx, cy)) == 0
 	var db = _get_db()
 	if db != null and db.is_open():
 		var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cx, cy])
@@ -1480,11 +1706,14 @@ func _get_cell_features(cell_x: int, cell_y: int) -> Dictionary:
 func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 	var cell := Vector2i(cx, cy)
 	var reveal_state := 0
-	var db = _get_db()
-	if db != null and db.is_open():
-		var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cx, cy])
-		if not rows.is_empty():
-			reveal_state = int(rows[0].get("reveal_state", 0))
+	if _is_caricature_place:
+		reveal_state = _caricature_reveal_state(cell)
+	else:
+		var db = _get_db()
+		if db != null and db.is_open():
+			var rows: Array = db.query_rows("SELECT reveal_state FROM map_cell WHERE cell_x = ? AND cell_y = ?;", [cx, cy])
+			if not rows.is_empty():
+				reveal_state = int(rows[0].get("reveal_state", 0))
 
 	if reveal_state == 0:
 		_render_unknown_cell(cx, cy)
@@ -1495,7 +1724,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 	if _synth_cache.has(cell):
 		item = _synth_cache.get_item(cell)
 	elif _synth_worker != null and _synth_worker.is_running():
-		var res: Dictionary = _synth_worker.request_cell_sync(cell, (_current_zoom_step < 1.0), reveal_state, _preview_cleared)
+		var res: Dictionary = _synth_worker.request_cell_sync(cell, (_current_zoom_step < 0.5), reveal_state, _preview_cleared)
 		item = {
 			"buf": res["tiles"],
 			"signs": res["signs"],
@@ -1503,6 +1732,22 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 			"has_data": res["has_data"],
 			"image": res.get("image", null),
 			"thread_id": res.get("thread_id", 0),
+			"reveal_state": reveal_state
+		}
+		_synth_cache.put(cell, item)
+	elif _is_caricature_place and _caricature_cells.has(cell):
+		var c_entry: Dictionary = _caricature_cells[cell]
+		var c_res: Dictionary = CaricatureMap.cell_result(
+			c_entry.get("compiled", {}),
+			cell,
+			c_entry.get("area", {})
+		)
+		item = {
+			"buf": c_res.get("tiles", PackedByteArray()),
+			"signs": c_res.get("signs", []),
+			"stamps": c_res.get("stamps", []),
+			"has_data": true,
+			"thread_id": OS.get_thread_caller_id(),
 			"reveal_state": reveal_state
 		}
 		_synth_cache.put(cell, item)
@@ -1701,7 +1946,8 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 			continue
 
 		var base_rows: int = sh if bool(def.get("tiled", false)) else int(def.get("base_rows", sh))
-		var split_ty: int = (sh - base_rows) if (str(def.get("kind", "")) == "landmark" and base_rows > 0 and sh > base_rows) else 0
+		var s_kind := str(def.get("kind", ""))
+		var split_ty: int = (sh - base_rows) if ((s_kind == "landmark" or s_kind == "prop") and base_rows > 0 and sh > base_rows) else 0
 
 		if ty0 < split_ty and _stamp_overhang_layer != null:
 			var o_ty0: int = ty0
@@ -1823,7 +2069,9 @@ func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String
 	_screenshot_focus = focus
 	_focus_mode = focus
 	_set_zoom_step(zoom_step)
-	if _focus_mode == "most_buildings":
+	if _focus_mode == "area":
+		focus_on_area(_screenshot_area_id, is_equal_approx(zoom_step, 0.5))
+	elif _focus_mode == "most_buildings":
 		_focus_most_buildings()
 	elif _focus_mode == "far_buildings":
 		_focus_far_buildings()
@@ -1867,6 +2115,14 @@ func _on_frame_post_draw() -> void:
 					get_tree().quit(1)
 					return
 				print("SCREENSHOT_SAVED %s" % _screenshot_path.get_file())
+				var vp_px := get_viewport_rect().size
+				var zoomed_tile_x := float(TILE_SIZE_PX) * (_camera.zoom.x if _camera != null else 1.0)
+				var zoomed_tile_y := float(TILE_SIZE_PX) * (_camera.zoom.y if _camera != null else 1.0)
+				var view_w := floori(vp_px.x / zoomed_tile_x) if zoomed_tile_x > 0.0 else 0
+				var view_h := floori(vp_px.y / zoomed_tile_y) if zoomed_tile_y > 0.0 else 0
+				print("VIEW_TILES %dx%d" % [view_w, view_h])
+				if not _focused_area_id.is_empty():
+					print("AREA_TILES %dx%d" % [_focused_area_tiles.x, _focused_area_tiles.y])
 				var visible_doors := count_visible_doors()
 				print("VISIBLE_DOORS %d" % visible_doors)
 				_screenshot_saved = true

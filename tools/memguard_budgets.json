@@ -143,5 +143,12 @@
     "date": "2026-11-09",
     "machine": "darwin arm64",
     "status": "measured"
+  },
+  "check_caricature": {
+    "budget_gib": 0.5,
+    "peak_gib": 0.154,
+    "date": "2026-11-11",
+    "machine": "darwin arm64",
+    "status": "measured"
   }
 }

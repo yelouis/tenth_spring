@@ -4,14 +4,18 @@ extends RefCounted
 # screenshot_config.gd — Screenshot Harness Argument Parsing and Refusal Rules
 # Contract: docs/implementation_plan_world_generation.md §7.4 & docs/agent_execution_guide.md §6
 
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+
 const ERR_IN_REPO: String = "[FAIL] screenshot path must be outside the repository"
 const ERR_UNSUPPORTED_ZOOM: String = "[FAIL] unsupported zoom %s"
 const ERR_UNSUPPORTED_FOCUS: String = "[FAIL] unsupported focus %s"
 const ERR_UNSUPPORTED_SCREEN: String = "[FAIL] unsupported screen %s"
 const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
+const ERR_AREA_NEEDS_DEMO: String = "[FAIL] --area needs --demo"
+const ERR_UNKNOWN_AREA: String = "[FAIL] unknown area %s"
 
-const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 1, 2, 3]
-const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark"]
+const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
+const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
 const SUPPORTED_SCREENS: Array = ["map", "town_map"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
@@ -24,6 +28,9 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var focus_val := "most_visited"
 	var screen_str := ""
 	var screen_val := "map"
+	var area_str := ""
+	var has_area := false
+	var has_demo := false
 	var has_screenshot := false
 
 	var repo_root := repo_root_override
@@ -72,10 +79,32 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			i += 1
 		elif arg == "--town-map":
 			screen_str = "town_map"
+		elif arg == "--demo" or arg.begins_with("--demo-dir="):
+			has_demo = true
+		elif arg == "--demo-dir" and i + 1 < user_args.size():
+			has_demo = true
+			i += 1
+		elif arg.begins_with("--area="):
+			has_area = true
+			area_str = arg.trim_prefix("--area=").strip_edges()
+		elif arg == "--area" and i + 1 < user_args.size():
+			has_area = true
+			area_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--area":
+			has_area = true
+			area_str = ""
 		i += 1
 
+	# Refusal 0: --area is demo-only and must name a roster area (standing constraint 22, §4.3)
+	if has_area:
+		if not has_demo:
+			return {"ok": false, "error": ERR_AREA_NEEDS_DEMO, "exit_code": 2}
+		if area_str.is_empty() or Neighbourhoods.area(area_str).is_empty():
+			return {"ok": false, "error": ERR_UNKNOWN_AREA % area_str, "exit_code": 2}
+
 	if not has_screenshot:
-		return {"ok": true, "is_screenshot": false}
+		return {"ok": true, "is_screenshot": false, "area": area_str}
 
 	# Refusal 1: Headless refusal (§7.4 rule 2)
 	if is_headless:
@@ -86,7 +115,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		var valid_zoom := false
 		if zoom_str.is_valid_float():
 			var z_val := zoom_str.to_float()
-			for sz in [0.0625, 0.25, 1.0, 2.0, 3.0]:
+			for sz in [0.0625, 0.25, 0.5, 1.0, 2.0, 3.0]:
 				if is_equal_approx(z_val, float(sz)):
 					zoom_val = z_val
 					valid_zoom = true
@@ -94,12 +123,16 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		if not valid_zoom:
 			return {"ok": false, "error": ERR_UNSUPPORTED_ZOOM % zoom_str, "exit_code": 2}
 
-	# Refusal 3: Unsupported focus (§10.6 rule 1)
+	# Refusal 3: Unsupported focus (§10.6 rule 1, §4.3)
 	if not focus_str.is_empty():
-		if focus_str in SUPPORTED_FOCUSES:
+		if focus_str == "area" and not has_area:
+			return {"ok": false, "error": ERR_UNSUPPORTED_FOCUS % focus_str, "exit_code": 2}
+		elif focus_str in SUPPORTED_FOCUSES:
 			focus_val = focus_str
 		else:
 			return {"ok": false, "error": ERR_UNSUPPORTED_FOCUS % focus_str, "exit_code": 2}
+	if has_area:
+		focus_val = "area"
 
 	# Refusal 3b: Unsupported screen
 	if not screen_str.is_empty():
@@ -133,5 +166,6 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"frames": frames_val,
 		"timeout": timeout_val,
 		"focus": focus_val,
-		"screen": screen_val
+		"screen": screen_val,
+		"area": area_str
 	}

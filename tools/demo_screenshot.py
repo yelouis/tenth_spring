@@ -24,7 +24,7 @@ def parse_args():
         type=str,
         action="append",
         dest="zooms",
-        help="Zoom level to capture (can be specified multiple times, e.g. --zoom 1 --zoom 0.0625). Defaults to ['1']."
+        help="Zoom level to capture (can be specified multiple times, e.g. --zoom 1 --zoom 0.5 --zoom 0.0625). Defaults to ['1']."
     )
     parser.add_argument(
         "--preview-cleared",
@@ -66,6 +66,18 @@ def parse_args():
         type=str,
         default=None,
         help="Optional explicit output PNG filename (e.g. shot_z2_mb_cleared.png)."
+    )
+    parser.add_argument(
+        "--area",
+        type=str,
+        default=None,
+        help="Optional caricature area id to focus (e.g. camp:washington-dc). Passed through to Godot."
+    )
+    parser.add_argument(
+        "--resolution",
+        type=str,
+        default="1280x720",
+        help="Window resolution WxH (default: 1280x720)."
     )
     return parser.parse_args()
 
@@ -129,6 +141,8 @@ def main():
                 focus_tag = "_waypost"
             elif args.focus == "landmark":
                 focus_tag = "_landmark"
+            elif args.area:
+                focus_tag = "_" + args.area.replace(":", "_")
             elif args.focus == "most_visited" and (args.preview_cleared or z in ["1", "2"]):
                 focus_tag = "_mv"
             out_png = os.path.join(real_out, f"shot_z{z}{focus_tag}{suffix}.png")
@@ -140,7 +154,7 @@ def main():
             "demo_screenshot",
             "--windowed",
             "--resolution",
-            "1280x720",
+            args.resolution,
             "--",
             "--demo",
             f"--screenshot={out_png}",
@@ -153,6 +167,8 @@ def main():
             godot_cmd.append(f"--demo-dir={args.demo_dir}")
         if args.preview_cleared:
             godot_cmd.append("--preview-cleared")
+        if args.area:
+            godot_cmd.append(f"--area={args.area}")
         if args.focus:
             godot_cmd.append(f"--focus={args.focus}")
         if args.screen:

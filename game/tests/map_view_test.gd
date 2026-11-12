@@ -8,6 +8,9 @@ const MapStoreClass := preload("res://world/region_import/map_store.gd")
 const ProfilePathsClass := preload("res://scripts/profile_paths.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const SynthWorkerScript := preload("res://world/synth_worker.gd")
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
+const ScreenshotConfig := preload("res://scripts/screenshot_config.gd")
 
 func run_test() -> bool:
 	var map_view = MapViewScene.instantiate()
@@ -702,6 +705,135 @@ func run_test() -> bool:
 		push_error("(42) _unrender_cell did not erase tree canopy tile at st+(0,-1)")
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
+
+	# 15. Item 48b (§4.2 step 3): Zoom 0.5 is a tile zoom (not flat-colour overview)
+	var has_half_zoom := false
+	for z_step in map_view.ZOOM_STEPS:
+		if is_equal_approx(float(z_step), 0.5):
+			has_half_zoom = true
+			break
+	if not has_half_zoom:
+		push_error("(48b) ZOOM_STEPS missing 0.5: got %s" % str(map_view.ZOOM_STEPS))
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._set_zoom_step(0.5)
+	if overview_layer.visible or not world_known.visible or not world_cleared.visible or not stamp_base.visible or not stamp_overhang.visible:
+		push_error("(48b) Zoom 0.5 must show tile and stamp layers (not overview): overview=%s known=%s cleared=%s" % [str(overview_layer.visible), str(world_known.visible), str(world_cleared.visible)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var z05_tiles := PackedByteArray()
+	z05_tiles.resize(32 * 32 * 3)
+	z05_tiles.fill(0)
+	z05_tiles[0] = TileSynth2.TILE_PATH
+	DB.upsert_map_cell(15, 15, 1, 0)
+	map_view.get_lru_cache().put(Vector2i(15, 15), {
+		"buf": z05_tiles, "signs": [], "stamps": [], "reveal_state": 1
+	})
+	map_view._render_cell(15, 15)
+	var z05_st: Vector2i = map_view._screen_tile(15, 15, 0, 0)
+	if world_known.get_cell_atlas_coords(z05_st) == Vector2i(-1, -1):
+		push_error("(48b) Zoom 0.5 failed to blit tiles into WorldKnown at %s" % str(z05_st))
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._unrender_cell(15, 15)
+	map_view._set_zoom_step(1.0)
+
+	# 16. Item 48b (§4.1, §4.2, §4.3, §9): Worker's two paths (caricature vs store),
+	#     fog outside blocks, focus_on_area + BackToCampButton, and --area refusal checks.
+	var repo_root := ProjectSettings.globalize_path("res://").simplify_path().get_base_dir()
+	var bad_area_no_demo: Dictionary = ScreenshotConfig.parse_args(
+		["--screenshot=/tmp/out_test.png", "--area=camp:washington-dc"], false, repo_root
+	)
+	if bad_area_no_demo.get("ok", true) or int(bad_area_no_demo.get("exit_code", 0)) != 2 or str(bad_area_no_demo.get("error", "")) != "[FAIL] --area needs --demo":
+		push_error("(48b) --area without --demo should exit 2 with '[FAIL] --area needs --demo', got %s" % str(bad_area_no_demo))
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var bad_area_unknown: Dictionary = ScreenshotConfig.parse_args(
+		["--demo", "--screenshot=/tmp/out_test.png", "--area=hood:washington-dc:no-such-hood"], false, repo_root
+	)
+	if bad_area_unknown.get("ok", true) or int(bad_area_unknown.get("exit_code", 0)) != 2 or str(bad_area_unknown.get("error", "")) != "[FAIL] unknown area hood:washington-dc:no-such-hood":
+		push_error("(48b) --area with unknown id should exit 2 with '[FAIL] unknown area ...', got %s" % str(bad_area_unknown))
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# Record store-path worker bytes for cell (4, 4) before opening caricature mode
+	var store_res_before: Dictionary = worker.request_cell_sync(Vector2i(4, 4), false, 1, false)
+	var store_tiles_before: PackedByteArray = store_res_before.get("tiles", PackedByteArray())
+	if store_tiles_before.size() != 32 * 32 * 3:
+		push_error("(48b) Expected 3072 store-path bytes for (4, 4), got %d" % store_tiles_before.size())
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	Neighbourhoods.set_config_path_for_tests("res://tests/fixtures/neighbourhoods_fixture.json")
+	var fix_area: Dictionary = Neighbourhoods.area("hood:fixture-city:north-end")
+	var fix_raw: Dictionary = CaricatureMap.load_map("res://tests/fixtures/caricature_fixture_map.json")
+	var fix_compiled: Dictionary = CaricatureMap.compile(fix_area, fix_raw)
+	if not bool(fix_compiled.get("ok", false)):
+		push_error("(48b) Fixture caricature map failed to compile: %s" % str(fix_compiled.get("errors", [])))
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	var fix_cell: Vector2i = fix_compiled["origin"]
+	var expected_cari_cell: Dictionary = CaricatureMap.cell_result(fix_compiled, fix_cell, fix_area)
+
+	# Test worker's two paths directly with identical store & waypost state (§4.1, §9):
+	var direct_cari_cells: Dictionary = {}
+	for dy in range(int(fix_compiled["rows"])):
+		for dx in range(int(fix_compiled["cols"])):
+			direct_cari_cells[Vector2i(fix_cell.x + dx, fix_cell.y + dy)] = {
+				"compiled": fix_compiled,
+				"area": fix_area
+			}
+	worker.set_caricature(direct_cari_cells)
+
+	var worker_cari_res: Dictionary = worker.request_cell_sync(fix_cell, false, 1, false)
+	var got_cari_tiles: PackedByteArray = worker_cari_res.get("tiles", PackedByteArray())
+	var exp_cari_tiles: PackedByteArray = expected_cari_cell.get("tiles", PackedByteArray())
+	if got_cari_tiles != exp_cari_tiles:
+		push_error("(48b) Worker caricature path bytes for %s did not match CaricatureMap.cell_result" % str(fix_cell))
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	var worker_store_after: Dictionary = worker.request_cell_sync(Vector2i(4, 4), false, 1, false)
+	var got_store_after: PackedByteArray = worker_store_after.get("tiles", PackedByteArray())
+	if got_store_after != store_tiles_before:
+		push_error("(48b) Non-caricature cell (4, 4) changed when caricature cells were registered on worker")
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	map_view.force_caricature_area("hood:fixture-city:north-end")
+	if not map_view.load_place("city:fixture-city", false):
+		push_error("(48b) load_place failed for forced caricature fixture city")
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# Cell (4, 4) is revealed in map_cell (state 1), but outside caricature blocks -> treated as fog (0)
+	if map_view._caricature_reveal_state(Vector2i(4, 4)) != 0 or not map_view._is_cell_hidden(4, 4):
+		push_error("(48b) Revealed cell (4, 4) outside caricature blocks must report fog (0 / hidden)")
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	map_view.focus_on_area("hood:fixture-city:north-end", true)
+	var back_btn := map_view.get_node_or_null("AttributionUI/BackToCampButton") as Button
+	var board_btn := map_view.get_node_or_null("AttributionUI/BoardButton") as Button
+	var ret_btn := map_view.get_node_or_null("AttributionUI/ReturnHomeButton") as Button
+	if back_btn == null or board_btn == null or not back_btn.visible or board_btn.visible or ret_btn.visible:
+		push_error("(48b) In caricature neighbourhood, BackToCampButton must be visible and ReturnHome/Board hidden")
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._on_back_to_camp_pressed()
+	if not ret_btn.visible or back_btn.visible or board_btn.visible:
+		push_error("(48b) After BackToCamp, ReturnHomeButton must be visible and BackToCamp/Board hidden")
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	Neighbourhoods.set_config_path_for_tests("")
 
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")

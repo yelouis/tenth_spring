@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://check_caricature_scene_01"]
+
+[ext_resource type="Script" path="res://scenes/check_caricature.gd" id="1_check_caricature"]
+
+[node name="CheckCaricature" type="Node"]
+script = ExtResource("1_check_caricature")

@@ -139,5 +139,36 @@ func run_test() -> bool:
 		push_error("Non-screenshot test failed: %s" % str(r_none))
 		return false
 
+	# 6. Item 48b (§4.3 & standing constraint 22): zoom 0.5 and --area demo-only & roster validation
+	var r_z05: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--zoom=0.5"], false, repo_root)
+	if not r_z05.get("ok", false) or not is_equal_approx(float(r_z05.get("zoom", 0.0)), 0.5):
+		push_error("Zoom 0.5 config test failed: %s" % str(r_z05))
+		return false
+
+	var r_area_no_demo: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--area=camp:washington-dc"], false, repo_root)
+	if r_area_no_demo.get("ok", true) != false or r_area_no_demo.get("exit_code", 0) != 2 or r_area_no_demo.get("error", "") != "[FAIL] --area needs --demo":
+		push_error("--area without --demo failed: %s" % str(r_area_no_demo))
+		return false
+
+	var r_area_no_shot_no_demo: Dictionary = ScreenshotConfig.parse_args(["--area=camp:washington-dc"], false, repo_root)
+	if r_area_no_shot_no_demo.get("ok", true) != false or r_area_no_shot_no_demo.get("exit_code", 0) != 2 or r_area_no_shot_no_demo.get("error", "") != "[FAIL] --area needs --demo":
+		push_error("--area without --screenshot and without --demo failed: %s" % str(r_area_no_shot_no_demo))
+		return false
+
+	var r_area_unknown: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--area=hood:washington-dc:unknown"], false, repo_root)
+	if r_area_unknown.get("ok", true) != false or r_area_unknown.get("exit_code", 0) != 2 or r_area_unknown.get("error", "") != "[FAIL] unknown area hood:washington-dc:unknown":
+		push_error("--area unknown id failed: %s" % str(r_area_unknown))
+		return false
+
+	var r_focus_area_bare: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--focus=area"], false, repo_root)
+	if r_focus_area_bare.get("ok", true) != false or r_focus_area_bare.get("exit_code", 0) != 2 or r_focus_area_bare.get("error", "") != "[FAIL] unsupported focus area":
+		push_error("--focus=area without --area failed: %s" % str(r_focus_area_bare))
+		return false
+
+	var r_area_ok: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--area=camp:washington-dc", "--zoom=0.5"], false, repo_root)
+	if not r_area_ok.get("ok", false) or r_area_ok.get("focus", "") != "area" or r_area_ok.get("area", "") != "camp:washington-dc" or not is_equal_approx(float(r_area_ok.get("zoom", 0.0)), 0.5):
+		push_error("Valid --area config test failed: %s" % str(r_area_ok))
+		return false
+
 	print("screenshot_args_test checks passed")
 	return true

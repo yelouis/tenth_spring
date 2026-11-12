@@ -56,6 +56,8 @@ class TestDemoScreenshotWrapper(unittest.TestCase):
         self.assertIn("--focus", res.stdout)
         self.assertIn("--filename", res.stdout)
         self.assertIn("--timeout", res.stdout)
+        self.assertIn("--area", res.stdout)
+        self.assertIn("--resolution", res.stdout)
 
     def test_timeout_is_forwarded_and_exit_3_is_passed_on(self):
         """Item 25b: --timeout reaches the game, and the game's exit code 3 (a stalled capture) ends the wrapper with 3."""
@@ -110,6 +112,43 @@ class TestDemoScreenshotWrapper(unittest.TestCase):
                         contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
                     module.main()
         self.assertFalse(any(a.startswith("--timeout") for a in seen[0]))
+        self.assertIn("1280x720", seen[0])
+
+    def test_area_resolution_and_zoom_half_forwarded(self):
+        """Item 48b: --area, --resolution, and --zoom 0.5 reach Godot cleanly."""
+        import importlib.util
+        import tempfile
+        from unittest import mock
+
+        spec = importlib.util.spec_from_file_location("demo_screenshot_under_test", self.wrapper_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        seen = []
+
+        def fake_run(cmd, **kwargs):
+            seen.append(cmd)
+            return mock.Mock(returncode=2)
+
+        with tempfile.TemporaryDirectory() as out_dir:
+            argv = [
+                "demo_screenshot.py",
+                "--out-dir", out_dir,
+                "--area", "camp:washington-dc",
+                "--zoom", "0.5",
+                "--resolution", "1600x1056",
+            ]
+            with mock.patch.object(sys, "argv", argv), \
+                    mock.patch.dict(os.environ, {"TENTH_SPRING_MEMGUARD_HELD": "1"}), \
+                    mock.patch.object(module.subprocess, "run", fake_run):
+                with self.assertRaises(SystemExit) as raised, \
+                        contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    module.main()
+        self.assertEqual(raised.exception.code, 2)
+        self.assertEqual(len(seen), 1)
+        self.assertIn("1600x1056", seen[0])
+        self.assertIn("--zoom=0.5", seen[0])
+        self.assertIn("--area=camp:washington-dc", seen[0])
 
 if __name__ == "__main__":
     unittest.main()

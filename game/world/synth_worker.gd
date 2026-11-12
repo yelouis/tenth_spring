@@ -7,6 +7,7 @@ extends RefCounted
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const CellClassifier := preload("res://world/cell_classifier.gd")
+const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 
 ## At most this many requests are queued at once, nearest to the camera first (§10.5 rule 2).
 const MAX_QUEUED_REQUESTS := 64
@@ -60,6 +61,7 @@ var _store_paths_changed: bool = false
 var _worker_stores: Array[MapStore] = []
 var _store_cache: LruCache = null
 var _worker_landmarks_by_cell: Dictionary = {}
+var _worker_caricature_cells: Dictionary = {}
 var _worker_waypost_wm: Variant = null
 
 func set_landmarks(lms: Dictionary) -> void:
@@ -69,6 +71,14 @@ func _modal_set_landmarks(lms: Dictionary) -> void:
 	if _mutex != null:
 		_mutex.lock()
 	_worker_landmarks_by_cell = lms.duplicate()
+	if _mutex != null:
+		_mutex.unlock()
+
+func set_caricature(cells: Dictionary) -> void:
+	CaricatureMap._ensure_stamp_cache()
+	if _mutex != null:
+		_mutex.lock()
+	_worker_caricature_cells = cells.duplicate()
 	if _mutex != null:
 		_mutex.unlock()
 
@@ -357,37 +367,57 @@ func _process_request(req: Dictionary) -> Dictionary:
 
 	var caller_id := OS.get_thread_caller_id()
 
-	# Assemble 3x3 neighbourhood area for TileSynth2
-	var area: Dictionary = {}
-	if _worker_waypost_wm != null and _worker_waypost_wm is Vector2:
-		area["waypost_wm"] = _worker_waypost_wm
-	var has_map_data := false
-	var is_covered_by_store := false
-
-	for dy in range(-1, 2):
-		for dx in range(-1, 2):
-			var n_cell := Vector2i(cx + dx, cy + dy)
-			var n_feat := _get_cell_features(n_cell.x, n_cell.y)
-			area[Vector2i(dx, dy)] = n_feat
-			if n_feat.get("has_data", false):
-				has_map_data = true
-			if n_feat.get("is_covered", false):
-				is_covered_by_store = true
-
 	var tile_buf: PackedByteArray
 	var signs_list: Array = []
 	var stamps_list: Array = []
+	var has_map_data := false
 
-	if has_map_data or is_covered_by_store:
-		var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
-		tile_buf = synth_res.get("tiles", PackedByteArray())
-		signs_list = synth_res.get("signs", [])
-		stamps_list = synth_res.get("stamps", [])
+	var caricature_entry: Variant = null
+	if _mutex != null:
+		_mutex.lock()
+	if _worker_caricature_cells.has(cell):
+		caricature_entry = _worker_caricature_cells[cell]
+	if _mutex != null:
+		_mutex.unlock()
+
+	if caricature_entry is Dictionary:
+		var c_entry: Dictionary = caricature_entry
+		var c_res: Dictionary = CaricatureMap.cell_result(
+			c_entry.get("compiled", {}),
+			cell,
+			c_entry.get("area", {})
+		)
+		tile_buf = c_res.get("tiles", PackedByteArray())
+		signs_list = c_res.get("signs", [])
+		stamps_list = c_res.get("stamps", [])
 		has_map_data = true
 	else:
-		tile_buf = PackedByteArray()
-		tile_buf.resize(32 * 32 * 3)
-		tile_buf.fill(0)
+		# Assemble 3x3 neighbourhood area for TileSynth2
+		var area: Dictionary = {}
+		if _worker_waypost_wm != null and _worker_waypost_wm is Vector2:
+			area["waypost_wm"] = _worker_waypost_wm
+		var is_covered_by_store := false
+
+		for dy in range(-1, 2):
+			for dx in range(-1, 2):
+				var n_cell := Vector2i(cx + dx, cy + dy)
+				var n_feat := _get_cell_features(n_cell.x, n_cell.y)
+				area[Vector2i(dx, dy)] = n_feat
+				if n_feat.get("has_data", false):
+					has_map_data = true
+				if n_feat.get("is_covered", false):
+					is_covered_by_store = true
+
+		if has_map_data or is_covered_by_store:
+			var synth_res: Dictionary = TileSynth2.synthesize_cell(cx, cy, area)
+			tile_buf = synth_res.get("tiles", PackedByteArray())
+			signs_list = synth_res.get("signs", [])
+			stamps_list = synth_res.get("stamps", [])
+			has_map_data = true
+		else:
+			tile_buf = PackedByteArray()
+			tile_buf.resize(32 * 32 * 3)
+			tile_buf.fill(0)
 
 	var overview_image: Image = null
 	if needs_overview:
