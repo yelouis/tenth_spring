@@ -32,12 +32,20 @@ const TERRAIN_MAP: Dictionary = {
 	"v": {"cls": TileSynth2.TILE_LEDGE, "var": 0},
 	">": {"cls": TileSynth2.TILE_LEDGE, "var": 1},
 	"<": {"cls": TileSynth2.TILE_LEDGE, "var": 2},
+	"^": {"cls": TileSynth2.TILE_CLIFF, "var": 0},
+	"s": {"cls": TileSynth2.TILE_STAIRS, "var": 0},
+	"S": {"cls": TileSynth2.TILE_STAIRS, "var": 1},
+	"k": {"cls": TileSynth2.TILE_CUT_TREE, "var": 0},
+	"r": {"cls": TileSynth2.TILE_SMASH_ROCK, "var": 0},
+	"o": {"cls": TileSynth2.TILE_BOULDER, "var": 0},
+	"!": {"cls": TileSynth2.TILE_ITEM_BALL, "var": 0},
 }
 
 const BORDER_CHARS: Dictionary = {
 	"T": true,
 	"~": true,
 	"F": true,
+	"^": true,
 }
 
 const ORDINARY_KINDS: Dictionary = {
@@ -435,6 +443,10 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 				rec["kind"] = k_str
 				rec["fate"] = fate_str
 
+			if o.has("interior"):
+				rec["interior"] = str(o.get("interior", ""))
+			if o.has("name"):
+				rec["name"] = str(o.get("name", ""))
 			rec["w"] = ow
 			rec["h"] = oh
 			rec["is_decal"] = is_decal
@@ -584,8 +596,12 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			var s_def: Dictionary = TileSynth2.STAMP_TABLE[s_num]
 			var s_kind := str(s_def.get("kind", ""))
 			var lm_meta: Dictionary = roster_lm_by_stamp.get(s_str, {})
-			var lm_interior := str(lm_meta.get("interior", ""))
-			var lm_name := str(lm_meta.get("name", ""))
+			var lm_interior := str(obj.get("interior", ""))
+			if lm_interior.is_empty():
+				lm_interior = str(lm_meta.get("interior", ""))
+			var lm_name := str(obj.get("name", ""))
+			if lm_name.is_empty():
+				lm_name = str(lm_meta.get("name", ""))
 			_write_stamp(
 				s_num, s_def, x0, y0, origin, rows,
 				0, false, false, lm_interior, lm_name,
@@ -775,7 +791,8 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			var s_def: Dictionary = TileSynth2.STAMP_TABLE[chosen_sid]
 			_write_stamp(
 				chosen_sid, s_def, x0, y0, origin, rows,
-				door_color, is_ruined_flag, is_ordinary_searchable, "", "",
+				door_color, is_ruined_flag, is_ordinary_searchable,
+				str(obj.get("interior", "")), str(obj.get("name", "")),
 				cls_buf, var_buf, mask_buf, w, stamps_out, doors_out
 			)
 			placed_objects.append({
@@ -1104,8 +1121,8 @@ static func _write_stamp(
 						"x": x0 + tx,
 						"y": y0 + ty,
 						"stamp_id": stamp_num,
-						"interior": "",
-						"name": "",
+						"interior": lm_interior,
+						"name": lm_name,
 						"is_ordinary": is_ordinary_searchable,
 					})
 				else:

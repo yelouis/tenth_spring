@@ -33,15 +33,58 @@ static var _texture_lru_map: Dictionary = {}
 static var _texture_lru_order: Array[String] = []
 static var _silhouette_cache: Dictionary = {}
 static var _item_placeholder_tex: ImageTexture = null
+static var _tile_atlas_cache: Dictionary = {}
+static var _auto_import_gba_attempted: bool = false
 
-static func tile_atlas() -> Variant:
-	## World map tiles use res://assets/tiles/original_v1.{png,json} (Decision 53).
-	return null
+static func clear_tile_atlas_cache() -> void:
+	_tile_atlas_cache.clear()
+	_auto_import_gba_attempted = false
+
+static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
+	var norm := cache_dir.strip_edges().trim_suffix("/")
+	if norm.is_empty():
+		norm = DEFAULT_CACHE_DIR
+	if _tile_atlas_cache.has(norm):
+		return _tile_atlas_cache[norm]
+
+	var abs_dir := ProjectSettings.globalize_path(norm)
+	var png_path := abs_dir.path_join("tiles/emerald_v1.png")
+	var json_path := abs_dir.path_join("tiles/emerald_v1.json")
+
+	if not FileAccess.file_exists(png_path):
+		var default_norm := DEFAULT_CACHE_DIR.trim_suffix("/")
+		if norm == default_norm and not _auto_import_gba_attempted:
+			var gba_env := OS.get_environment("TENTH_SPRING_ROM_GBA").strip_edges()
+			if not gba_env.is_empty():
+				_auto_import_gba_attempted = true
+				var imp_script := load("res://rom/importer.gd")
+				if imp_script != null:
+					imp_script.call("import_gba_rom", gba_env, DEFAULT_CACHE_DIR)
+
+	if not FileAccess.file_exists(png_path) or not FileAccess.file_exists(json_path):
+		return null
+
+	var png_bytes := FileAccess.get_file_as_bytes(png_path)
+	if png_bytes.is_empty():
+		return null
+	var img := Image.new()
+	if img.load_png_from_buffer(png_bytes) != OK or img.is_empty():
+		return null
+	img.convert(Image.FORMAT_RGBA8)
+	var tex := ImageTexture.create_from_image(img)
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(json_path))
+	if not (parsed is Dictionary):
+		return null
+	var result := {"texture": tex, "json": parsed}
+	_tile_atlas_cache[norm] = result
+	return result
 
 static func clear_memory_cache() -> void:
 	_json_cache_by_dir.clear()
 	_texture_lru_map.clear()
 	_texture_lru_order.clear()
+	_tile_atlas_cache.clear()
+	_auto_import_gba_attempted = false
 
 static func _norm_dir(cache_dir: String) -> String:
 	var s := cache_dir.strip_edges().trim_suffix("/")

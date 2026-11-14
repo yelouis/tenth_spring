@@ -121,6 +121,12 @@ const MAP_COLORS := {
 	20: Color("#948674"), # RUBBLE
 	21: Color("#948674"), # STAMP
 	22: Color("#4c8e40"), # LEDGE
+	23: Color("#7a5c43"), # CLIFF
+	24: Color("#b8b4aa"), # STAIRS
+	25: Color("#3f7a34"), # CUT_TREE
+	26: Color("#7d6852"), # SMASH_ROCK
+	27: Color("#94856a"), # BOULDER
+	28: Color("#d14b3a"), # ITEM_BALL
 }
 
 const ROOF_BASE_COLORS := [

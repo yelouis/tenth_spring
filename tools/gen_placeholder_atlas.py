@@ -889,6 +889,115 @@ class AtlasBuilder:
                 self.set_pixel(col, row, 7, y, PALETTE["tree_trunk"])
                 self.set_pixel(col, row, 6, y, PALETTE["ink_outline"])
 
+    def draw_cliff(self, row: int, col: int, mask: int):
+        """Draws stepped cliff bluff (class 23, bit0=N, bit1=E, bit2=S, bit3=W)."""
+        has_n = (mask & 1) != 0
+        has_e = (mask & 2) != 0
+        has_s = (mask & 4) != 0
+        has_w = (mask & 8) != 0
+        for y in range(TILE_SIZE):
+            for x in range(TILE_SIZE):
+                c = PALETTE["path_edge"] if ((x // 2 + y // 2) % 3 != 0) else PALETTE["rubble"]
+                if (x + y * 3) % 11 == 0:
+                    c = PALETTE["rubble_shade"]
+                if not has_n and y < 4:
+                    c = PALETTE["grass"] if y < 2 else (PALETTE["tree_trunk"] if y == 2 else PALETTE["path"])
+                elif not has_s and y >= TILE_SIZE - 6:
+                    c = PALETTE["grass_tuft"] if y >= TILE_SIZE - 2 else (PALETTE["ink_outline"] if y == TILE_SIZE - 3 else PALETTE["door_frame"])
+                elif not has_w and x < 4:
+                    c = PALETTE["grass"] if x < 2 else PALETTE["door_frame"]
+                elif not has_e and x >= TILE_SIZE - 4:
+                    c = PALETTE["grass"] if x >= TILE_SIZE - 2 else PALETTE["rubble_shade"]
+                self.set_pixel(col, row, x, y, c)
+
+    def draw_stairs(self, row: int, col: int, variant: int):
+        """Draws stone steps carved into cliff (class 24, 0=N-S, 1=E-W)."""
+        for y in range(TILE_SIZE):
+            for x in range(TILE_SIZE):
+                if variant == 0:
+                    if x < 2 or x >= TILE_SIZE - 2:
+                        c = PALETTE["rubble_shade"]
+                    else:
+                        step = y % 8
+                        c = PALETTE["road_curb"] if step < 3 else (PALETTE["plaza"] if step < 6 else PALETTE["plaza_joint"])
+                else:
+                    if y < 2 or y >= TILE_SIZE - 2:
+                        c = PALETTE["rubble_shade"]
+                    else:
+                        step = x % 8
+                        c = PALETTE["road_curb"] if step < 3 else (PALETTE["plaza"] if step < 6 else PALETTE["plaza_joint"])
+                self.set_pixel(col, row, x, y, c)
+
+    def draw_cut_tree(self, row: int, col: int):
+        """Draws thorny Cut sapling over grass (class 25)."""
+        self.draw_grass(row, col, 0)
+        for y in range(TILE_SIZE):
+            for x in range(TILE_SIZE):
+                dx = abs(x - 16)
+                dy = y - 15
+                if dy >= 5 and dy <= 10 and dx <= 3:
+                    self.set_pixel(col, row, x, y, PALETTE["tree_trunk"])
+                elif dx * dx + (dy + 3) * (dy + 3) <= 92 and y >= 5:
+                    if dx + abs(dy + 3) >= 9:
+                        self.set_pixel(col, row, x, y, PALETTE["ink_outline"])
+                    else:
+                        self.set_pixel(col, row, x, y, PALETTE["tall_tips"] if (x + y) % 5 == 0 else PALETTE["tree_canopy"])
+
+    def draw_smash_rock(self, row: int, col: int):
+        """Draws cracked Rock Smash boulder over grass (class 26)."""
+        self.draw_grass(row, col, 0)
+        for y in range(6, 27):
+            for x in range(6, 26):
+                dx = (x - 16) / 9.0
+                dy = (y - 17) / 9.0
+                d2 = dx * dx + dy * dy
+                if d2 <= 1.0:
+                    if d2 >= 0.78 or (abs(x - y) <= 1 and y >= 10 and y <= 23) or (abs(x + y - 32) <= 1 and y >= 12 and y <= 22):
+                        c = PALETTE["ink_outline"]
+                    elif y < 14:
+                        c = PALETTE["path_pebble"]
+                    else:
+                        c = PALETTE["rubble"] if x < 18 else PALETTE["rubble_shade"]
+                    self.set_pixel(col, row, x, y, c)
+
+    def draw_boulder(self, row: int, col: int):
+        """Draws smooth Strength push boulder over grass (class 27)."""
+        self.draw_grass(row, col, 0)
+        for y in range(5, 28):
+            for x in range(5, 27):
+                dx = (x - 16) / 10.5
+                dy = (y - 16) / 10.5
+                d2 = dx * dx + dy * dy
+                if d2 <= 1.0:
+                    if d2 >= 0.80:
+                        c = PALETTE["ink_outline"]
+                    elif x < 14 and y < 14:
+                        c = PALETTE["road_curb"]
+                    elif y > 20:
+                        c = PALETTE["road_crack"]
+                    else:
+                        c = PALETTE["plaza"] if (x + y) % 4 != 0 else PALETTE["plaza_joint"]
+                    self.set_pixel(col, row, x, y, c)
+
+    def draw_item_ball(self, row: int, col: int):
+        """Draws visible overworld Item Ball over grass (class 28)."""
+        self.draw_grass(row, col, 0)
+        for y in range(7, 26):
+            for x in range(7, 25):
+                dx = x - 16
+                dy = y - 16
+                d2 = dx * dx + dy * dy
+                if d2 <= 76:
+                    if d2 >= 56 or abs(dy) <= 1:
+                        c = PALETTE["ink_outline"]
+                    elif dy < 0:
+                        c = PALETTE["roof0_base"] if x < 18 else PALETTE["roof0_shade"]
+                    else:
+                        c = PALETTE["flower_white"] if y < 21 else PALETTE["plaza"]
+                    if dx * dx + dy * dy <= 7:
+                        c = PALETTE["ink_outline"] if dx * dx + dy * dy >= 4 else PALETTE["flower_white"]
+                    self.set_pixel(col, row, x, y, c)
+
     def draw_fog(self, row: int, coverage_pct: int):
         # Draw across all columns
         threshold_map = {
@@ -987,6 +1096,12 @@ def build_atlas():
     r_door_broken = [add_row(14, 16 + v, False) for v in range(8)]
     r_rubble = [add_row(20, v, False) for v in range(2)]
     r_ledge = [add_row(22, v, False) for v in range(3)]
+    r_cliff = add_row(23, 0, True)
+    r_stairs = [add_row(24, v, False) for v in range(2)]
+    r_cut_tree = add_row(25, 0, False)
+    r_smash_rock = add_row(26, 0, False)
+    r_boulder = add_row(27, 0, False)
+    r_item_ball = add_row(28, 0, False)
 
     # Fog rows (§5.2)
     fog_solid = current_row; current_row += 1
@@ -1098,6 +1213,16 @@ def build_atlas():
     # Render LEDGE
     for v in range(3):
         builder.draw_ledge(r_ledge[v], 0, v)
+
+    # Render CLIFF, STAIRS, CUT_TREE, SMASH_ROCK, BOULDER, ITEM_BALL
+    for mask in range(NUM_COLS):
+        builder.draw_cliff(r_cliff, mask, mask)
+    for v in range(2):
+        builder.draw_stairs(r_stairs[v], 0, v)
+    builder.draw_cut_tree(r_cut_tree, 0)
+    builder.draw_smash_rock(r_smash_rock, 0)
+    builder.draw_boulder(r_boulder, 0)
+    builder.draw_item_ball(r_item_ball, 0)
 
     # Render FOG rows
     builder.draw_fog(fog_solid, 100)

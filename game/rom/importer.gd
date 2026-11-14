@@ -11,6 +11,8 @@ const NitroGfxRef := preload("res://rom/nitro_gfx.gd")
 const Gen5CellsRef := preload("res://rom/gen5_cells.gd")
 const DataPackImporterRef := preload("res://rom/data_pack.gd")
 const FanSpritesImporterRef := preload("res://rom/fan_sprites.gd")
+const GbaRomRef := preload("res://rom/gba_rom.gd")
+const TileAtlasBuilderRef := preload("res://rom/tile_atlas_builder.gd")
 
 const DEFAULT_CACHE_DIR := "user://rom_cache"
 
@@ -89,6 +91,58 @@ static func _read_manifest_or_default(dir_path: String) -> Dictionary:
 		"rom": null,
 		"dataPack": null,
 		"tiles": null,
+	}
+
+
+static func import_gba_rom(
+	rom_path: String = "",
+	cache_dir: String = DEFAULT_CACHE_DIR,
+	allow_test_user_dir: bool = false
+) -> Dictionary:
+	var effective_path := rom_path.strip_edges()
+	if effective_path.is_empty():
+		effective_path = OS.get_environment("TENTH_SPRING_ROM_GBA").strip_edges()
+	var is_test_dir := allow_test_user_dir or cache_dir.strip_edges().begins_with("user://test/")
+	var opened := GbaRomRef.open_rom(effective_path, is_test_dir, true)
+	if not bool(opened.get("ok", false)):
+		return opened
+	var rom: Variant = opened["rom"]
+	var staging_dir := _prepare_staging_dir(cache_dir)
+	var build_res := TileAtlasBuilderRef.build_emerald_atlas(rom, staging_dir)
+	rom.close()
+	if not bool(build_res.get("ok", false)):
+		DataPackImporterRef._remove_dir_recursive(staging_dir)
+		return build_res
+
+	var manifest := _read_manifest_or_default(staging_dir)
+	manifest["importerVersion"] = 1
+	manifest["tiles"] = {
+		"format": "emerald_v1",
+		"gameCode": str(opened.get("game_code", GbaRomRef.EXPECTED_GAME_CODE)),
+		"sha1": str(opened.get("sha1", "")),
+		"isClean": bool(opened.get("is_clean", false)),
+		"tilesWritten": int(build_res.get("tiles_written", 0)),
+	}
+	var mf := FileAccess.open(staging_dir.path_join("manifest.json"), FileAccess.WRITE)
+	if mf == null:
+		DataPackImporterRef._remove_dir_recursive(staging_dir)
+		return {"ok": false, "error": "Cannot write manifest.json in GBA staging dir."}
+	mf.store_string(JSON.stringify(manifest, "\t") + "\n")
+	mf.close()
+
+	if not _promote_staging_dir(staging_dir, cache_dir):
+		DataPackImporterRef._remove_dir_recursive(staging_dir)
+		return {"ok": false, "error": "Failed to promote GBA tile cache directory."}
+
+	var asset_db_script := load("res://rom/asset_db.gd")
+	if asset_db_script != null:
+		asset_db_script.call("clear_tile_atlas_cache")
+
+	return {
+		"ok": true,
+		"cache_dir": cache_dir,
+		"sha1": str(opened.get("sha1", "")),
+		"tiles_written": int(build_res.get("tiles_written", 0)),
 	}
 
 static func import_bw_rom(

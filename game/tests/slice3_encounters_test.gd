@@ -483,7 +483,7 @@ func _test_one_way_ledges_and_atlases() -> bool:
 		push_error("Expected scrub cells to synthesize >= 3 TILE_LEDGE tiles, got %d" % ledge_count)
 		return false
 
-	# Verify both tile atlases include class 22 at rows [94, 95, 96] and 512x3232 dimensions
+	# Verify both tile atlases include class 22 at rows [94, 95, 96] and 512x3456 dimensions
 	for base in ["res://assets/tiles/original_v1", "res://assets/tiles/placeholder_v1"]:
 		var json_txt := FileAccess.get_file_as_string(base + ".json")
 		var meta: Variant = JSON.parse_string(json_txt)
@@ -502,8 +502,8 @@ func _test_one_way_ledges_and_atlases() -> bool:
 		if img.load(ProjectSettings.globalize_path(base + ".png")) != OK:
 			push_error("Failed to load %s.png" % base)
 			return false
-		if img.get_width() != 512 or img.get_height() != 3232:
-			push_error("Expected %s.png size 512x3232, got %dx%d" % [base, img.get_width(), img.get_height()])
+		if img.get_width() != 512 or img.get_height() != 3456:
+			push_error("Expected %s.png size 512x3456, got %dx%d" % [base, img.get_width(), img.get_height()])
 			return false
 
 	return true

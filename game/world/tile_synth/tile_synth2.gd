@@ -33,6 +33,12 @@ const TILE_CROP := 19
 const TILE_RUBBLE := 20
 const TILE_STAMP := 21
 const TILE_LEDGE := 22
+const TILE_CLIFF := 23
+const TILE_STAIRS := 24
+const TILE_CUT_TREE := 25
+const TILE_SMASH_ROCK := 26
+const TILE_BOULDER := 27
+const TILE_ITEM_BALL := 28
 
 # Stamp flags in mask_id for TILE_STAMP (§14.2.2)
 const STAMP_FLAG_SOLID := 1
@@ -244,9 +250,17 @@ static func get_stamp_def(stamp_id: int) -> Dictionary:
 static func is_walkable(cls: int, _variant: int = 0, mask: int = 0) -> bool:
 	if cls == TILE_STAMP:
 		return (mask & STAMP_FLAG_SOLID) == 0
-	if cls == TILE_VOID or cls == TILE_TREE or cls == TILE_WATER or cls == TILE_ROOF or cls == TILE_WALL or cls == TILE_FENCE or cls == TILE_SIGN or cls == TILE_LEDGE:
+	if (
+		cls == TILE_VOID or cls == TILE_TREE or cls == TILE_WATER
+		or cls == TILE_ROOF or cls == TILE_WALL or cls == TILE_FENCE
+		or cls == TILE_SIGN or cls == TILE_LEDGE or cls == TILE_CLIFF
+		or cls == TILE_CUT_TREE or cls == TILE_SMASH_ROCK or cls == TILE_BOULDER
+	):
 		return false
 	return true
+
+static func is_field_clearable(cls: int) -> bool:
+	return cls == TILE_CUT_TREE or cls == TILE_SMASH_ROCK or cls == TILE_BOULDER
 
 ## One-way ledge jump check (Slice 3 §2.3):
 ## Returns true iff ledge_class == TILE_LEDGE, landing tile is walkable, and step_dir matches the ledge's jump direction
@@ -3173,7 +3187,7 @@ static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, 
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < road_v1_thresh else 0
 				TILE_TREE:
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_TREE_VARIANT) < 0.30 else 0
-				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE, TILE_STAMP, TILE_LEDGE:
+				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE, TILE_STAMP, TILE_LEDGE, TILE_STAIRS:
 					variant = grid_variant[idx]
 				_:
 					variant = 0
@@ -3268,5 +3282,7 @@ static func _get_mask_family(cls: int) -> Array:
 			return [TILE_WALL, TILE_DOOR]
 		TILE_FENCE:
 			return [TILE_FENCE]
+		TILE_CLIFF:
+			return [TILE_CLIFF, TILE_STAIRS]
 		_:
 			return []

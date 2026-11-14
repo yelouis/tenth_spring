@@ -49,6 +49,12 @@ const MAP_COLORS := {
 	20: Color("#948674"), # RUBBLE
 	21: Color("#948674"), # STAMP
 	22: Color("#4c8e40"), # LEDGE
+	23: Color("#7a5c43"), # CLIFF
+	24: Color("#b8b4aa"), # STAIRS
+	25: Color("#3f7a34"), # CUT_TREE
+	26: Color("#7d6852"), # SMASH_ROCK
+	27: Color("#94856a"), # BOULDER
+	28: Color("#d14b3a"), # ITEM_BALL
 }
 
 const ROOF_BASE_COLORS := [
@@ -456,14 +462,15 @@ func _init_tile_sets() -> void:
 		json_dict = atlas_data["json"]
 	else:
 		for png_res in ["res://assets/tiles/original_v1.png", "res://assets/tiles/placeholder_v1.png"]:
-			if ResourceLoader.exists(png_res):
-				texture = load(png_res) as Texture2D
-			if texture == null:
-				var abs_p := ProjectSettings.globalize_path(png_res)
-				if FileAccess.file_exists(abs_p):
-					var img := Image.load_from_file(abs_p)
-					if img != null and not img.is_empty():
+			var abs_p := ProjectSettings.globalize_path(png_res)
+			if FileAccess.file_exists(abs_p):
+				var bytes := FileAccess.get_file_as_bytes(abs_p)
+				if not bytes.is_empty():
+					var img := Image.new()
+					if img.load_png_from_buffer(bytes) == OK and not img.is_empty():
 						texture = ImageTexture.create_from_image(img)
+			if texture == null and ResourceLoader.exists(png_res):
+				texture = load(png_res) as Texture2D
 			if texture != null:
 				break
 
@@ -512,6 +519,8 @@ func _init_tile_sets() -> void:
 				_class_any_variant[c] = r
 			if r > max_row:
 				max_row = r
+	for fv in _fog_rows.values():
+		max_row = maxi(max_row, int(fv))
 
 	var tileset := TileSet.new()
 	tileset.tile_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)

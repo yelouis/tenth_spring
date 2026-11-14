@@ -131,6 +131,7 @@ def main():
 		"db_legacy_import_test",
 		"db_migration_test",
 		"db_test",
+		"emerald_landscape_and_puzzles_test",
 		"frame_codec_test",
 		"grid_test",
 		"idempotent_sync_test",

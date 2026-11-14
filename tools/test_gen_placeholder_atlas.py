@@ -110,6 +110,12 @@ class TestGenPlaceholderAtlas(unittest.TestCase):
         expected_pairs.append((19, 0))  # CROP
         for v in range(2): expected_pairs.append((20, v))  # RUBBLE 0..1
         for v in range(3): expected_pairs.append((22, v))  # LEDGE 0..2
+        expected_pairs.append((23, 0))  # CLIFF
+        for v in range(2): expected_pairs.append((24, v))  # STAIRS 0..1
+        expected_pairs.append((25, 0))  # CUT_TREE
+        expected_pairs.append((26, 0))  # SMASH_ROCK
+        expected_pairs.append((27, 0))  # BOULDER
+        expected_pairs.append((28, 0))  # ITEM_BALL
 
         for c, v in expected_pairs:
             if c in any_variant_classes:
@@ -118,7 +124,7 @@ class TestGenPlaceholderAtlas(unittest.TestCase):
             self.assertIn((c, v), class_variant_map, f"Missing (class={c}, variant={v}) in JSON rows")
 
         # Masked classes verification
-        masked_classes = {2, 3, 4, 7, 8, 9, 10, 12, 13, 15}
+        masked_classes = {2, 3, 4, 7, 8, 9, 10, 12, 13, 15, 23}
         for entry in row_entries:
             c = entry["class"]
             expected_masked = (c in masked_classes)

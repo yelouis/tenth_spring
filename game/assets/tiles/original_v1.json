@@ -583,12 +583,54 @@
       "variant": 2,
       "row": 96,
       "masked": false
+    },
+    {
+      "class": 23,
+      "variant": 0,
+      "row": 97,
+      "masked": true
+    },
+    {
+      "class": 24,
+      "variant": 0,
+      "row": 98,
+      "masked": false
+    },
+    {
+      "class": 24,
+      "variant": 1,
+      "row": 99,
+      "masked": false
+    },
+    {
+      "class": 25,
+      "variant": 0,
+      "row": 100,
+      "masked": false
+    },
+    {
+      "class": 26,
+      "variant": 0,
+      "row": 101,
+      "masked": false
+    },
+    {
+      "class": 27,
+      "variant": 0,
+      "row": 102,
+      "masked": false
+    },
+    {
+      "class": 28,
+      "variant": 0,
+      "row": 103,
+      "masked": false
     }
   ],
   "fog_rows": {
-    "solid": 97,
-    "d75": 98,
-    "d50": 99,
-    "d25": 100
+    "solid": 104,
+    "d75": 105,
+    "d50": 106,
+    "d25": 107
   }
 }

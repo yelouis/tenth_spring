@@ -1,0 +1,714 @@
+{
+  "version": 2,
+  "tilesets": {
+    "primary": 0,
+    "sec02": 2,
+    "sec03": 3,
+    "sec04": 4,
+    "sec05": 5,
+    "sec07": 7,
+    "sec10": 10
+  },
+  "tile_map": {
+    "0": {
+      "0": {
+        "0": {
+          "metatile": 0
+        }
+      }
+    },
+    "1": {
+      "0": {
+        "0": {
+          "metatile": 1
+        }
+      },
+      "1": {
+        "0": {
+          "metatile": 910,
+          "tileset": "sec05"
+        }
+      },
+      "2": {
+        "0": {
+          "metatile": 925,
+          "tileset": "sec10"
+        }
+      },
+      "3": {
+        "0": {
+          "metatile": 830,
+          "tileset": "sec03"
+        }
+      }
+    },
+    "2": {
+      "0": {
+        "a": {
+          "metatile": 13
+        },
+        "l": {
+          "metatile": 13
+        }
+      }
+    },
+    "3": {
+      "0": {
+        "0": {
+          "metatile": 14
+        },
+        "2": {
+          "metatile": 14
+        },
+        "4": {
+          "metatile": 14
+        },
+        "6": {
+          "metatile": 14
+        },
+        "8": {
+          "metatile": 14
+        },
+        "10": {
+          "metatile": 14
+        },
+        "12": {
+          "metatile": 14
+        },
+        "14": {
+          "metatile": 14
+        },
+        "1": {
+          "metatile": 22
+        },
+        "3": {
+          "metatile": 22
+        },
+        "9": {
+          "metatile": 22
+        },
+        "11": {
+          "metatile": 22
+        },
+        "5": {
+          "metatile": 198
+        },
+        "7": {
+          "metatile": 198
+        },
+        "13": {
+          "metatile": 198
+        },
+        "15": {
+          "metatile": 198
+        }
+      },
+      "1": {
+        "6": {
+          "metatile": 30
+        },
+        "12": {
+          "metatile": 31
+        },
+        "3": {
+          "metatile": 38
+        },
+        "9": {
+          "metatile": 39
+        }
+      }
+    },
+    "4": {
+      "0": {
+        "15": {
+          "metatile": 161
+        },
+        "14": {
+          "metatile": 201
+        },
+        "13": {
+          "metatile": 210
+        },
+        "12": {
+          "metatile": 202
+        },
+        "11": {
+          "metatile": 217
+        },
+        "9": {
+          "metatile": 218
+        },
+        "7": {
+          "metatile": 208
+        },
+        "6": {
+          "metatile": 200
+        },
+        "3": {
+          "metatile": 216
+        }
+      }
+    },
+    "5": {
+      "0": {
+        "0": {
+          "metatile": 292
+        }
+      }
+    },
+    "7": {
+      "0": {
+        "15": {
+          "metatile": 289
+        },
+        "14": {
+          "metatile": 281
+        },
+        "11": {
+          "metatile": 297
+        },
+        "7": {
+          "metatile": 288
+        },
+        "13": {
+          "metatile": 290
+        },
+        "6": {
+          "metatile": 280
+        },
+        "12": {
+          "metatile": 282
+        },
+        "3": {
+          "metatile": 296
+        },
+        "9": {
+          "metatile": 298
+        }
+      }
+    },
+    "8": {
+      "0": {
+        "15": {
+          "metatile": 529,
+          "tileset": "sec04"
+        },
+        "14": {
+          "metatile": 521,
+          "tileset": "sec04"
+        },
+        "11": {
+          "metatile": 537,
+          "tileset": "sec04"
+        },
+        "7": {
+          "metatile": 528,
+          "tileset": "sec04"
+        },
+        "13": {
+          "metatile": 530,
+          "tileset": "sec04"
+        },
+        "6": {
+          "metatile": 520,
+          "tileset": "sec04"
+        },
+        "12": {
+          "metatile": 522,
+          "tileset": "sec04"
+        },
+        "3": {
+          "metatile": 536,
+          "tileset": "sec04"
+        },
+        "9": {
+          "metatile": 538,
+          "tileset": "sec04"
+        }
+      }
+    },
+    "10": {
+      "0": {
+        "7": {
+          "metatile": 846,
+          "tileset": "sec02"
+        },
+        "13": {
+          "metatile": 847,
+          "tileset": "sec02"
+        },
+        "6": {
+          "metatile": 848,
+          "tileset": "sec02"
+        },
+        "12": {
+          "metatile": 849,
+          "tileset": "sec02"
+        },
+        "3": {
+          "metatile": 838,
+          "tileset": "sec02"
+        },
+        "9": {
+          "metatile": 839,
+          "tileset": "sec02"
+        },
+        "14": {
+          "metatile": 836,
+          "tileset": "sec02"
+        },
+        "11": {
+          "metatile": 844,
+          "tileset": "sec02"
+        }
+      }
+    },
+    "11": {
+      "0": {
+        "0": {
+          "metatile": 699,
+          "tileset": "sec02"
+        }
+      }
+    },
+    "15": {
+      "0": {
+        "0": {
+          "metatile": 329
+        },
+        "2": {
+          "metatile": 329
+        },
+        "8": {
+          "metatile": 329
+        },
+        "10": {
+          "metatile": 329
+        },
+        "1": {
+          "metatile": 306
+        },
+        "9": {
+          "metatile": 306
+        },
+        "3": {
+          "metatile": 328
+        },
+        "4": {
+          "metatile": 313
+        },
+        "12": {
+          "metatile": 313
+        },
+        "5": {
+          "metatile": 320
+        },
+        "6": {
+          "metatile": 312
+        }
+      }
+    },
+    "16": {
+      "0": {
+        "0": {
+          "metatile": 4
+        }
+      }
+    },
+    "18": {
+      "0": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "1": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "2": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "3": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "4": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "5": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "6": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "7": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "8": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "9": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "10": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "11": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "12": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "13": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "14": {
+        "0": {
+          "metatile": 27
+        }
+      },
+      "15": {
+        "0": {
+          "metatile": 27
+        }
+      }
+    },
+    "19": {
+      "0": {
+        "0": {
+          "metatile": 657,
+          "tileset": "sec07"
+        }
+      }
+    },
+    "20": {
+      "0": {
+        "0": {
+          "metatile": 224
+        }
+      }
+    },
+    "22": {
+      "0": {
+        "0": {
+          "metatile": 135
+        }
+      },
+      "1": {
+        "0": {
+          "metatile": 134
+        }
+      },
+      "2": {
+        "0": {
+          "metatile": 133
+        }
+      }
+    },
+    "23": {
+      "0": {
+        "0": {
+          "metatile": 276
+        },
+        "1": {
+          "metatile": 129
+        },
+        "2": {
+          "metatile": 259
+        },
+        "3": {
+          "metatile": 120
+        },
+        "4": {
+          "metatile": 108
+        },
+        "5": {
+          "metatile": 267
+        },
+        "6": {
+          "metatile": 104
+        },
+        "7": {
+          "metatile": 112
+        },
+        "8": {
+          "metatile": 261
+        },
+        "9": {
+          "metatile": 122
+        },
+        "10": {
+          "metatile": 260
+        },
+        "11": {
+          "metatile": 121
+        },
+        "12": {
+          "metatile": 106
+        },
+        "13": {
+          "metatile": 114
+        },
+        "14": {
+          "metatile": 105
+        },
+        "15": {
+          "metatile": 113
+        }
+      }
+    },
+    "24": {
+      "0": {
+        "0": {
+          "metatile": 207
+        }
+      },
+      "1": {
+        "0": {
+          "metatile": 233
+        }
+      }
+    }
+  },
+  "object_sprites": {
+    "25": {
+      "frame_offset": 5130168,
+      "palette_offset": 4905208,
+      "base_metatile": 1
+    },
+    "26": {
+      "frame_offset": 5130680,
+      "palette_offset": 4905144,
+      "base_metatile": 1
+    },
+    "27": {
+      "frame_offset": 5131192,
+      "palette_offset": 4905144,
+      "base_metatile": 1
+    },
+    "28": {
+      "frame_offset": 5028920,
+      "palette_offset": 4905208,
+      "base_metatile": 1
+    }
+  },
+  "buildings": {},
+  "compositions": {},
+  "gaps": [
+    {
+      "id": "buildings_stay_original",
+      "classes": [
+        12,
+        13,
+        14
+      ],
+      "reason": "Buildings and doors keep Tenth Spring original art by design."
+    },
+    {
+      "id": "marsh_wet_ground",
+      "classes": [
+        6
+      ],
+      "reason": "The ROM has no marsh art: its one wetland is plain pale lawn dotted with ponds, and the puddle and shallow-water pieces are water edges or pale lawn, so every candidate would be a stand-in."
+    },
+    {
+      "id": "rail_track",
+      "classes": [
+        9
+      ],
+      "reason": "No railway track piece exists; the nearest look-alikes are fences, bridge decks and girders, none a track. A road piece is not a stand-in."
+    },
+    {
+      "id": "path_overgrown",
+      "classes": [
+        7
+      ],
+      "variants": [
+        1
+      ],
+      "reason": "No path piece shows weeds on its surface; the lawn rim on edge pieces is a border, not weeds."
+    },
+    {
+      "id": "path_one_wide",
+      "classes": [
+        7
+      ],
+      "masks": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        8,
+        10
+      ],
+      "reason": "Every ROM path is at least two tiles wide, so there is no end, isolated or one-wide piece."
+    },
+    {
+      "id": "road_cracked",
+      "classes": [
+        8
+      ],
+      "variants": [
+        1
+      ],
+      "reason": "No cracked or broken paving piece exists in any paving family."
+    },
+    {
+      "id": "road_one_wide",
+      "classes": [
+        8
+      ],
+      "masks": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        8,
+        10
+      ],
+      "reason": "Every ROM street lane is at least two tiles wide, so there is no end, isolated or one-wide piece."
+    },
+    {
+      "id": "plaza_weeded",
+      "classes": [
+        11
+      ],
+      "variants": [
+        1
+      ],
+      "reason": "No paving piece shows weeds or grass tufts across its surface."
+    },
+    {
+      "id": "gravestone",
+      "classes": [
+        17
+      ],
+      "reason": "No headstone or grave marker piece was found on plain ground in any tileset."
+    },
+    {
+      "id": "pointed_tree_other_cells",
+      "classes": [
+        3
+      ],
+      "variants": [
+        1
+      ],
+      "masks": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        7,
+        8,
+        10,
+        11,
+        13,
+        14,
+        15
+      ],
+      "reason": "The ROM's only pointed tree is a 2 x 2 block: there is no single-cell, row, column or grove piece, and a round canopy would be a stand-in."
+    },
+    {
+      "id": "fence_junctions",
+      "classes": [
+        15
+      ],
+      "masks": [
+        7,
+        11,
+        13,
+        14,
+        15
+      ],
+      "reason": "No fence T-junction or crossing piece exists."
+    },
+    {
+      "id": "water_one_tile_channel",
+      "classes": [
+        4
+      ],
+      "masks": [
+        5,
+        10
+      ],
+      "reason": "Water one tile wide with land on both sides: every pond edge piece shows a shore on one side or on two adjacent sides, none on two opposite sides."
+    },
+    {
+      "id": "water_dead_end_tip",
+      "classes": [
+        4
+      ],
+      "masks": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "reason": "Water with a single water neighbour (a channel end or peninsula tip, shore on three sides): the pond shore set has no three-sided end piece, and the sea-coloured beach pieces would be a stand-in."
+    },
+    {
+      "id": "water_single_cell_pool",
+      "classes": [
+        4
+      ],
+      "masks": [
+        0
+      ],
+      "reason": "An isolated one-tile pool: no pond-coloured piece draws a shore on all four sides."
+    },
+    {
+      "id": "bridge_not_two_wide",
+      "classes": [
+        10
+      ],
+      "masks": [
+        0,
+        1,
+        2,
+        4,
+        5,
+        8,
+        10,
+        15
+      ],
+      "reason": "The ROM's plank bridge is a deck exactly two tiles wide built of paired pieces: there is no plank piece for a one-tile deck or a single cell, and the inside of a wider deck (mask 15) cannot tell a north-south deck from an east-west one."
+    },
+    {
+      "id": "rubble_large_pile",
+      "classes": [
+        20
+      ],
+      "variants": [
+        1
+      ],
+      "reason": "The only large rock pile sits on a cave floor, not on lawn, so it would read as a patch; the placeholder stays."
+    }
+  ]
+}

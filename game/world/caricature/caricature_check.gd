@@ -170,41 +170,17 @@ static func _uses_route_era_rules(area: Dictionary, is_camp: bool, is_route: boo
 			return true
 	return false
 
-static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
-	var w: int = int(compiled.get("w", 0))
-	var h: int = int(compiled.get("h", 0))
-	var cls_buf: PackedByteArray = compiled.get("class", PackedByteArray())
-	var var_buf: PackedByteArray = compiled.get("variant", PackedByteArray())
-	var mask_buf: PackedByteArray = compiled.get("mask", PackedByteArray())
-	var arrival: Vector2i = compiled.get("arrival", Vector2i.ZERO)
-	var art_pending: int = int(compiled.get("art_pending", 0))
-	var openings_var: Variant = compiled.get("openings", [])
-	var openings: Array = openings_var if openings_var is Array else []
-
-	var akind := str(area.get("kind", str(compiled.get("kind", ""))))
-	var aid := str(area.get("id", ""))
-	var is_camp := (akind == "camp" or aid.begins_with("camp:"))
-	var is_route := (akind == "route" or aid.begins_with("route:"))
-
-	var total: int = w * h
-	var opening_mask := _build_opening_mask(w, h, openings)
-	var walkable_flags := PackedByteArray()
-	walkable_flags.resize(total)
-	walkable_flags.fill(0)
-
-	var walkable_count := 0
-	for y in range(h):
-		for x in range(w):
-			if not _in_play_bounds(x, y, w, h, opening_mask):
-				continue
-			var idx: int = y * w + x
-			if TileSynth2.is_walkable(cls_buf[idx], var_buf[idx], mask_buf[idx]):
-				walkable_flags[idx] = 1
-				walkable_count += 1
-
-	# Build directed movement graph (normal 1-step & 1-step ledge jumps) and reverse graph
-	var fwd_edges: Dictionary = {} # int_idx -> PackedInt32Array
-	var rev_edges: Dictionary = {} # int_idx -> PackedInt32Array
+static func _build_directed_graph(
+	w: int,
+	h: int,
+	cls_buf: PackedByteArray,
+	var_buf: PackedByteArray,
+	mask_buf: PackedByteArray,
+	opening_mask: PackedByteArray,
+	walkable_flags: PackedByteArray
+) -> Dictionary:
+	var fwd_edges: Dictionary = {}
+	var rev_edges: Dictionary = {}
 	for y in range(h):
 		for x in range(w):
 			var a_idx: int = y * w + x
@@ -239,6 +215,102 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 				var r_arr: PackedInt32Array = rev_edges[dst_idx]
 				r_arr.append(a_idx)
 				rev_edges[dst_idx] = r_arr
+	return {"fwd": fwd_edges, "rev": rev_edges}
+
+static func _count_trapped_in_graph(
+	total: int,
+	arr_idx: int,
+	walkable_flags: PackedByteArray,
+	graph: Dictionary
+) -> int:
+	if arr_idx < 0 or arr_idx >= total or walkable_flags[arr_idx] == 0:
+		return 0
+	var fwd_edges: Dictionary = graph["fwd"]
+	var rev_edges: Dictionary = graph["rev"]
+	var fwd_seen := PackedByteArray()
+	fwd_seen.resize(total)
+	fwd_seen.fill(0)
+	fwd_seen[arr_idx] = 1
+	var fq: Array[int] = [arr_idx]
+	var fh := 0
+	while fh < fq.size():
+		var u: int = fq[fh]
+		fh += 1
+		for v in (fwd_edges.get(u, PackedInt32Array()) as PackedInt32Array):
+			if fwd_seen[v] == 0:
+				fwd_seen[v] = 1
+				fq.append(v)
+
+	var rev_seen := PackedByteArray()
+	rev_seen.resize(total)
+	rev_seen.fill(0)
+	rev_seen[arr_idx] = 1
+	var rq: Array[int] = [arr_idx]
+	var rh := 0
+	while rh < rq.size():
+		var u: int = rq[rh]
+		rh += 1
+		for prev in (rev_edges.get(u, PackedInt32Array()) as PackedInt32Array):
+			if rev_seen[prev] == 0:
+				rev_seen[prev] = 1
+				rq.append(prev)
+
+	var trapped := 0
+	for i in range(total):
+		if fwd_seen[i] == 1 and rev_seen[i] == 0:
+			trapped += 1
+	return trapped
+
+static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
+	var w: int = int(compiled.get("w", 0))
+	var h: int = int(compiled.get("h", 0))
+	var cls_buf: PackedByteArray = compiled.get("class", PackedByteArray())
+	var var_buf: PackedByteArray = compiled.get("variant", PackedByteArray())
+	var mask_buf: PackedByteArray = compiled.get("mask", PackedByteArray())
+	var arrival: Vector2i = compiled.get("arrival", Vector2i.ZERO)
+	var art_pending: int = int(compiled.get("art_pending", 0))
+	var openings_var: Variant = compiled.get("openings", [])
+	var openings: Array = openings_var if openings_var is Array else []
+
+	var akind := str(area.get("kind", str(compiled.get("kind", ""))))
+	var aid := str(area.get("id", ""))
+	var is_camp := (akind == "camp" or aid.begins_with("camp:"))
+	var is_route := (akind == "route" or aid.begins_with("route:"))
+
+	var total: int = w * h
+	var opening_mask := _build_opening_mask(w, h, openings)
+	var base_flags := PackedByteArray()
+	base_flags.resize(total)
+	base_flags.fill(0)
+	var walkable_flags := PackedByteArray()
+	walkable_flags.resize(total)
+	walkable_flags.fill(0)
+
+	var walkable_count := 0
+	var item_balls := 0
+	for y in range(h):
+		for x in range(w):
+			if not _in_play_bounds(x, y, w, h, opening_mask):
+				continue
+			var idx: int = y * w + x
+			var cls: int = cls_buf[idx]
+			if cls == TileSynth2.TILE_ITEM_BALL:
+				item_balls += 1
+			var is_base_w := TileSynth2.is_walkable(cls, var_buf[idx], mask_buf[idx])
+			if is_base_w:
+				base_flags[idx] = 1
+			if is_base_w or TileSynth2.is_field_clearable(cls):
+				walkable_flags[idx] = 1
+				walkable_count += 1
+
+	var arr_idx_global: int = (arrival.y * w + arrival.x) if _in_play_bounds(arrival.x, arrival.y, w, h, opening_mask) else -1
+	var base_graph := _build_directed_graph(w, h, cls_buf, var_buf, mask_buf, opening_mask, base_flags)
+	var base_trapped_count := _count_trapped_in_graph(total, arr_idx_global, base_flags, base_graph)
+
+	# Build Full movement graph (includes Cut/Rock Smash/Strength clearable obstacles)
+	var full_graph := _build_directed_graph(w, h, cls_buf, var_buf, mask_buf, opening_mask, walkable_flags)
+	var fwd_edges: Dictionary = full_graph["fwd"]
+	var rev_edges: Dictionary = full_graph["rev"]
 
 	# Forward BFS from arrival
 	var dist := PackedInt32Array()
@@ -318,8 +390,9 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 	if is_route and openings.size() == ROUTE_OPENINGS_COUNT:
 		var out0 := _local_outer_of_opening(openings[0] as Dictionary, w, h)
 		var out1 := _local_outer_of_opening(openings[1] as Dictionary, w, h)
-		var d_from_0 := _bfs_from_sources(out0, w, h, walkable_flags, fwd_edges)
-		var d_from_1 := _bfs_from_sources(out1, w, h, walkable_flags, fwd_edges)
+		var base_fwd: Dictionary = base_graph["fwd"]
+		var d_from_0 := _bfs_from_sources(out0, w, h, base_flags, base_fwd)
+		var d_from_1 := _bfs_from_sources(out1, w, h, base_flags, base_fwd)
 		var min_01 := -1
 		for pt1 in out1:
 			var v01: int = d_from_0[pt1.y * w + pt1.x]
@@ -420,7 +493,7 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 
 	if unreached_count != MAX_UNREACHED:
 		failed_rules.append("P1")
-	if trapped_count != MAX_TRAPPED:
+	if trapped_count != MAX_TRAPPED or base_trapped_count != MAX_TRAPPED:
 		failed_rules.append("P2")
 
 	if not is_route:
@@ -492,6 +565,8 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"reached": reached_count,
 		"unreached": unreached_count,
 		"trapped": trapped_count,
+		"base_trapped": base_trapped_count,
+		"item_balls": item_balls,
 		"max_walk": max_walk,
 		"landmark_steps": landmark_steps,
 		"landmark_max": landmark_max,

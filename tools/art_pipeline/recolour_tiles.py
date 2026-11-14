@@ -223,6 +223,12 @@ EXPECTED_MAP_COLORS_HEX = {
     20: "#948674",  # RUBBLE -> rail_ballast
     21: "#948674",  # STAMP -> rail_ballast
     22: "#4c8e40",  # LEDGE -> grass_shade
+    23: "#7a5c43",  # CLIFF
+    24: "#b8b4aa",  # STAIRS
+    25: "#3f7a34",  # CUT_TREE
+    26: "#7d6852",  # SMASH_ROCK
+    27: "#94856a",  # BOULDER
+    28: "#d14b3a",  # ITEM_BALL
 }
 
 # Exact deterministic mapping from Kenney Roguelike/RPG Pack RGB colours to TS_TERRAIN_PALETTE
@@ -477,6 +483,12 @@ def _build_row_specs():
     r_door_broken = [add_row(14, 16 + v, False) for v in range(8)]
     r_rubble = [add_row(20, v, False) for v in range(2)]
     r_ledge = [add_row(22, v, False) for v in range(3)]
+    r_cliff = add_row(23, 0, True)
+    r_stairs = [add_row(24, v, False) for v in range(2)]
+    r_cut_tree = add_row(25, 0, False)
+    r_smash_rock = add_row(26, 0, False)
+    r_boulder = add_row(27, 0, False)
+    r_item_ball = add_row(28, 0, False)
 
     fog_rows = {
         "solid": current_row,
@@ -517,6 +529,12 @@ def _build_row_specs():
         "door_broken": r_door_broken,
         "rubble": r_rubble,
         "ledge": r_ledge,
+        "cliff": r_cliff,
+        "stairs": r_stairs,
+        "cut_tree": r_cut_tree,
+        "smash_rock": r_smash_rock,
+        "boulder": r_boulder,
+        "item_ball": r_item_ball,
         "fog": fog_rows,
         "total_rows": total_rows,
     }
@@ -926,6 +944,111 @@ def generate_original_atlas(pack_sheet_path=None):
         ledge_w.set(3, y, TS_TERRAIN_PALETTE["wood_shadow"])
         ledge_w.set(2, y, TS_TERRAIN_PALETTE["tall_deep"])
     put_16(0, idx["ledge"][2], ledge_w)
+
+    # Row 97: CLIFF (class 23, masked 0..15)
+    for mask in range(16):
+        has_n = (mask & 1) != 0
+        has_e = (mask & 2) != 0
+        has_s = (mask & 4) != 0
+        has_w = (mask & 8) != 0
+        cl = grass0.copy()
+        for y in range(16):
+            for x in range(16):
+                c = TS_TERRAIN_PALETTE["path_pebble"] if (x + y) % 3 != 0 else TS_TERRAIN_PALETTE["rail_ballast"]
+                if not has_n and y < 2:
+                    c = TS_TERRAIN_PALETTE["grass_base"] if y == 0 else TS_TERRAIN_PALETTE["path_hi"]
+                elif not has_s and y >= 13:
+                    c = TS_TERRAIN_PALETTE["grass_shade"] if y == 15 else TS_TERRAIN_PALETTE["wood_shadow"]
+                elif not has_w and x < 2:
+                    c = TS_TERRAIN_PALETTE["grass_base"] if x == 0 else TS_TERRAIN_PALETTE["wood_shadow"]
+                elif not has_e and x >= 14:
+                    c = TS_TERRAIN_PALETTE["grass_base"] if x == 15 else TS_TERRAIN_PALETTE["path_rim"]
+                cl.set(x, y, c)
+        put_16(mask, idx["cliff"], cl)
+
+    # Rows 98..99: STAIRS 0..1 (N-S, E-W stone steps)
+    for sv in range(2):
+        st = grass0.copy()
+        for y in range(16):
+            for x in range(16):
+                if sv == 0:
+                    c = TS_TERRAIN_PALETTE["path_rim"] if (x < 1 or x >= 15) else (
+                        TS_TERRAIN_PALETTE["plaza_hi"] if y % 4 < 2 else (
+                            TS_TERRAIN_PALETTE["plaza_base"] if y % 4 == 2 else TS_TERRAIN_PALETTE["plaza_joint"]
+                        )
+                    )
+                else:
+                    c = TS_TERRAIN_PALETTE["path_rim"] if (y < 1 or y >= 15) else (
+                        TS_TERRAIN_PALETTE["plaza_hi"] if x % 4 < 2 else (
+                            TS_TERRAIN_PALETTE["plaza_base"] if x % 4 == 2 else TS_TERRAIN_PALETTE["plaza_joint"]
+                        )
+                    )
+                st.set(x, y, c)
+        put_16(0, idx["stairs"][sv], st)
+
+    # Row 100: CUT_TREE
+    ct = grass0.copy()
+    for y in range(2, 15):
+        for x in range(3, 14):
+            dx, dy = abs(x - 8), y - 7
+            if dy >= 3 and dy <= 6 and dx <= 1:
+                ct.set(x, y, TS_TERRAIN_PALETTE["wood_seam"])
+            elif dx * dx + (dy + 1) * (dy + 1) <= 23 and y <= 11:
+                ct.set(x, y, TS_TERRAIN_PALETTE["tall_deep"] if dx * dx + (dy + 1) * (dy + 1) >= 18 else (
+                    TS_TERRAIN_PALETTE["tall_tip"] if (x + y) % 4 == 0 else TS_TERRAIN_PALETTE["tall_mid"]
+                ))
+    put_16(0, idx["cut_tree"], ct)
+
+    # Row 101: SMASH_ROCK
+    sr = grass0.copy()
+    for y in range(3, 14):
+        for x in range(3, 13):
+            dx, dy = (x - 8) / 4.5, (y - 8.5) / 4.5
+            d2 = dx * dx + dy * dy
+            if d2 <= 1.0:
+                if d2 >= 0.72 or (abs(x - y) <= 0 and 5 <= y <= 11) or (abs(x + y - 16) <= 0 and 6 <= y <= 11):
+                    sr.set(x, y, TS_TERRAIN_PALETTE["wood_shadow"])
+                elif y < 7:
+                    sr.set(x, y, TS_TERRAIN_PALETTE["path_base"])
+                else:
+                    sr.set(x, y, TS_TERRAIN_PALETTE["path_pebble"] if x < 9 else TS_TERRAIN_PALETTE["path_rim"])
+    put_16(0, idx["smash_rock"], sr)
+
+    # Row 102: BOULDER
+    bo = grass0.copy()
+    for y in range(2, 14):
+        for x in range(2, 14):
+            dx, dy = (x - 8) / 5.2, (y - 8) / 5.2
+            d2 = dx * dx + dy * dy
+            if d2 <= 1.0:
+                if d2 >= 0.78:
+                    bo.set(x, y, TS_TERRAIN_PALETTE["road_crack"])
+                elif x < 7 and y < 7:
+                    bo.set(x, y, TS_TERRAIN_PALETTE["plaza_hi"])
+                elif y > 10:
+                    bo.set(x, y, TS_TERRAIN_PALETTE["road_wear"])
+                else:
+                    bo.set(x, y, TS_TERRAIN_PALETTE["plaza_base"])
+    put_16(0, idx["boulder"], bo)
+
+    # Row 103: ITEM_BALL
+    ib = grass0.copy()
+    ball_red = (209, 75, 58, 255)
+    ball_white = (244, 244, 240, 255)
+    for y in range(3, 13):
+        for x in range(3, 13):
+            dx, dy = x - 8, y - 8
+            d2 = dx * dx + dy * dy
+            if d2 <= 20:
+                if d2 >= 14 or dy == 0:
+                    ib.set(x, y, TS_TERRAIN_PALETTE["road_crack"])
+                elif dy < 0:
+                    ib.set(x, y, ball_red)
+                else:
+                    ib.set(x, y, ball_white)
+                if d2 <= 2:
+                    ib.set(x, y, TS_TERRAIN_PALETTE["road_crack"] if d2 > 0 else ball_white)
+    put_16(0, idx["item_ball"], ib)
 
     # Rows 94..97: fog_rows (solid, d75, d50, d25 across all 16 columns)
     for key, thresh in [("solid", 16), ("d75", 12), ("d50", 8), ("d25", 4)]:
