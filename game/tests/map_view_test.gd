@@ -737,6 +737,11 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 	map_view._unrender_cell(15, 15)
+	map_view._set_zoom_step(0.25)
+	if not overview_layer.visible or world_known.visible:
+		push_error("(58) Street-accurate mode at zoom 0.25 must stay overview: overview=%s known=%s" % [str(overview_layer.visible), str(world_known.visible)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
 	map_view._set_zoom_step(1.0)
 
 	# 16. Item 48b (§4.1, §4.2, §4.3, §9): Worker's two paths (caricature vs store),
@@ -903,6 +908,96 @@ func run_test() -> bool:
 		Neighbourhoods.set_config_path_for_tests("")
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
+
+	# Decision 58 falsifier: in caricature mode, zoom 0.25 draws tiles & stamps (not flat overview) so 160x128 fits whole
+	map_view._set_zoom_step(0.25)
+	if overview_layer.visible or not world_known.visible or not world_cleared.visible or not stamp_base.visible or not stamp_overhang.visible:
+		push_error("(58) [falsifier] Caricature mode at zoom 0.25 must show tile and stamp layers (not overview): overview=%s known=%s stamp_base=%s" % [str(overview_layer.visible), str(world_known.visible), str(stamp_base.visible)])
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._set_zoom_step(0.125)
+	if not overview_layer.visible or world_known.visible:
+		push_error("(58) Caricature mode at zoom 0.125 must show overview: overview=%s known=%s" % [str(overview_layer.visible), str(world_known.visible)])
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view._set_zoom_step(1.0)
+
+	# Item 53 (§10.7, §10.12): on caricature_routes_fixture_roster.json, leg cells take their route's state
+	# (fog at no row, known at 1, cleared at 2), 2x2 camp keeps camp HUD across all 4 cells, and --area accepts a leg id.
+	Neighbourhoods.set_config_path_for_tests("res://tests/fixtures/caricature_routes_fixture_roster.json")
+	var repo_root_mv := ProjectSettings.globalize_path("res://").simplify_path().get_base_dir()
+	var leg_arg_res: Dictionary = ScreenshotConfig.parse_args(
+		["--demo", "--screenshot=/tmp/out_leg.png", "--area=route:fixture-city:harbor-road#1", "--zoom=0.25"],
+		false,
+		repo_root_mv
+	)
+	if not bool(leg_arg_res.get("ok", false)) or str(leg_arg_res.get("area", "")) != "route:fixture-city:harbor-road#1":
+		push_error("(53) ScreenshotConfig.parse_args failed to accept leg id in --area: %s" % str(leg_arg_res))
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	DB.execute_query("DELETE FROM neighbourhood_state;")
+	DB.execute_query("DELETE FROM map_cell;")
+	if not map_view.load_place("city:fixture-city", true):
+		push_error("(53) load_place failed on caricature_routes_fixture_roster.json")
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# Focus on camp's north-east cell (camp_origin + (1, 1)): still inside 2x2 camp!
+	var camp_rf_orig := Neighbourhoods.block_origin(Neighbourhoods.area("camp:fixture-city"))
+	map_view.focus_on_cell(camp_rf_orig.x + 1, camp_rf_orig.y + 1)
+	if not ret_btn.visible or not board_btn.visible or back_btn.visible:
+		push_error("(53) 2x2 camp north-east cell did not keep ReturnHome/Board visible: ret=%s board=%s back=%s" % [str(ret_btn.visible), str(board_btn.visible), str(back_btn.visible)])
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	var leg_cells := Neighbourhoods.block_cells(Neighbourhoods.area("route:fixture-city:harbor-road#1"))
+	for lc in leg_cells:
+		if map_view._caricature_reveal_state(lc) != 0 or not map_view._is_cell_hidden(lc.x, lc.y):
+			push_error("(53) Locked route leg cell %s should be fog (0 / hidden)" % str(lc))
+			Neighbourhoods.set_config_path_for_tests("")
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
+
+	DB.upsert_neighbourhood_state("route:fixture-city:harbor-road", "city:fixture-city", 1, "route", 1000)
+	map_view.focus_on_area("route:fixture-city:harbor-road#1", true)
+	var wait_53_leg := Time.get_ticks_msec()
+	while Time.get_ticks_msec() - wait_53_leg < 5000:
+		map_view._process(0.0)
+		if map_view.pending_cell_count() == 0:
+			break
+		OS.delay_msec(5)
+	map_view._process(0.0)
+
+	var leg_known_tiles := 0
+	for lc2 in leg_cells:
+		if map_view._caricature_reveal_state(lc2) != 1 or map_view._is_cell_hidden(lc2.x, lc2.y):
+			push_error("(53) Open route (state=1) leg cell %s did not take route state 1 (known)" % str(lc2))
+			Neighbourhoods.set_config_path_for_tests("")
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
+		for ty_l in 32:
+			for tx_l in 32:
+				if map_view._world_known.get_cell_source_id(map_view._screen_tile(lc2.x, lc2.y, tx_l, ty_l)) != -1:
+					leg_known_tiles += 1
+	if leg_known_tiles != 2048:
+		push_error("(53) Expected 2048 known tiles on 1x2 open route leg, got %d" % leg_known_tiles)
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	DB.upsert_neighbourhood_state("route:fixture-city:harbor-road", "city:fixture-city", 2, "route", 1001)
+	for lc3 in leg_cells:
+		if map_view._caricature_reveal_state(lc3) != 2:
+			push_error("(53) Walked route (state=2) leg cell %s did not take route state 2 (cleared)" % str(lc3))
+			Neighbourhoods.set_config_path_for_tests("")
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
 
 	Neighbourhoods.set_config_path_for_tests("")
 

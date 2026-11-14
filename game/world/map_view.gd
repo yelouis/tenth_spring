@@ -159,6 +159,7 @@ var _caricature_compiled_by_area: Dictionary = {} # area_id -> compiled Dictiona
 var _caricature_camp_id: String = ""
 var _focused_area_id: String = ""
 var _focused_area_tiles: Vector2i = Vector2i.ZERO
+var _focused_city_cells: Vector2i = Vector2i.ZERO
 var _screenshot_area_id: String = ""
 
 var _map_fetcher = MapFetcher.new()
@@ -654,6 +655,7 @@ func _focus_initial_cell() -> void:
 func focus_on_cell(cx: int, cy: int) -> void:
 	_focused_area_id = ""
 	_focused_area_tiles = Vector2i.ZERO
+	_focused_city_cells = Vector2i.ZERO
 	if _camera != null:
 		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
 	_update_return_home_visibility()
@@ -674,6 +676,7 @@ func focus_on_area(area_id: String, whole: bool = false) -> void:
 	var rows: int = int(cells_arr[1]) if cells_arr.size() >= 2 else 1
 	_focused_area_id = area_id
 	_focused_area_tiles = Vector2i(cols * 32, rows * 32)
+	_focused_city_cells = Vector2i.ZERO
 	if _camera != null:
 		if whole:
 			_camera.position = Vector2(
@@ -693,22 +696,48 @@ func focus_on_area(area_id: String, whole: bool = false) -> void:
 			)
 	_update_return_home_visibility()
 
+func focus_on_city(place_id: String) -> float:
+	var bounds: Rect2i = Neighbourhoods.city_bounds(place_id)
+	_focused_area_id = ""
+	_focused_area_tiles = Vector2i.ZERO
+	if bounds.size.x <= 0 or bounds.size.y <= 0:
+		_focused_city_cells = Vector2i.ZERO
+		return _current_zoom_step
+	_focused_city_cells = bounds.size
+	var vp_px := get_viewport_rect().size
+	var fit_zoom := _current_zoom_step
+	if vp_px.x > 0.0 and vp_px.y > 0.0:
+		fit_zoom = minf(
+			vp_px.x / (float(bounds.size.x) * CELL_SIZE_PX),
+			vp_px.y / (float(bounds.size.y) * CELL_SIZE_PX)
+		)
+	_set_zoom_step(fit_zoom)
+	if _camera != null:
+		_camera.position = Vector2(
+			(float(bounds.position.x) + float(bounds.size.x) * 0.5) * CELL_SIZE_PX,
+			-(float(bounds.position.y) + float(bounds.size.y) * 0.5) * CELL_SIZE_PX
+		)
+	_update_return_home_visibility()
+	return fit_zoom
+
 func _caricature_reveal_state(cell: Vector2i, states_by_area: Dictionary = {}) -> int:
 	if not _caricature_cells.has(cell):
 		return 0
 	var entry: Dictionary = _caricature_cells[cell]
 	var area_dict: Dictionary = entry.get("area", {}) if entry.get("area") is Dictionary else {}
 	var aid := str(area_dict.get("id", ""))
-	if str(area_dict.get("kind", "")) == "camp" or aid.begins_with("camp:"):
+	var kind := str(area_dict.get("kind", ""))
+	if kind == "camp" or aid.begins_with("camp:"):
 		return 2
+	var lookup_id := str(area_dict.get("route_id", aid)) if kind == "route" else aid
 	if not states_by_area.is_empty():
-		if not states_by_area.has(aid):
+		if not states_by_area.has(lookup_id):
 			return 0
-		var st_val := int(states_by_area[aid])
+		var st_val := int(states_by_area[lookup_id])
 		return 2 if st_val >= 2 else (1 if st_val == 1 else 0)
 	var db = _get_db()
 	if db != null and db.is_open():
-		var ns_row: Dictionary = db.get_neighbourhood_state(aid)
+		var ns_row: Dictionary = db.get_neighbourhood_state(lookup_id)
 		if not ns_row.is_empty():
 			var st_val := int(ns_row.get("state", 0))
 			return 2 if st_val >= 2 else (1 if st_val == 1 else 0)
@@ -817,6 +846,7 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 		_has_active_waypost = true
 		_synth_cache.clear()
 		_clear_rendered_layers()
+		_set_zoom_step(_current_zoom_step)
 		if center_waypost and not camp_id.is_empty():
 			focus_on_area(camp_id, false)
 		_update_return_home_visibility()
@@ -832,6 +862,7 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 		_load_map_stores()
 		_synth_cache.clear()
 		_clear_rendered_layers()
+		_set_zoom_step(_current_zoom_step)
 
 	var places: Array = RevealEngine.load_places()
 	for p in places:
@@ -864,7 +895,12 @@ func get_camera_cell() -> Vector2i:
 func _update_return_home_visibility() -> void:
 	if _is_caricature_place:
 		var cam_cell := get_camera_cell()
-		var in_camp: bool = _has_active_waypost and (cam_cell == _active_waypost_cell)
+		var cell_entry: Dictionary = _caricature_cells.get(cam_cell, {}) if _caricature_cells.has(cam_cell) else {}
+		var cell_area: Dictionary = cell_entry.get("area", {}) if cell_entry.get("area") is Dictionary else {}
+		var in_camp: bool = (
+			str(cell_area.get("kind", "")) == "camp"
+			or (_has_active_waypost and (cam_cell == _active_waypost_cell))
+		)
 		if _return_home_button != null:
 			_return_home_button.visible = in_camp
 		if _board_button != null:
@@ -1335,13 +1371,17 @@ func _step_zoom(direction: int) -> void:
 	var next_idx: int = clampi(curr_idx + direction, 0, ZOOM_STEPS.size() - 1)
 	_set_zoom_step(float(ZOOM_STEPS[next_idx]))
 
+func _is_overview_zoom(zoom_val: float = _current_zoom_step) -> bool:
+	var min_tile_zoom := 0.25 if _is_caricature_place else 0.5
+	return zoom_val < min_tile_zoom - 0.001
+
 func _set_zoom_step(zoom_val: float) -> void:
-	var was_overview := (_current_zoom_step < 0.5)
+	var was_overview := (_overview_layer != null and _overview_layer.visible)
 	_current_zoom_step = zoom_val
 	if _camera != null:
 		_camera.zoom = Vector2(zoom_val, zoom_val)
 
-	var show_overview := (_current_zoom_step < 0.5)
+	var show_overview := _is_overview_zoom(_current_zoom_step)
 	if was_overview != show_overview:
 		_rendered_cells.clear()
 		_rendered_reveal_state.clear()
@@ -1404,7 +1444,7 @@ func _update_frustum_culling() -> void:
 				var r_cell := Vector2i(int(r["cell_x"]), int(r["cell_y"]))
 				revealed_cells_in_view[r_cell] = int(r["reveal_state"])
 
-	var is_overview := (_current_zoom_step < 0.5)
+	var is_overview := _is_overview_zoom()
 
 	for cy in range(min_cy, max_cy + 1):
 		for cx in range(min_cx, max_cx + 1):
@@ -1526,7 +1566,7 @@ func _drain_worker_results() -> void:
 
 func _blit_pending_cells() -> void:
 	var blits_this_frame := 0
-	var is_overview := (_current_zoom_step < 0.5)
+	var is_overview := _is_overview_zoom()
 	var max_blits := 64 if is_overview else 2
 
 	while not _pending_blit_cells.is_empty() and blits_this_frame < max_blits:
@@ -1604,7 +1644,7 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
 	var reveal_state: int = item.get("reveal_state", 1)
 	var has_map_data: bool = item.get("has_data", false)
-	var is_overview := (_current_zoom_step < 0.5)
+	var is_overview := _is_overview_zoom()
 
 	if not is_overview:
 		if reveal_state == 0:
@@ -1686,7 +1726,7 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 		_unmapped_revealed_cells.erase(cell)
 
 func _render_unknown_cell(cx: int, cy: int) -> void:
-	if _current_zoom_step >= 0.5:
+	if not _is_overview_zoom():
 		_render_solid_fog(cx, cy)
 	if _overview_layer != null:
 		_blit_cell_to_overview_chunk(cx, cy, _get_unknown_overview_image())
@@ -1797,7 +1837,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 	if _synth_cache.has(cell):
 		item = _synth_cache.get_item(cell)
 	elif _synth_worker != null and _synth_worker.is_running():
-		var res: Dictionary = _synth_worker.request_cell_sync(cell, (_current_zoom_step < 0.5), reveal_state, _preview_cleared)
+		var res: Dictionary = _synth_worker.request_cell_sync(cell, _is_overview_zoom(), reveal_state, _preview_cleared)
 		item = {
 			"buf": res["tiles"],
 			"signs": res["signs"],
@@ -2135,6 +2175,23 @@ func count_visible_doors() -> int:
 							visible_doors += 1
 	return visible_doors
 
+func setup_city_screenshot(path: String, frames: int, place_id: String) -> void:
+	_screenshot_mode = true
+	_screenshot_path = path
+	_screenshot_target_frames = frames
+	_screenshot_focus = "city"
+	_focus_mode = "city"
+	_screenshot_zoom = focus_on_city(place_id)
+	_pending_blit_cells.clear()
+	_requested_cells.clear()
+	_load_start_time_usec = Time.get_ticks_usec()
+	_load_max_frame_ms = 0.0
+	_load_done = false
+	_steady_frames_count = 0
+	_steady_frame_times.clear()
+	if not RenderingServer.frame_post_draw.is_connected(_on_frame_post_draw):
+		RenderingServer.frame_post_draw.connect(_on_frame_post_draw)
+
 func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String = "most_visited") -> void:
 	_screenshot_mode = true
 	_screenshot_path = path
@@ -2144,7 +2201,7 @@ func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String
 	_focus_mode = focus
 	_set_zoom_step(zoom_step)
 	if _focus_mode == "area":
-		focus_on_area(_screenshot_area_id, is_equal_approx(zoom_step, 0.5))
+		focus_on_area(_screenshot_area_id, zoom_step <= 0.5 + 0.001)
 	elif _focus_mode == "most_buildings":
 		_focus_most_buildings()
 	elif _focus_mode == "far_buildings":
@@ -2195,6 +2252,8 @@ func _on_frame_post_draw() -> void:
 				var view_w := floori(vp_px.x / zoomed_tile_x) if zoomed_tile_x > 0.0 else 0
 				var view_h := floori(vp_px.y / zoomed_tile_y) if zoomed_tile_y > 0.0 else 0
 				print("VIEW_TILES %dx%d" % [view_w, view_h])
+				if _focused_city_cells != Vector2i.ZERO:
+					print("CITY_CELLS %dx%d" % [_focused_city_cells.x, _focused_city_cells.y])
 				if not _focused_area_id.is_empty():
 					print("AREA_TILES %dx%d" % [_focused_area_tiles.x, _focused_area_tiles.y])
 				var visible_doors := count_visible_doors()

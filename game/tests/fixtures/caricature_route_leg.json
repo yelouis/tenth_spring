@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "id": "route:fixture-city:harbor-road#1",
+  "rows": [
+    "TTTTTTTTTTTTTT---TTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---TTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---TTTTTTTTTTTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT.,,,,,,.---*.,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---*.,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT..*.....---*........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT~~~~~~~~BBB~~~~~~~~~TTTTTT",
+    "TTTTTT~~~~~~~~BBB~~~~~~~~~TTTTTT",
+    "TTTTTT~~~~~~~~BBB~~~~~~~~~TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT..*.....---*........TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---*.,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---..,,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,.---*.,,,,,,.TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTT........---.........TTTTTT",
+    "TTTTTTTTTTTTTT---TTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---TTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---TTTTTTTTTTTTTTT"
+  ],
+  "objects": [],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        13,
+        4
+      ],
+      "text": "Harbor Road"
+    },
+    {
+      "at": [
+        17,
+        29
+      ],
+      "text": "Harbor Bridge"
+    },
+    {
+      "at": [
+        13,
+        59
+      ],
+      "text": "Harbor Road"
+    }
+  ],
+  "openings": [
+    {
+      "side": "N",
+      "at": 14,
+      "width": 3
+    },
+    {
+      "side": "S",
+      "at": 14,
+      "width": 3
+    }
+  ]
+}

@@ -71,6 +71,37 @@ func _ready() -> void:
 					)
 			return
 
+		if s_cfg.get("screen", "map") == "city":
+			var city_place_id := get_resume_place_id()
+			if city_place_id.is_empty():
+				var starter_c := DB.get_db_meta("starter_place", "")
+				if Neighbourhoods.is_ready(starter_c):
+					city_place_id = starter_c
+				else:
+					for de_c in DB.get_all_distort_entries():
+						if de_c is Dictionary:
+							var cand_c := str((de_c as Dictionary).get("place_id", ""))
+							if Neighbourhoods.is_ready(cand_c):
+								city_place_id = cand_c
+								break
+			if city_place_id.is_empty():
+				printerr("[FAIL] --screen=city found no ready caricature city in save")
+				get_tree().quit(1)
+				return
+			var map_view_city = open_map_view()
+			if map_view_city != null:
+				if not map_view_city.load_place(city_place_id, false):
+					get_tree().quit(1)
+					return
+				if map_view_city.has_method("setup_city_screenshot"):
+					map_view_city.screenshot_timeout_sec = float(s_cfg.get("timeout", 120))
+					map_view_city.setup_city_screenshot(
+						str(s_cfg.get("screenshot_path", "")),
+						int(s_cfg.get("frames", 10)),
+						city_place_id
+					)
+			return
+
 		var area_id := str(s_cfg.get("area", ""))
 		if not area_id.is_empty():
 			var area_dict: Dictionary = Neighbourhoods.area(area_id)

@@ -175,5 +175,21 @@ func run_test() -> bool:
 		push_error("Valid --area config test failed: %s" % str(r_area_ok))
 		return false
 
+	# 7. Item 53 (§10.11, §10.12): --zoom=0.25 and --screen=city (demo-only)
+	var r_z025: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--zoom=0.25"], false, repo_root)
+	if not r_z025.get("ok", false) or not is_equal_approx(float(r_z025.get("zoom", 0.0)), 0.25):
+		push_error("Zoom 0.25 config test failed: %s" % str(r_z025))
+		return false
+
+	var r_city_no_demo: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--screen=city"], false, repo_root)
+	if r_city_no_demo.get("ok", true) != false or r_city_no_demo.get("exit_code", 0) != 2 or r_city_no_demo.get("error", "") != "[FAIL] --screen=city needs --demo":
+		push_error("--screen=city without --demo failed: %s" % str(r_city_no_demo))
+		return false
+
+	var r_city_ok: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--screen=city"], false, repo_root)
+	if not r_city_ok.get("ok", false) or r_city_ok.get("screen", "") != "city":
+		push_error("Valid --screen=city config test failed: %s" % str(r_city_ok))
+		return false
+
 	print("screenshot_args_test checks passed")
 	return true

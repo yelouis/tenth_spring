@@ -285,6 +285,11 @@ static func open(db, area_id: String) -> Dictionary:
 		_end_tx(db, owned, false)
 		return {"ok": false, "error": err2}
 
+	if not _open_ready_routes_in_tx(db, place_id, now):
+		var err3 := str(db.last_error)
+		_end_tx(db, owned, false)
+		return {"ok": false, "error": err3}
+
 	if not _end_tx(db, owned, true):
 		return {"ok": false, "error": str(db.last_error)}
 	return {"ok": true, "opened_by": opened_by}
@@ -361,6 +366,10 @@ static func finish(db, area_id: String) -> Dictionary:
 			var err3 := str(db.last_error)
 			_end_tx(db, owned, false)
 			return {"ok": false, "error": err3, "finale_opened": false, "city_complete": false}
+		if not _open_ready_routes_in_tx(db, place_id, now):
+			var err4 := str(db.last_error)
+			_end_tx(db, owned, false)
+			return {"ok": false, "error": err4, "finale_opened": false, "city_complete": false}
 		finale_opened = true
 		states_by_id = _states_by_area(db, place_id)
 
@@ -388,26 +397,187 @@ static func city_complete(db, place_id: String) -> bool:
 			return not row.is_empty() and int(row.get("state", 0)) == 3
 	return false
 
+static func _reveal_route_cells(db, route_dict: Dictionary, reveal_state: int) -> bool:
+	var rid := str(route_dict.get("id", ""))
+	var legs_var: Variant = route_dict.get("legs", [])
+	if not (legs_var is Array):
+		return true
+	for idx in range((legs_var as Array).size()):
+		var leg_id := "%s#%d" % [rid, idx + 1]
+		var leg_area: Dictionary = Neighbourhoods.area(leg_id)
+		if leg_area.is_empty():
+			continue
+		if not _reveal_area_cells(db, leg_area, reveal_state):
+			return false
+	return true
+
+static func _open_ready_routes_in_tx(db, place_id: String, now: int) -> bool:
+	var routes: Array = Neighbourhoods.routes_of(place_id)
+	if routes.is_empty():
+		return true
+	var states_by_id := _states_by_area(db, place_id)
+	for r_var in routes:
+		if not (r_var is Dictionary):
+			continue
+		var r: Dictionary = r_var
+		var rid := str(r.get("id", ""))
+		if rid.is_empty() or states_by_id.has(rid):
+			continue
+		var ends_var: Variant = r.get("ends", [])
+		if not (ends_var is Array) or (ends_var as Array).size() != 2:
+			continue
+		var e0 := str((ends_var as Array)[0])
+		var e1 := str((ends_var as Array)[1])
+		if states_by_id.has(e0) and states_by_id.has(e1):
+			if not db.upsert_neighbourhood_state(rid, place_id, 1, "route", now):
+				return false
+			if not _reveal_route_cells(db, r, 1):
+				return false
+			states_by_id[rid] = {"area_id": rid, "state": 1, "opened_by": "route"}
+	return true
+
+static func can_go(db, area_id: String) -> bool:
+	if db == null or not db.is_open():
+		return false
+	var area_dict: Dictionary = Neighbourhoods.area(area_id)
+	if area_dict.is_empty():
+		return false
+	var kind := str(area_dict.get("kind", ""))
+	if kind == "camp" or area_id.begins_with("camp:"):
+		return true
+	if kind != "hood":
+		return false
+	var row: Dictionary = db.get_neighbourhood_state(area_id)
+	if row.is_empty():
+		return false
+	var place_id := str(area_dict.get("place_id", ""))
+	var city_dict: Dictionary = Neighbourhoods.city(place_id)
+	# Item 53 transition rule (§10.6): a city without routes keeps today's rule until Item 54 removes it.
+	if not city_dict.has("routes"):
+		return true
+	if str(area_dict.get("role", "")) == "gateway":
+		return true
+	return int(row.get("state", 0)) >= 2
+
+static func walk_from(db, area_id: String) -> Array[String]:
+	var out: Array[String] = []
+	if db == null or not db.is_open():
+		return out
+	var area_dict: Dictionary = Neighbourhoods.area(area_id)
+	if area_dict.is_empty():
+		return out
+	var place_id := str(area_dict.get("place_id", ""))
+	var states_by_id := _states_by_area(db, place_id)
+	for r_var in Neighbourhoods.routes_at(area_id):
+		if not (r_var is Dictionary):
+			continue
+		var r: Dictionary = r_var
+		var rid := str(r.get("id", ""))
+		if not states_by_id.has(rid) or int((states_by_id[rid] as Dictionary).get("state", 0)) < 1:
+			continue
+		var ends_var: Variant = r.get("ends", [])
+		if not (ends_var is Array) or (ends_var as Array).size() != 2:
+			continue
+		var e0 := str((ends_var as Array)[0])
+		var e1 := str((ends_var as Array)[1])
+		var other_id := e1 if e0 == area_id else e0
+		if states_by_id.has(other_id) and int((states_by_id[other_id] as Dictionary).get("state", 0)) >= 2:
+			out.append(rid)
+	return out
+
+static func walk_route(db, route_id: String, from_area_id: String) -> Dictionary:
+	if db == null or not db.is_open():
+		return {"ok": false, "error": "db not open", "arrived_at": ""}
+	var route_dict: Dictionary = Neighbourhoods.route(route_id)
+	if route_dict.is_empty():
+		return {"ok": false, "error": "unknown route", "arrived_at": ""}
+	var route_row: Dictionary = db.get_neighbourhood_state(route_id)
+	if route_row.is_empty() or int(route_row.get("state", 0)) < 1:
+		return {"ok": false, "error": "route not open", "arrived_at": ""}
+	var ends_var: Variant = route_dict.get("ends", [])
+	if not (ends_var is Array) or (ends_var as Array).size() != 2:
+		return {"ok": false, "error": "invalid route ends", "arrived_at": ""}
+	var e0 := str((ends_var as Array)[0])
+	var e1 := str((ends_var as Array)[1])
+	if from_area_id != e0 and from_area_id != e1:
+		return {"ok": false, "error": "not an end of route", "arrived_at": ""}
+	var from_row: Dictionary = db.get_neighbourhood_state(from_area_id)
+	if from_row.is_empty() or int(from_row.get("state", 0)) < 2:
+		return {"ok": false, "error": "origin not entered", "arrived_at": ""}
+	var other_id := e1 if from_area_id == e0 else e0
+	var other_row: Dictionary = db.get_neighbourhood_state(other_id)
+	if other_row.is_empty():
+		return {"ok": false, "error": "destination not open", "arrived_at": ""}
+	var other_area: Dictionary = Neighbourhoods.area(other_id)
+	if other_area.is_empty():
+		return {"ok": false, "error": "unknown destination", "arrived_at": ""}
+
+	var place_id := str(route_dict.get("place_id", str(other_area.get("place_id", ""))))
+	var tx := _begin_tx(db)
+	if not bool(tx["ok"]):
+		return {"ok": false, "error": str(tx["error"]), "arrived_at": ""}
+	var owned := bool(tx["owned"])
+	var now := int(Time.get_unix_time_from_system())
+
+	if not db.upsert_neighbourhood_state(route_id, place_id, maxi(2, int(route_row.get("state", 1))), str(route_row.get("opened_by", "route")), now):
+		var err1 := str(db.last_error)
+		_end_tx(db, owned, false)
+		return {"ok": false, "error": err1, "arrived_at": ""}
+	if not _reveal_route_cells(db, route_dict, 2):
+		var err2 := str(db.last_error)
+		_end_tx(db, owned, false)
+		return {"ok": false, "error": err2, "arrived_at": ""}
+	if not db.upsert_neighbourhood_state(other_id, place_id, maxi(2, int(other_row.get("state", 1))), str(other_row.get("opened_by", "pick")), now):
+		var err3 := str(db.last_error)
+		_end_tx(db, owned, false)
+		return {"ok": false, "error": err3, "arrived_at": ""}
+	if not _reveal_area_cells(db, other_area, 2):
+		var err4 := str(db.last_error)
+		_end_tx(db, owned, false)
+		return {"ok": false, "error": err4, "arrived_at": ""}
+
+	if not _end_tx(db, owned, true):
+		return {"ok": false, "error": str(db.last_error), "arrived_at": ""}
+	return {"ok": true, "arrived_at": other_id}
+
 static func demo_force_open(db, area_id: String) -> Dictionary:
 	if not is_demo_profile():
 		return {"ok": false, "error": "demo only"}
-	var area_dict: Dictionary = Neighbourhoods.area(area_id)
-	if area_dict.is_empty():
-		return {"ok": false, "error": "unknown area"}
 	if db == null or not db.is_open():
 		return {"ok": false, "error": "db not open"}
+
+	var area_dict: Dictionary = Neighbourhoods.area(area_id)
+	var direct_route: Dictionary = Neighbourhoods.route(area_id) if area_dict.is_empty() else {}
+	if area_dict.is_empty() and direct_route.is_empty():
+		return {"ok": false, "error": "unknown area"}
+
+	var tx := _begin_tx(db)
+	if not bool(tx["ok"]):
+		return {"ok": false, "error": str(tx["error"])}
+	var owned := bool(tx["owned"])
+	var now := int(Time.get_unix_time_from_system())
+
+	if not direct_route.is_empty() or str(area_dict.get("kind", "")) == "route":
+		var route_id := str(direct_route.get("id", "")) if not direct_route.is_empty() else str(area_dict.get("route_id", area_id))
+		var r_dict: Dictionary = direct_route if not direct_route.is_empty() else Neighbourhoods.route(route_id)
+		var r_place_id := str(r_dict.get("place_id", str(area_dict.get("place_id", ""))))
+		if not db.upsert_neighbourhood_state(route_id, r_place_id, 2, "demo", now):
+			var r_err1 := str(db.last_error)
+			_end_tx(db, owned, false)
+			return {"ok": false, "error": r_err1}
+		if not _reveal_route_cells(db, r_dict, 2):
+			var r_err2 := str(db.last_error)
+			_end_tx(db, owned, false)
+			return {"ok": false, "error": r_err2}
+		if not _end_tx(db, owned, true):
+			return {"ok": false, "error": str(db.last_error)}
+		return {"ok": true}
 
 	var place_id := str(area_dict.get("place_id", ""))
 	var is_camp := str(area_dict.get("kind", "")) == "camp" or area_id.begins_with("camp:")
 	var opened_by := "camp" if is_camp else "demo"
 	var target_state := 1 if is_camp else 2
 
-	var tx := _begin_tx(db)
-	if not bool(tx["ok"]):
-		return {"ok": false, "error": str(tx["error"])}
-	var owned := bool(tx["owned"])
-
-	var now := int(Time.get_unix_time_from_system())
 	if not db.upsert_neighbourhood_state(area_id, place_id, target_state, opened_by, now):
 		var err1 := str(db.last_error)
 		_end_tx(db, owned, false)
@@ -417,6 +587,11 @@ static func demo_force_open(db, area_id: String) -> Dictionary:
 		var err2 := str(db.last_error)
 		_end_tx(db, owned, false)
 		return {"ok": false, "error": err2}
+
+	if not is_camp and not _open_ready_routes_in_tx(db, place_id, now):
+		var err3 := str(db.last_error)
+		_end_tx(db, owned, false)
+		return {"ok": false, "error": err3}
 
 	if not _end_tx(db, owned, true):
 		return {"ok": false, "error": str(db.last_error)}

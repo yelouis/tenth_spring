@@ -13,10 +13,11 @@ const ERR_UNSUPPORTED_SCREEN: String = "[FAIL] unsupported screen %s"
 const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
 const ERR_AREA_NEEDS_DEMO: String = "[FAIL] --area needs --demo"
 const ERR_UNKNOWN_AREA: String = "[FAIL] unknown area %s"
+const ERR_CITY_NEEDS_DEMO: String = "[FAIL] --screen=city needs --demo"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
 const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
-const SUPPORTED_SCREENS: Array = ["map", "town_map", "board"]
+const SUPPORTED_SCREENS: Array = ["map", "town_map", "board", "city"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""
@@ -96,12 +97,14 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			area_str = ""
 		i += 1
 
-	# Refusal 0: --area is demo-only and must name a roster area (standing constraint 22, §4.3)
+	# Refusal 0: --area and --screen=city are demo-only (standing constraint 22, §4.3, §10.12)
 	if has_area:
 		if not has_demo:
 			return {"ok": false, "error": ERR_AREA_NEEDS_DEMO, "exit_code": 2}
 		if area_str.is_empty() or Neighbourhoods.area(area_str).is_empty():
 			return {"ok": false, "error": ERR_UNKNOWN_AREA % area_str, "exit_code": 2}
+	if screen_str == "city" and not has_demo:
+		return {"ok": false, "error": ERR_CITY_NEEDS_DEMO, "exit_code": 2}
 
 	if not has_screenshot:
 		return {"ok": true, "is_screenshot": false, "area": area_str}

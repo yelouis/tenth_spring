@@ -75,7 +75,7 @@ def main():
 
     produced_caricature_line = False
     for line in proc.stdout.splitlines():
-        if line.startswith("CARICATURE "):
+        if line.startswith(("CARICATURE ", "CARICATURE_ROUTE ", "CARICATURE_CITY ")):
             print(line)
             produced_caricature_line = True
         elif line.startswith("PREVIEW:"):

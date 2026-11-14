@@ -150,5 +150,129 @@ func run_test() -> bool:
 		push_error("caricature_check_test: corridor expected walkable=16 reached=16 max_walk=15, got %s" % str(m_corr))
 		return false
 
+	# -------------------------------------------------------------
+	# 5. Item 53 (§10.5, §10.12): Route fixture city — ends_steps, ledge trap, P9, RP1–RP2, C0 & C1
+	# -------------------------------------------------------------
+	Neighbourhoods.set_config_path_for_tests("res://tests/fixtures/caricature_routes_fixture_roster.json")
+	var r_camp_area := Neighbourhoods.area("camp:fixture-city")
+	var r_hood_a_area := Neighbourhoods.area("hood:fixture-city:north-end")
+	var r_hood_b_area := Neighbourhoods.area("hood:fixture-city:south-harbor")
+	var r_leg_area := Neighbourhoods.area("route:fixture-city:harbor-road#1")
+	var r_route_dict := Neighbourhoods.route("route:fixture-city:harbor-road")
+
+	var r_camp_map := CaricatureMap.load_map("res://tests/fixtures/caricature_route_camp.json")
+	var r_hood_a_map := CaricatureMap.load_map("res://tests/fixtures/caricature_route_hood_a.json")
+	var r_hood_b_map := CaricatureMap.load_map("res://tests/fixtures/caricature_route_hood_b.json")
+	var r_leg_map := CaricatureMap.load_map("res://tests/fixtures/caricature_route_leg.json")
+
+	var c_rcamp := CaricatureMap.compile(r_camp_area, r_camp_map)
+	var c_rhood_a := CaricatureMap.compile(r_hood_a_area, r_hood_a_map)
+	var c_rhood_b := CaricatureMap.compile(r_hood_b_area, r_hood_b_map)
+	var c_rleg := CaricatureMap.compile(r_leg_area, r_leg_map)
+	if not (bool(c_rcamp["ok"]) and bool(c_rhood_a["ok"]) and bool(c_rhood_b["ok"]) and bool(c_rleg["ok"])):
+		_cleanup()
+		push_error("caricature_check_test: route fixture maps failed to compile")
+		return false
+
+	var m_rcamp := CaricatureCheck.measure(c_rcamp, r_camp_area)
+	var m_rhood_a := CaricatureCheck.measure(c_rhood_a, r_hood_a_area)
+	var m_rhood_b := CaricatureCheck.measure(c_rhood_b, r_hood_b_area)
+	var m_rleg := CaricatureCheck.measure(c_rleg, r_leg_area)
+
+	# (a) ▶ ends_steps is exact on known path (63 steps from y=0 to y=63) and all 4 maps pass
+	if not bool(m_rcamp["ok"]) or not bool(m_rhood_a["ok"]) or not bool(m_rhood_b["ok"]) or not bool(m_rleg["ok"]):
+		_cleanup()
+		push_error("caricature_check_test: route fixture measure failed: camp=%s a=%s b=%s leg=%s" % [
+			str(m_rcamp["failed_rules"]), str(m_rhood_a["failed_rules"]),
+			str(m_rhood_b["failed_rules"]), str(m_rleg["failed_rules"])
+		])
+		return false
+	if int(m_rleg.get("ends_steps", -1)) != 63:
+		_cleanup()
+		push_error("caricature_check_test: expected exact ends_steps=63 on fixture leg, got %s" % str(m_rleg.get("ends_steps", -1)))
+		return false
+
+	# Route check RP1 & RP2 pass on aligned fixture
+	var compiled_by_id := {
+		"camp:fixture-city": c_rcamp,
+		"hood:fixture-city:north-end": c_rhood_a,
+		"hood:fixture-city:south-harbor": c_rhood_b,
+		"route:fixture-city:harbor-road#1": c_rleg,
+	}
+	var measures_by_id := {
+		"camp:fixture-city": m_rcamp,
+		"hood:fixture-city:north-end": m_rhood_a,
+		"hood:fixture-city:south-harbor": m_rhood_b,
+		"route:fixture-city:harbor-road#1": m_rleg,
+	}
+	var rp_res := CaricatureCheck.check_route(r_route_dict, compiled_by_id, measures_by_id)
+	if not bool(rp_res.get("ok", false)) or int(rp_res.get("landmarks_present", 0)) != 1 or int(rp_res.get("end_signs", 0)) != 2:
+		_cleanup()
+		push_error("caricature_check_test: expected check_route ok with landmarks=1, end_signs=2; got %s" % str(rp_res))
+		return false
+
+	# (b) ▶ Ledge across leg that strands south end gives trapped > 0 and fails P2
+	var leg_stranded := r_leg_map.duplicate(true)
+	var row27 := str(leg_stranded["rows"][27])
+	var ledge_band := row27.substr(0, 6) + "vvvvvvvvvvvvvvvvvvvv" + row27.substr(26)
+	leg_stranded["rows"][27] = ledge_band
+	var c_leg_stranded := CaricatureMap.compile(r_leg_area, leg_stranded)
+	if not bool(c_leg_stranded["ok"]):
+		_cleanup()
+		push_error("caricature_check_test: stranded leg compile failed: %s" % str(c_leg_stranded["errors"]))
+		return false
+	var m_leg_stranded := CaricatureCheck.measure(c_leg_stranded, r_leg_area)
+	if int(m_leg_stranded["trapped"]) <= 0 or not (m_leg_stranded["failed_rules"] as Array).has("P2"):
+		_cleanup()
+		push_error("caricature_check_test: ledge stranding south end expected trapped > 0 and P2, got trapped=%d rules=%s" % [
+			int(m_leg_stranded["trapped"]), str(m_leg_stranded["failed_rules"])
+		])
+		return false
+
+	# (c) ▶ A 12x12 plain-grass window fails P9
+	var hood_lawn := r_hood_a_map.duplicate(true)
+	for ly in range(30, 42):
+		var lr := str(hood_lawn["rows"][ly])
+		hood_lawn["rows"][ly] = lr.substr(0, 28) + "............" + lr.substr(40)
+	var c_hood_lawn := CaricatureMap.compile(r_hood_a_area, hood_lawn)
+	if not bool(c_hood_lawn["ok"]):
+		_cleanup()
+		push_error("caricature_check_test: lawn copy compile failed: %s" % str(c_hood_lawn["errors"]))
+		return false
+	var m_hood_lawn := CaricatureCheck.measure(c_hood_lawn, r_hood_a_area)
+	if bool(m_hood_lawn["ok"]) or not (m_hood_lawn["failed_rules"] as Array).has("P9"):
+		_cleanup()
+		push_error("caricature_check_test: 12x12 plain-grass window did not fail P9: %s" % str(m_hood_lawn["failed_rules"]))
+		return false
+
+	# (d) ▶ Aligned openings pass C0 and C1; moving one opening by 1 tile fails C0 and then C1
+	var city_ok := CaricatureCheck.check_city("city:fixture-city", compiled_by_id)
+	if not bool(city_ok.get("ok", false)) or int(city_ok.get("openings_aligned", 0)) != 2 or int(city_ok.get("connected", 0)) != 2:
+		_cleanup()
+		push_error("caricature_check_test: aligned fixture city expected C0/C1 PASS (2/2, 2/2), got %s" % str(city_ok))
+		return false
+
+	var hood_shifted := r_hood_a_map.duplicate(true)
+	hood_shifted["openings"] = [{"side": "S", "at": 15, "width": 3}]
+	for sy in [92, 93, 94, 95]:
+		var sr := str(hood_shifted["rows"][sy])
+		if sy >= 93:
+			hood_shifted["rows"][sy] = sr.substr(0, 14) + "T---" + sr.substr(18)
+		else:
+			hood_shifted["rows"][sy] = sr.substr(0, 14) + "----" + sr.substr(18)
+	var c_hood_shifted := CaricatureMap.compile(r_hood_a_area, hood_shifted)
+	if not bool(c_hood_shifted["ok"]):
+		_cleanup()
+		push_error("caricature_check_test: shifted opening hood compile failed: %s" % str(c_hood_shifted["errors"]))
+		return false
+	var shifted_compiled := compiled_by_id.duplicate()
+	shifted_compiled["hood:fixture-city:north-end"] = c_hood_shifted
+	var city_shifted := CaricatureCheck.check_city("city:fixture-city", shifted_compiled)
+	var sh_rules: Array = city_shifted.get("failed_rules", [])
+	if bool(city_shifted.get("ok", true)) or not sh_rules.has("C0") or not sh_rules.has("C1"):
+		_cleanup()
+		push_error("caricature_check_test: 1-tile shifted opening expected C0 and C1 failure, got %s" % str(city_shifted))
+		return false
+
 	_cleanup()
 	return true

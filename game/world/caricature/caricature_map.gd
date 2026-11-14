@@ -111,10 +111,11 @@ static func _seed_gy(origin: Vector2i, rows: int, y: int) -> int:
 	var ty: int = y % 32
 	return cy * 32 + (31 - ty)
 
-static func _fail_result(errors: Array[String], origin: Vector2i, cols: int, rows: int) -> Dictionary:
+static func _fail_result(errors: Array[String], origin: Vector2i, cols: int, rows: int, area_kind: String = "hood") -> Dictionary:
 	return {
 		"ok": false,
 		"errors": errors,
+		"kind": area_kind,
 		"w": cols * 32,
 		"h": rows * 32,
 		"origin": origin,
@@ -127,7 +128,8 @@ static func _fail_result(errors: Array[String], origin: Vector2i, cols: int, row
 		"signs": [],
 		"doors": [],
 		"placed_objects": [],
-		"lamp": Vector2i.ZERO,
+		"openings": [],
+		"lamp": Vector2i(-1, -1) if area_kind == "route" else Vector2i.ZERO,
 		"arrival": Vector2i.ZERO,
 		"art_pending": 0,
 	}
@@ -144,6 +146,15 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 	var h: int = rows * 32
 	var origin: Vector2i = Neighbourhoods.block_origin(area)
 	var ruin_level: String = str(area.get("ruin_level", "near"))
+	var area_kind: String = str(area.get("kind", ""))
+	if area_kind.is_empty():
+		var aid_guess := str(area.get("id", ""))
+		if aid_guess.begins_with("camp:"):
+			area_kind = "camp"
+		elif aid_guess.begins_with("route:"):
+			area_kind = "route"
+		else:
+			area_kind = "hood"
 
 	# Build lookup of roster landmarks by stamp id
 	var roster_lm_by_stamp: Dictionary = {}
@@ -156,11 +167,11 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 					roster_lm_by_stamp[str(lm.get("stamp", ""))] = lm
 
 	# -------------------------------------------------------------
-	# Step 1: Pre-tile structural checks (M1, M7, M3/M5 bounds, M2 row chars)
+	# Step 1: Pre-tile structural checks (M1, M9, M2, M5, M7, M3, M6, M4)
 	# -------------------------------------------------------------
 	if map.is_empty():
 		errors.append("M1: map dictionary is empty")
-		return _fail_result(errors, origin, cols, rows)
+		return _fail_result(errors, origin, cols, rows, area_kind)
 
 	var schema_v: Variant = map.get("schema", null)
 	if not _is_integral(schema_v) or int(schema_v) != 1:
@@ -194,32 +205,149 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 				break
 
 	if not errors.is_empty():
-		return _fail_result(errors, origin, cols, rows)
+		return _fail_result(errors, origin, cols, rows, area_kind)
 
-	# M2 check on border characters
+	# M9: Parse and validate openings (§10.4)
+	var opening_mask := PackedByteArray()
+	opening_mask.resize(w * h)
+	opening_mask.fill(0)
+	var compiled_openings: Array[Dictionary] = []
+	var openings_v: Variant = map.get("openings", [])
+	if map.has("openings") and not (openings_v is Array):
+		errors.append("M9: openings must be an array")
+	elif openings_v is Array:
+		var openings_arr: Array = openings_v
+		for op_idx in range(openings_arr.size()):
+			var op_v: Variant = openings_arr[op_idx]
+			if not (op_v is Dictionary):
+				errors.append("M9: opening %d must be a dictionary" % op_idx)
+				continue
+			var op_d: Dictionary = op_v
+			var side_str := str(op_d.get("side", ""))
+			if side_str != "N" and side_str != "E" and side_str != "S" and side_str != "W":
+				errors.append("M9: opening %d has invalid side '%s'" % [op_idx, side_str])
+				continue
+			var at_val: Variant = op_d.get("at", null)
+			var wid_val: Variant = op_d.get("width", null)
+			if not _is_integral(at_val) or not _is_integral(wid_val):
+				errors.append("M9: opening %d 'at' and 'width' must be integers" % op_idx)
+				continue
+			var op_at: int = int(at_val)
+			var op_w: int = int(wid_val)
+			if op_w < 2 or op_w > 4:
+				errors.append("M9: opening %d width %d must be 2 to 4" % [op_idx, op_w])
+				continue
+			var side_len: int = w if (side_str == "N" or side_str == "S") else h
+			if op_at < BORDER or op_at + op_w > side_len - BORDER:
+				errors.append("M9: opening %d on %s at %d width %d must lie at least BORDER=%d from corners" % [op_idx, side_str, op_at, op_w, BORDER])
+				continue
+
+			# Check no overlap with prior opening on the same side
+			var overlaps_existing := false
+			for prev_op in compiled_openings:
+				if str(prev_op["side"]) == side_str:
+					var p_at: int = int(prev_op["at"])
+					var p_w: int = int(prev_op["width"])
+					if op_at < p_at + p_w and p_at < op_at + op_w:
+						overlaps_existing = true
+						break
+			if overlaps_existing:
+				errors.append("M9: opening %d overlaps another opening on side %s" % [op_idx, side_str])
+				continue
+
+			var outer_tiles: Array[Vector2i] = []
+			var local_outer: Array[Vector2i] = []
+			var inner_strip: Array[Vector2i] = []
+			var border_tiles: Array[Vector2i] = []
+			var mid_t: int = op_at + int(op_w / 2)
+			var inner_arrival := Vector2i.ZERO
+
+			if side_str == "N":
+				inner_arrival = Vector2i(mid_t, BORDER - 1)
+				for tx in range(op_at, op_at + op_w):
+					local_outer.append(Vector2i(tx, 0))
+					outer_tiles.append(Vector2i(_global_col(origin, tx), _screen_row(origin, rows, 0)))
+					inner_strip.append(Vector2i(tx, BORDER))
+					for ty in range(0, BORDER):
+						opening_mask[ty * w + tx] = 1
+						border_tiles.append(Vector2i(tx, ty))
+			elif side_str == "S":
+				inner_arrival = Vector2i(mid_t, h - BORDER)
+				for tx in range(op_at, op_at + op_w):
+					local_outer.append(Vector2i(tx, h - 1))
+					outer_tiles.append(Vector2i(_global_col(origin, tx), _screen_row(origin, rows, h - 1)))
+					inner_strip.append(Vector2i(tx, h - BORDER - 1))
+					for ty in range(h - BORDER, h):
+						opening_mask[ty * w + tx] = 1
+						border_tiles.append(Vector2i(tx, ty))
+			elif side_str == "W":
+				inner_arrival = Vector2i(BORDER - 1, mid_t)
+				for ty in range(op_at, op_at + op_w):
+					local_outer.append(Vector2i(0, ty))
+					outer_tiles.append(Vector2i(_global_col(origin, 0), _screen_row(origin, rows, ty)))
+					inner_strip.append(Vector2i(BORDER, ty))
+					for tx in range(0, BORDER):
+						opening_mask[ty * w + tx] = 1
+						border_tiles.append(Vector2i(tx, ty))
+			else: # "E"
+				inner_arrival = Vector2i(w - BORDER, mid_t)
+				for ty in range(op_at, op_at + op_w):
+					local_outer.append(Vector2i(w - 1, ty))
+					outer_tiles.append(Vector2i(_global_col(origin, w - 1), _screen_row(origin, rows, ty)))
+					inner_strip.append(Vector2i(w - BORDER - 1, ty))
+					for tx in range(w - BORDER, w):
+						opening_mask[ty * w + tx] = 1
+						border_tiles.append(Vector2i(tx, ty))
+
+			compiled_openings.append({
+				"side": side_str,
+				"at": op_at,
+				"width": op_w,
+				"outer_tiles": outer_tiles,
+				"local_outer": local_outer,
+				"inner_strip": inner_strip,
+				"border_tiles": border_tiles,
+				"inner_arrival": inner_arrival,
+			})
+
+	# M2 check on border characters (walkable inside openings, T/~ /F outside openings)
 	var map_rows: Array = map["rows"]
+	var m2_err := false
 	for y in range(h):
 		var r_str: String = map_rows[y]
 		for x in range(w):
 			if x < BORDER or x >= w - BORDER or y < BORDER or y >= h - BORDER:
 				var ch: String = r_str[x]
-				if not BORDER_CHARS.has(ch):
-					errors.append("M2: border tile (%d, %d) has '%s', expected T, ~, or F" % [x, y, ch])
-					break
-		if not errors.is_empty():
+				if opening_mask[y * w + x] == 1:
+					var o_spec: Dictionary = TERRAIN_MAP[ch]
+					if not TileSynth2.is_walkable(int(o_spec["cls"]), int(o_spec["var"]), 0):
+						errors.append("M2: opening border tile (%d, %d) has non-walkable '%s'" % [x, y, ch])
+						m2_err = true
+						break
+				else:
+					if not BORDER_CHARS.has(ch):
+						errors.append("M2: border tile (%d, %d) has '%s', expected T, ~, or F" % [x, y, ch])
+						m2_err = true
+						break
+		if m2_err:
 			break
 
-	# M5 bounds check on lamp
+	# M5 check on lamp (§10.4: route legs have lamp=null; all other maps have [x, y])
+	var has_lamp := (area_kind != "route")
 	var lamp_v: Variant = map.get("lamp", null)
-	var lamp_pos := Vector2i.ZERO
-	if not (lamp_v is Array) or (lamp_v as Array).size() != 2 or not _is_integral(lamp_v[0]) or not _is_integral(lamp_v[1]):
-		errors.append("M5: lamp must be [x, y] integers")
+	var lamp_pos := Vector2i(-1, -1)
+	if not has_lamp:
+		if not map.has("lamp") or lamp_v != null:
+			errors.append("M5: route leg must have lamp: null")
 	else:
-		lamp_pos = Vector2i(int(lamp_v[0]), int(lamp_v[1]))
-		var lamp_top_y: int = lamp_pos.y - 1
-		var arr_y: int = lamp_pos.y + 1
-		if lamp_pos.x < BORDER or lamp_pos.x >= w - BORDER or lamp_top_y < BORDER or arr_y >= h - BORDER:
-			errors.append("M5: lamp (%d, %d) two tiles and south arrival tile must lie inside BORDER=%d" % [lamp_pos.x, lamp_pos.y, BORDER])
+		if not (lamp_v is Array) or (lamp_v as Array).size() != 2 or not _is_integral(lamp_v[0]) or not _is_integral(lamp_v[1]):
+			errors.append("M5: lamp must be [x, y] integers")
+		else:
+			lamp_pos = Vector2i(int(lamp_v[0]), int(lamp_v[1]))
+			var lamp_top_y: int = lamp_pos.y - 1
+			var arr_y: int = lamp_pos.y + 1
+			if lamp_pos.x < BORDER or lamp_pos.x >= w - BORDER or lamp_top_y < BORDER or arr_y >= h - BORDER:
+				errors.append("M5: lamp (%d, %d) two tiles and south arrival tile must lie inside BORDER=%d" % [lamp_pos.x, lamp_pos.y, BORDER])
 
 	# Parse & check objects (M7 + M3 + M4 object-object & object-lamp overlap)
 	var objs_v: Variant = map.get("objects", [])
@@ -341,10 +469,12 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			explicit_signs.append({"x": sx, "y": sy, "text": str(s_dict.get("text", ""))})
 
 	if not errors.is_empty():
-		return _fail_result(errors, origin, cols, rows)
+		return _fail_result(errors, origin, cols, rows, area_kind)
 
-	# Check M4 overlaps among objects, lamp's two tiles, and explicit signs
-	var lamp_tiles: Array[Vector2i] = [Vector2i(lamp_pos.x, lamp_pos.y - 1), lamp_pos]
+	# Check M4 overlaps among objects, lamp's two tiles (if any), and explicit signs
+	var lamp_tiles: Array[Vector2i] = []
+	if has_lamp:
+		lamp_tiles = [Vector2i(lamp_pos.x, lamp_pos.y - 1), lamp_pos]
 	for i in range(parsed_objs.size()):
 		var a: Dictionary = parsed_objs[i]
 		var ax0: int = a["x"]
@@ -372,7 +502,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 				errors.append("M4: objects at (%d, %d) and (%d, %d) overlap" % [ax0, ay0, bx0, by0])
 
 	if not errors.is_empty():
-		return _fail_result(errors, origin, cols, rows)
+		return _fail_result(errors, origin, cols, rows, area_kind)
 
 	# -------------------------------------------------------------
 	# Step 2: Terrain
@@ -660,32 +790,37 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			})
 
 	# -------------------------------------------------------------
-	# Step 5: The lamp (§3.6) and signs (§3.7)
+	# Step 5: The lamp (§3.6, §10.4) and signs (§3.7)
 	# -------------------------------------------------------------
 	var cell_sign_lists: Dictionary = {} # Vector2i -> Array[String]
 	var signs_out: Array[Dictionary] = []
 	var placed_sign_coords: Dictionary = {} # Vector2i -> true
-	var arrival_pos := Vector2i(lamp_pos.x, lamp_pos.y + 1)
+	var arrival_pos := Vector2i(-1, -1)
 
-	if _stamp_num_by_id.has("waypost_lamp"):
-		var lamp_sid: int = _stamp_num_by_id["waypost_lamp"]
-		var lamp_def: Dictionary = TileSynth2.STAMP_TABLE[lamp_sid]
-		_write_stamp(
-			lamp_sid, lamp_def, lamp_pos.x, lamp_pos.y - 1, origin, rows,
-			0, false, false, "", "",
-			cls_buf, var_buf, mask_buf, w, stamps_out, doors_out
-		)
-	else:
-		# Until waypost_lamp exists (Item 52), lamp tile is class SIGN with text "Waypost lamp"
-		var l_idx: int = lamp_pos.y * w + lamp_pos.x
-		if not TileSynth2.is_walkable(cls_buf[l_idx], var_buf[l_idx], mask_buf[l_idx]):
-			errors.append("M5: lamp tile (%d, %d) is not walkable terrain" % [lamp_pos.x, lamp_pos.y])
-		else:
-			_append_sign_at(
-				lamp_pos.x, lamp_pos.y, "Waypost lamp", false,
-				origin, rows, w, cls_buf, var_buf, mask_buf,
-				cell_sign_lists, signs_out, placed_sign_coords
+	if has_lamp:
+		arrival_pos = Vector2i(lamp_pos.x, lamp_pos.y + 1)
+		if _stamp_num_by_id.has("waypost_lamp"):
+			var lamp_sid: int = _stamp_num_by_id["waypost_lamp"]
+			var lamp_def: Dictionary = TileSynth2.STAMP_TABLE[lamp_sid]
+			_write_stamp(
+				lamp_sid, lamp_def, lamp_pos.x, lamp_pos.y - 1, origin, rows,
+				0, false, false, "", "",
+				cls_buf, var_buf, mask_buf, w, stamps_out, doors_out
 			)
+		else:
+			# Until waypost_lamp exists (Item 52), lamp tile is class SIGN with text "Waypost lamp"
+			var l_idx: int = lamp_pos.y * w + lamp_pos.x
+			if not TileSynth2.is_walkable(cls_buf[l_idx], var_buf[l_idx], mask_buf[l_idx]):
+				errors.append("M5: lamp tile (%d, %d) is not walkable terrain" % [lamp_pos.x, lamp_pos.y])
+			else:
+				_append_sign_at(
+					lamp_pos.x, lamp_pos.y, "Waypost lamp", false,
+					origin, rows, w, cls_buf, var_buf, mask_buf,
+					cell_sign_lists, signs_out, placed_sign_coords
+				)
+	else:
+		if not compiled_openings.is_empty():
+			arrival_pos = compiled_openings[0]["inner_arrival"]
 
 	# Explicit signs in file order
 	for es in explicit_signs:
@@ -693,7 +828,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 		var sy: int = es["y"]
 		var stext := str(es["text"])
 		var spos := Vector2i(sx, sy)
-		if spos == Vector2i(lamp_pos.x, lamp_pos.y - 1) or spos == lamp_pos:
+		if has_lamp and (spos == Vector2i(lamp_pos.x, lamp_pos.y - 1) or spos == lamp_pos):
 			errors.append("M4: sign at (%d, %d) covers lamp tile" % [sx, sy])
 			continue
 		if placed_sign_coords.has(spos):
@@ -724,7 +859,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 		for cand in cands:
 			if cand.x < BORDER or cand.x >= w - BORDER or cand.y < BORDER or cand.y >= h - BORDER:
 				continue
-			if cand == Vector2i(lamp_pos.x, lamp_pos.y - 1) or cand == lamp_pos or cand == arrival_pos:
+			if has_lamp and (cand == Vector2i(lamp_pos.x, lamp_pos.y - 1) or cand == lamp_pos or cand == arrival_pos):
 				continue
 			if placed_sign_coords.has(cand):
 				continue
@@ -753,21 +888,53 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			)
 
 	# -------------------------------------------------------------
-	# Step 6: Post-grid checks (M2, M5 arrival walkability, M8 door south walkability)
+	# Step 6: Post-grid checks (M2, M10, M5 arrival walkability, M8 door south walkability)
 	# -------------------------------------------------------------
+	var m2_post_err := false
 	for y in range(h):
 		for x in range(w):
 			if x < BORDER or x >= w - BORDER or y < BORDER or y >= h - BORDER:
-				var b_cls: int = cls_buf[y * w + x]
-				if b_cls != TileSynth2.TILE_TREE and b_cls != TileSynth2.TILE_WATER and b_cls != TileSynth2.TILE_FENCE:
-					errors.append("M2: finished border tile (%d, %d) is class %d" % [x, y, b_cls])
-					break
-		if not errors.is_empty():
+				var b_idx: int = y * w + x
+				var b_cls: int = cls_buf[b_idx]
+				if opening_mask[b_idx] == 1:
+					if not TileSynth2.is_walkable(b_cls, var_buf[b_idx], mask_buf[b_idx]) or b_cls == TileSynth2.TILE_DOOR:
+						errors.append("M2: finished opening border tile (%d, %d) is not walkable terrain" % [x, y])
+						m2_post_err = true
+						break
+				else:
+					if b_cls != TileSynth2.TILE_TREE and b_cls != TileSynth2.TILE_WATER and b_cls != TileSynth2.TILE_FENCE:
+						errors.append("M2: finished border tile (%d, %d) is class %d" % [x, y, b_cls])
+						m2_post_err = true
+						break
+		if m2_post_err:
 			break
 
-	var arr_idx: int = arrival_pos.y * w + arrival_pos.x
-	if not TileSynth2.is_walkable(cls_buf[arr_idx], var_buf[arr_idx], mask_buf[arr_idx]):
-		errors.append("M5: tile south of lamp (%d, %d) is not walkable" % [arrival_pos.x, arrival_pos.y])
+	# M10: Every tile of an opening (width x BORDER) and the tile just inside it is walkable terrain (§10.4)
+	for op_rec in compiled_openings:
+		var m10_failed := false
+		for bt in (op_rec["border_tiles"] as Array):
+			var bp: Vector2i = bt
+			var bi: int = bp.y * w + bp.x
+			if not TileSynth2.is_walkable(cls_buf[bi], var_buf[bi], mask_buf[bi]) or cls_buf[bi] == TileSynth2.TILE_DOOR:
+				errors.append("M10: opening tile (%d, %d) is not walkable terrain" % [bp.x, bp.y])
+				m10_failed = true
+				break
+		if m10_failed:
+			break
+		for ist in (op_rec["inner_strip"] as Array):
+			var ip: Vector2i = ist
+			var ii: int = ip.y * w + ip.x
+			if not TileSynth2.is_walkable(cls_buf[ii], var_buf[ii], mask_buf[ii]) or cls_buf[ii] == TileSynth2.TILE_DOOR:
+				errors.append("M10: tile (%d, %d) just inside opening on %s is not walkable terrain" % [ip.x, ip.y, str(op_rec["side"])])
+				m10_failed = true
+				break
+		if m10_failed:
+			break
+
+	if has_lamp:
+		var arr_idx: int = arrival_pos.y * w + arrival_pos.x
+		if not TileSynth2.is_walkable(cls_buf[arr_idx], var_buf[arr_idx], mask_buf[arr_idx]):
+			errors.append("M5: tile south of lamp (%d, %d) is not walkable" % [arrival_pos.x, arrival_pos.y])
 
 	for d in doors_out:
 		var dx: int = d["x"]
@@ -781,11 +948,22 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 				errors.append("M8: tile south of door (%d, %d) is not walkable" % [dx, dy])
 
 	if not errors.is_empty():
-		return _fail_result(errors, origin, cols, rows)
+		return _fail_result(errors, origin, cols, rows, area_kind)
+
+	var public_openings: Array[Dictionary] = []
+	for op_rec in compiled_openings:
+		public_openings.append({
+			"side": op_rec["side"],
+			"at": op_rec["at"],
+			"width": op_rec["width"],
+			"outer_tiles": op_rec["outer_tiles"],
+			"local_outer": op_rec["local_outer"],
+		})
 
 	return {
 		"ok": true,
 		"errors": errors,
+		"kind": area_kind,
 		"w": w,
 		"h": h,
 		"origin": origin,
@@ -799,6 +977,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 		"cell_signs": cell_sign_lists,
 		"doors": doors_out,
 		"placed_objects": placed_objects,
+		"openings": public_openings,
 		"lamp": lamp_pos,
 		"arrival": arrival_pos,
 		"art_pending": art_pending,

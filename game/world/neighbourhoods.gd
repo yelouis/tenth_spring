@@ -1,9 +1,9 @@
 class_name Neighbourhoods
 extends RefCounted
 
-## game/world/neighbourhoods.gd — Caricature City & Neighbourhood Roster Loader (Item 47)
+## game/world/neighbourhoods.gd — Caricature City, Neighbourhood & Route Roster Loader (Items 47, 53)
 ## Contract: docs/design_neighbourhoods_and_caricature.md §2–§7, §10;
-##           docs/implementation_plan_dc_trial.md §1.3, §3.1
+##           docs/implementation_plan_dc_trial.md §1.3, §3.1, §10.1–§10.2
 
 const Grid := preload("res://world/grid.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
@@ -20,6 +20,8 @@ static var _loaded_path: String = ""
 static var _cities_by_id: Dictionary = {} # place_id -> Dictionary
 static var _areas_by_place: Dictionary = {} # place_id -> Array[Dictionary]
 static var _areas_by_id: Dictionary = {} # area_id -> Dictionary
+static var _routes_by_place: Dictionary = {} # place_id -> Array[Dictionary]
+static var _routes_by_id: Dictionary = {} # route_id -> Dictionary
 static var _wayposts_by_place: Dictionary = {} # place_id -> Dictionary {lat, lon, name}
 
 static func set_config_path_for_tests(path: String) -> void:
@@ -30,6 +32,8 @@ static func set_config_path_for_tests(path: String) -> void:
 	_cities_by_id.clear()
 	_areas_by_place.clear()
 	_areas_by_id.clear()
+	_routes_by_place.clear()
+	_routes_by_id.clear()
 
 static func _ensure_wayposts_loaded() -> void:
 	if not _wayposts_by_place.is_empty():
@@ -68,6 +72,8 @@ static func _ensure_loaded() -> void:
 	_cities_by_id.clear()
 	_areas_by_place.clear()
 	_areas_by_id.clear()
+	_routes_by_place.clear()
+	_routes_by_id.clear()
 	_loaded = true
 	_loaded_path = _config_path
 
@@ -117,7 +123,50 @@ static func _ensure_loaded() -> void:
 				if not hid.is_empty():
 					_areas_by_id[hid] = hood_entry
 
+		var route_list: Array = []
+		var routes_var: Variant = c.get("routes", [])
+		if routes_var is Array:
+			for r_var in routes_var:
+				if not (r_var is Dictionary):
+					continue
+				var r_entry: Dictionary = (r_var as Dictionary).duplicate(true)
+				r_entry["place_id"] = pid
+				var rid := str(r_entry.get("id", ""))
+				if not rid.is_empty():
+					_routes_by_id[rid] = r_entry
+				route_list.append(r_entry)
+
+				var legs_var: Variant = r_entry.get("legs", [])
+				if legs_var is Array:
+					var legs_arr: Array = legs_var
+					for leg_idx in range(legs_arr.size()):
+						var leg_var: Variant = legs_arr[leg_idx]
+						if not (leg_var is Dictionary):
+							continue
+						var leg_d: Dictionary = leg_var
+						var leg_num: int = leg_idx + 1
+						var leg_id := "%s#%d" % [rid, leg_num]
+						var leg_entry: Dictionary = {
+							"id": leg_id,
+							"kind": "route",
+							"place_id": pid,
+							"route_id": rid,
+							"name": str(r_entry.get("name", "")),
+							"leg": leg_num,
+							"cells": (leg_d.get("cells", [1, 1]) as Array).duplicate(true) if leg_d.get("cells", [1, 1]) is Array else [1, 1],
+							"map": str(leg_d.get("map", "")),
+							"zone": str(r_entry.get("zone", "wilds")),
+							"ruin_level": str(r_entry.get("ruin_level", "mid")),
+							"calm": bool(r_entry.get("calm", false)),
+							"landmarks": (r_entry.get("landmarks", []) as Array).duplicate(true) if r_entry.get("landmarks", []) is Array else [],
+						}
+						if leg_d.has("at") and leg_d["at"] is Array:
+							leg_entry["at"] = (leg_d["at"] as Array).duplicate(true)
+						area_list.append(leg_entry)
+						_areas_by_id[leg_id] = leg_entry
+
 		_areas_by_place[pid] = area_list
+		_routes_by_place[pid] = route_list
 
 static func has_city(place_id: String) -> bool:
 	_ensure_loaded()
@@ -152,7 +201,38 @@ static func area(area_id: String) -> Dictionary:
 		return {}
 	return (_areas_by_id[area_id] as Dictionary).duplicate(true)
 
-static func block_origin(area_dict: Dictionary) -> Vector2i:
+static func route(route_id: String) -> Dictionary:
+	_ensure_loaded()
+	if not _routes_by_id.has(route_id):
+		return {}
+	return (_routes_by_id[route_id] as Dictionary).duplicate(true)
+
+static func routes_of(place_id: String) -> Array:
+	_ensure_loaded()
+	if not _routes_by_place.has(place_id):
+		return []
+	var out: Array = []
+	for r in _routes_by_place[place_id]:
+		out.append((r as Dictionary).duplicate(true))
+	return out
+
+static func routes_at(area_id: String) -> Array:
+	_ensure_loaded()
+	var out: Array = []
+	var pid := ""
+	if _areas_by_id.has(area_id):
+		pid = str((_areas_by_id[area_id] as Dictionary).get("place_id", ""))
+	var candidates: Array = _routes_by_place.get(pid, []) if not pid.is_empty() else _routes_by_id.values()
+	for r_var in candidates:
+		if not (r_var is Dictionary):
+			continue
+		var r: Dictionary = r_var
+		var ends_var: Variant = r.get("ends", [])
+		if ends_var is Array and area_id in (ends_var as Array):
+			out.append(r.duplicate(true))
+	return out
+
+static func _anchor_block_origin(area_dict: Dictionary) -> Vector2i:
 	var anchor_var: Variant = area_dict.get("anchor", {})
 	var anchor: Dictionary = anchor_var if anchor_var is Dictionary else {}
 	var lat := float(anchor.get("lat", 0.0))
@@ -166,6 +246,26 @@ static func block_origin(area_dict: Dictionary) -> Vector2i:
 	var half_y: int = int((rows - 1) / 2)
 	return anchor_cell - Vector2i(half_x, half_y)
 
+static func block_origin(area_dict: Dictionary) -> Vector2i:
+	var kind := str(area_dict.get("kind", ""))
+	if kind != "camp" and area_dict.has("at") and area_dict["at"] is Array:
+		var at_arr: Array = area_dict["at"]
+		var dx: int = int(at_arr[0]) if at_arr.size() >= 1 else 0
+		var dy: int = int(at_arr[1]) if at_arr.size() >= 2 else 0
+		var pid := str(area_dict.get("place_id", ""))
+		if pid.is_empty() and area_dict.has("id"):
+			_ensure_loaded()
+			var cached: Variant = _areas_by_id.get(str(area_dict["id"]), {})
+			if cached is Dictionary:
+				pid = str((cached as Dictionary).get("place_id", ""))
+		if not pid.is_empty():
+			_ensure_loaded()
+			if _cities_by_id.has(pid):
+				var camp_var: Variant = (_cities_by_id[pid] as Dictionary).get("camp", {})
+				if camp_var is Dictionary and not (camp_var as Dictionary).is_empty():
+					return _anchor_block_origin(camp_var as Dictionary) + Vector2i(dx, dy)
+	return _anchor_block_origin(area_dict)
+
 static func block_cells(area_dict: Dictionary) -> Array[Vector2i]:
 	var orig := block_origin(area_dict)
 	var cells_var: Variant = area_dict.get("cells", [1, 1])
@@ -177,6 +277,42 @@ static func block_cells(area_dict: Dictionary) -> Array[Vector2i]:
 		for dx in range(cols):
 			result.append(Vector2i(orig.x + dx, orig.y + dy))
 	return result
+
+static func city_bounds(place_id: String) -> Rect2i:
+	_ensure_loaded()
+	if not _areas_by_place.has(place_id):
+		return Rect2i(0, 0, 0, 0)
+	var areas: Array = _areas_by_place[place_id]
+	if areas.is_empty():
+		return Rect2i(0, 0, 0, 0)
+	var first := true
+	var min_x := 0
+	var min_y := 0
+	var max_x := 0
+	var max_y := 0
+	for a_var in areas:
+		if not (a_var is Dictionary):
+			continue
+		var a: Dictionary = a_var
+		var orig := block_origin(a)
+		var cells_var: Variant = a.get("cells", [1, 1])
+		var cells_arr: Array = cells_var if cells_var is Array else [1, 1]
+		var cols: int = int(cells_arr[0]) if cells_arr.size() >= 1 else 1
+		var rows: int = int(cells_arr[1]) if cells_arr.size() >= 2 else 1
+		if first:
+			min_x = orig.x
+			min_y = orig.y
+			max_x = orig.x + cols
+			max_y = orig.y + rows
+			first = false
+		else:
+			min_x = mini(min_x, orig.x)
+			min_y = mini(min_y, orig.y)
+			max_x = maxi(max_x, orig.x + cols)
+			max_y = maxi(max_y, orig.y + rows)
+	if first:
+		return Rect2i(0, 0, 0, 0)
+	return Rect2i(min_x, min_y, max_x - min_x, max_y - min_y)
 
 static func distance_m(place_id: String, area_id: String) -> float:
 	_ensure_loaded()
@@ -211,7 +347,8 @@ static func validate_landmark_stamps(place_id: String = "") -> Dictionary:
 			continue
 		for a_var in _areas_by_place[pid]:
 			var a: Dictionary = a_var
-			if str(a.get("kind", "")) != "hood":
+			var akind := str(a.get("kind", ""))
+			if akind != "hood" and akind != "route":
 				continue
 			var lms_var: Variant = a.get("landmarks", [])
 			if not (lms_var is Array):

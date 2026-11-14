@@ -128,12 +128,16 @@ func refresh() -> void:
 		var has_row := states_by_id.has(area_id)
 		var state_val: int = int((states_by_id[area_id] as Dictionary).get("state", 0)) if has_row else 0
 		var is_openable := openable_set.has(area_id)
+		var can_go_flag := NeighbourhoodProgress.can_go(db, area_id)
 
 		var state_text := "Locked"
 		var state_color := Color(0.58, 0.63, 0.70, 1.0)
 		if state_val >= 3:
 			state_text = "Finished ✓"
 			state_color = Color(0.98, 0.84, 0.42, 1.0)
+		elif has_row and not can_go_flag:
+			state_text = "Walk there"
+			state_color = Color(0.95, 0.78, 0.45, 1.0)
 		elif has_row:
 			state_text = "Open"
 			state_color = Color(0.56, 0.90, 0.66, 1.0)
@@ -148,9 +152,34 @@ func refresh() -> void:
 		var pays_str := str(mq.get("pays", ""))
 		var trip_min := NeighbourhoodProgress.trip_minutes(_place_id, camp_id, area_id)
 
-		var card_text := "Types: %s · Night: %s · Pays: %s · Trip: %d min" % [
-			types_str, night_str, pays_str, trip_min
+		var card_lines: Array[String] = [
+			"Types: %s · Night: %s · Pays: %s · Trip: %d min" % [
+				types_str, night_str, pays_str, trip_min
+			]
 		]
+		if has_row and not can_go_flag:
+			for r_var in Neighbourhoods.routes_at(area_id):
+				if not (r_var is Dictionary):
+					continue
+				var r_dict: Dictionary = r_var
+				var rid := str(r_dict.get("id", ""))
+				if not states_by_id.has(rid):
+					continue
+				var ends_var: Variant = r_dict.get("ends", [])
+				if not (ends_var is Array) or (ends_var as Array).size() != 2:
+					continue
+				var e0 := str((ends_var as Array)[0])
+				var e1 := str((ends_var as Array)[1])
+				var nbr_id := e1 if e0 == area_id else e0
+				var nbr_area: Dictionary = Neighbourhoods.area(nbr_id)
+				var nbr_name := str(nbr_area.get("name", nbr_id))
+				var r_name := str(r_dict.get("name", rid))
+				var nbr_state := int((states_by_id.get(nbr_id, {}) as Dictionary).get("state", 0))
+				if nbr_state >= 2:
+					card_lines.append("Walk: %s from %s" % [r_name, nbr_name])
+				else:
+					card_lines.append("Walk: %s from %s (go there first)" % [r_name, nbr_name])
+		var card_text := "\n".join(PackedStringArray(card_lines))
 		var name_line := "%s — %s" % [area_name, lm_joined] if not lm_joined.is_empty() else area_name
 
 		var row_panel := PanelContainer.new()
@@ -216,6 +245,7 @@ func refresh() -> void:
 		var has_open_btn := false
 		var has_go_btn := false
 		var has_demo_finish_btn := false
+		var has_demo_walk_btn := false
 
 		if is_openable:
 			has_open_btn = true
@@ -228,7 +258,7 @@ func refresh() -> void:
 			open_btn.pressed.connect(func(): _on_open_pressed(captured_open_id))
 			btn_hbox.add_child(open_btn)
 
-		if has_row:
+		if can_go_flag:
 			has_go_btn = true
 			var go_btn := Button.new()
 			go_btn.name = "GoButton"
@@ -238,6 +268,27 @@ func refresh() -> void:
 			var captured_go_id := area_id
 			go_btn.pressed.connect(func(): _on_go_pressed(captured_go_id))
 			btn_hbox.add_child(go_btn)
+
+		if is_demo and has_row and not can_go_flag:
+			for walk_rid in NeighbourhoodProgress.walk_from(db, area_id):
+				var wr_dict: Dictionary = Neighbourhoods.route(walk_rid)
+				var wr_ends: Variant = wr_dict.get("ends", [])
+				if not (wr_ends is Array) or (wr_ends as Array).size() != 2:
+					continue
+				var we0 := str((wr_ends as Array)[0])
+				var we1 := str((wr_ends as Array)[1])
+				var walk_origin_id := we1 if we0 == area_id else we0
+				var wr_name := str(wr_dict.get("name", walk_rid))
+				has_demo_walk_btn = true
+				var walk_btn := Button.new()
+				walk_btn.name = "DemoWalk_" + walk_rid.replace(":", "_").replace("-", "_")
+				walk_btn.text = "Walk %s (demo)" % wr_name
+				walk_btn.custom_minimum_size = Vector2(150, 30)
+				walk_btn.add_theme_font_size_override("font_size", 11)
+				var cap_rid := walk_rid
+				var cap_from := walk_origin_id
+				walk_btn.pressed.connect(func(): _on_demo_walk_pressed(cap_rid, cap_from))
+				btn_hbox.add_child(walk_btn)
 
 		if is_demo and state_val >= 2 and state_val < 3:
 			has_demo_finish_btn = true
@@ -259,6 +310,7 @@ func refresh() -> void:
 			"has_open": has_open_btn,
 			"has_go": has_go_btn,
 			"has_demo_finish": has_demo_finish_btn,
+			"has_demo_walk": has_demo_walk_btn,
 		}
 
 func _on_open_pressed(area_id: String) -> void:
@@ -274,6 +326,15 @@ func _on_go_pressed(area_id: String) -> void:
 		state_changed.emit(_place_id)
 		visible = false
 		go_requested.emit(area_id)
+
+func _on_demo_walk_pressed(route_id: String, from_area_id: String) -> void:
+	var db = _get_db()
+	var res := NeighbourhoodProgress.walk_route(db, route_id, from_area_id)
+	if bool(res.get("ok", false)):
+		var arrived_at := str(res.get("arrived_at", ""))
+		state_changed.emit(_place_id)
+		visible = false
+		go_requested.emit(arrived_at)
 
 func _on_demo_finish_pressed(area_id: String) -> void:
 	var db = _get_db()

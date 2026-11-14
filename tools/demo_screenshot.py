@@ -51,9 +51,9 @@ def parse_args():
     )
     parser.add_argument(
         "--screen",
-        choices=["map", "town_map", "board"],
+        choices=["map", "town_map", "board", "city"],
         default="map",
-        help="Screen to capture (map, town_map, or board, default: map)."
+        help="Screen to capture (map, town_map, board, or city, default: map)."
     )
     parser.add_argument(
         "--focus",
@@ -132,6 +132,8 @@ def main():
             out_png = os.path.join(real_out, "shot_town_map.png")
         elif args.screen == "board":
             out_png = os.path.join(real_out, "shot_board.png")
+        elif args.screen == "city":
+            out_png = os.path.join(real_out, "shot_city.png")
         else:
             suffix = "_cleared" if args.preview_cleared else ""
             focus_tag = ""

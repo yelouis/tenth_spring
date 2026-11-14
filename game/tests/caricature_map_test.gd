@@ -419,5 +419,93 @@ func run_test() -> bool:
 		push_error("caricature_map_test: block fate=gone did not compile as ruined block")
 		return false
 
+	# -------------------------------------------------------------
+	# 6. Item 53 (§10.4, §10.12): Openings (M2, M9, M10) and route legs without a lamp (M5)
+	# -------------------------------------------------------------
+	Neighbourhoods.set_config_path_for_tests("res://tests/fixtures/caricature_routes_fixture_roster.json")
+	var r_hood_area := Neighbourhoods.area("hood:fixture-city:north-end")
+	var r_hood_map := CaricatureMap.load_map("res://tests/fixtures/caricature_route_hood_a.json")
+	var r_leg_area := Neighbourhoods.area("route:fixture-city:harbor-road#1")
+	var r_leg_map := CaricatureMap.load_map("res://tests/fixtures/caricature_route_leg.json")
+
+	# (a) ▶ Opening's border tiles pass M2 while walkable, and fail M2 when non-walkable ('T')
+	var comp_open_ok := CaricatureMap.compile(r_hood_area, r_hood_map, seed_val)
+	if not bool(comp_open_ok.get("ok", false)):
+		_cleanup()
+		push_error("caricature_map_test: walkable opening failed to compile: %s" % str(comp_open_ok.get("errors", [])))
+		return false
+	if str(comp_open_ok.get("kind", "")) != "hood" or (comp_open_ok.get("openings", []) as Array).size() != 1:
+		_cleanup()
+		push_error("caricature_map_test: expected compiled kind='hood' and 1 opening")
+		return false
+
+	var m2_bad_open := r_hood_map.duplicate(true)
+	var row95 := str(m2_bad_open["rows"][95])
+	m2_bad_open["rows"][95] = row95.substr(0, 15) + "T" + row95.substr(16)
+	var res_m2_open := CaricatureMap.compile(r_hood_area, m2_bad_open, seed_val)
+	if bool(res_m2_open["ok"]) or not _has_error_prefix(res_m2_open["errors"], "M2:"):
+		_cleanup()
+		push_error("caricature_map_test: non-walkable opening border tile did not fail M2: %s" % str(res_m2_open["errors"]))
+		return false
+
+	# (b) ▶ M9 refuses width-5 opening and openings within 3 tiles of either corner
+	var m9_wide := r_hood_map.duplicate(true)
+	m9_wide["openings"] = [{"side": "S", "at": 14, "width": 5}]
+	for ry in [93, 94, 95]:
+		var rs := str(m9_wide["rows"][ry])
+		m9_wide["rows"][ry] = rs.substr(0, 14) + "-----" + rs.substr(19)
+	var res_m9_wide := CaricatureMap.compile(r_hood_area, m9_wide, seed_val)
+	if bool(res_m9_wide["ok"]) or not _has_error_prefix(res_m9_wide["errors"], "M9:"):
+		_cleanup()
+		push_error("caricature_map_test: width-5 opening did not fail M9: %s" % str(res_m9_wide["errors"]))
+		return false
+
+	var m9_west_corner := r_hood_map.duplicate(true)
+	m9_west_corner["openings"] = [{"side": "S", "at": 2, "width": 3}]
+	var res_m9_west := CaricatureMap.compile(r_hood_area, m9_west_corner, seed_val)
+	if bool(res_m9_west["ok"]) or not _has_error_prefix(res_m9_west["errors"], "M9:"):
+		_cleanup()
+		push_error("caricature_map_test: opening at=2 (< BORDER) did not fail M9: %s" % str(res_m9_west["errors"]))
+		return false
+
+	var m9_east_corner := r_hood_map.duplicate(true)
+	m9_east_corner["openings"] = [{"side": "S", "at": 123, "width": 3}]
+	var res_m9_east := CaricatureMap.compile(r_hood_area, m9_east_corner, seed_val)
+	if bool(res_m9_east["ok"]) or not _has_error_prefix(res_m9_east["errors"], "M9:"):
+		_cleanup()
+		push_error("caricature_map_test: opening within 3 tiles of east corner did not fail M9: %s" % str(res_m9_east["errors"]))
+		return false
+
+	# (c) ▶ M10 refuses an opening blocked one tile inside (row 92 = h - BORDER - 1)
+	var m10_blocked := r_hood_map.duplicate(true)
+	var row92 := str(m10_blocked["rows"][92])
+	m10_blocked["rows"][92] = row92.substr(0, 15) + "T" + row92.substr(16)
+	var res_m10 := CaricatureMap.compile(r_hood_area, m10_blocked, seed_val)
+	if bool(res_m10["ok"]) or not _has_error_prefix(res_m10["errors"], "M10:"):
+		_cleanup()
+		push_error("caricature_map_test: opening blocked one tile inside did not fail M10: %s" % str(res_m10["errors"]))
+		return false
+
+	# (d) Leg compiles with "lamp": null; neighbourhood with "lamp": null still fails M5
+	var comp_leg := CaricatureMap.compile(r_leg_area, r_leg_map, seed_val)
+	if not bool(comp_leg.get("ok", false)):
+		_cleanup()
+		push_error("caricature_map_test: route leg with lamp=null failed compile: %s" % str(comp_leg.get("errors", [])))
+		return false
+	if str(comp_leg.get("kind", "")) != "route" or comp_leg.get("arrival", Vector2i.ZERO) != Vector2i(15, 2):
+		_cleanup()
+		push_error("caricature_map_test: route leg expected kind='route' arrival=(15, 2), got kind=%s arrival=%s" % [
+			str(comp_leg.get("kind", "")), str(comp_leg.get("arrival", Vector2i.ZERO))
+		])
+		return false
+
+	var m5_hood_null := r_hood_map.duplicate(true)
+	m5_hood_null["lamp"] = null
+	var res_m5_hood := CaricatureMap.compile(r_hood_area, m5_hood_null, seed_val)
+	if bool(res_m5_hood["ok"]) or not _has_error_prefix(res_m5_hood["errors"], "M5:"):
+		_cleanup()
+		push_error("caricature_map_test: neighbourhood with lamp=null did not fail M5: %s" % str(res_m5_hood["errors"]))
+		return false
+
 	_cleanup()
 	return true

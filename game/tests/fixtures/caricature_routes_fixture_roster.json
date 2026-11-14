@@ -1,0 +1,150 @@
+{
+  "version": 1,
+  "cities": [
+    {
+      "place_id": "city:fixture-city",
+      "ready": false,
+      "camp": {
+        "id": "camp:fixture-city",
+        "name": "Fixture Town Hall Camp",
+        "anchor": {
+          "lat": 0.0103486,
+          "lon": 0.0080489
+        },
+        "cells": [
+          2,
+          2
+        ],
+        "ruin_level": "camp",
+        "landmarks": [
+          {
+            "name": "the camp's board",
+            "feature": "board",
+            "sign": "Waypost Board"
+          }
+        ],
+        "map": "res://tests/fixtures/caricature_route_camp.json"
+      },
+      "neighbourhoods": [
+        {
+          "id": "hood:fixture-city:north-end",
+          "name": "North End",
+          "role": "gateway",
+          "anchor": {
+            "lat": 0.01495,
+            "lon": 0.01495
+          },
+          "at": [
+            4,
+            6
+          ],
+          "cells": [
+            4,
+            3
+          ],
+          "zone": "parkland",
+          "ruin_level": "near",
+          "haunt_site": "",
+          "borders": [
+            "hood:fixture-city:south-harbor"
+          ],
+          "landmarks": [
+            {
+              "name": "Fixture Parthenon",
+              "stamp": "parthenon",
+              "interior": "fixture-city:town-hall"
+            },
+            {
+              "name": "North Square",
+              "feature": "plaza",
+              "sign": "North Square"
+            }
+          ],
+          "main_quest": {
+            "title": "North Clearing",
+            "pattern": "famous_building",
+            "source": "roster",
+            "pays": "items",
+            "summary": "Clear the north hall."
+          },
+          "map": "res://tests/fixtures/caricature_route_hood_a.json"
+        },
+        {
+          "id": "hood:fixture-city:south-harbor",
+          "name": "South Harbor",
+          "role": "inner",
+          "anchor": {
+            "lat": 0.00575,
+            "lon": 0.01495
+          },
+          "at": [
+            4,
+            1
+          ],
+          "cells": [
+            4,
+            3
+          ],
+          "zone": "waterfront",
+          "ruin_level": "mid",
+          "haunt_site": "",
+          "borders": [
+            "hood:fixture-city:north-end"
+          ],
+          "landmarks": [
+            {
+              "name": "Harbor Light",
+              "stamp": "boston_light"
+            },
+            {
+              "name": "Harbor Pier",
+              "feature": "pier",
+              "sign": "Harbor Pier"
+            }
+          ],
+          "main_quest": {
+            "title": "Harbor Watch",
+            "pattern": "keeper",
+            "source": "new",
+            "pays": "items",
+            "summary": "Hold the harbor pier."
+          },
+          "map": "res://tests/fixtures/caricature_route_hood_b.json"
+        }
+      ],
+      "routes": [
+        {
+          "id": "route:fixture-city:harbor-road",
+          "name": "Harbor Road",
+          "ends": [
+            "hood:fixture-city:north-end",
+            "hood:fixture-city:south-harbor"
+          ],
+          "legs": [
+            {
+              "at": [
+                4,
+                4
+              ],
+              "cells": [
+                1,
+                2
+              ],
+              "map": "res://tests/fixtures/caricature_route_leg.json"
+            }
+          ],
+          "zone": "parkland",
+          "ruin_level": "near",
+          "calm": false,
+          "landmarks": [
+            {
+              "name": "Harbor Bridge",
+              "feature": "bridge",
+              "sign": "Harbor Bridge"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
