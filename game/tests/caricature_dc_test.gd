@@ -1,7 +1,7 @@
 extends Node
 
-# game/tests/caricature_dc_test.gd — Washington DC Caricature Maps Contract Test (Item 49)
-# Contract: docs/implementation_plan_dc_trial.md §2.5, §5, §9; docs/agent_execution_guide.md §6
+# game/tests/caricature_dc_test.gd — Washington DC Caricature Maps & Routes Contract Test (Items 49, 54)
+# Contract: docs/implementation_plan_dc_trial.md §2.5, §5, §10.10, §10.12; docs/agent_execution_guide.md §4
 
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
@@ -9,15 +9,27 @@ const CaricatureCheck := preload("res://world/caricature/caricature_check.gd")
 const MapConstants := preload("res://world/map_constants.gd")
 
 const PINNED_SHA256: Dictionary = {
-	"camp:washington-dc": "ebe2621998f4f09a8f8c2ca84f4b082028629a67ba255d413d3ff22c2685f9fe",
-	"hood:washington-dc:national-mall": "7f211c1f6ebb75f2453d5b49184562fc0e3ed2792f4dfdaa59804838c781e1e5",
-	"hood:washington-dc:tidal-basin": "c342635eb42dfb86a189a87def5ad924ac233ef2dfa8032964bc711cbe7f68bf",
-	"hood:washington-dc:dupont-circle": "dc799476e781e39abc1d0d5c09ba47f1bc53cef385c2298efa0b36195a50bc38",
-	"hood:washington-dc:capitol-hill": "b57a9fafdab8df9541739b707b2e778edbb03efb66442396d0fc9d76c47d880c",
-	"hood:washington-dc:union-station": "3960928359aba69e15c904439fe61fe1c870107bf9dd0ce7586d363a92d0e072",
-	"hood:washington-dc:georgetown": "542538f16e127d651457db3ed1fcd9ad624b54fc253e001c76f4fcee37e7339b",
-	"hood:washington-dc:woodley-park": "20e6d25350d8f90c8f4f9652dcf58440c63067fe15434db44cca30a7e23ff5ac",
-	"hood:washington-dc:lincoln-memorial": "2d19037e3c83ec82ada955e30355022c89511ea56e040ab7db26c65c38a92a49",
+	"camp:washington-dc": "fab50dc3781d26cd7fa211b59aef1e2490ccae9ed43fa33c393d16750af5e5e2",
+	"hood:washington-dc:national-mall": "626fbbe37bfd121fbfc5629472f192fe9dac2b5793f3434335bb81cef99357da",
+	"hood:washington-dc:tidal-basin": "9235d1bf2e5029560e14d8887ec6d7f00219a1185a8870ab9e3cbf045dcad081",
+	"hood:washington-dc:dupont-circle": "406883d476d2c724d5a69d745b00a2b9671d799c75ef42d918a27ba7e7236c7f",
+	"hood:washington-dc:capitol-hill": "0d2c1942e7446c6f0395760701918f0c2bdfbf2ba83cd8e11d32c28b93fd178a",
+	"hood:washington-dc:union-station": "6a5ded4ec5ecf0a0753a8e4d07a15cbf5e32d8f52d39933f81bb38e4791a77b3",
+	"hood:washington-dc:georgetown": "8a9064649e564c1992401e0fbff21f4b3dedd2c05d1ccbfb30892fd163102682",
+	"hood:washington-dc:woodley-park": "b31ed27af2480026cdc89c99d7ac64bd25556ca73dfa1818d8a456d9deab65cc",
+	"hood:washington-dc:lincoln-memorial": "1fa99ad67c18467eadd52f89b23a6a98149580dc5dc1594ed396845e4a8b20c3",
+	"route:washington-dc:monument-grounds#1": "43cd7ff129e4d89710e1644baa8e1cb11089579434c3f1abb09d1fcbece02f09",
+	"route:washington-dc:pennsylvania-avenue#1": "fee11d5afa554e2e0814b40e9b94ec328a60642b2c617c318dd09745f2d6eb5d",
+	"route:washington-dc:constitution-gardens#1": "e4cd3188bb45a90f50841ccb8acf23b3014a682a07fe307c57f26fabe1fe5b0c",
+	"route:washington-dc:west-potomac-park#1": "5c410d7efc2b3c78ea10d6471490e66c37dab688e07241ae38b113fcc3336406",
+	"route:washington-dc:west-potomac-park#2": "936bf0e05ee4113e3d4995704300f3c6c81ed24ebaa77cecf6713bdab485fbac",
+	"route:washington-dc:upper-senate-park#1": "25d59c9ccd002289232052e8a39b51abbebc22c8480de63739ad9b12181fb5a0",
+	"route:washington-dc:q-street#1": "245ef256c5d83ec154f8478f63a27ec599c472caa1c494524e5b8e32cf4eb4cf",
+	"route:washington-dc:connecticut-avenue#1": "719302f85fb35e9d6f893e33a95bbae8eec30cf476d5dfc70092959df016b214",
+	"route:washington-dc:massachusetts-avenue#1": "fd6899b1ffd30e215106b2167e0f71caeac229049f8a34e3312a53f24ff92796",
+	"route:washington-dc:rock-creek-trail#1": "a8b9de24bba33879acbe8a8af706352a0d6218d8264fad049673dfebb75a49e7",
+	"route:washington-dc:rock-creek-trail#2": "f0f6dd55dc2f53703872f18d26693d2f46b5bae7e08f1a194a22f88e89d80f37",
+	"route:washington-dc:potomac-riverfront#1": "83b215e5b71e31bd8a2e86aab21912283b10deaa828792f2db8a8f765f563620",
 }
 
 func _hash_all_cells(compiled: Dictionary, area: Dictionary, cells: Array[Vector2i]) -> String:
@@ -32,10 +44,17 @@ func _hash_all_cells(compiled: Dictionary, area: Dictionary, cells: Array[Vector
 func run_test() -> bool:
 	Neighbourhoods.set_config_path_for_tests("")
 	var areas: Array = Neighbourhoods.areas_of("city:washington-dc")
-	if areas.size() != 9:
-		push_error("caricature_dc_test: expected 9 areas for city:washington-dc, got %d" % areas.size())
+	if areas.size() != 21:
+		push_error("caricature_dc_test: expected 21 blocks for city:washington-dc (camp + 8 neighbourhoods + 12 legs), got %d" % areas.size())
 		return false
 
+	var routes: Array = Neighbourhoods.routes_of("city:washington-dc")
+	if routes.size() != 10:
+		push_error("caricature_dc_test: expected 10 routes for city:washington-dc, got %d" % routes.size())
+		return false
+
+	var compiled_by_id: Dictionary = {}
+	var measures_by_id: Dictionary = {}
 	var all_ok := true
 	for a_var in areas:
 		var area: Dictionary = a_var
@@ -66,6 +85,9 @@ func run_test() -> bool:
 			)
 			return false
 
+		compiled_by_id[area_id] = compiled
+		measures_by_id[area_id] = m
+
 		var cells := Neighbourhoods.block_cells(area)
 		var sha1 := _hash_all_cells(compiled, area, cells)
 		var compiled2 := CaricatureMap.compile(area, map_dict, MapConstants.MAP_SEED)
@@ -83,5 +105,21 @@ func run_test() -> bool:
 		if sha1 != expected_sha:
 			push_error("caricature_dc_test: %s SHA-256 mismatch: got %s, expected %s" % [area_id, sha1, expected_sha])
 			all_ok = false
+
+	for r_var in routes:
+		var r_dict: Dictionary = r_var
+		var rid := str(r_dict.get("id", ""))
+		var rc := CaricatureCheck.check_route(r_dict, compiled_by_id, measures_by_id)
+		if not bool(rc.get("ok", false)):
+			push_error("caricature_dc_test: route %s failed checks (%s): %s" % [rid, str(rc.get("failed_rules", [])), str(rc)])
+			return false
+
+	var cc := CaricatureCheck.check_city("city:washington-dc", compiled_by_id)
+	if not bool(cc.get("ok", false)):
+		push_error("caricature_dc_test: city:washington-dc failed C0/C1 checks (%s): %s" % [str(cc.get("failed_rules", [])), str(cc)])
+		return false
+	if int(cc.get("openings_aligned", 0)) != 22 or int(cc.get("openings_total", 0)) != 22 or int(cc.get("connected", 0)) != 8:
+		push_error("caricature_dc_test: unexpected city check counts: %s" % str(cc))
+		return false
 
 	return all_ok

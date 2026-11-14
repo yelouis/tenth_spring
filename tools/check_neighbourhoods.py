@@ -201,7 +201,7 @@ def validate_neighbourhoods(
         if pid in seen_cities:
             raise RuleError("N1", f"duplicate city entry for {pid}")
         seen_cities.add(pid)
-        if "routes" in c and not isinstance(c.get("routes"), list):
+        if not isinstance(c.get("routes"), list):
             raise RuleError("N1", f"{pid} 'routes' must be a list")
 
     # N2: each city has one camp and exactly neighbourhoodsPerCity neighbourhoods
@@ -243,17 +243,16 @@ def validate_neighbourhoods(
                 raise RuleError("N3", f"duplicate id {hid!r}")
             seen_ids.add(hid)
 
-        if "routes" in c:
-            route_pat = re.compile(rf"^route:{re.escape(slug)}:([a-z0-9-]+)$")
-            for r in c["routes"]:
-                if not isinstance(r, dict):
-                    raise RuleError("N3", f"{pid} route entry must be an object")
-                rid = r.get("id")
-                if not isinstance(rid, str) or not route_pat.match(rid):
-                    raise RuleError("N3", f"invalid route id {rid!r} for {pid}")
-                if rid in seen_ids:
-                    raise RuleError("N3", f"duplicate id {rid!r}")
-                seen_ids.add(rid)
+        route_pat = re.compile(rf"^route:{re.escape(slug)}:([a-z0-9-]+)$")
+        for r in c["routes"]:
+            if not isinstance(r, dict):
+                raise RuleError("N3", f"{pid} route entry must be an object")
+            rid = r.get("id")
+            if not isinstance(rid, str) or not route_pat.match(rid):
+                raise RuleError("N3", f"invalid route id {rid!r} for {pid}")
+            if rid in seen_ids:
+                raise RuleError("N3", f"duplicate id {rid!r}")
+            seen_ids.add(rid)
 
     # N4: role counts (gatewayCount gateway, 1 finale, rest inner)
     for c in cities:
@@ -301,16 +300,13 @@ def validate_neighbourhoods(
                 f"{pid} gateways {sorted(actual_gateways)} != nearest {gateway_count} non-finale {sorted(expected_gateways)}",
             )
 
-    # N6: for cities with routes (Decision 58), camp is [2, 2] and neighbourhoods [4, 3], [4, 4], or [5, 4];
-    #     for cities without routes (Item 53 transition), camp is [1, 1] and neighbourhoods [2, 2] or [3, 2].
+    # N6: Decision 58 sizes — camp is [2, 2] and neighbourhoods [4, 3], [4, 4], or [5, 4]
+    valid_hood_cells = ([4, 3], [4, 4], [5, 4])
     for c in cities:
         camp = c["camp"]
         cc = camp.get("cells")
-        has_routes = "routes" in c
-        expected_camp_cells = [2, 2] if has_routes else [1, 1]
-        valid_hood_cells = ([4, 3], [4, 4], [5, 4]) if has_routes else ([2, 2], [3, 2])
-        if not isinstance(cc, list) or len(cc) != 2 or not all(_is_int(v) for v in cc) or cc != expected_camp_cells:
-            raise RuleError("N6", f"{camp['id']} cells must be {expected_camp_cells}, got {cc!r}")
+        if not isinstance(cc, list) or len(cc) != 2 or not all(_is_int(v) for v in cc) or cc != [2, 2]:
+            raise RuleError("N6", f"{camp['id']} cells must be [2, 2], got {cc!r}")
         for h in c["neighbourhoods"]:
             hc = h.get("cells")
             if (
@@ -355,28 +351,14 @@ def validate_neighbourhoods(
             if h["role"] == "inner" and hid not in visited:
                 raise RuleError("N9", f"inner neighbourhood {hid} cannot be reached from any gateway without finale")
 
-    # Layout rules: L1–L8 for cities with routes (§10.3); legacy N7 & N8 for cities without routes during Item 53.
+    # Layout rules L1–L8 (§10.3; supersedes old N7 & N8)
     pack_cells_by_city = _load_pack_cells_by_city(pack_path)
-    legacy_blocks = []  # (area_id, x0, x1, y0, y1) across legacy cities for N8
-    all_route_blocks = []  # (block_id, x0, x1, y0, y1) across route cities
+    all_route_blocks = []  # (block_id, x0, x1, y0, y1) across cities
     all_allowed_touch = set()
 
     for c in cities:
         pid = c["place_id"]
         city_cells = pack_cells_by_city.get(pid, set())
-        if "routes" not in c:
-            areas = [c["camp"]] + list(c["neighbourhoods"])
-            for area in areas:
-                aid = area["id"]
-                x0, x1, y0, y1 = _block_bounds(area["anchor"], area["cells"])
-                for cx in range(x0, x1 + 1):
-                    for cy in range(y0, y1 + 1):
-                        if (cx, cy) not in city_cells:
-                            raise RuleError("N7", f"{aid} cell ({cx}, {cy}) is outside {pid} in places pack")
-                legacy_blocks.append((aid, x0, x1, y0, y1))
-            continue
-
-        # City with routes: L1–L8
         camp = c["camp"]
         if "at" in camp:
             raise RuleError("L1", f"{camp['id']} must not have 'at'")
@@ -578,32 +560,18 @@ def validate_neighbourhoods(
 
         all_route_blocks.extend(city_blocks)
 
-    # Cross-city block spacing: legacy N8 among legacy cities; L1/L2 across route cities
-    for i in range(len(legacy_blocks)):
-        aid1, x1a, x1b, y1a, y1b = legacy_blocks[i]
-        for j in range(i + 1, len(legacy_blocks)):
-            aid2, x2a, x2b, y2a, y2b = legacy_blocks[j]
+    # Cross-city block spacing: L1/L2 across all cities
+    for i in range(len(all_route_blocks)):
+        id1, x1a, x1b, y1a, y1b = all_route_blocks[i]
+        for j in range(i + 1, len(all_route_blocks)):
+            id2, x2a, x2b, y2a, y2b = all_route_blocks[j]
+            if x1a <= x2b and x2a <= x1b and y1a <= y2b and y2a <= y1b:
+                raise RuleError("L1", f"blocks {id1} and {id2} overlap")
             col_gap = max(0, x2a - x1b, x1a - x2b)
             row_gap = max(0, y2a - y1b, y1a - y2b)
-            if max(col_gap, row_gap) < 2:
-                raise RuleError(
-                    "N8",
-                    f"blocks {aid1} and {aid2} gap is {max(col_gap, row_gap)} (col={col_gap}, row={row_gap}), expected >= 2",
-                )
-
-    combined_blocks = all_route_blocks + legacy_blocks
-    if all_route_blocks:
-        for i in range(len(all_route_blocks)):
-            id1, x1a, x1b, y1a, y1b = all_route_blocks[i]
-            for j in range(i + 1, len(combined_blocks)):
-                id2, x2a, x2b, y2a, y2b = combined_blocks[j]
-                if x1a <= x2b and x2a <= x1b and y1a <= y2b and y2a <= y1b:
-                    raise RuleError("L1", f"blocks {id1} and {id2} overlap")
-                col_gap = max(0, x2a - x1b, x1a - x2b)
-                row_gap = max(0, y2a - y1b, y1a - y2b)
-                cheb = max(col_gap, row_gap)
-                if cheb < 2 and frozenset({id1, id2}) not in all_allowed_touch:
-                    raise RuleError("L2", f"blocks {id1} and {id2} touch across cities (Chebyshev distance {cheb})")
+            cheb = max(col_gap, row_gap)
+            if cheb < 2 and frozenset({id1, id2}) not in all_allowed_touch:
+                raise RuleError("L2", f"blocks {id1} and {id2} touch across cities (Chebyshev distance {cheb})")
 
     # N10: zone, haunt_site, ruin_level (and routes' name, zone, ruin_level, calm)
     for c in cities:

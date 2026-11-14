@@ -2,76 +2,351 @@
   "schema": 1,
   "id": "camp:washington-dc",
   "rows": [
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTT..........................TTT",
-    "TTT.T......................T.TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT.T......................T.TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT..........................TTT",
-    "TTT..**..................**..TTT",
-    "TTT..........................TTT",
-    "TTT......##############......TTT",
-    "TTT.....*##############*.....TTT",
-    "TTT......##############......TTT",
-    "TTT.....*##############*.....TTT",
-    "TTT......##############......TTT",
-    "TTT.....*##############*.....TTT",
-    "TTT.-----##############-----.TTT",
-    "TTT......**....-#-...**......TTT",
-    "TTT............-#-...........TTT",
-    "TTT............-#-...........TTT",
-    "TTT.T..........-#-.........T.TTT",
-    "TTT............-#-...........TTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTT.....TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT..............TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTT.......................TTTTTTTTTTTTTTT.......TTTTTTTTTTT",
+    "TTTTTTTT..##############................##############TTTTTTTTTT",
+    "TTTTTTT...##############................##############TTTTTTTTTT",
+    "TTTTTTT...##############................##############TTTTTTTTTT",
+    "TTTTTTT...##############................##############.TTTTTTTTT",
+    "TTTTTTT...##############................##############.TTTTTTTTT",
+    "TTTTTTT...#.........####................####.........#.TTTTTTTTT",
+    "TTTTTTT...#.........####................####.........#..TTTTTTTT",
+    "TTTTTTT...#.........####................####.........#..TTTTTTTT",
+    "TTTTTTT...#.........####................####.........#...TTTTTTT",
+    "TTTTTTT...#.........***#................#***.........#...TTTTTTT",
+    "TTTTTTT...#.........***#................#***.........#...TTTTTTT",
+    "TTTTTTT...#.........***#................#***.........#...TTTTTTT",
+    "TTTTTTT...#.........***#................#***.........#...TTTTTTT",
+    "TTTTTTT...#.........***#................#***.........#...TTTTTTT",
+    "TTTTTTT...##########***##################***##########....TTTTTT",
+    "TTTTTTT...############################################....TTTTTT",
+    "TTTTTT####################################################TTTTTT",
+    "TTTTTTxxxx===================######===================xxxxTTTTTT",
+    "TTTTTTxxxx===================######===================xxxxTTTTTT",
+    "TTTTTTxxxx===================######===================xxxxTTTTTT",
+    "TTTTTTxxxx===================######===================xxxxTTTTTT",
+    "TTTTTT####################################################TTTTTT",
+    "TTTTTT....--------############################--------....TTTTTT",
+    "TTTTTT....--------############################--------....TTTTTT",
+    "TTTTTT....------T-##cccccccc########cccccccc##-T------....TTTTTT",
+    "TTTTTT....-.....--##cccccccc########cccccccc##--.....-.....TTTTT",
+    "TTTTTT....-.....--##cccccccc########cccccccc##--.....-.....TTTTT",
+    "TTTTTT....-.....--##cccccccc########cccccccc##--.....-.....TTTTT",
+    "TTTTTTT...-.....--##cccccccc########cccccccc##--.....-.....TTTTT",
+    "TTTTTTT...--------############################--------.....TTTTT",
+    "TTTTTTT...--------##********########********##--------......TTTT",
+    "TTTTTTT...--....--##********########********##--....--......TTTT",
+    "TTTTTTT...--....--##********########********##--....--......TTTT",
+    "TTTTTTT...--....--##********########********##--....--......TTTT",
+    "TTTTTTT...--....--##********########********##--....--.....TTTTT",
+    "TTTTTTT...--------##########T######T##########--------.....TTTTT",
+    "TTTTTTT...--------############################--------.....TTTTT",
+    "TTTTTTT...--------------------------------------------....TTTTTT",
+    "TTTTTTT...--------------------------------------------....TTTTTT",
+    "TTTTTTT...--------------------------------------------...TTTTTTT",
+    "TTTTTTT...-FFFFF##FFFFF.################.FFFFF##FFFFF-...TTTTTTT",
+    "TTTTTTT....F*c*c##*c*cF.################.F*c*c##*c*cF...TTTTTTTT",
+    "TTTTTT.....Fc*c*##c*c*F.#***########***#.Fc*c*##c*c*F...TTTTTTTT",
+    "TTTTTT.....F##########F.#***########***#.F##########F..TTTTTTTTT",
+    "TTTTTT.....Fc*c*##c*c*F.#***########***#.Fc*c*##c*c*F..TTTTTTTTT",
+    "TTTTTT.....F*c*c##*c*cF.#***########***#.F*c*c##*c*cF.TTTTTTTTTT",
+    "TTTTTT.....Fc*c*##c*c*F.#***########***#.Fc*c*##c*c*F.TTTTTTTTTT",
+    "TTTTTT.....FFFFFFFFFFFF.################.FFFFFFFFFFFF.TTTTTTTTTT",
+    "TTTTTTT.................################.............TTTTTTTTTTT",
+    "TTTTTTT..........................................TTTTTTTTTTTTTTT",
+    "TTTTTTTT....................................TTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTT...TTTTTTTTTTTTTT.........TTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
   ],
   "objects": [
     {
       "kind": "block_16x14",
       "at": [
-        8,
-        3
-      ],
-      "fate": "standing"
-    },
-    {
-      "kind": "house_s",
-      "at": [
-        4,
-        19
-      ],
-      "fate": "standing"
-    },
-    {
-      "kind": "house_s",
-      "at": [
         24,
-        19
+        6
       ],
       "fate": "standing"
+    },
+    {
+      "kind": "block_9x9",
+      "at": [
+        11,
+        11
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "block_9x9",
+      "at": [
+        44,
+        11
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_m",
+      "at": [
+        11,
+        31
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_s",
+      "at": [
+        12,
+        37
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_m",
+      "at": [
+        48,
+        31
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_s",
+      "at": [
+        48,
+        37
+      ],
+      "fate": "standing"
+    },
+    {
+      "stamp": "decal_wall_stump",
+      "at": [
+        9,
+        22
+      ]
+    },
+    {
+      "stamp": "decal_wall_stump",
+      "at": [
+        54,
+        22
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        9,
+        39
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        53,
+        40
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        43,
+        13
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        54,
+        29
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        14,
+        29
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        53,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        40,
+        6
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        9,
+        18
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        8,
+        43
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        54,
+        33
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        38,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        8,
+        53
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        23,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        8,
+        16
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        17,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_creeper",
+      "at": [
+        8,
+        32
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        34,
+        37
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        16,
+        38
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        23,
+        42
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        15,
+        29
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        18,
+        5
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        11,
+        43
+      ]
+    },
+    {
+      "stamp": "decal_creeper",
+      "at": [
+        31,
+        56
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        32,
+        57
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        15,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        39,
+        23
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        50,
+        24
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        37,
+        55
+      ]
     }
   ],
   "lamp": [
-    16,
-    26
+    32,
+    50
   ],
   "signs": [
     {
       "at": [
-        18,
-        18
+        35,
+        21
       ],
       "text": "Waypost Notice Board"
     }
-  ]
+  ],
+  "openings": []
 }

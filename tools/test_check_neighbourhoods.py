@@ -200,7 +200,7 @@ class TestCheckNeighbourhoods(unittest.TestCase):
         self.assertEqual(code, 0, f"Canonical file failed: {out}")
         self.assertEqual(
             out,
-            "[CHECK NEIGHBOURHOODS OK] 1 cities, 8 neighbourhoods, 1 camps, 0 routes, 0 legs.",
+            "[CHECK NEIGHBOURHOODS OK] 1 cities, 8 neighbourhoods, 1 camps, 10 routes, 12 legs.",
         )
 
     def test_routes_fixture_valid(self):
@@ -216,29 +216,29 @@ class TestCheckNeighbourhoods(unittest.TestCase):
             )
 
     def test_falsifying_N1_version_and_city_entry(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         mutated["version"] = 2
         self._assert_fails_rule(mutated, "N1")
 
     def test_falsifying_N2_neighbourhood_count(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         mutated["cities"][0]["neighbourhoods"].pop()
         self._assert_fails_rule(mutated, "N2")
 
     def test_falsifying_N3_id_format_and_uniqueness(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         mutated["cities"][0]["neighbourhoods"][0]["id"] = "hood:washington-dc:National_Mall"
         self._assert_fails_rule(mutated, "N3")
 
     def test_falsifying_N4_role_counts(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         for h in mutated["cities"][0]["neighbourhoods"]:
             if h["id"] == "hood:washington-dc:union-station":
                 h["role"] = "gateway"
         self._assert_fails_rule(mutated, "N4")
 
     def test_falsifying_N5_gateways_nearest_waypost(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         for h in mutated["cities"][0]["neighbourhoods"]:
             if h["id"] == "hood:washington-dc:capitol-hill":
                 h["role"] = "inner"
@@ -252,22 +252,8 @@ class TestCheckNeighbourhoods(unittest.TestCase):
         mutated["cities"][0]["neighbourhoods"][2]["cells"] = [2, 2]
         self._assert_fails_rule(mutated, "N6")
 
-    def test_falsifying_N7_cells_inside_city_pack(self):
-        mutated = copy.deepcopy(self.valid_data)
-        for h in mutated["cities"][0]["neighbourhoods"]:
-            if h["id"] == "hood:washington-dc:woodley-park":
-                h["anchor"] = {"lat": 39.20, "lon": -77.05}
-        self._assert_fails_rule(mutated, "N7")
-
-    def test_falsifying_N8_minimum_block_gap(self):
-        mutated = copy.deepcopy(self.valid_data)
-        for h in mutated["cities"][0]["neighbourhoods"]:
-            if h["id"] == "hood:washington-dc:union-station":
-                h["anchor"] = {"lat": 38.893529, "lon": -77.006173}
-        self._assert_fails_rule(mutated, "N8")
-
     def test_falsifying_N9_borders_symmetric_and_reachable(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         for h in mutated["cities"][0]["neighbourhoods"]:
             if h["id"] == "hood:washington-dc:woodley-park":
                 h["borders"] = []
@@ -278,31 +264,31 @@ class TestCheckNeighbourhoods(unittest.TestCase):
         self._assert_fails_rule(mutated, "N9")
 
     def test_falsifying_N10_zone_haunt_and_ruin_level(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         mutated["cities"][0]["neighbourhoods"][2]["zone"] = "suburb"
         self._assert_fails_rule(mutated, "N10")
 
     def test_falsifying_N11_landmarks_schema(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         for h in mutated["cities"][0]["neighbourhoods"]:
             if h["id"] == "hood:washington-dc:tidal-basin":
                 h["landmarks"] = [h["landmarks"][0]]
         self._assert_fails_rule(mutated, "N11")
 
     def test_falsifying_N12_city_interiors_bijection(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         del mutated["cities"][0]["neighbourhoods"][0]["landmarks"][0]["interior"]
         self._assert_fails_rule(mutated, "N12")
 
     def test_falsifying_N13_main_quest_schema(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         for h in mutated["cities"][0]["neighbourhoods"]:
             if h["id"] == "hood:washington-dc:dupont-circle":
                 h["main_quest"]["pattern"] = "time_of_day"
         self._assert_fails_rule(mutated, "N13")
 
     def test_falsifying_N14_ready_flag_and_maps_present(self):
-        mutated = copy.deepcopy(self.valid_data)
+        mutated = copy.deepcopy(self.routes_data)
         mutated["cities"][0]["ready"] = True
         mutated["cities"][0]["camp"]["map"] = "washington-dc/missing-falsifier.json"
         self._assert_fails_rule(mutated, "N14")

@@ -1,0 +1,301 @@
+{
+  "schema": 1,
+  "id": "route:washington-dc:rock-creek-trail#1",
+  "rows": [
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT....,,,,,,,..TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.............TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTT..TTTTT",
+    "TTT.........,,,,,,,..,,,,,,TTTTTTTTTTTTTT.......,,,,,,,,,,,,,,,,,,,,,,.....,,,,,,,TTTTTTTTTTTTT,,,....,,,,..,,,,,.......................TTTTTT----TT.......TTTTT",
+    "TTT.......,,,,,,,,,,,,,,,,,,,..................,,,,,,,,,,,,,,,,,,,,,,,....,,,,,,,,,,,,,,,,,,,,,,,,...,,,,,,,,,,,,,,...........................----.........TTTTT",
+    "TTT.....,,,,,,,,,,,,,,,,,,,,,,.................,,,,,,,,,,,,,,,,,,,,,,,,...,,,,,,,,,,,,,,,,,,,,,,,,..,,,,,,,,,,,,,,,,..........................----.........TTTTT",
+    "TTT....,,,,,,,,,,,,,,,,,,,,,,,..................,,,,,,,,,,,,,,,,,,,,,,....,,,,,,,,,,,,,,,,,,,,,,,...,,,,,,,,,,,,,,,,..........................----.........TTTTT",
+    "TTT....,,,,,,,,,,,,,,,,,,,,,,,...................,,,,,,,,,,,,,,,,,,,,.......,,,,,,,,,,,,,,,,,,,,.....,,,,,,,,,,,,,,,..----....................----.........TTTTT",
+    "TTT.....,,,,,,,,,,,,,,,,,,,,,,.....................,,,,,,,,,,,,,,,............,,,,,,--------------------------------------------------------------..........TTTT",
+    "TTT......,,,,,,,,,,,,,,,,,,,,........................,,,,,,---------------------------------------------------------------------------------------...,,,....TTTT",
+    "TTT.........,,,,,,,,,,,,,,,..........------------------------------------------------,,,,,,.......BBBB.......,,.................,,,,,.........---...,,,,,...TTTT",
+    "TTT...........,,,,,,..,---------------------B---------------,..................%:::::::%%%........BBBB.........................,,,,,,,,,,,.........,,,%%%%..TTTT",
+    "TTT.......----------------------------......BBBB....vvvvvvvvvvv........:%%%%%%:~~~~~~~~~~%%%%%::::BBBB.........................,,,,,,,,,,,,,,......%%%%~~~%.TTTT",
+    "-------------------------...................BBBB..................:::::~~~~~~~~~~~~~~~~~~~~~~~~~~~BBBB%%......................,,,,,,,,,,,,,,,,,:%%%~~~~~~~~%TTTT",
+    "-----------.................................BBBB..............%%:::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BBBB~~%%%%%%................,,,,,,,,,,,,,::::~~~~~~~~~~~%..TTT",
+    "-----------.................................BBBB...........%%%%~~~~~~~~~~~~~~~~:::::::%%%%~~~~~~~~BBBB~~~~~~~:::::::..........,,,,,,,%%%:::~~~~~~~~~~~~%%%,,,TTT",
+    "-----------.................................BBBB.......::%%~~~~~~~~~~~~~%%%%%%%..........%%%%:::::BBBB~~~~~~~~~~~~~~%%%%%%%::::::%%%%~~~~~~~~~~~~~~~%%%,,,,,,TTT",
+    "TTTT........................................BBBB....::::~~~~~~~~~~~:::::.........................:BBBB%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:%%%,,,,,,,,,TTT",
+    "TTTT..................,,....................BBBB%%::~~~~~~~~~~~%%%:...............................BBBB.%%%%::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:::::,,,,,,,,,,,,,TTT",
+    "TTTT...:::::.........,,,,,..................BBBB~~~~~~~~~~~~%%%...................................BBBB...,,,,::::::%~~~~~~~~~~~~~~~~~%%%%%::,,,,,,,,,,,,,,,,,TTT",
+    "TTTT..:~~~~:::%%%%..,,,,,,,,,,,........:::%%BBBB~~~~~~~~:::%......................................BBBB.,,,,,,,,,,,,,%%%%%%::::::::%%%,,,,,,,,,,,,,,,,,,,,,,,,TTT",
+    "TTTTT:~~~~~~~~~~~%%%%::::::::%%%%%%::::~~~~~BBBB~~~~~:::...............,,,........................BBBB,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,......,,,,,,,,,,,,,,TTT",
+    "TTTTT.:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BBBB~%%::...........,,,,,,,---------------------------BBBB,,,,,,,,,,,,,,,,,,,,,,,,,,,,,..,,........,,,,,,,,,,,,,,TTT",
+    "TTTTT..::::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~B-----------------------------------------------------BBBB,,,,,,,,,,,,,,,,,,,,,,,,,,,,.............,,,,,,,,,,,,,,TTT",
+    "TTTT.......::%%%%~~~~~~~~~~~~~~~~~~~~~~~::::B----------------------------,,,,,,,,,,,,,,,..............,,,,,,,,,,,,,,,,,,,,,,,,,,,...............,,,,,,..,,,,.TTT",
+    "TTTT........,,,,,%%%%:::::::%%%%%%%%::::.................,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.............,,,,,,,,,,,,,,,,,,,,,,,,,.................,,,,.........TTT",
+    "TTTT.........,,,,,,,,,,,,,,,,,,,,,TTTTTTTTTTTTTT.........,,,,,,,,,,,,,,,TTTTTTT,,,,,,,,,................,,,,,,,.............TTTTTTTTTTTTT...................TTTT",
+    "TTTTTTTTTTTTTTTTT.,,,,,,....,TTTTTTTTTTTTTTTTTTTTTTT.......,,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT............TTTTTTTTTTTTTTTTTTTTTTT.............TTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "kind": "house_s",
+      "at": [
+        118,
+        4
+      ],
+      "fate": "ruined"
+    },
+    {
+      "stamp": "decal_boulder",
+      "at": [
+        34,
+        9
+      ]
+    },
+    {
+      "stamp": "decal_boulder",
+      "at": [
+        60,
+        23
+      ]
+    },
+    {
+      "stamp": "decal_boulder",
+      "at": [
+        84,
+        22
+      ]
+    },
+    {
+      "stamp": "decal_boulder",
+      "at": [
+        128,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        96,
+        27
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        53,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_creeper",
+      "at": [
+        102,
+        20
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        28,
+        19
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        80,
+        10
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        32,
+        16
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        5,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        89,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        40,
+        20
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        46,
+        10
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        16,
+        18
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        108,
+        14
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        146,
+        12
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        113,
+        15
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        78,
+        22
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        6,
+        4
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        26,
+        16
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        26,
+        19
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        29,
+        19
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        114,
+        14
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        137,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        63,
+        20
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        135,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        155,
+        12
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        133,
+        7
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        140,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        4,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        40,
+        8
+      ]
+    }
+  ],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        4,
+        13
+      ],
+      "text": "Rock Creek Trail"
+    },
+    {
+      "at": [
+        96,
+        10
+      ],
+      "text": "Rock Creek"
+    }
+  ],
+  "openings": [
+    {
+      "side": "W",
+      "at": 14,
+      "width": 4
+    },
+    {
+      "side": "N",
+      "at": 142,
+      "width": 4
+    }
+  ]
+}

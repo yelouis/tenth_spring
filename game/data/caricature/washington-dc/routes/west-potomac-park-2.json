@@ -1,0 +1,206 @@
+{
+  "schema": 1,
+  "id": "route:washington-dc:west-potomac-park#2",
+  "rows": [
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT..,,,....-----....,,,,..TTTT",
+    "TTTT.,,,,,...-----..,,,,,,,.TTTT",
+    "TTTT,,,,,,,,---.---.,,,,,,,.TTTT",
+    "TTTT,,,,,,,,---.---.,,,,,,,,TTTT",
+    "TTTT,,,,,,,,--...--..,,,,,,,TTTT",
+    "TTTT.,,,,,,,--...---.,,,,,,,TTTT",
+    "TTTT.,,,,,,---....--.,,,,,,,TTTT",
+    "TTTT.,,,,,,--.....---,,,,,,,TTTT",
+    "TTTT.,,,,,,--......--,,,,,,.TTTT",
+    "TTTT.,,,,,---......---,,,,,.TTTT",
+    "TTTT.,,,,,--........--,,,,..TTTT",
+    "TTTT......--.T.....---......TTTT",
+    "TTTT.....---.......--.......TTTT",
+    "TTTT.....---......---.......TTTT",
+    "TTTT,,,,.--......---........TTTT",
+    "TTTT,,,,,---.....---........TTTT",
+    "TTTT,,,,,,--....---.....,,,,TTTT",
+    "TTTT,,,,,,---...---....,,,,,TTTT",
+    "TTTT.,,,,,,--..---.....,,,,,TTTT",
+    "TTTT.,,,,,,---.--.....,,,,,,TTTT",
+    "TTTT,,,,,,,,-----.....,,,,,,TTTT",
+    "TTTT,,,**,,.----.....,,**,,,TTTT",
+    "TTTT,,,**....--:::...,,**,,,TTTT",
+    "TTTT.,,**...-:::~:::...**,,,TTTT",
+    "TTTT.,,**..-::~~~~~::..**,,,TTTT",
+    "TTTT..,**..-:~~~~~~~:..**,,,TTTT",
+    "TTTT...**.--::~~~~~::..**,,,TTTT",
+    "TTTT...**.---:::~:::...**,,.TTTT",
+    "TTTT...**---...:::-....**...TTTT",
+    "TTTT.....--.....---.........TTTT",
+    "TTTT....---......---........TTTT",
+    "TTTT....--.......---........TTTT",
+    "TTTT....---.......---.......TTTT",
+    "TTTT.....--...,,...--.......TTTT",
+    "TTTT.....---.,,,,..---......TTTT",
+    "TTTT.....---.,,,,,,,--......TTTT",
+    "TTTT.....,--,,,,,,,,---.....TTTT",
+    "TTTT....,,--,,,,,,,,,--.....TTTT",
+    "TTTT,,,,,,---,,,,,,,---.....TTTT",
+    "TTTT,,,,,,,--.,,,,,---.,,,..TTTT",
+    "TTTT,,,,,,,---,,,,.--,,,,,,.TTTT",
+    "TTTT,,,,,,,-T-,,,..--,,,,,,,TTTT",
+    "TTTT,,,,,,,,--....---,,,,,,,TTTT",
+    "TTTT.,,,,,,,---..---,,,,,,,,TTTT",
+    "TTTT.,,,,,,,.--..--..,,,,,,,TTTT",
+    "TTTT.,,,,,,,.--..--..,,,,,,,TTTT",
+    "TTTT.,,,,,,,.------..,,,,,,.TTTT",
+    "TTTT..,,,,,,.-----...,,,,,,,TTTT",
+    "TTTT...,,,,,..----...,,,,,,,TTTT",
+    "TTTT....,,,...----....,,,,,.TTTT",
+    "TTTT..........----.....,,,,.TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "stamp": "decal_stones",
+      "at": [
+        13,
+        24
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        13,
+        17
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        12,
+        23
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        7,
+        40
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        25,
+        45
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        12,
+        51
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        10,
+        39
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        20,
+        35
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        9,
+        34
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        11,
+        58
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        27,
+        19
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        13,
+        23
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        10,
+        32
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        14,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        6,
+        19
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        4,
+        33
+      ]
+    }
+  ],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        13,
+        3
+      ],
+      "text": "West Potomac Park"
+    }
+  ],
+  "openings": [
+    {
+      "side": "S",
+      "at": 14,
+      "width": 4
+    },
+    {
+      "side": "N",
+      "at": 14,
+      "width": 4
+    }
+  ]
+}

@@ -450,11 +450,6 @@ static func can_go(db, area_id: String) -> bool:
 	var row: Dictionary = db.get_neighbourhood_state(area_id)
 	if row.is_empty():
 		return false
-	var place_id := str(area_dict.get("place_id", ""))
-	var city_dict: Dictionary = Neighbourhoods.city(place_id)
-	# Item 53 transition rule (§10.6): a city without routes keeps today's rule until Item 54 removes it.
-	if not city_dict.has("routes"):
-		return true
 	if str(area_dict.get("role", "")) == "gateway":
 		return true
 	return int(row.get("state", 0)) >= 2

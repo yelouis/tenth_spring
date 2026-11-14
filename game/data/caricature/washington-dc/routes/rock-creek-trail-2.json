@@ -1,0 +1,234 @@
+{
+  "schema": 1,
+  "id": "route:washington-dc:rock-creek-trail#2",
+  "rows": [
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTT..........----....:~~~:.TTTT",
+    "TTTT..........----....:~~~:.TTTT",
+    "TTTT..,.......----....:~~~:.TTTT",
+    "TTTT.,,,,.....----....:~~~:.TTTT",
+    "TTTT.,,,,,,..-----,,,.:~~~:.TTTT",
+    "TTTT.,,,,,,,.-----,,,,:~~~:.TTTT",
+    "TTTT.,,,,,,,.--,,,,,,,:~~~:.TTTT",
+    "TTTT.,,,,,,,.--,,,,,,,:~~~:.TTTT",
+    "TTTT.,,,,,,,,--,,,,,,.:~~~:.TTTT",
+    "TTTT,,,,,,,,---,,,,,,.:~~~:.TTTT",
+    "TTTT,,,,,,,,--..,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,--..,,,,,,:~~~:.TTTT",
+    "TTTT.,,,,,..--...,,,,,:~~~:.TTTT",
+    "TTTT..,,,...--........:~~~:.TTTT",
+    "TTTT.......---........:~~~:.TTTT",
+    "TTTT.......--.BBBBBBBBBBBBB.TTTT",
+    "TTTT.......--.BBBBBBBBBBB--.TTTT",
+    "TTTT.......--.BBBBBBBBBBB--.TTTT",
+    "TTTT..,,,,,--........:~~~--.TTTT",
+    "TTTT.,,,,,,--.......:~~~:--.TTTT",
+    "TTTT.,,,,,,--.......:~~~:--.TTTT",
+    "TTTT,,,,,,,--.......:~~~:--.TTTT",
+    "TTTT,,,,,,---.......:~~~:--.TTTT",
+    "TTTT,,,,,,---...,,..:~~~:--.TTTT",
+    "TTTT.,,,,,--...,,,,.:~~~:--.TTTT",
+    "TTTT..,,,,--..,,,,,,:~~~:--.TTTT",
+    "TTTT..,,,,--.,,,,,,,:~~~:--.TTTT",
+    "TTTT...vvvv-,,,,,,,,:~~~:--.TTTT",
+    "TTTT......--,,,,,,,,:~~~:--.TTTT",
+    "TTTT....,.--,,,,,,,,:~~~:--.TTTT",
+    "TTTT...,,,--.,,,,,,,:~~~:--.TTTT",
+    "TTTT..,,,,--.,,,,,,,:~~~:--.TTTT",
+    "TTTT..,,,---.,,,,,,,:~~~:--.TTTT",
+    "TTTT,,,,,---..,,,,,,:~~~:--.TTTT",
+    "TTTT,,,,,--...,,,,,,:~~~:--.TTTT",
+    "TTTT,,,,,--....,,,,,.:~~~--.TTTT",
+    "TTTT,,,,,--..........:~~~--.TTTT",
+    "TTTT,,,,,--..........:~~~--.TTTT",
+    "TTTT,,,,,--..........:~~~--.TTTT",
+    "TTTT..,,,--...........:~~--.TTTT",
+    "TTTT...,,---..........:~~--.TTTT",
+    "TTTT.....---..BBBBBBBBBBB--.TTTT",
+    "TTTT......--..BBBBBBBBBBBBB.TTTT",
+    "TTTT.....,---.BBBBBBBBBBBBB.TTTT",
+    "TTTT....,,,--.........:~~~:.TTTT",
+    "TTTT..,,,,,--.........:~~~:.TTTT",
+    "TTTT,,,,,,,---....,...:~~~:.TTTT",
+    "TTTT,,,,,,,---.,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,--,,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,--,,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,---,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,.--.,,,,,.:~~~:.TTTT",
+    "TTTT.,,,,,,,.-----,,,.:~~~:.TTTT",
+    "TTTT...,,,,,.-----,,,.:~~~:.TTTT",
+    "TTTT...,,,,,..----,,,:~~~:..TTTT",
+    "TTTT....,,,...----...:~~~:..TTTT",
+    "TTTT.....,....----...:~~~:..TTTT",
+    "TTTT..........----...:~~~:..TTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "stamp": "decal_boulder",
+      "at": [
+        8,
+        46
+      ]
+    },
+    {
+      "stamp": "decal_boulder",
+      "at": [
+        17,
+        24
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        14,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        19,
+        42
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        13,
+        48
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        15,
+        13
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        27,
+        42
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        18,
+        6
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        12,
+        59
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        13,
+        57
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        4,
+        56
+      ]
+    },
+    {
+      "stamp": "decal_creeper",
+      "at": [
+        27,
+        43
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        27,
+        49
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        5,
+        43
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        6,
+        17
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        13,
+        18
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        5,
+        58
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        5,
+        17
+      ]
+    },
+    {
+      "stamp": "decal_creeper",
+      "at": [
+        27,
+        40
+      ]
+    },
+    {
+      "stamp": "decal_creeper",
+      "at": [
+        21,
+        11
+      ]
+    }
+  ],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        13,
+        3
+      ],
+      "text": "Rock Creek Trail"
+    }
+  ],
+  "openings": [
+    {
+      "side": "S",
+      "at": 14,
+      "width": 4
+    },
+    {
+      "side": "N",
+      "at": 14,
+      "width": 4
+    }
+  ]
+}

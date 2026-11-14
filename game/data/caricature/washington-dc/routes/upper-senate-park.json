@@ -1,0 +1,221 @@
+{
+  "schema": 1,
+  "id": "route:washington-dc:upper-senate-park#1",
+  "rows": [
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTT..........====..........TTTT",
+    "TTTT..........====..........TTTT",
+    "TTTT..........#--=..........TTTT",
+    "TTTT..........#--=..........TTTT",
+    "TTTT...,.....##---..........TTTT",
+    "TTTT..,,,,...##---..........TTTT",
+    "TTTT.,,,,,,..##.--..........TTTT",
+    "TTTT.,,,,,,,.##.--..........TTTT",
+    "TTTT,,,,,,,,###.---.........TTTT",
+    "TTTT,,,,,,,.###,---.........TTTT",
+    "TTTT,,,,,,..##,,,--.........TTTT",
+    "TTTT,,,,,,..##,,,--,.----...TTTT",
+    "TTTT.,,,,,,###,,,---........TTTT",
+    "TTTT.,,,,,,###,,,---,.......TTTT",
+    "TTTT.,,,,,,##,,,,,--,.......TTTT",
+    "TTTT.,,,,,,##,,,,,--,,......TTTT",
+    "TTTT..,,,,###,,,,,---,......TTTT",
+    "TTTT......###,,,,,---.......TTTT",
+    "TTTT......##..,,,..--.......TTTT",
+    "TTTT......##.......--....,..TTTT",
+    "TTTT.....###.......---..,,,.TTTT",
+    "TTTT.....###.......-T-.,,,,.TTTT",
+    "TTTT..,,.##.........--.,,,,,TTTT",
+    "TTTT.,,,.##..######.--.,,,,,TTTT",
+    "TTTT.,,,############---,,,,,TTTT",
+    "TTTT,,,,############---,,,,,TTTT",
+    "TTTT,,,,#############--,,,,,TTTT",
+    "TTTT,,,,##***#~~~~#**--,,,,,TTTT",
+    "TTTT,,,,,#***#~~~~#***#,,,,,TTTT",
+    "TTTT,,,,##***#~~~~#***##,,,,TTTT",
+    "TTTT,,,,##***#~~~~#**--,,,,,TTTT",
+    "TTTT,,,,##***#~~~~#**--,,,,,TTTT",
+    "TTTT,,,,############---,,,,,TTTT",
+    "TTTT,,,,############---,,,,,TTTT",
+    "TTTT,,,,,###########--.,,,,,TTTT",
+    "TTTT,,,,,##..######.--.,,,,.TTTT",
+    "TTTT.,,,,###.......---......TTTT",
+    "TTTT.,,,.###.......-T-......TTTT",
+    "TTTT......##....,,.--.......TTTT",
+    "TTTT......##..,,,,.--..,....TTTT",
+    "TTTT.,,...###,,,,,---.,,,,..TTTT",
+    "TTTT,,,,..###,,,,,---.,,,,..TTTT",
+    "TTTT,,,,,..##,,,,,--,.,,,,,.TTTT",
+    "TTTT,,,,,,.##,,,,,--,,,,,,,.TTTT",
+    "TTTT,,,,,,,###,,,---,,,,,,,.TTTT",
+    "TTTT,,,,,,,###,,,---,.,,,,,,TTTT",
+    "TTTT,,,,,,,.##,,,--,.,,,,,,,TTTT",
+    "TTTT,,,,,,,,##,..--.,,,,,,,,TTTT",
+    "TTTT,,,,,,,,###.---.,,,,,,,,TTTT",
+    "TTTT,,,,,,,,###.---..,,,,,,,TTTT",
+    "TTTT,,,,,,,..##.--...,,,,,,,TTTT",
+    "TTTT,,,,,....##.--...,,,,,,,TTTT",
+    "TTTT,,,,,....##---...,,,,...TTTT",
+    "TTTT.,,,.....##---..........TTTT",
+    "TTTT..........#--#..........TTTT",
+    "TTTT..........#--#..........TTTT",
+    "TTTT..........####..........TTTT",
+    "TTTT..........####..........TTTT",
+    "TTTTTTTTTTTTTT####TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT####TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT####TTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "kind": "house_s",
+      "at": [
+        21,
+        10
+      ],
+      "fate": "standing"
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        10,
+        5
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        24,
+        5
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        26,
+        43
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        22,
+        7
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        8,
+        7
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        12,
+        4
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        19,
+        58
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        26,
+        15
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        11,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        21,
+        58
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        27,
+        42
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        19,
+        57
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        5,
+        21
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        26,
+        56
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        13,
+        57
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        10,
+        59
+      ]
+    }
+  ],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        13,
+        60
+      ],
+      "text": "Upper Senate Park"
+    },
+    {
+      "at": [
+        18,
+        3
+      ],
+      "text": "Upper Senate Park"
+    }
+  ],
+  "openings": [
+    {
+      "side": "S",
+      "at": 14,
+      "width": 4
+    },
+    {
+      "side": "N",
+      "at": 14,
+      "width": 4
+    }
+  ]
+}

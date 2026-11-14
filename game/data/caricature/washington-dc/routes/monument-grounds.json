@@ -1,0 +1,242 @@
+{
+  "schema": 1,
+  "id": "route:washington-dc:monument-grounds#1",
+  "rows": [
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT,,,,,,..------..........TTTT",
+    "TTTT,,,,,,..------..........TTTT",
+    "TTTT,,,,,,,-------.......,..TTTT",
+    "TTTT,,,,,,,----.-.......,,,.TTTT",
+    "TTTT,,,,,,-----........,,,,,TTTT",
+    "TTTT,,,,,,----........,,,,,,TTTT",
+    "TTTT,,,,,-----......,,,,,,,,TTTT",
+    "TTTT,,,,,----....----,,,,,,,TTTT",
+    "TTTT,,,,,----......--,,,,,,,TTTT",
+    "TTTT.,,,----.......--,,,,,,,TTTT",
+    "TTTT...,----.......---,,,,,,TTTT",
+    "TTTTTTT.---.T.......---,,,,,TTTT",
+    "TTTTTTTT---..........--,,,,,TTTT",
+    "TTTTTTTT---..........T-.,,,,TTTT",
+    "TTTTTTTT---..........---..,.TTTT",
+    "TTTTTTT.---...........--....TTTT",
+    "TTTT....---...........--....TTTT",
+    "TTTT,,,.---...........--.,..TTTT",
+    "TTTT,,,,---...........--,,,.TTTT",
+    "TTTT,,,,---.....#####.--,,,,TTTT",
+    "TTTT,,,,---....#######--,,,,TTTT",
+    "TTTT,,,,---...#########-,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..#*********#,,,,TTTT",
+    "TTTT,,,,---...*********-,,,,TTTT",
+    "TTTT,,,,---....#######--,,,,TTTT",
+    "TTTT,,,,---....ccccccc--,,,,TTTT",
+    "TTTT,,,,---...........--,,,,TTTT",
+    "TTTT,,,,---...........--,,,,TTTT",
+    "TTTT,,,,---...........--,,,.TTTT",
+    "TTTT,,,.---...........--,,,TTTTT",
+    "TTTT....---...........--TTTTTTTT",
+    "TTTT....---.....,,,,.---TTTTTTTT",
+    "TTTT....---,,,,,,,,,.T-.TTTTTTTT",
+    "TTTT....---,,,,,,,,,.--,,TTTTTTT",
+    "TTTT...,----,,,,,,,,---,,,..TTTT",
+    "TTTT..,,----,,,,,,,---,,,,,,TTTT",
+    "TTTT..,,,----,,,,,,--,,,,,,,TTTT",
+    "TTTT,,,,,----,,,,,,--,,,,,,,TTTT",
+    "TTTT,,,,,-----,,,,---,,,,,,,TTTT",
+    "TTTT,,,,,,----,,,---,,,,,,,,TTTT",
+    "TTTT,,,,,,----.,,--..,,,,,,,TTTT",
+    "TTTT,,,,,,,----..--..,,,,,,,TTTT",
+    "TTTT,,,,,,,----.---..,,,,,,,TTTT",
+    "TTTT,,,,,,,.------...,,,,,,,TTTT",
+    "TTTT.,,,,,,.------...,,,,,,.TTTT",
+    "TTTT...,,,,.------...,,,,,..TTTT",
+    "TTTT....,,,..-----....,,....TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "kind": "house_s",
+      "at": [
+        17,
+        10
+      ],
+      "fate": "standing"
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        4,
+        4
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        4,
+        23
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        6,
+        45
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        25,
+        22
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        11,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        12,
+        16
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        14,
+        12
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        23,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        17,
+        18
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        7,
+        4
+      ]
+    },
+    {
+      "stamp": "decal_beams",
+      "at": [
+        17,
+        21
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        22,
+        58
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        5,
+        58
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        10,
+        7
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        13,
+        39
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        23,
+        43
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        14,
+        22
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        20,
+        21
+      ]
+    }
+  ],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        13,
+        3
+      ],
+      "text": "Monument Grounds"
+    },
+    {
+      "at": [
+        18,
+        60
+      ],
+      "text": "Monument Grounds"
+    },
+    {
+      "at": [
+        17,
+        30
+      ],
+      "text": "Sylvan Theater"
+    }
+  ],
+  "openings": [
+    {
+      "side": "N",
+      "at": 14,
+      "width": 4
+    },
+    {
+      "side": "S",
+      "at": 14,
+      "width": 4
+    }
+  ]
+}

@@ -1,0 +1,326 @@
+{
+  "schema": 1,
+  "id": "route:washington-dc:q-street#1",
+  "rows": [
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT%%~~~~~~~%%TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTT......................................................,,,,,,,...........::~~~~~~~::......TTT..............................................,,,,............TTT",
+    "TTT.....................................................,,,,,,,,,...........::~~~~~~~::....TTTTTTT...........................................,,,,,,,,........TTT",
+    "TTT...................................................,,,,,,,,,,,,,.........%%~~~~~~~%%....TTTTTTT..........................................,,,,,,,,,,,......TTT",
+    "TTT..................................................,,,,,,,,,,,,,,,,.......%%~~~~~~~%%....TTTTTTT........................................,,,,,,,,,,,,,,.....TTT",
+    "==================..................#####.....####..,,,,,,,,,,,,,,,,,.......::~~~~~~~::.......TTT........................................,,,,,,,,,,,,,,,.....TTT",
+    "====================================................,,,,,,,,,,,,,,,,,.......::~~~~~~~::..................................................,,,,,,,,,,,,,,,,....TTT",
+    "===========--=====================================...,,,,,,,,,,,,,,,........%%~~~~~~~%%...............#####.....####......................,,,,,,,,,,,,,,,....TTT",
+    "===========---.=================================================...........%%~~~~~~~%%.....................................................,,,,,,.,,,,,,.....TTT",
+    "TTT........---,,..................=====================================BBBBBBBBBBBBBBBBBB.....................................########.......,,,.............TTT",
+    "TTT.........---,,,..,,,,.............,,,,,,....====================--==BBBBBBBBBBBBBBBBBB===================================.................................TTT",
+    "TTT.........---,,,,,,,,,,,....,,,,,,,,,,,,,,,,....,,,,,,,,,,,====----==BBBBBBBBBBBBBBBBB--======================================================================",
+    "TTT........,,---,,,,,,,,,,,.,,,,,,,,,,,,,,,,,,....,,,,,,,,,,,,,,,---..BBBBBBBBBBBBBBBBBB---=================================================---=================",
+    "TTT........,,---,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,....,,,,,,,,,,,,,----,......::~~~~~~~::...---.,,,,,,,,,,....,,,,,,,,,,,,,,,,=================----=================",
+    "TTT........,,,---,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.....,,,,,,,,,,,----,,......::~~~~~~~::....--,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,............-----,......============",
+    "TTT........,,,---,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.....,,,,,,,,,,----,,......%%~~~~~~~%%.....--,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.......,,,,-----,,,..............TTT",
+    "TTT........,,,,---,,,,,,,,,,.,,,,,,,,,,,,,,,,.......,,,,,,,,---,.........%%~~~~~~~%%.....---,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.......,,-----,,,,,,,,,...........TTT",
+    "TTT..........,,---,,,,,,,......,,,,,,,,,,,,,,........,,,,,,----..........::~~~~~~~::.....,--,,,,,,,,,,,,.,,,,,,,,,,,,,,,,,.......,,-----,,,,,,,,,,,..........TTT",
+    "TTT............,---,...............,,..,,,,,,..........,,,---,..........::~~~~~~~::.......---,,,,,,,,,,,....,,,,,,,,,,,,,.......-----,,,,,,,,,,,,,,,.........TTT",
+    "TTT.............---------------------------------------------...........%%~~~~~~~%%.......------------------------------------------,,,,,,,,,,,,,,,,.........TTT",
+    "TTT..............------------------------------------------.....TTTT....%%~~~~~~~%%........--------------------------------------,,,,,,,,,,,,,,,,,,..........TTT",
+    "TTT............................................................TTTTTT...::~~~~~~~::..........,,...................................,,,,,,,,,,,,,,,,...........TTT",
+    "TTT............................................................TTTTTTT..::~~~~~~~::................................................,,,,,...,,,,,.............TTT",
+    "TTT.............................................................TTTTTT..%%~~~~~~~%%..........................................................,,..............TTT",
+    "TTT..............................................................TTTT....%%~~~~~~~%%.........................................................................TTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT::~~~~~~~::TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+  ],
+  "objects": [
+    {
+      "stamp": "decal_wall_stump",
+      "at": [
+        70,
+        11
+      ]
+    },
+    {
+      "stamp": "decal_wall_stump",
+      "at": [
+        70,
+        16
+      ]
+    },
+    {
+      "stamp": "decal_wall_stump",
+      "at": [
+        88,
+        11
+      ]
+    },
+    {
+      "stamp": "decal_wall_stump",
+      "at": [
+        88,
+        16
+      ]
+    },
+    {
+      "kind": "house_m",
+      "at": [
+        102,
+        6
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_s",
+      "at": [
+        112,
+        6
+      ],
+      "fate": "ruined"
+    },
+    {
+      "kind": "block_8x7",
+      "at": [
+        126,
+        5
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_m",
+      "at": [
+        36,
+        4
+      ],
+      "fate": "standing"
+    },
+    {
+      "kind": "house_s",
+      "at": [
+        46,
+        4
+      ],
+      "fate": "auto"
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        29,
+        27
+      ]
+    },
+    {
+      "stamp": "decal_tufts",
+      "at": [
+        21,
+        27
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        86,
+        17
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        89,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        27,
+        20
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        14,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        91,
+        24
+      ]
+    },
+    {
+      "stamp": "decal_bramble",
+      "at": [
+        73,
+        8
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        8,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        5,
+        13
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        112,
+        25
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        71,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        131,
+        13
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        108,
+        9
+      ]
+    },
+    {
+      "stamp": "decal_rubble_weeds",
+      "at": [
+        103,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_stump",
+      "at": [
+        136,
+        9
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        93,
+        9
+      ]
+    },
+    {
+      "stamp": "decal_wall_corner",
+      "at": [
+        48,
+        20
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        117,
+        10
+      ]
+    },
+    {
+      "stamp": "decal_rubble",
+      "at": [
+        48,
+        14
+      ]
+    },
+    {
+      "stamp": "decal_cracks",
+      "at": [
+        136,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_sapling",
+      "at": [
+        152,
+        19
+      ]
+    },
+    {
+      "stamp": "decal_bush",
+      "at": [
+        45,
+        13
+      ]
+    },
+    {
+      "stamp": "decal_doorstep",
+      "at": [
+        12,
+        5
+      ]
+    },
+    {
+      "stamp": "decal_stones",
+      "at": [
+        98,
+        26
+      ]
+    },
+    {
+      "stamp": "decal_weeds",
+      "at": [
+        135,
+        13
+      ]
+    }
+  ],
+  "lamp": null,
+  "signs": [
+    {
+      "at": [
+        155,
+        13
+      ],
+      "text": "Q Street"
+    },
+    {
+      "at": [
+        4,
+        12
+      ],
+      "text": "Q Street"
+    },
+    {
+      "at": [
+        90,
+        11
+      ],
+      "text": "Buffalo Bridge"
+    }
+  ],
+  "openings": [
+    {
+      "side": "E",
+      "at": 14,
+      "width": 4
+    },
+    {
+      "side": "W",
+      "at": 8,
+      "width": 4
+    }
+  ]
+}
