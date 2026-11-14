@@ -30,8 +30,8 @@
           ],
           "landmarks": [
             {"name": "Washington Monument", "stamp": "obelisk", "interior": "dc:washington-monument"},
-            {"name": "Smithsonian Castle", "stamp": "dc_castle", "art": "pending"},
-            {"name": "National Air and Space Museum", "stamp": "dc_air_and_space", "art": "pending", "interior": "dc:air-and-space"}
+            {"name": "Smithsonian Castle", "stamp": "dc_castle"},
+            {"name": "National Air and Space Museum", "stamp": "dc_air_and_space", "interior": "dc:air-and-space"}
           ],
           "main_quest": {
             "title": "Above the Mall",
@@ -57,7 +57,7 @@
             "hood:washington-dc:lincoln-memorial"
           ],
           "landmarks": [
-            {"name": "Jefferson Memorial", "stamp": "dc_jefferson", "art": "pending"},
+            {"name": "Jefferson Memorial", "stamp": "dc_jefferson"},
             {"name": "the cherry trees", "feature": "trees", "sign": "Tidal Basin Cherry Trees"}
           ],
           "main_quest": {
@@ -85,7 +85,7 @@
             "hood:washington-dc:union-station"
           ],
           "landmarks": [
-            {"name": "Dupont Circle Fountain", "stamp": "dc_dupont_fountain", "art": "pending"},
+            {"name": "Dupont Circle Fountain", "stamp": "dc_dupont_fountain"},
             {"name": "the circle", "feature": "circle", "sign": "Dupont Circle"}
           ],
           "main_quest": {
@@ -112,7 +112,7 @@
             "hood:washington-dc:union-station"
           ],
           "landmarks": [
-            {"name": "United States Capitol", "stamp": "dc_capitol", "art": "pending"},
+            {"name": "United States Capitol", "stamp": "dc_capitol"},
             {"name": "Library of Congress", "stamp": "library_of_congress", "interior": "dc:library-of-congress"}
           ],
           "main_quest": {
@@ -139,7 +139,7 @@
             "hood:washington-dc:dupont-circle"
           ],
           "landmarks": [
-            {"name": "Union Station", "stamp": "dc_union_station", "art": "pending"},
+            {"name": "Union Station", "stamp": "dc_union_station"},
             {"name": "the rail yard", "feature": "rail yard", "sign": "Union Station Rail Yard"}
           ],
           "main_quest": {
@@ -167,7 +167,7 @@
             "hood:washington-dc:lincoln-memorial"
           ],
           "landmarks": [
-            {"name": "Healy Hall", "stamp": "dc_healy_hall", "art": "pending"},
+            {"name": "Healy Hall", "stamp": "dc_healy_hall"},
             {"name": "the C&O Canal", "feature": "canal", "sign": "C&O Canal"},
             {"name": "Key Bridge", "feature": "bridge", "sign": "Key Bridge"}
           ],
@@ -195,8 +195,8 @@
             "hood:washington-dc:georgetown"
           ],
           "landmarks": [
-            {"name": "National Zoo Gate", "stamp": "dc_zoo_gate", "art": "pending"},
-            {"name": "Great Aviary", "stamp": "dc_aviary", "art": "pending"},
+            {"name": "National Zoo Gate", "stamp": "dc_zoo_gate"},
+            {"name": "Great Aviary", "stamp": "dc_aviary"},
             {"name": "Rock Creek", "feature": "creek", "sign": "Rock Creek"}
           ],
           "main_quest": {

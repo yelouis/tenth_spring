@@ -9,27 +9,27 @@ const CaricatureCheck := preload("res://world/caricature/caricature_check.gd")
 const MapConstants := preload("res://world/map_constants.gd")
 
 const PINNED_SHA256: Dictionary = {
-	"camp:washington-dc": "fab50dc3781d26cd7fa211b59aef1e2490ccae9ed43fa33c393d16750af5e5e2",
-	"hood:washington-dc:national-mall": "626fbbe37bfd121fbfc5629472f192fe9dac2b5793f3434335bb81cef99357da",
-	"hood:washington-dc:tidal-basin": "9235d1bf2e5029560e14d8887ec6d7f00219a1185a8870ab9e3cbf045dcad081",
-	"hood:washington-dc:dupont-circle": "406883d476d2c724d5a69d745b00a2b9671d799c75ef42d918a27ba7e7236c7f",
-	"hood:washington-dc:capitol-hill": "0d2c1942e7446c6f0395760701918f0c2bdfbf2ba83cd8e11d32c28b93fd178a",
-	"hood:washington-dc:union-station": "6a5ded4ec5ecf0a0753a8e4d07a15cbf5e32d8f52d39933f81bb38e4791a77b3",
-	"hood:washington-dc:georgetown": "8a9064649e564c1992401e0fbff21f4b3dedd2c05d1ccbfb30892fd163102682",
-	"hood:washington-dc:woodley-park": "b31ed27af2480026cdc89c99d7ac64bd25556ca73dfa1818d8a456d9deab65cc",
-	"hood:washington-dc:lincoln-memorial": "1fa99ad67c18467eadd52f89b23a6a98149580dc5dc1594ed396845e4a8b20c3",
-	"route:washington-dc:monument-grounds#1": "43cd7ff129e4d89710e1644baa8e1cb11089579434c3f1abb09d1fcbece02f09",
-	"route:washington-dc:pennsylvania-avenue#1": "fee11d5afa554e2e0814b40e9b94ec328a60642b2c617c318dd09745f2d6eb5d",
-	"route:washington-dc:constitution-gardens#1": "e4cd3188bb45a90f50841ccb8acf23b3014a682a07fe307c57f26fabe1fe5b0c",
-	"route:washington-dc:west-potomac-park#1": "5c410d7efc2b3c78ea10d6471490e66c37dab688e07241ae38b113fcc3336406",
-	"route:washington-dc:west-potomac-park#2": "936bf0e05ee4113e3d4995704300f3c6c81ed24ebaa77cecf6713bdab485fbac",
-	"route:washington-dc:upper-senate-park#1": "25d59c9ccd002289232052e8a39b51abbebc22c8480de63739ad9b12181fb5a0",
-	"route:washington-dc:q-street#1": "245ef256c5d83ec154f8478f63a27ec599c472caa1c494524e5b8e32cf4eb4cf",
-	"route:washington-dc:connecticut-avenue#1": "719302f85fb35e9d6f893e33a95bbae8eec30cf476d5dfc70092959df016b214",
-	"route:washington-dc:massachusetts-avenue#1": "fd6899b1ffd30e215106b2167e0f71caeac229049f8a34e3312a53f24ff92796",
-	"route:washington-dc:rock-creek-trail#1": "a8b9de24bba33879acbe8a8af706352a0d6218d8264fad049673dfebb75a49e7",
-	"route:washington-dc:rock-creek-trail#2": "f0f6dd55dc2f53703872f18d26693d2f46b5bae7e08f1a194a22f88e89d80f37",
-	"route:washington-dc:potomac-riverfront#1": "83b215e5b71e31bd8a2e86aab21912283b10deaa828792f2db8a8f765f563620",
+	"camp:washington-dc": "ed66fae446a61fc5df8db4e3dc6f17d928443512ae058df739b462a4cb92ea80",
+	"hood:washington-dc:national-mall": "a82a456da467599c576c7913003b178defe5f186454b9fda999c800dcbcf055a",
+	"hood:washington-dc:tidal-basin": "cf77afd2c9dd22c7058b58b73cdc5a430368c6db0fd14c1eaea62061d0161fcf",
+	"hood:washington-dc:dupont-circle": "e0d11df7b9a164bb24698caffe0e2927acc288ffa035d8a7d01162c9d176c6d0",
+	"hood:washington-dc:capitol-hill": "f34dd25c14b6bc38cd4f75cf93147d1bf8ed0d396b8d74f60c196a92911a5ce7",
+	"hood:washington-dc:union-station": "a9aa9434065479f887cc4b3516581520f407ff750ac6fea6775862313c7e9420",
+	"hood:washington-dc:georgetown": "88dfc0f99ff78b0687e2ebc1f5fc79d1586644b4e5ef7fcf72f24efeb3a57ded",
+	"hood:washington-dc:woodley-park": "982551e323b0734d06c30937ee5fe71e10cfb3636bd9e8e93a8f6d3012f6f887",
+	"hood:washington-dc:lincoln-memorial": "b4701a757749ab7148e549a5234251e74ea5279c0934c74b9220f119e9168456",
+	"route:washington-dc:monument-grounds#1": "db59aada938685b6deff8e3ab9e177144652b065f14a14f42a60471006032e5b",
+	"route:washington-dc:pennsylvania-avenue#1": "6b8447accc891991022878a3cfe2462cf271ceed734516e95391672fee55404e",
+	"route:washington-dc:constitution-gardens#1": "b4ba335b4e213465eb9d3f83e3d53b238a73c8a86561e96ffc3dc2f96954507b",
+	"route:washington-dc:west-potomac-park#1": "2b5d10d3e8db4f05118ddcdf1555eec11dfd89b0b8dac68c2b1cef110443f77c",
+	"route:washington-dc:west-potomac-park#2": "b5a54b6ff464cf4a3e9c56eeb80766b766bbf82febe4528fb51a3d1ab718e7f7",
+	"route:washington-dc:upper-senate-park#1": "d28ba90e8f8bceb244787c3f0bd756290902ab1f9f59da0db22d4560b52207cf",
+	"route:washington-dc:q-street#1": "3d4a275feb9466df8fcc4313196ba321bcb56fc7471b8a9159519373a67a470d",
+	"route:washington-dc:connecticut-avenue#1": "6a32919dbc565797c97c1fa3a377f7b1c28a1ba72b555ef453ae33a0dd76e085",
+	"route:washington-dc:massachusetts-avenue#1": "45d4a599755855a0284b5863fb783bbb0f44106d1f3254162769d446bf41a640",
+	"route:washington-dc:rock-creek-trail#1": "6d8642be4cc7eaa96a68872906683ece81dbf34b58229314ead0c446d649b809",
+	"route:washington-dc:rock-creek-trail#2": "299cfa5aaed15bf6b4c2e9e9b7c81cd641d52ea33d36f1f1cb33a6c1020e3558",
+	"route:washington-dc:potomac-riverfront#1": "8fd08ea655e1a6d3f5feda023b1e7b335d0f83e77b2407fbbacd942c5b2ee22f",
 }
 
 func _hash_all_cells(compiled: Dictionary, area: Dictionary, cells: Array[Vector2i]) -> String:
@@ -81,6 +81,14 @@ func run_test() -> bool:
 					area_id,
 					str(m.get("failed_rules", [])),
 					str(m),
+				]
+			)
+			return false
+		if int(m.get("art_pending", 0)) != 0:
+			push_error(
+				"caricature_dc_test: [falsifier] %s still has art_pending=%d (expected 0 after Item 52)" % [
+					area_id,
+					int(m.get("art_pending", 0)),
 				]
 			)
 			return false

@@ -919,7 +919,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 						m2_post_err = true
 						break
 				else:
-					if b_cls != TileSynth2.TILE_TREE and b_cls != TileSynth2.TILE_WATER and b_cls != TileSynth2.TILE_FENCE:
+					if b_cls != TileSynth2.TILE_TREE and b_cls != TileSynth2.TILE_WATER and b_cls != TileSynth2.TILE_FENCE and b_cls != TileSynth2.TILE_CLIFF:
 						errors.append("M2: finished border tile (%d, %d) is class %d" % [x, y, b_cls])
 						m2_post_err = true
 						break

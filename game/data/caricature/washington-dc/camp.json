@@ -48,18 +48,18 @@
     "TTTTTTT...--------------------------------------------....TTTTTT",
     "TTTTTTT...--------------------------------------------....TTTTTT",
     "TTTTTTT...--------------------------------------------...TTTTTTT",
-    "TTTTTTT...-FFFFF##FFFFF.################.FFFFF##FFFFF-...TTTTTTT",
+    "TTTTTTT...-FFFFF##FFFFF.################.FFFFFkFFFFFF-...TTTTTTT",
     "TTTTTTT....F*c*c##*c*cF.################.F*c*c##*c*cF...TTTTTTTT",
     "TTTTTT.....Fc*c*##c*c*F.#***########***#.Fc*c*##c*c*F...TTTTTTTT",
-    "TTTTTT.....F##########F.#***########***#.F##########F..TTTTTTTTT",
+    "TTTTTT.....F##########F.#***########***#.F####!#####F..TTTTTTTTT",
     "TTTTTT.....Fc*c*##c*c*F.#***########***#.Fc*c*##c*c*F..TTTTTTTTT",
     "TTTTTT.....F*c*c##*c*cF.#***########***#.F*c*c##*c*cF.TTTTTTTTTT",
     "TTTTTT.....Fc*c*##c*c*F.#***########***#.Fc*c*##c*c*F.TTTTTTTTTT",
     "TTTTTT.....FFFFFFFFFFFF.################.FFFFFFFFFFFF.TTTTTTTTTT",
-    "TTTTTTT.................################.............TTTTTTTTTTT",
-    "TTTTTTT..........................................TTTTTTTTTTTTTTT",
-    "TTTTTTTT....................................TTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTT...TTTTTTTTTTTTTT.........TTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTT...##########################################.TTTTTTTTTTT",
+    "TTTTTTT.......^^^.....^^^^^^^ssss^^^^^^^.....^^^^^TTTTTTTTTTTTTT",
+    "TTTTTTTT......^^^vvvvv^^^^^^^ssss^^^^^^^vvvvv^^^^^TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTT..------------------------------------TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -293,13 +293,6 @@
       ]
     },
     {
-      "stamp": "decal_creeper",
-      "at": [
-        31,
-        56
-      ]
-    },
-    {
       "stamp": "decal_wall_corner",
       "at": [
         32,
@@ -328,10 +321,10 @@
       ]
     },
     {
-      "stamp": "decal_cracks",
+      "stamp": "waypost_board",
       "at": [
-        37,
-        55
+        34,
+        20
       ]
     }
   ],
@@ -339,14 +332,6 @@
     32,
     50
   ],
-  "signs": [
-    {
-      "at": [
-        35,
-        21
-      ],
-      "text": "Waypost Notice Board"
-    }
-  ],
+  "signs": [],
   "openings": []
 }

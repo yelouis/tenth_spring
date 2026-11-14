@@ -144,10 +144,11 @@ func run_test() -> bool:
 		_cleanup()
 		push_error("caricature_check_test: corridor grid compile failed: %s" % str(c_corr["errors"]))
 		return false
+	# waypost_lamp (1x2, mask 2 overhang / mask 0 walkable) occupies (15, 4) and (15, 5), plus y=6..21 -> 18 walkable tiles
 	var m_corr := CaricatureCheck.measure(c_corr, camp_area)
-	if int(m_corr["walkable"]) != 16 or int(m_corr["reached"]) != 16 or int(m_corr["unreached"]) != 0 or int(m_corr["trapped"]) != 0 or int(m_corr["max_walk"]) != 15:
+	if int(m_corr["walkable"]) != 18 or int(m_corr["reached"]) != 18 or int(m_corr["unreached"]) != 0 or int(m_corr["trapped"]) != 0 or int(m_corr["max_walk"]) != 15:
 		_cleanup()
-		push_error("caricature_check_test: corridor expected walkable=16 reached=16 max_walk=15, got %s" % str(m_corr))
+		push_error("caricature_check_test: corridor expected walkable=18 reached=18 max_walk=15, got %s" % str(m_corr))
 		return false
 
 	# -------------------------------------------------------------

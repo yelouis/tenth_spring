@@ -77,7 +77,7 @@ const SALT_DECAL_POS := 20
 const SALT_BLOCK_DESIGN := 21
 const SALT_LEDGE := 22
 
-# Stamp metadata table 1..97 (0 reserved; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43)
+# Stamp metadata table 1..109 (0 reserved; kinds: landmark, prop, house, shell, block, decal; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43, Item 52)
 const STAMP_TABLE: Dictionary = {
 	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
 	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
@@ -175,7 +175,19 @@ const STAMP_TABLE: Dictionary = {
 	94: {"id": "standing_block_16x14_a", "kind": "block", "path": "buildings/standing_block_16x14_a.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
 	95: {"id": "standing_block_16x14_b", "kind": "block", "path": "buildings/standing_block_16x14_b.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
 	96: {"id": "standing_block_23x14_a", "kind": "block", "path": "buildings/standing_block_23x14_a.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
-	97: {"id": "standing_block_23x14_b", "kind": "block", "path": "buildings/standing_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]}
+	97: {"id": "standing_block_23x14_b", "kind": "block", "path": "buildings/standing_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
+	98: {"id": "waypost_lamp", "kind": "prop", "path": "props/waypost_lamp.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "+"]},
+	99: {"id": "waypost_board", "kind": "prop", "path": "props/waypost_board.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
+	100: {"id": "tree_cherry", "kind": "prop", "path": "props/tree_cherry.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "#"]},
+	101: {"id": "dc_capitol", "kind": "landmark", "path": "landmarks/dc_capitol.png", "w": 21, "h": 13, "base_rows": 6, "door": [10, 12], "tiles": [".........++..........", ".........++..........", "........++++.........", "........++++.........", ".++++..++++++...++++.", ".+++++++++++++++++++.", "+++++++++++++++++++++", "+###################+", "+###################+", "+###################+", "+###################+", "++++++#######++++++++", "......+######........"]},
+	102: {"id": "dc_castle", "kind": "landmark", "path": "landmarks/dc_castle.png", "w": 11, "h": 9, "base_rows": 4, "door": [5, 8], "tiles": ["+++++++++++", "+++++++++++", "+++++++++++", "+++++++++++", "+++++++++++", "###########", "###########", "###########", "###########"]},
+	103: {"id": "dc_air_and_space", "kind": "landmark", "path": "landmarks/dc_air_and_space.png", "w": 15, "h": 6, "base_rows": 4, "door": [7, 5], "tiles": [".+++++++++++++.", "+++++++++++++++", "###############", "###############", "###############", "###############"]},
+	104: {"id": "dc_jefferson", "kind": "landmark", "path": "landmarks/dc_jefferson.png", "w": 9, "h": 8, "base_rows": 4, "door": [4, 7], "tiles": ["...+++...", "..+++++..", ".+++++++.", "+++++++++", "########+", "#########", "#########", "#########"]},
+	105: {"id": "dc_union_station", "kind": "landmark", "path": "landmarks/dc_union_station.png", "w": 17, "h": 8, "base_rows": 5, "door": [8, 7], "tiles": [".+++++++++++++++.", "+++++++++++++++++", "+++++++++++++++++", "#################", "#################", "#################", "#################", "#################"]},
+	106: {"id": "dc_healy_hall", "kind": "landmark", "path": "landmarks/dc_healy_hall.png", "w": 9, "h": 14, "base_rows": 5, "door": [4, 13], "tiles": [".........", "....+....", "....+...+", "...+++.++", "+.+++++++", "+++++++++", "+++++++++", "+++++++++", "+++++++++", "#########", "#########", "#########", "#########", "#########"]},
+	107: {"id": "dc_zoo_gate", "kind": "landmark", "path": "landmarks/dc_zoo_gate.png", "w": 7, "h": 5, "base_rows": 2, "door": null, "tiles": [".+.+.+.", "+++++++", "+++.+++", "###.+##", "##+.+##"]},
+	108: {"id": "dc_aviary", "kind": "landmark", "path": "landmarks/dc_aviary.png", "w": 8, "h": 8, "base_rows": 3, "door": null, "tiles": ["...++...", ".++++++.", ".++++++.", ".++++++.", "++++++++", "+######+", "+######+", ".+####+."]},
+	109: {"id": "dc_dupont_fountain", "kind": "landmark", "path": "landmarks/dc_dupont_fountain.png", "w": 3, "h": 4, "base_rows": 2, "door": null, "tiles": ["+++", "+++", "###", "###"]}
 }
 
 static var _landmark_art_loaded := false

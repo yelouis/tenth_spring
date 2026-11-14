@@ -12,7 +12,7 @@ const FIXTURE_ROSTER := "res://tests/fixtures/neighbourhoods_fixture.json"
 const FIXTURE_MAP := "res://tests/fixtures/caricature_fixture_map.json"
 
 # Pinned SHA-256 across the four compiled 32x32 cell tile buffers of caricature_fixture_map.json
-const PINNED_FIXTURE_SHA256 := "8c3c1fa344b7a42a1901461bf3a367e175b82f4ed186e19efd527356794cc66a"
+const PINNED_FIXTURE_SHA256 := "2d4e09a0ddf75a2cb623fe67748dd5afbe5b29a3dc86e3761bc2521fe56bad5d"
 
 func _cleanup() -> void:
 	Neighbourhoods.set_config_path_for_tests("")
@@ -281,16 +281,17 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
-	# 3. Sign variant indexes its own cell's list (§3.7)
+	# 3. Waypost lamp stamp (98) and sign variant indexing its own cell's list (§3.6, §3.7)
 	# -------------------------------------------------------------
-	# Cell (6, 6): lamp [30, 52] -> index 0 ("Waypost lamp"); [13, 43] -> index 1 ("Fixture Pond")
+	# Cell (6, 6): lamp [30, 52] -> waypost_lamp stamp 98 at (30, 51..52); [13, 43] -> sign index 0 ("Fixture Pond")
+	var lamp_top_bytes := _tile_bytes_in_cell(cr_6_6["tiles"], 30, 51 - 32)
 	var lamp_bytes := _tile_bytes_in_cell(cr_6_6["tiles"], 30, 52 - 32)
 	var pond_sign_bytes := _tile_bytes_in_cell(cr_6_6["tiles"], 13, 43 - 32)
-	if lamp_bytes != [TileSynth2.TILE_SIGN, 0, 0] or pond_sign_bytes != [TileSynth2.TILE_SIGN, 1, 0]:
+	if lamp_top_bytes != [TileSynth2.TILE_STAMP, 98, TileSynth2.STAMP_FLAG_OVERHANG] or lamp_bytes != [TileSynth2.TILE_STAMP, 98, 0] or pond_sign_bytes != [TileSynth2.TILE_SIGN, 0, 0]:
 		_cleanup()
-		push_error("caricature_map_test: cell (6,6) sign bytes mismatch: lamp=%s pond=%s" % [str(lamp_bytes), str(pond_sign_bytes)])
+		push_error("caricature_map_test: cell (6,6) lamp/sign bytes mismatch: top=%s lamp=%s pond=%s" % [str(lamp_top_bytes), str(lamp_bytes), str(pond_sign_bytes)])
 		return false
-	if cr_6_6["signs"] != PackedStringArray(["Waypost lamp", "Fixture Pond"]):
+	if cr_6_6["signs"] != PackedStringArray(["Fixture Pond"]):
 		_cleanup()
 		push_error("caricature_map_test: cell (6,6) signs list mismatch: %s" % str(cr_6_6["signs"]))
 		return false

@@ -1659,9 +1659,9 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# (y.5) F68 (d): Recompute all 15 landmark "tiles" maps from game/assets/original/<path> and verify
+	# (y.5) F68 (d): Recompute all landmark and Item-52 DC stamp "tiles" maps from game/assets/original/<path> and verify
 	#       that flipping 128 pixels' alpha in tile (7, 23) of an in-memory copy of arch.png fails the check.
-	var landmark_sids := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 59]
+	var landmark_sids := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 59, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109]
 	for sid in landmark_sids:
 		var s_def: Dictionary = TileSynth2.get_stamp_def(sid)
 		var s_path: String = str(s_def.get("path", ""))
@@ -1681,6 +1681,11 @@ func run_test() -> bool:
 			store.close()
 			_cleanup()
 			return false
+	if str(TileSynth2.get_stamp_def(107).get("tiles", ["", "", "", "", ""])[4])[3] == "#":
+		push_error("(y.5) dc_zoo_gate (107) bottom archway center col must be walkable, not '#'")
+		store.close()
+		_cleanup()
+		return false
 
 	var mut_arch_img := Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/landmarks/arch.png"))
 	var flipped := 0
