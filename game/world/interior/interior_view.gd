@@ -22,15 +22,18 @@ var _floor_index: int = 0
 var _atlas_source_kind: String = "fallback"
 var _stamp_tex_cache: Dictionary = {}
 var _npc_tex_cache: Dictionary = {}
+var _atlas_slice_cache: Dictionary = {}
 
 var _backdrop: ColorRect = null
 var _tile_layer: TileMapLayer = null
+var _overlay_tile_layer: TileMapLayer = null
 var _floor_flat_layer: Node2D = null
 var _ysort_layer: Node2D = null
 var _ceiling_layer: Node2D = null
 var _camera: Camera2D = null
 var _hud_canvas: CanvasLayer = null
 var _tint_rect: ColorRect = null
+var _banner: PanelContainer = null
 var _title_label: Label = null
 
 var _screenshot_active: bool = false
@@ -80,13 +83,16 @@ func _clear_scene() -> void:
 		ch.free()
 	_backdrop = null
 	_tile_layer = null
+	_overlay_tile_layer = null
 	_floor_flat_layer = null
 	_ysort_layer = null
 	_ceiling_layer = null
 	_camera = null
 	_hud_canvas = null
 	_tint_rect = null
+	_banner = null
 	_title_label = null
+	_atlas_slice_cache.clear()
 
 func _load_stamp_texture(rel_path: String) -> Texture2D:
 	if _stamp_tex_cache.has(rel_path):
@@ -140,16 +146,27 @@ func _get_npc_texture(role: String) -> Texture2D:
 	_npc_tex_cache[key] = tex
 	return tex
 
-func _build_tileset(strip_tex: Texture2D) -> TileSet:
+func _build_tileset(strip_tex: Texture2D, cols: int = InteriorTiles.CLASS_COUNT, rows: int = 1) -> TileSet:
 	var ts := TileSet.new()
 	ts.tile_size = Vector2i(TILE_PX, TILE_PX)
 	var src := TileSetAtlasSource.new()
 	src.texture = strip_tex
 	src.texture_region_size = Vector2i(TILE_PX, TILE_PX)
-	for c in range(InteriorTiles.CLASS_COUNT):
-		src.create_tile(Vector2i(c, 0))
+	for ry in range(rows):
+		for cx in range(cols):
+			src.create_tile(Vector2i(cx, ry))
 	ts.add_source(src, 0)
 	return ts
+
+func _get_atlas_cell_tex(strip_tex: Texture2D, col: int, row: int) -> AtlasTexture:
+	var key := "%d:%d" % [col, row]
+	if _atlas_slice_cache.has(key):
+		return _atlas_slice_cache[key] as AtlasTexture
+	var atex := AtlasTexture.new()
+	atex.atlas = strip_tex
+	atex.region = Rect2(float(col * TILE_PX), float(row * TILE_PX), float(TILE_PX), float(TILE_PX))
+	_atlas_slice_cache[key] = atex
+	return atex
 
 func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	_clear_scene()
@@ -160,51 +177,106 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	var world_w := float(w * TILE_PX)
 	var world_h := float(h * TILE_PX)
 
-	# 1. Void backdrop around room
+	# 1. Pure black void backdrop around room (#000000)
 	_backdrop = ColorRect.new()
 	_backdrop.name = "VoidBackdrop"
-	_backdrop.color = Color8(12, 14, 20, 255)
+	_backdrop.color = Color8(0, 0, 0, 255)
 	_backdrop.position = Vector2(-2048.0, -2048.0)
 	_backdrop.size = Vector2(world_w + 4096.0, world_h + 4096.0)
 	_backdrop.z_index = -10
 	add_child(_backdrop)
 
-	# 2. Indoor 0..16 base TileMapLayer
-	var resolved := InteriorTiles.resolve_atlas_texture(cache_dir, force_fallback)
-	var strip_tex: Texture2D = resolved["texture"]
-	_atlas_source_kind = str(resolved["source"])
+	# 2. Indoor base TileMapLayer + Layer-1 kit overlay (rugs)
+	var bundle := InteriorTiles.resolve_atlas_bundle(cache_dir, force_fallback)
+	var strip_tex: Texture2D = bundle["texture"]
+	_atlas_source_kind = str(bundle["source"])
+	var atlas_cols := int(bundle.get("cols", InteriorTiles.CLASS_COUNT))
+	var atlas_rows := int(bundle.get("rows", 1))
+	var ts := _build_tileset(strip_tex, atlas_cols, atlas_rows)
+
+	var kit_id := str(fd.get("kit", ""))
+	var kits_dict: Dictionary = bundle.get("kits", {})
+	var kit_def: Dictionary = kits_dict.get(kit_id, {}) if (not kit_id.is_empty() and kits_dict.has(kit_id)) else {}
+	var kit_cells := InteriorTiles.resolve_kit_cells(fd, kit_def)
 
 	_tile_layer = TileMapLayer.new()
 	_tile_layer.name = "IndoorTileLayer"
 	_tile_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_tile_layer.tile_set = _build_tileset(strip_tex)
+	_tile_layer.tile_set = ts
 	_tile_layer.z_index = 0
-	var tiles: PackedByteArray = fd["tiles"]
-	for y in range(h):
-		for x in range(w):
-			var cls := int(tiles[y * w + x])
-			_tile_layer.set_cell(Vector2i(x, y), 0, Vector2i(cls, 0))
+	for b_cell in (kit_cells["base"] as Array):
+		var bc := b_cell as Dictionary
+		_tile_layer.set_cell(bc["pos"] as Vector2i, 0, bc["atlas"] as Vector2i)
 	add_child(_tile_layer)
 
-	# 3. Flat floor layer, Y-sorted upright layer, and Ceiling layer
+	_overlay_tile_layer = TileMapLayer.new()
+	_overlay_tile_layer.name = "IndoorOverlayTileLayer"
+	_overlay_tile_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_overlay_tile_layer.tile_set = ts
+	_overlay_tile_layer.z_index = 1
+	for o_cell in (kit_cells["overlay"] as Array):
+		var oc := o_cell as Dictionary
+		_overlay_tile_layer.set_cell(oc["pos"] as Vector2i, 0, oc["atlas"] as Vector2i)
+	add_child(_overlay_tile_layer)
+
+	# 3. Flat floor/wall layer, Y-sorted upright layer, and Ceiling layer
 	_floor_flat_layer = Node2D.new()
 	_floor_flat_layer.name = "FloorFlatLayer"
 	_floor_flat_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_floor_flat_layer.z_index = 1
+	_floor_flat_layer.z_index = 2
 	add_child(_floor_flat_layer)
 
 	_ysort_layer = Node2D.new()
 	_ysort_layer.name = "YSortPropsLayer"
 	_ysort_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_ysort_layer.y_sort_enabled = true
-	_ysort_layer.z_index = 2
+	_ysort_layer.z_index = 3
 	add_child(_ysort_layer)
 
 	_ceiling_layer = Node2D.new()
 	_ceiling_layer.name = "CeilingHangLayer"
 	_ceiling_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_ceiling_layer.z_index = 4
+	_ceiling_layer.z_index = 5
 	add_child(_ceiling_layer)
+
+	# 3a. Emerald runtime small furniture & wall fixtures
+	var fx_atlas_map: Dictionary = bundle.get("fixtures", {})
+	for fx_v in (fd.get("fixtures", []) as Array):
+		var fx: Dictionary = fx_v
+		var fx_id := str(fx.get("fixture", ""))
+		if not fx_atlas_map.has(fx_id):
+			continue
+		var fx_meta := fx_atlas_map[fx_id] as Dictionary
+		var fx_cells: Array = fx_meta.get("cells", [])
+		var at: Vector2i = fx["at"]
+		var fh := int(fx.get("h", fx_cells.size()))
+		var fbase := int(fx.get("base_rows", 1))
+		if fbase <= 0:
+			for cy in range(fx_cells.size()):
+				var row_arr: Array = fx_cells[cy]
+				for cx in range(row_arr.size()):
+					var coords: Array = row_arr[cx]
+					var fsp := Sprite2D.new()
+					fsp.texture = _get_atlas_cell_tex(strip_tex, int(coords[0]), int(coords[1]))
+					fsp.centered = false
+					fsp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+					fsp.position = Vector2(float((at.x + cx) * TILE_PX), float((at.y + cy) * TILE_PX))
+					_floor_flat_layer.add_child(fsp)
+		else:
+			var holder := Node2D.new()
+			holder.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			holder.position = Vector2(float(at.x * TILE_PX), float((at.y + fh) * TILE_PX))
+			for cy in range(fx_cells.size()):
+				var row_arr: Array = fx_cells[cy]
+				for cx in range(row_arr.size()):
+					var coords: Array = row_arr[cx]
+					var fsp := Sprite2D.new()
+					fsp.texture = _get_atlas_cell_tex(strip_tex, int(coords[0]), int(coords[1]))
+					fsp.centered = false
+					fsp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+					fsp.position = Vector2(float(cx * TILE_PX), float((cy - fh) * TILE_PX))
+					holder.add_child(fsp)
+			_ysort_layer.add_child(holder)
 
 	for st_v in (fd["stamps"] as Array):
 		var st: Dictionary = st_v
@@ -280,8 +352,8 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 		_tint_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_hud_canvas.add_child(_tint_rect)
 
-	var banner := PanelContainer.new()
-	banner.position = Vector2(12.0, 10.0)
+	_banner = PanelContainer.new()
+	_banner.position = Vector2(12.0, 10.0)
 	var sb := StyleBoxFlat.new()
 	sb.bg_color = Color(0.08, 0.10, 0.14, 0.84)
 	sb.border_color = Color(0.42, 0.48, 0.60, 0.90)
@@ -291,21 +363,52 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	sb.content_margin_right = 10.0
 	sb.content_margin_top = 4.0
 	sb.content_margin_bottom = 4.0
-	banner.add_theme_stylebox_override("panel", sb)
+	_banner.add_theme_stylebox_override("panel", sb)
 
 	_title_label = Label.new()
 	_title_label.text = "%s  —  %s" % [str(_compiled.get("title", "")), str(fd.get("label", ""))]
 	_title_label.add_theme_color_override("font_color", Color(0.94, 0.95, 0.98, 1.0))
 	_title_label.add_theme_font_size_override("font_size", 14)
-	banner.add_child(_title_label)
-	_hud_canvas.add_child(banner)
+	_banner.add_child(_title_label)
+	_hud_canvas.add_child(_banner)
 
-func setup_screenshot(path: String, zoom_val: float = 1.0, frames: int = 10) -> void:
+func setup_screenshot(path: String, zoom_val: float = 1.0, frames: int = 10, interior_view_mode: String = "whole") -> void:
 	_screenshot_path = path
 	_screenshot_frames_left = maxi(2, frames)
 	_screenshot_elapsed_sec = 0.0
 	_screenshot_active = true
-	if _camera != null:
+	var floors: Array = _compiled.get("floors", [])
+	var mode := interior_view_mode.strip_edges().to_lower()
+	if _banner != null:
+		_banner.visible = (mode == "whole" or mode.is_empty())
+	if _camera != null and _floor_index >= 0 and _floor_index < floors.size():
+		var fd: Dictionary = floors[_floor_index]
+		var w := int(fd.get("w", 0))
+		var h := int(fd.get("h", 0))
+		if mode == "door" and w > 0 and h > 0:
+			var door_mats: Array = fd.get("door_mats", [])
+			var exit_cx := (float(w) - 1.0) * 0.5
+			if not door_mats.is_empty():
+				var max_y := -1
+				for dm_v in door_mats:
+					max_y = maxi(max_y, (dm_v as Vector2i).y)
+				var sum_x := 0.0
+				var cnt := 0
+				for dm_v in door_mats:
+					var dm := dm_v as Vector2i
+					if dm.y == max_y:
+						sum_x += float(dm.x)
+						cnt += 1
+				if cnt > 0:
+					exit_cx = sum_x / float(cnt)
+			var x0 := int(floor(exit_cx - 7.0))
+			var y0 := h - 9
+			_camera.position = Vector2((float(x0) + 7.5) * float(TILE_PX), (float(y0) + 5.0) * float(TILE_PX))
+			_camera.zoom = Vector2(zoom_val, zoom_val)
+		else:
+			_camera.position = Vector2(float(w * TILE_PX) * 0.5, float(h * TILE_PX) * 0.5)
+			_camera.zoom = Vector2(zoom_val, zoom_val)
+	elif _camera != null:
 		_camera.zoom = Vector2(zoom_val, zoom_val)
 	set_process(true)
 

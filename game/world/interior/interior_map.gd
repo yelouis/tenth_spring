@@ -155,6 +155,9 @@ static func compile(doc: Dictionary) -> Dictionary:
 		var fid := str(fd.get("floor_id", str(f_idx)))
 		var label := str(fd.get("label", fid))
 		var theme := str(fd.get("theme", "stone"))
+		var kit := str(fd.get("kit", "")).strip_edges()
+		if not kit.is_empty() and not InteriorTiles.has_kit(kit):
+			(rule_errors["I6"] as Array).append("floor %s unknown kit '%s'" % [fid, kit])
 		var w_v: Variant = fd.get("width", 0)
 		var h_v: Variant = fd.get("height", 0)
 		if not _is_int(w_v) or not _is_int(h_v):
@@ -279,17 +282,47 @@ static func compile(doc: Dictionary) -> Dictionary:
 			if sgv is Dictionary:
 				signs_arr.append(sgv as Dictionary)
 
+		var fixtures_compiled: Array[Dictionary] = []
+		var fixtures_v: Variant = fd.get("fixtures", [])
+		if fixtures_v is Array:
+			for fx_v in (fixtures_v as Array):
+				if not (fx_v is Dictionary):
+					continue
+				var fxd := fx_v as Dictionary
+				if str(fxd.get("art", "")) == "pending":
+					art_pending += 1
+					(rule_errors["I6"] as Array).append("floor %s fixture has art=pending" % fid)
+				var fx_id := str(fxd.get("fixture", "")).strip_edges()
+				if fx_id.is_empty() or not InteriorTiles.has_fixture(fx_id):
+					(rule_errors["I6"] as Array).append("floor %s invalid fixture '%s'" % [fid, fx_id])
+					continue
+				var at_fx: Variant = _parse_vec2i(fxd.get("at", null))
+				if not (at_fx is Vector2i):
+					(rule_errors["I5"] as Array).append("floor %s fixture %s invalid 'at'" % [fid, fx_id])
+					continue
+				var fdef := InteriorTiles.get_fixture_def(fx_id)
+				fixtures_compiled.append({
+					"fixture": fx_id,
+					"at": at_fx as Vector2i,
+					"w": int(fdef.get("w", 1)),
+					"h": int(fdef.get("h", 1)),
+					"base_rows": int(fdef.get("base_rows", 1)),
+					"layer": str(fdef.get("layer", "l1")),
+				})
+
 		var cf := {
 			"index": f_idx,
 			"floor_id": fid,
 			"label": label,
 			"theme": theme,
+			"kit": kit,
 			"w": w,
 			"h": h,
 			"grid_ok": grid_ok,
 			"tiles": tiles,
 			"door_mats": door_mats,
 			"stamps": stamps_compiled,
+			"fixtures": fixtures_compiled,
 			"stairs": stairs_arr,
 			"warps": warps_arr,
 			"switches": switches_arr,

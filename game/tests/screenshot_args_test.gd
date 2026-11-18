@@ -217,5 +217,21 @@ func run_test() -> bool:
 		push_error("Valid --interior --floor=1 config test failed: %s" % str(r_int_ok))
 		return false
 
+	# 9. Item 61: --interior-view and --interior-fallback validation
+	var r_iv_no_int: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--interior-view=door"], false, repo_root)
+	if r_iv_no_int.get("ok", true) != false or r_iv_no_int.get("exit_code", 0) != 2 or r_iv_no_int.get("error", "") != "[FAIL] --interior-view needs --interior":
+		push_error("--interior-view without --interior failed: %s" % str(r_iv_no_int))
+		return false
+
+	var r_iv_bad: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--interior=res://tests/fixtures/interior_fixture.json", "--interior-view=bad"], false, repo_root)
+	if r_iv_bad.get("ok", true) != false or r_iv_bad.get("exit_code", 0) != 2 or r_iv_bad.get("error", "") != "[FAIL] unsupported interior-view bad":
+		push_error("--interior-view=bad refusal failed: %s" % str(r_iv_bad))
+		return false
+
+	var r_iv_ok: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--interior=res://tests/fixtures/interior_fixture.json", "--floor=0", "--interior-view=door", "--interior-fallback"], false, repo_root)
+	if not r_iv_ok.get("ok", false) or r_iv_ok.get("interior_view", "") != "door" or not bool(r_iv_ok.get("interior_fallback", false)):
+		push_error("Valid --interior-view=door --interior-fallback test failed: %s" % str(r_iv_ok))
+		return false
+
 	print("screenshot_args_test checks passed")
 	return true

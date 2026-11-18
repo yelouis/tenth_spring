@@ -9,53 +9,71 @@
       "floor_id": "1F",
       "label": "1F — Great Octagon Reading Room",
       "theme": "wood",
-      "width": 26,
-      "height": 18,
+      "kit": "gallery_wood",
+      "width": 20,
+      "height": 12,
       "grid": [
-        "##########################",
-        "#========================#",
-        "#WWWWWWWWWWWWWWWWWWWWWWWW#",
-        "#WWWWWWWWWWWCCWWWWWWWWUWW#",
-        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
-        "#WWWWWWWWCCCCCCCCWWWWWWWW#",
-        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
-        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
-        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
-        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
-        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
-        "#WWWWWWWWCCCCCCCCWWWWWWWW#",
-        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
-        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
-        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
-        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
-        "#WWWWWWWWWWWDDWWWWWWWWWWW#",
-        "##########################"
+        "####################",
+        "================U===",
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWRRRRRRWWWWWWW",
+        "WWWWWWWRRRRRRWWWWWWW",
+        "WWWWWWWRRRRRRWWWWWWW",
+        "WWWWWWWRRRRRRWWWWWWW",
+        "WWWWWWWRRRRRRWWWWWWW",
+        "WWWWWWWRRRRRRWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWDDWWWWWWWWW"
       ],
       "warps": [],
       "stairs": [
-        {"at": [22, 3], "to_floor": "2F", "to": [21, 3], "dir": "up"}
+        {"at": [16, 1], "to_floor": "2F", "to": [21, 3], "dir": "up"}
       ],
       "switches": [],
       "stamps": [
-        {"stamp": "int_archive_bookshelf", "at": [2, 1]},
-        {"stamp": "int_archive_bookshelf", "at": [7, 1]},
-        {"stamp": "int_archive_bookshelf", "at": [15, 1]},
-        {"stamp": "int_archive_bookshelf", "at": [19, 1]},
-        {"stamp": "int_octagon_desk", "at": [11, 7]},
-        {"stamp": "int_reading_table_lamp", "at": [3, 6]},
-        {"stamp": "int_reading_table_lamp", "at": [3, 11]},
-        {"stamp": "int_reading_table_lamp", "at": [20, 6]},
-        {"stamp": "int_reading_table_lamp", "at": [20, 11]},
-        {"stamp": "int_item_ball", "at": [2, 15]}
+        {"stamp": "int_archive_bookshelf", "at": [1, 0]},
+        {"stamp": "int_archive_bookshelf", "at": [10, 0]},
+        {"stamp": "int_octagon_desk", "at": [8, 5]},
+        {"stamp": "int_reading_table_lamp", "at": [2, 4]},
+        {"stamp": "int_reading_table_lamp", "at": [2, 8]},
+        {"stamp": "int_reading_table_lamp", "at": [15, 4]},
+        {"stamp": "int_reading_table_lamp", "at": [15, 8]},
+        {"stamp": "int_item_ball", "at": [18, 10]}
+      ],
+      "fixtures": [
+        {"fixture": "em_wall_pilaster_1x2", "at": [4, 0]},
+        {"fixture": "em_wall_window_2x1", "at": [5, 0]},
+        {"fixture": "em_bookshelf_2x2", "at": [5, 1]},
+        {"fixture": "em_painting_gold_2x2", "at": [7, 0]},
+        {"fixture": "em_wall_pilaster_1x2", "at": [9, 0]},
+        {"fixture": "em_wall_pilaster_1x2", "at": [13, 0]},
+        {"fixture": "em_wall_clock_1x1", "at": [14, 0]},
+        {"fixture": "em_potted_tree_1x2", "at": [0, 1]},
+        {"fixture": "em_potted_tree_1x2", "at": [14, 1]},
+        {"fixture": "em_wall_window_2x1", "at": [18, 0]},
+        {"fixture": "em_pc_desk_2x2", "at": [18, 1]},
+        {"fixture": "em_chair_e_1x1", "at": [1, 5]},
+        {"fixture": "em_chair_w_1x1", "at": [5, 5]},
+        {"fixture": "em_chair_e_1x1", "at": [1, 9]},
+        {"fixture": "em_chair_w_1x1", "at": [5, 9]},
+        {"fixture": "em_chair_e_1x1", "at": [14, 5]},
+        {"fixture": "em_chair_w_1x1", "at": [18, 5]},
+        {"fixture": "em_chair_e_1x1", "at": [14, 9]},
+        {"fixture": "em_chair_w_1x1", "at": [18, 9]},
+        {"fixture": "em_stool_1x1", "at": [9, 8]},
+        {"fixture": "em_stool_1x1", "at": [10, 8]},
+        {"fixture": "em_potted_plant_1x2", "at": [0, 10]},
+        {"fixture": "em_potted_plant_1x2", "at": [19, 10]}
       ],
       "npcs": [
-        {"id": "npc_marcus_bell", "name": "Marcus Bell", "at": [10, 10], "role": "scholar"}
+        {"id": "npc_marcus_bell", "name": "Marcus Bell", "at": [7, 7], "role": "scholar"}
       ],
       "items": [
-        {"id": "dc_loc_1f_wise", "at": [2, 15], "name": "Wise Glasses"}
+        {"id": "dc_loc_1f_wise", "at": [18, 10], "name": "Wise Glasses"}
       ],
       "signs": [
-        {"at": [13, 11], "text": "Main Reading Room — Silence Keeps the Archive Whole"}
+        {"at": [11, 9], "text": "Main Reading Room — Silence Keeps the Archive Whole"}
       ]
     },
     {
@@ -83,10 +101,10 @@
         "########################"
       ],
       "warps": [
-        {"at": [19, 13], "to_floor": "1F", "to": [12, 13], "kind": "warp_pad"}
+        {"at": [19, 13], "to_floor": "1F", "to": [9, 10], "kind": "warp_pad"}
       ],
       "stairs": [
-        {"at": [20, 3], "to_floor": "1F", "to": [22, 4], "dir": "down"}
+        {"at": [20, 3], "to_floor": "1F", "to": [16, 2], "dir": "down"}
       ],
       "switches": [
         {"id": "sw_cipher_vault", "at": [3, 13], "opens": ["gate_cipher_vault"]}

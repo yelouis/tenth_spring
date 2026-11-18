@@ -53,7 +53,13 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	var indoor_png_path := abs_dir.path_join("tiles/emerald_indoor_v1.png")
 	var indoor_json_path := abs_dir.path_join("tiles/emerald_indoor_v1.json")
 
-	if not FileAccess.file_exists(png_path) or not FileAccess.file_exists(indoor_png_path):
+	var need_import := not FileAccess.file_exists(png_path) or not FileAccess.file_exists(indoor_png_path) or not FileAccess.file_exists(indoor_json_path)
+	if not need_import:
+		var cached_iparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(indoor_json_path))
+		var expected_sha := FileAccess.get_file_as_string("res://config/emerald_tile_map.json").sha256_text()
+		if not (cached_iparsed is Dictionary) or str((cached_iparsed as Dictionary).get("format", "")) != "emerald_indoor_v2" or str((cached_iparsed as Dictionary).get("cfg_sha256", "")) != expected_sha:
+			need_import = true
+	if need_import:
 		var default_norm := DEFAULT_CACHE_DIR.trim_suffix("/")
 		if norm == default_norm and not _auto_import_gba_attempted:
 			var gba_env := OS.get_environment("TENTH_SPRING_ROM_GBA").strip_edges()

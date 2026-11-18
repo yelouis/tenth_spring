@@ -15,7 +15,7 @@ const CACHE_EMERALD := "user://test/interior_dc_emerald"
 const PINNED_SHA256: Dictionary = {
 	"res://data/interiors/washington-dc/air-and-space.json": "ebe5629f41b2fb3194fc7cecd05032f3798bcf4300b13c5055871c52bb42e4f6",
 	"res://data/interiors/washington-dc/georgetown-ruins.json": "c6f5185db206a980d8c50532affaf20bfb85ad29cfd697b47cc664cc3b48f497",
-	"res://data/interiors/washington-dc/library-of-congress.json": "abdb0b3efe9914741d0f06724dbaa6bab281f5d78cd5de8ce2630bc325c88109",
+	"res://data/interiors/washington-dc/library-of-congress.json": "49808d17830850bab93cf992d128e65cdbf939e95b34b93af01d4586933d941d",
 	"res://data/interiors/washington-dc/lincoln-memorial.json": "e2f2ce5d452b529503e8ac40e11069e65d80baafd60cd4847e992fbd01897046",
 	"res://data/interiors/washington-dc/washington-monument.json": "086a70d5cdad609e31b24921bc266c9ff1bff07c1d4205a9049267894400a8e1",
 	"res://data/interiors/washington-dc/woodley-vet.json": "b962a93fb904f7359676c09b44cfbfa7ee154aa63989ce0c32c29834b8fade4a",
@@ -129,17 +129,26 @@ func run_test() -> bool:
 		var iatlas: Variant = AssetDB.indoor_tile_atlas(CACHE_EMERALD)
 		if not (iatlas is Dictionary):
 			return _fail("Expected non-null AssetDB.indoor_tile_atlas after GBA import")
+		var ijson: Dictionary = (iatlas as Dictionary).get("json", {})
+		if str(ijson.get("format", "")) != "emerald_indoor_v2":
+			return _fail("Expected format 'emerald_indoor_v2', got '%s'" % str(ijson.get("format", "")))
 		var itex: Texture2D = (iatlas as Dictionary).get("texture", null)
-		if itex == null or itex.get_width() != 17 * 32 or itex.get_height() != 32:
-			return _fail("Expected 544x32 Emerald indoor texture")
+		if itex == null or itex.get_width() != 17 * 32 or itex.get_height() < 64 or (itex.get_height() % 32) != 0:
+			return _fail("Expected 544x(>=64, mult 32) Emerald indoor texture, got %s" % str(itex.get_size() if itex != null else Vector2i.ZERO))
+		var iimg := itex.get_image()
+		if iimg == null or iimg.get_pixel(0, 0) != Color8(0, 0, 0, 255):
+			return _fail("Expected class 0 Emerald void pixel (0,0) to be pure #000000")
 		var iv_em := InteriorView.new()
 		add_child(iv_em)
-		var ok_em := iv_em.load_interior("dc:washington-monument", 1, CACHE_EMERALD, false)
+		var ok_em := iv_em.load_interior("dc:library-of-congress", 0, CACHE_EMERALD, false)
 		var src_em := iv_em.get_atlas_source_kind()
+		var loc_sz := iv_em.get_floor_size()
 		remove_child(iv_em)
 		iv_em.free()
 		if not ok_em or src_em != "emerald":
 			return _fail("Expected InteriorView to select 'emerald' indoor atlas, got %s" % src_em)
+		if loc_sz.x > 21 or loc_sz.y > 14:
+			return _fail("Expected Library of Congress 1F <= 21x14 Emerald reference size, got %s" % str(loc_sz))
 
 	_cleanup()
 	return true

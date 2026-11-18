@@ -54,6 +54,7 @@ const TOKEN_TO_CLASS: Dictionary = {
 	"W": TILE_INT_FLOOR_WOOD,
 	".": TILE_INT_FLOOR_STONE,
 	"C": TILE_INT_CARPET_RUNNER,
+	"R": TILE_INT_CARPET_RUNNER,
 	"#": TILE_INT_WALL_TOP,
 	"=": TILE_INT_WALL_FACE,
 	"D": TILE_INT_DOOR_MAT,
@@ -89,6 +90,58 @@ const CLASS_TO_TOKEN: Dictionary = {
 }
 
 static var _fallback_tex: ImageTexture = null
+static var _fallback_bundle_cache: Dictionary = {}
+static var _tile_map_cfg_cache: Dictionary = {}
+static var _known_kits_cache: Dictionary = {}
+static var _known_fixtures_cache: Dictionary = {}
+
+const EMERALD_TILE_MAP_PATH := "res://config/emerald_tile_map.json"
+
+static func _ensure_cfg_loaded() -> void:
+	if not _tile_map_cfg_cache.is_empty():
+		return
+	if FileAccess.file_exists(EMERALD_TILE_MAP_PATH):
+		var f := FileAccess.open(EMERALD_TILE_MAP_PATH, FileAccess.READ)
+		if f != null:
+			var parsed: Variant = JSON.parse_string(f.get_as_text())
+			f.close()
+			if parsed is Dictionary:
+				_tile_map_cfg_cache = parsed as Dictionary
+				var ks: Variant = _tile_map_cfg_cache.get("indoor_kits", {})
+				if ks is Dictionary:
+					_known_kits_cache = ks as Dictionary
+				var fs: Variant = _tile_map_cfg_cache.get("indoor_fixtures", {})
+				if fs is Dictionary:
+					_known_fixtures_cache = fs as Dictionary
+
+static func has_kit(kit_id: String) -> bool:
+	_ensure_cfg_loaded()
+	return _known_kits_cache.has(kit_id)
+
+static func has_fixture(fixture_id: String) -> bool:
+	_ensure_cfg_loaded()
+	return _known_fixtures_cache.has(fixture_id)
+
+static func get_fixture_def(fixture_id: String) -> Dictionary:
+	_ensure_cfg_loaded()
+	var d: Variant = _known_fixtures_cache.get(fixture_id, null)
+	return d if d is Dictionary else {}
+
+static func known_kit_ids() -> Array[String]:
+	_ensure_cfg_loaded()
+	var out: Array[String] = []
+	for k in _known_kits_cache.keys():
+		out.append(str(k))
+	out.sort()
+	return out
+
+static func known_fixture_ids() -> Array[String]:
+	_ensure_cfg_loaded()
+	var out: Array[String] = []
+	for k in _known_fixtures_cache.keys():
+		out.append(str(k))
+	out.sort()
+	return out
 
 static func is_valid_class(cls: int) -> bool:
 	return cls >= 0 and cls < CLASS_COUNT
@@ -133,23 +186,236 @@ static func gust_delta(cls: int) -> Vector2i:
 		return Vector2i(-1, 0)
 	return Vector2i.ZERO
 
-static func resolve_atlas_texture(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, force_fallback: bool = false) -> Dictionary:
+static func resolve_atlas_bundle(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, force_fallback: bool = false) -> Dictionary:
 	if not force_fallback:
 		var em_v: Variant = AssetDB.indoor_tile_atlas(cache_dir)
 		if em_v is Dictionary:
-			var em_tex: Texture2D = (em_v as Dictionary).get("texture", null)
-			if em_tex != null:
-				return {"texture": em_tex, "source": "emerald"}
-	return {"texture": build_fallback_texture(), "source": "fallback"}
+			var em_dict := em_v as Dictionary
+			var em_tex: Texture2D = em_dict.get("texture", null)
+			var em_json: Variant = em_dict.get("json", null)
+			if em_tex != null and em_json is Dictionary and str((em_json as Dictionary).get("format", "")) == "emerald_indoor_v2":
+				var jd := em_json as Dictionary
+				return {
+					"texture": em_tex,
+					"source": "emerald",
+					"cols": int(jd.get("cols", CLASS_COUNT)),
+					"rows": int(jd.get("rows", 1)),
+					"kits": jd.get("kits", {}),
+					"fixtures": jd.get("fixtures", {}),
+				}
+	return build_fallback_bundle()
+
+static func resolve_atlas_texture(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, force_fallback: bool = false) -> Dictionary:
+	var bundle := resolve_atlas_bundle(cache_dir, force_fallback)
+	return {"texture": bundle.get("texture", null), "source": str(bundle.get("source", "fallback"))}
 
 static func build_fallback_texture() -> ImageTexture:
-	if _fallback_tex != null:
-		return _fallback_tex
-	var strip16 := Image.create(CLASS_COUNT * 16, 16, false, Image.FORMAT_RGBA8)
-	strip16.fill(Color8(12, 14, 20, 255))
+	var bundle := build_fallback_bundle()
+	return bundle.get("texture", null) as ImageTexture
 
-	# 0: void_black
-	_fill_tile16(strip16, TILE_INT_VOID_BLACK, Color8(12, 14, 20, 255))
+static func resolve_kit_cells(fd: Dictionary, kit_def: Dictionary) -> Dictionary:
+	var w := int(fd.get("w", 0))
+	var h := int(fd.get("h", 0))
+	var tiles: PackedByteArray = fd.get("tiles", PackedByteArray())
+	var base_cells: Array = []
+	var overlay_cells: Array = []
+	if w <= 0 or h <= 0 or tiles.size() < w * h:
+		return {"base": base_cells, "overlay": overlay_cells}
+
+	if kit_def.is_empty():
+		for y in range(h):
+			for x in range(w):
+				var cls := int(tiles[y * w + x])
+				if cls >= 0 and cls < CLASS_COUNT:
+					base_cells.append({"pos": Vector2i(x, y), "atlas": Vector2i(cls, 0)})
+		return {"base": base_cells, "overlay": overlay_cells}
+
+	var grid_coords: Dictionary = {}
+	var stair_mask := PackedByteArray()
+	stair_mask.resize(w * h)
+	stair_mask.fill(0)
+
+	# Pass 1: Stamp 3x2 recessed staircases around U and d
+	for y in range(h):
+		for x in range(w):
+			var cls := int(tiles[y * w + x])
+			var slot_name := ""
+			if cls == TILE_INT_STAIRS_UP:
+				slot_name = "stairs_up_3x2"
+			elif cls == TILE_INT_STAIRS_DOWN:
+				slot_name = "stairs_down_3x2"
+			if slot_name.is_empty():
+				continue
+			var mat: Variant = kit_def.get(slot_name, [])
+			if not (mat is Array) or (mat as Array).size() < 2:
+				continue
+			var ox := x - 1
+			var oy := y - 1
+			for sy in range(2):
+				var row_arr: Array = (mat as Array)[sy]
+				for sx in range(mini(3, row_arr.size())):
+					var gx := ox + sx
+					var gy := oy + sy
+					if gx >= 0 and gx < w and gy >= 0 and gy < h:
+						var coords: Array = row_arr[sx]
+						grid_coords[Vector2i(gx, gy)] = Vector2i(int(coords[0]), int(coords[1]))
+						stair_mask[gy * w + gx] = 1
+
+	# Pass 2: Pair 2x1 door mats horizontally on D runs
+	var dmat_arr: Variant = kit_def.get("door_mat_2x1", [])
+	for y in range(h):
+		var x := 0
+		while x < w:
+			var p := Vector2i(x, y)
+			if not grid_coords.has(p) and int(tiles[y * w + x]) == TILE_INT_DOOR_MAT and dmat_arr is Array and (dmat_arr as Array).size() >= 2:
+				var c0: Array = (dmat_arr as Array)[0]
+				var c1: Array = (dmat_arr as Array)[1]
+				grid_coords[p] = Vector2i(int(c0[0]), int(c0[1]))
+				if x + 1 < w and int(tiles[y * w + (x + 1)]) == TILE_INT_DOOR_MAT and not grid_coords.has(Vector2i(x + 1, y)):
+					grid_coords[Vector2i(x + 1, y)] = Vector2i(int(c1[0]), int(c1[1]))
+					x += 2
+					continue
+			x += 1
+
+	# Pass 3: Neighbour-aware walls, shadows, floors, puzzles, and 9-slice rug overlay
+	var void_c := _atlas_vec(kit_def.get("void", [0, 0]))
+	var wu_c := _atlas_vec(kit_def.get("wall_upper", [5, 0]))
+	var wl_c := _atlas_vec(kit_def.get("wall_lower", [6, 0]))
+	var pw_c := _atlas_vec(kit_def.get("partition_top_w", [5, 0]))
+	var ph_c := _atlas_vec(kit_def.get("partition_top_h", [5, 0]))
+	var pe_c := _atlas_vec(kit_def.get("partition_top_end_e", [5, 0]))
+	var flr_c := _atlas_vec(kit_def.get("floor", [2, 0]))
+	var shn_c := _atlas_vec(kit_def.get("floor_shadow_n", [2, 0]))
+	var shw_c := _atlas_vec(kit_def.get("floor_shadow_w", [2, 0]))
+	var shnw_c := _atlas_vec(kit_def.get("floor_shadow_nw", [2, 0]))
+	var rug_mat: Variant = kit_def.get("rug_3x3", [])
+
+	for y in range(h):
+		for x in range(w):
+			var p := Vector2i(x, y)
+			if grid_coords.has(p):
+				base_cells.append({"pos": p, "atlas": grid_coords[p]})
+				continue
+			var cls := int(tiles[y * w + x])
+			var atlas_v := Vector2i(cls, 0)
+			if cls == TILE_INT_VOID_BLACK:
+				atlas_v = void_c
+			elif cls == TILE_INT_WALL_TOP:
+				var south_cls := int(tiles[(y + 1) * w + x]) if (y + 1 < h) else TILE_INT_VOID_BLACK
+				if south_cls == TILE_INT_WALL_FACE or south_cls == TILE_INT_STAIRS_UP or south_cls == TILE_INT_STAIRS_DOWN:
+					atlas_v = wu_c
+				else:
+					var has_w_wall := (x > 0 and int(tiles[y * w + (x - 1)]) == TILE_INT_WALL_TOP)
+					var has_e_wall := (x + 1 < w and int(tiles[y * w + (x + 1)]) == TILE_INT_WALL_TOP)
+					if not has_w_wall:
+						atlas_v = pw_c
+					elif not has_e_wall:
+						atlas_v = pe_c
+					else:
+						atlas_v = ph_c
+			elif cls == TILE_INT_WALL_FACE:
+				atlas_v = wl_c
+			elif cls in [TILE_INT_FLOOR_MARBLE, TILE_INT_FLOOR_WOOD, TILE_INT_FLOOR_STONE, TILE_INT_CARPET_RUNNER]:
+				var north_cls := int(tiles[(y - 1) * w + x]) if y > 0 else TILE_INT_VOID_BLACK
+				var west_cls := int(tiles[y * w + (x - 1)]) if x > 0 else TILE_INT_VOID_BLACK
+				var north_stair := (y > 0 and stair_mask[(y - 1) * w + x] != 0)
+				var shadow_n := north_stair or (north_cls in [TILE_INT_WALL_TOP, TILE_INT_WALL_FACE, TILE_INT_STAIRS_UP, TILE_INT_STAIRS_DOWN])
+				var shadow_w := (x == 0) or (west_cls in [TILE_INT_VOID_BLACK, TILE_INT_WALL_TOP, TILE_INT_WALL_FACE])
+				if shadow_n and shadow_w:
+					atlas_v = shnw_c
+				elif shadow_n:
+					atlas_v = shn_c
+				elif shadow_w:
+					atlas_v = shw_c
+				else:
+					atlas_v = flr_c
+				if cls == TILE_INT_CARPET_RUNNER and rug_mat is Array and (rug_mat as Array).size() >= 3:
+					var rw := (x > 0 and int(tiles[y * w + (x - 1)]) == TILE_INT_CARPET_RUNNER)
+					var re := (x + 1 < w and int(tiles[y * w + (x + 1)]) == TILE_INT_CARPET_RUNNER)
+					var rn := (y > 0 and int(tiles[(y - 1) * w + x]) == TILE_INT_CARPET_RUNNER)
+					var rs_b := (y + 1 < h and int(tiles[(y + 1) * w + x]) == TILE_INT_CARPET_RUNNER)
+					var rx_i := 0 if not rw else (2 if not re else 1)
+					var ry_i := 0 if not rn else (2 if not rs_b else 1)
+					var rcell: Array = ((rug_mat as Array)[ry_i] as Array)[rx_i]
+					overlay_cells.append({"pos": p, "atlas": Vector2i(int(rcell[0]), int(rcell[1]))})
+			base_cells.append({"pos": p, "atlas": atlas_v})
+	return {"base": base_cells, "overlay": overlay_cells}
+
+static func _atlas_vec(v: Variant) -> Vector2i:
+	if v is Array and (v as Array).size() >= 2:
+		return Vector2i(int((v as Array)[0]), int((v as Array)[1]))
+	return Vector2i.ZERO
+
+static func _reg_fb_slot(slot_specs: Array, kind: String, key: String, args: Dictionary) -> Array:
+	var idx := CLASS_COUNT + slot_specs.size()
+	slot_specs.append({"idx": idx, "kind": kind, "key": key, "args": args})
+	return [idx % CLASS_COUNT, int(idx / CLASS_COUNT)]
+
+static func build_fallback_bundle() -> Dictionary:
+	if not _fallback_bundle_cache.is_empty():
+		return _fallback_bundle_cache
+	_ensure_cfg_loaded()
+
+	var slot_specs: Array = []
+	var kits_meta: Dictionary = {}
+
+	var r_rug: Array = []
+	for ry in range(3):
+		var row_r: Array = []
+		for rx in range(3):
+			row_r.append(_reg_fb_slot(slot_specs, "rug", "shared", {"rx": rx, "ry": ry}))
+		r_rug.append(row_r)
+
+	var kit_names := known_kit_ids()
+	for kit_name in kit_names:
+		var pal := _fallback_kit_palette(kit_name)
+		var stairs_up := [
+			[_reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 0, "sy": 0, "up": true, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 1, "sy": 0, "up": true, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 2, "sy": 0, "up": true, "pal": pal})],
+			[_reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 0, "sy": 1, "up": true, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 1, "sy": 1, "up": true, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 2, "sy": 1, "up": true, "pal": pal})],
+		]
+		var stairs_dn := [
+			[_reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 0, "sy": 0, "up": false, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 1, "sy": 0, "up": false, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 2, "sy": 0, "up": false, "pal": pal})],
+			[_reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 0, "sy": 1, "up": false, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 1, "sy": 1, "up": false, "pal": pal}), _reg_fb_slot(slot_specs, "stair", kit_name, {"sx": 2, "sy": 1, "up": false, "pal": pal})],
+		]
+		kits_meta[kit_name] = {
+			"void": [0, 0],
+			"wall_upper": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "wall_upper", "pal": pal}),
+			"wall_lower": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "wall_lower", "pal": pal}),
+			"partition_top_w": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "partition_top_w", "pal": pal}),
+			"partition_top_h": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "partition_top_h", "pal": pal}),
+			"partition_top_end_e": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "partition_top_end_e", "pal": pal}),
+			"floor": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "floor", "pal": pal}),
+			"floor_shadow_n": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "floor_shadow_n", "pal": pal}),
+			"floor_shadow_w": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "floor_shadow_w", "pal": pal}),
+			"floor_shadow_nw": _reg_fb_slot(slot_specs, "kit_surface", kit_name, {"slot": "floor_shadow_nw", "pal": pal}),
+			"door_mat_2x1": [_reg_fb_slot(slot_specs, "mat", kit_name, {"side": 0, "pal": pal}), _reg_fb_slot(slot_specs, "mat", kit_name, {"side": 1, "pal": pal})],
+			"stairs_up_3x2": stairs_up,
+			"stairs_down_3x2": stairs_dn,
+			"rug_3x3": r_rug,
+		}
+
+	var fixtures_meta: Dictionary = {}
+	for fx_id in known_fixture_ids():
+		var fspec := get_fixture_def(fx_id)
+		var fw := int(fspec.get("w", 1))
+		var fh := int(fspec.get("h", 1))
+		var fbase := int(fspec.get("base_rows", 1))
+		var flayer := str(fspec.get("layer", "l1"))
+		var out_cells: Array = []
+		for cy in range(fh):
+			var row_c: Array = []
+			for cx in range(fw):
+				row_c.append(_reg_fb_slot(slot_specs, "fixture", fx_id, {"fx": fx_id, "cx": cx, "cy": cy, "w": fw, "h": fh}))
+			out_cells.append(row_c)
+		fixtures_meta[fx_id] = {"w": fw, "h": fh, "base_rows": fbase, "layer": flayer, "cells": out_cells}
+
+	var total_slots := CLASS_COUNT + slot_specs.size()
+	var total_rows := maxi(1, int((total_slots + CLASS_COUNT - 1) / CLASS_COUNT))
+	var strip16 := Image.create(CLASS_COUNT * 16, total_rows * 16, false, Image.FORMAT_RGBA8)
+	strip16.fill(Color(0, 0, 0, 0))
+
+	# 0: void_black (#000000)
+	_fill_tile16(strip16, TILE_INT_VOID_BLACK, Color8(0, 0, 0, 255))
 
 	# 1: floor_marble — crisp pale museum marble with bevel & mortar grid
 	_fill_tile16(strip16, TILE_INT_FLOOR_MARBLE, Color8(216, 220, 226, 255))
@@ -272,9 +538,32 @@ static func build_fallback_texture() -> ImageTexture:
 			_px16(strip16, TILE_INT_RAILING, post_x, py, Color8(64, 68, 80, 255))
 			_px16(strip16, TILE_INT_RAILING, post_x + 1, py, Color8(96, 102, 116, 255))
 
-	var strip32 := Image.create(CLASS_COUNT * TILE_PX, TILE_PX, false, Image.FORMAT_RGBA8)
-	for y in range(16):
-		for x in range(CLASS_COUNT * 16):
+	for spec_v in slot_specs:
+		var sp := spec_v as Dictionary
+		var idx := int(sp["idx"])
+		var kind := str(sp["kind"])
+		var key := str(sp["key"])
+		var args: Dictionary = sp["args"]
+		var col_i := idx % CLASS_COUNT
+		var row_i := int(idx / CLASS_COUNT)
+		var ox := col_i * 16
+		var oy := row_i * 16
+		if kind == "kit_surface":
+			_draw_kit_surface16(strip16, ox, oy, str(args["slot"]), args["pal"] as Dictionary)
+		elif kind == "rug":
+			_draw_rug16(strip16, ox, oy, int(args["rx"]), int(args["ry"]))
+		elif kind == "stair":
+			_draw_stair16(strip16, ox, oy, int(args["sx"]), int(args["sy"]), bool(args["up"]), args["pal"] as Dictionary)
+		elif kind == "mat":
+			_draw_mat16(strip16, ox, oy, int(args["side"]), args["pal"] as Dictionary)
+		elif kind == "fixture":
+			_draw_fixture16(strip16, ox, oy, key, int(args["cx"]), int(args["cy"]))
+
+	var atlas_w16 := CLASS_COUNT * 16
+	var atlas_h16 := total_rows * 16
+	var strip32 := Image.create(atlas_w16 * 2, atlas_h16 * 2, false, Image.FORMAT_RGBA8)
+	for y in range(atlas_h16):
+		for x in range(atlas_w16):
 			var c := strip16.get_pixel(x, y)
 			var dx := x * 2
 			var dy := y * 2
@@ -283,17 +572,229 @@ static func build_fallback_texture() -> ImageTexture:
 			strip32.set_pixel(dx, dy + 1, c)
 			strip32.set_pixel(dx + 1, dy + 1, c)
 	_fallback_tex = ImageTexture.create_from_image(strip32)
-	return _fallback_tex
+	_fallback_bundle_cache = {
+		"texture": _fallback_tex,
+		"source": "fallback",
+		"cols": CLASS_COUNT,
+		"rows": total_rows,
+		"kits": kits_meta,
+		"fixtures": fixtures_meta,
+	}
+	return _fallback_bundle_cache
 
 static func _fill_tile16(img: Image, cls: int, col: Color) -> void:
-	var x0 := cls * 16
-	for y in range(16):
-		for x in range(16):
-			img.set_pixel(x0 + x, y, col)
+	_fill_rect16(img, cls * 16, 0, 0, 0, 16, 16, col)
 
 static func _px16(img: Image, cls: int, x: int, y: int, col: Color) -> void:
+	_cpx(img, cls * 16, 0, x, y, col)
+
+static func _cpx(img: Image, ox: int, oy: int, x: int, y: int, col: Color) -> void:
 	if x >= 0 and x < 16 and y >= 0 and y < 16:
-		img.set_pixel(cls * 16 + x, y, col)
+		img.set_pixel(ox + x, oy + y, col)
+
+static func _fill_rect16(img: Image, ox: int, oy: int, rx: int, ry: int, rw: int, rh: int, col: Color) -> void:
+	for y in range(ry, ry + rh):
+		for x in range(rx, rx + rw):
+			_cpx(img, ox, oy, x, y, col)
+
+static func _fallback_kit_palette(kit_name: String) -> Dictionary:
+	const PALS := {
+		"gallery_wood": {"wu": [244, 236, 184], "wl": [214, 176, 132], "fa": [228, 204, 132], "fb": [198, 172, 102], "sn": [170, 144, 80], "mat": [238, 148, 142], "trim": [216, 206, 152]},
+		"museum_tile": {"wu": [222, 206, 126], "wl": [172, 184, 224], "fa": [166, 214, 198], "fb": [146, 196, 180], "sn": [96, 166, 166], "mat": [244, 162, 140], "trim": [88, 106, 184]},
+		"space_tech": {"wu": [204, 214, 226], "wl": [164, 178, 198], "fa": [196, 204, 214], "fb": [178, 186, 198], "sn": [138, 148, 164], "mat": [212, 108, 108], "trim": [122, 134, 154]},
+		"hall_marble": {"wu": [232, 228, 204], "wl": [196, 192, 172], "fa": [210, 214, 222], "fb": [190, 194, 204], "sn": [156, 160, 172], "mat": [222, 118, 118], "trim": [142, 146, 158]},
+		"clinic_clean": {"wu": [244, 240, 222], "wl": [238, 170, 106], "fa": [248, 244, 198], "fb": [232, 226, 174], "sn": [206, 194, 144], "mat": [224, 128, 72], "trim": [182, 148, 114]},
+		"stone_shrine": {"wu": [148, 162, 182], "wl": [116, 130, 152], "fa": [168, 164, 148], "fb": [150, 146, 132], "sn": [118, 114, 102], "mat": [198, 104, 104], "trim": [88, 98, 116]},
+		"abandoned_wood": {"wu": [174, 162, 112], "wl": [138, 126, 92], "fa": [184, 136, 92], "fb": [162, 116, 76], "sn": [132, 110, 68], "mat": [212, 172, 132], "trim": [96, 86, 62]},
+	}
+	return PALS.get(kit_name, PALS["gallery_wood"]) as Dictionary
+
+static func _col(rgb: Array, mul: float = 1.0) -> Color:
+	return Color8(
+		clampi(int(round(float(rgb[0]) * mul)), 0, 255),
+		clampi(int(round(float(rgb[1]) * mul)), 0, 255),
+		clampi(int(round(float(rgb[2]) * mul)), 0, 255),
+		255
+	)
+
+static func _draw_kit_surface16(img: Image, ox: int, oy: int, slot: String, pal: Dictionary) -> void:
+	if slot == "wall_upper":
+		_fill_rect16(img, ox, oy, 0, 0, 16, 16, _col(pal["wu"]))
+		_fill_rect16(img, ox, oy, 0, 0, 16, 1, Color8(68, 64, 62, 255))
+		_fill_rect16(img, ox, oy, 0, 1, 16, 2, Color8(248, 248, 242, 255))
+		_fill_rect16(img, ox, oy, 0, 14, 16, 2, _col(pal["trim"]))
+		return
+	if slot == "wall_lower":
+		_fill_rect16(img, ox, oy, 0, 0, 16, 16, _col(pal["wl"]))
+		_fill_rect16(img, ox, oy, 0, 0, 16, 1, _col(pal["wu"], 0.85))
+		_fill_rect16(img, ox, oy, 0, 3, 16, 1, _col(pal["trim"]))
+		_fill_rect16(img, ox, oy, 0, 13, 16, 2, _col(pal["wl"], 0.85))
+		_fill_rect16(img, ox, oy, 0, 15, 16, 1, Color8(68, 62, 56, 255))
+		return
+	if slot.begins_with("partition_top"):
+		_fill_rect16(img, ox, oy, 0, 0, 16, 16, _col(pal["wu"]))
+		_fill_rect16(img, ox, oy, 0, 0, 16, 2, Color8(64, 60, 58, 255))
+		_fill_rect16(img, ox, oy, 0, 2, 16, 12, Color8(244, 244, 236, 255))
+		_fill_rect16(img, ox, oy, 0, 14, 16, 2, Color8(168, 164, 148, 255))
+		if slot == "partition_top_w":
+			_fill_rect16(img, ox, oy, 0, 0, 2, 16, Color8(64, 60, 58, 255))
+		elif slot == "partition_top_end_e":
+			_fill_rect16(img, ox, oy, 14, 0, 2, 16, Color8(64, 60, 58, 255))
+		return
+
+	# Floor and shadows (diamond parquet look)
+	var fa := _col(pal["fa"])
+	var fb := _col(pal["fb"])
+	var sn := _col(pal["sn"])
+	for y in range(16):
+		for x in range(16):
+			var d := absi((x % 8) - 3) + absi((y % 8) - 3)
+			var base_c := fb if d == 3 else fa
+			var is_sn := (slot == "floor_shadow_n" or slot == "floor_shadow_nw") and y < 4
+			var is_sw := (slot == "floor_shadow_w" or slot == "floor_shadow_nw") and x < 3
+			if is_sn or is_sw:
+				base_c = sn
+			_cpx(img, ox, oy, x, y, base_c)
+
+static func _draw_rug16(img: Image, ox: int, oy: int, rx: int, ry: int) -> void:
+	var cream := Color8(248, 232, 184, 255)
+	var trim := Color8(224, 192, 134, 255)
+	var edge := Color8(120, 86, 56, 255)
+	var x0 := 2 if rx == 0 else 0
+	var x1 := 14 if rx == 2 else 16
+	var y0 := 2 if ry == 0 else 0
+	var y1 := 14 if ry == 2 else 16
+	_fill_rect16(img, ox, oy, x0, y0, x1 - x0, y1 - y0, cream)
+	for y in range(y0, y1):
+		for x in range(x0, x1):
+			var on_l := (rx == 0 and x == x0)
+			var on_r := (rx == 2 and x == x1 - 1)
+			var on_t := (ry == 0 and y == y0)
+			var on_b := (ry == 2 and y == y1 - 1)
+			var in_l := (rx == 0 and (x == x0 + 1 or x == x0 + 2))
+			var in_r := (rx == 2 and (x == x1 - 2 or x == x1 - 3))
+			var in_t := (ry == 0 and (y == y0 + 1 or y == y0 + 2))
+			var in_b := (ry == 2 and (y == y1 - 2 or y == y1 - 3))
+			if on_l or on_r or on_t or on_b:
+				_cpx(img, ox, oy, x, y, edge)
+			elif in_l or in_r or in_t or in_b:
+				_cpx(img, ox, oy, x, y, trim)
+
+static func _draw_stair16(img: Image, ox: int, oy: int, sx: int, sy: int, up: bool, pal: Dictionary) -> void:
+	_draw_kit_surface16(img, ox, oy, "wall_upper" if sy == 0 else "wall_lower", pal)
+	var frame := Color8(224, 212, 178, 255)
+	var dark := Color8(62, 66, 82, 255)
+	var step_hi := Color8(210, 152, 108, 255) if up else Color8(126, 134, 152, 255)
+	var step_lo := Color8(136, 92, 64, 255) if up else Color8(78, 84, 102, 255)
+	if sx == 0:
+		_fill_rect16(img, ox, oy, 11, 0 if sy == 1 else 2, 5, 16 if sy == 1 else 14, frame)
+		_fill_rect16(img, ox, oy, 10, 0 if sy == 1 else 2, 1, 16 if sy == 1 else 14, dark)
+	elif sx == 2:
+		_fill_rect16(img, ox, oy, 0, 0 if sy == 1 else 2, 5, 16 if sy == 1 else 14, frame)
+		_fill_rect16(img, ox, oy, 5, 0 if sy == 1 else 2, 1, 16 if sy == 1 else 14, dark)
+	else:
+		_fill_rect16(img, ox, oy, 0, 2 if sy == 0 else 0, 16, 14 if sy == 0 else 16, dark)
+		if sy == 1 or not up:
+			for row_s in range(0, 16, 4):
+				_fill_rect16(img, ox, oy, 0, row_s, 16, 2, step_hi)
+				_fill_rect16(img, ox, oy, 0, row_s + 2, 16, 2, step_lo)
+
+static func _draw_mat16(img: Image, ox: int, oy: int, side: int, pal: Dictionary) -> void:
+	_draw_kit_surface16(img, ox, oy, "floor", pal)
+	var mc := _col(pal["mat"])
+	var ml := Color8(248, 232, 224, 255)
+	var outline := Color8(120, 72, 72, 255)
+	var x0 := 1 if side == 0 else 0
+	var x1 := 16 if side == 0 else 15
+	_fill_rect16(img, ox, oy, x0, 2, x1 - x0, 12, outline)
+	_fill_rect16(img, ox, oy, x0 + (1 if side == 0 else 0), 3, x1 - x0 - 1, 10, mc)
+	for y in range(4, 12):
+		for x in range(x0 + 1, x1 - 1):
+			if ((x + y) % 2) == 0:
+				_cpx(img, ox, oy, x, y, ml)
+
+static func _draw_fixture16(img: Image, ox: int, oy: int, fx_id: String, cx: int, cy: int) -> void:
+	var dark := Color8(48, 48, 56, 255)
+	var wood := Color8(178, 124, 72, 255)
+	var cream := Color8(240, 234, 206, 255)
+	var green := Color8(72, 164, 78, 255)
+	var green_hi := Color8(134, 214, 108, 255)
+	if fx_id == "em_wall_pilaster_1x2":
+		_fill_rect16(img, ox, oy, 0, 0, 16, 16, Color8(246, 238, 198, 255))
+		_fill_rect16(img, ox, oy, 4, 0, 8, 16, Color8(252, 248, 228, 255))
+		_fill_rect16(img, ox, oy, 3, 0, 1, 16, Color8(146, 134, 108, 255))
+		_fill_rect16(img, ox, oy, 12, 0, 1, 16, Color8(146, 134, 108, 255))
+	elif fx_id.begins_with("em_painting"):
+		var fcol := Color8(196, 146, 56, 255)
+		var art := Color8(88, 148, 216, 255) if fx_id == "em_painting_meadow_2x2" else Color8(214, 136, 68, 255)
+		if fx_id.ends_with("1x1"):
+			_fill_rect16(img, ox, oy, 3, 4, 10, 9, dark)
+			_fill_rect16(img, ox, oy, 4, 5, 8, 7, fcol)
+			_fill_rect16(img, ox, oy, 5, 6, 6, 5, art)
+		elif cy == 0:
+			_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 8, 15, 8, fcol)
+			_fill_rect16(img, ox, oy, 3 if cx == 0 else 0, 10, 13, 6, art)
+		else:
+			_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 0, 15, 6, fcol)
+			_fill_rect16(img, ox, oy, 3 if cx == 0 else 0, 0, 13, 4, art)
+	elif fx_id.begins_with("em_wall_window"):
+		_fill_rect16(img, ox, oy, 1, 5, 14, 9, cream)
+		_fill_rect16(img, ox, oy, 2, 6, 12, 7, Color8(122, 192, 244, 255))
+		_fill_rect16(img, ox, oy, 3, 7, 4, 3, Color8(224, 246, 255, 255))
+	elif fx_id == "em_wall_map_2x1":
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 6, 15, 8, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 7, 14, 6, Color8(124, 198, 136, 255))
+		_fill_rect16(img, ox, oy, 5, 8, 4, 3, Color8(216, 198, 118, 255))
+	elif fx_id == "em_wall_clock_1x1":
+		_fill_rect16(img, ox, oy, 4, 5, 8, 8, Color8(152, 162, 186, 255))
+		_fill_rect16(img, ox, oy, 5, 6, 6, 6, cream)
+		_fill_rect16(img, ox, oy, 7, 7, 1, 3, dark)
+		_fill_rect16(img, ox, oy, 8, 9, 2, 1, Color8(192, 64, 64, 255))
+	elif fx_id == "em_wall_notice_1x1":
+		_fill_rect16(img, ox, oy, 4, 5, 8, 8, dark)
+		_fill_rect16(img, ox, oy, 5, 6, 6, 6, cream)
+		_fill_rect16(img, ox, oy, 6, 8, 4, 1, Color8(120, 130, 148, 255))
+	elif fx_id.begins_with("em_chair"):
+		var seat := Color8(88, 178, 96, 255) if fx_id == "em_chair_green_1x1" else Color8(216, 128, 98, 255)
+		_fill_rect16(img, ox, oy, 4, 4, 8, 9, dark)
+		_fill_rect16(img, ox, oy, 5, 5, 6, 7, seat)
+		if fx_id == "em_chair_e_1x1":
+			_fill_rect16(img, ox, oy, 3, 2, 2, 11, dark)
+			_fill_rect16(img, ox, oy, 4, 3, 2, 9, Color8(168, 92, 68, 255))
+		elif fx_id == "em_chair_w_1x1":
+			_fill_rect16(img, ox, oy, 11, 2, 2, 11, dark)
+			_fill_rect16(img, ox, oy, 10, 3, 2, 9, Color8(168, 92, 68, 255))
+	elif fx_id == "em_stool_1x1":
+		_fill_rect16(img, ox, oy, 4, 5, 8, 7, dark)
+		_fill_rect16(img, ox, oy, 5, 6, 6, 5, Color8(208, 76, 76, 255))
+	elif fx_id == "em_bookshelf_2x2":
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 14, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 11, Color8(214, 218, 224, 255) if cy == 0 else wood)
+		for bx in range(3, 14, 3):
+			_fill_rect16(img, ox, oy, bx, 6 if cy == 0 else 2, 2, 6, Color8(192, 82, 82, 255) if (bx % 2 == 1) else Color8(72, 136, 198, 255))
+	elif fx_id == "em_pc_desk_2x2":
+		if cy == 0:
+			_fill_rect16(img, ox, oy, 2, 4, 12, 12, Color8(224, 198, 108, 255))
+			_fill_rect16(img, ox, oy, 4, 1, 8, 8, Color8(92, 98, 112, 255))
+			if cx == 1:
+				_fill_rect16(img, ox, oy, 5, 2, 6, 5, Color8(136, 178, 206, 255))
+		else:
+			_fill_rect16(img, ox, oy, 2, 0, 12, 8, Color8(178, 134, 72, 255))
+	elif fx_id.begins_with("em_potted"):
+		if cy == 0:
+			_fill_rect16(img, ox, oy, 3, 5, 10, 11, green)
+			_fill_rect16(img, ox, oy, 5, 6, 6, 6, green_hi)
+		else:
+			_fill_rect16(img, ox, oy, 4, 0, 8, 6, green)
+			_fill_rect16(img, ox, oy, 4, 6, 8, 8, Color8(186, 188, 196, 255))
+			_fill_rect16(img, ox, oy, 5, 7, 6, 6, Color8(138, 142, 152, 255))
+	elif fx_id == "em_wood_table_2x2" or fx_id == "em_sofa_2x2":
+		var body_c := Color8(216, 186, 128, 255) if fx_id == "em_wood_table_2x2" else cream
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 13, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 11, body_c)
+	elif fx_id == "em_trash_can_1x1":
+		_fill_rect16(img, ox, oy, 4, 3, 8, 11, Color8(132, 138, 150, 255))
+		_fill_rect16(img, ox, oy, 5, 4, 6, 2, Color8(194, 200, 212, 255))
 
 static func _draw_arrow_tile16(img: Image, cls: int, dir: Vector2i) -> void:
 	_fill_tile16(img, cls, Color8(224, 232, 244, 255))

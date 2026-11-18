@@ -23,12 +23,16 @@ func run_test() -> bool:
 	if base_doc.is_empty():
 		return _fail("Failed to load " + FIXTURE_PATH)
 
-	# Verify indoor tile palette 0..16 & fallback texture
+	# Verify indoor tile palette 0..16 & multi-row fallback bundle (Item 61)
 	if InteriorTiles.INDOOR_TILE_IDS.size() != 17:
 		return _fail("Expected 17 indoor tile IDs, got %d" % InteriorTiles.INDOOR_TILE_IDS.size())
-	var fb_tex := InteriorTiles.build_fallback_texture()
-	if fb_tex == null or fb_tex.get_width() != 17 * 32 or fb_tex.get_height() != 32:
-		return _fail("Expected 544x32 fallback indoor texture")
+	var fb_bundle := InteriorTiles.build_fallback_bundle()
+	var fb_tex: ImageTexture = fb_bundle.get("texture", null) as ImageTexture
+	if fb_tex == null or fb_tex.get_width() != 17 * 32 or fb_tex.get_height() < 64 or (fb_tex.get_height() % 32) != 0:
+		return _fail("Expected 544x(>=64, mult 32) fallback indoor texture, got %s" % str(fb_tex.get_size() if fb_tex != null else Vector2i.ZERO))
+	var fb_img := fb_tex.get_image()
+	if fb_img == null or fb_img.get_pixel(0, 0) != Color8(0, 0, 0, 255):
+		return _fail("Expected class 0 void pixel (0,0) to be pure #000000, got %s" % str(fb_img.get_pixel(0, 0) if fb_img != null else Color()))
 
 	# ------------------------------------------------------------------
 	# 1. ▶ Negative Falsifiers FIRST (broken in-memory copies of fixture)
@@ -127,6 +131,72 @@ func run_test() -> bool:
 	var res_i6b := InteriorCheck.compile_and_check(bad_i6_id)
 	if bool(res_i6b.get("ok", true)) or not (res_i6b.get("failed_rules", []) as Array).has("I6"):
 		return _fail("I6b falsifier (stamp=999) should fail I6, got: %s" % str(res_i6b))
+
+	# Falsifier I6c: unknown kit id
+	var bad_i6_kit := base_doc.duplicate(true)
+	bad_i6_kit["floors"][0]["kit"] = "nonexistent_kit"
+	var res_i6c := InteriorCheck.compile_and_check(bad_i6_kit)
+	if bool(res_i6c.get("ok", true)) or not (res_i6c.get("failed_rules", []) as Array).has("I6"):
+		return _fail("I6c falsifier (unknown kit) should fail I6, got: %s" % str(res_i6c))
+
+	# Falsifier I6d: unknown fixture id
+	var bad_i6_fx := base_doc.duplicate(true)
+	bad_i6_fx["floors"][0]["fixtures"] = [{"fixture": "nonexistent_fx", "at": [3, 3]}]
+	var res_i6d := InteriorCheck.compile_and_check(bad_i6_fx)
+	if bool(res_i6d.get("ok", true)) or not (res_i6d.get("failed_rules", []) as Array).has("I6"):
+		return _fail("I6d falsifier (unknown fixture) should fail I6, got: %s" % str(res_i6d))
+
+	# Falsifier I5c: solid Emerald fixture blocking sole 2-wide hallway pass lane
+	var bad_i5_fx := base_doc.duplicate(true)
+	(bad_i5_fx["floors"][1]["grid"] as Array)[4] = "######WW######"
+	bad_i5_fx["floors"][1]["stamps"] = [
+		{"stamp": "int_radio_console", "at": [3, 6], "capstone": true},
+	]
+	bad_i5_fx["floors"][1]["fixtures"] = [
+		{"fixture": "em_bookshelf_2x2", "at": [6, 3]},
+	]
+	var res_i5c := InteriorCheck.compile_and_check(bad_i5_fx)
+	if bool(res_i5c.get("ok", true)) or not (res_i5c.get("failed_rules", []) as Array).has("I5"):
+		return _fail("I5c falsifier (solid em_bookshelf_2x2 blocking 2-wide hallway) should fail I5, got: %s" % str(res_i5c))
+
+	# Item 61 positive mount check: base_rows=0 wall painting on '#'/'=' passes I5, and gallery_wood kit emits expected layered cells
+	var kit_doc := base_doc.duplicate(true)
+	kit_doc["floors"][0]["kit"] = "gallery_wood"
+	kit_doc["floors"][0]["grid"] = [
+		"##############",
+		"==========U===",
+		"WWWWWWWWWWWWWW",
+		"WWWWRRRRWWWWWW",
+		"WWWWRRRRWWWWWW",
+		"WWWWRRRRWWWWWW",
+		"WWWWWWWWWWWWWW",
+		"WWWWWWWWWWWWWW",
+		"WWWWWWWWWWWWWW",
+		"WWWWWWWWWWWWWW",
+		"WWWWWWWWWWWWWW",
+		"WWWWWWDDWWWWWW",
+	]
+	kit_doc["floors"][0]["stairs"] = [{"at": [10, 1], "to_floor": "2F", "to": [6, 3], "dir": "up"}]
+	kit_doc["floors"][0]["stamps"] = [{"stamp": "int_item_ball", "at": [12, 9]}]
+	kit_doc["floors"][0]["fixtures"] = [
+		{"fixture": "em_painting_gold_2x2", "at": [2, 0]},
+	]
+	var res_kit := InteriorCheck.compile_and_check(kit_doc)
+	if not bool(res_kit.get("ok", false)):
+		return _fail("Item 61 wall-mounted fixture + gallery_wood kit test failed: %s" % str(res_kit))
+	var kit_fd: Dictionary = (res_kit["compiled"] as Dictionary)["floors"][0]
+	var gw_def: Dictionary = (fb_bundle["kits"] as Dictionary)["gallery_wood"]
+	var resolved_kit := InteriorTiles.resolve_kit_cells(kit_fd, gw_def)
+	var base_map: Dictionary = {}
+	for bc in (resolved_kit["base"] as Array):
+		var bcd := bc as Dictionary
+		base_map[bcd["pos"] as Vector2i] = bcd["atlas"] as Vector2i
+	if base_map[Vector2i(1, 0)] == base_map[Vector2i(1, 1)]:
+		return _fail("gallery_wood wall_upper and wall_lower should use distinct atlas cells")
+	if base_map[Vector2i(1, 2)] == base_map[Vector2i(1, 3)]:
+		return _fail("gallery_wood floor_shadow_n at y=2 and open floor at y=3 should use distinct atlas cells")
+	if (resolved_kit["overlay"] as Array).size() != 12:
+		return _fail("Expected 12 9-slice rug overlay cells for 4x3 rug, got %d" % (resolved_kit["overlay"] as Array).size())
 
 	# ------------------------------------------------------------------
 	# 2. ▶ Valid Fixture Compilation & I1..I6 PASS

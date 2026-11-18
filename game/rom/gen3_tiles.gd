@@ -133,15 +133,17 @@ static func _blit_4bpp_tile(
 			img.set_pixel(dst_x + px, dst_y + py, pal[c_idx])
 
 
-static func render_metatile_16(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
+static func _render_metatile_subrange_16(
+	primary: Dictionary,
+	secondary: Variant,
+	metatile_id: int,
+	initial_color: Color,
+	start_sub: int,
+	end_sub: int
+) -> Image:
 	var img := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	img.fill(initial_color)
 	var pals := _combined_palettes(primary, secondary)
-	var backdrop := Color8(0, 0, 0, 255)
-	if not pals.is_empty() and (pals[0] as Array).size() > 0:
-		backdrop = pals[0][0]
-	# Fill with global BG palette 0 colour 0 so colour-0 pixels in Layer 0 palettes (like pal 3 black) stay transparent to backdrop.
-	img.fill(backdrop)
-
 	var pri_tiles: PackedByteArray = primary.get("tiles", PackedByteArray())
 	var sec_tiles: PackedByteArray = (secondary as Dictionary).get("tiles", PackedByteArray()) if secondary is Dictionary else PackedByteArray()
 
@@ -164,7 +166,7 @@ static func render_metatile_16(primary: Dictionary, secondary: Variant, metatile
 		Vector2i(0, 0), Vector2i(8, 0), Vector2i(0, 8), Vector2i(8, 8),
 		Vector2i(0, 0), Vector2i(8, 0), Vector2i(0, 8), Vector2i(8, 8),
 	]
-	for sub in range(8):
+	for sub in range(start_sub, end_sub):
 		var off := mt_base + sub * 2
 		var entry := int(mt_bytes[off]) | (int(mt_bytes[off + 1]) << 8)
 		var tile_idx := entry & 0x3FF
@@ -185,6 +187,25 @@ static func render_metatile_16(primary: Dictionary, secondary: Variant, metatile
 	return img
 
 
+static func render_metatile_16(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
+	var pals := _combined_palettes(primary, secondary)
+	var backdrop := Color8(0, 0, 0, 255)
+	if not pals.is_empty() and (pals[0] as Array).size() > 0:
+		backdrop = pals[0][0]
+	# Fill with global BG palette 0 colour 0 so colour-0 pixels in Layer 0 palettes stay transparent to backdrop.
+	return _render_metatile_subrange_16(primary, secondary, metatile_id, backdrop, 0, 8)
+
+
+static func render_indoor_metatile_16(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
+	# Indoor rooms always composite over pure black backdrop (#000000), ignoring pals[0][0].
+	return _render_metatile_subrange_16(primary, secondary, metatile_id, Color8(0, 0, 0, 255), 0, 8)
+
+
+static func render_metatile_layer1_16(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
+	# Layer-1-only extraction over transparent background for rugs, wall art, and furniture overlays.
+	return _render_metatile_subrange_16(primary, secondary, metatile_id, Color(0, 0, 0, 0), 4, 8)
+
+
 static func scale_2x_nearest(img16: Image) -> Image:
 	var w := img16.get_width()
 	var h := img16.get_height()
@@ -203,6 +224,14 @@ static func scale_2x_nearest(img16: Image) -> Image:
 
 static func render_metatile_32(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
 	return scale_2x_nearest(render_metatile_16(primary, secondary, metatile_id))
+
+
+static func render_indoor_metatile_32(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
+	return scale_2x_nearest(render_indoor_metatile_16(primary, secondary, metatile_id))
+
+
+static func render_metatile_layer1_32(primary: Dictionary, secondary: Variant, metatile_id: int) -> Image:
+	return scale_2x_nearest(render_metatile_layer1_16(primary, secondary, metatile_id))
 
 
 static func render_object_over_metatile_32(

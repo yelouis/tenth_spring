@@ -523,10 +523,18 @@
     "pri16": 16,
     "sec12": 12,
     "sec17": 17,
+    "sec18": 18,
+    "sec20": 20,
+    "sec24": 24,
+    "sec29": 29,
+    "sec30": 30,
+    "sec41": 41,
     "sec42": 42,
     "sec43": 43,
     "sec45": 45,
-    "sec53": 53
+    "sec47": 47,
+    "sec53": 53,
+    "sec56": 56
   },
   "indoor_tile_map": {
     "0": {"primary": "pri16", "metatile": 0},
@@ -546,6 +554,430 @@
     "15": {"primary": "pri16", "tileset": "sec53", "metatile": 674},
     "14": {"primary": "pri16", "tileset": "sec53", "metatile": 672},
     "16": {"primary": "pri16", "tileset": "sec45", "metatile": 515}
+  },
+  "indoor_kits": {
+    "gallery_wood": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri16", "tileset": "sec41", "metatile": 523, "layer": "full"},
+      "wall_lower": {"primary": "pri16", "tileset": "sec41", "metatile": 531, "layer": "full"},
+      "partition_top_w": {"primary": "pri16", "tileset": "sec41", "metatile": 520, "layer": "full"},
+      "partition_top_h": {"primary": "pri16", "tileset": "sec41", "metatile": 521, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri16", "tileset": "sec41", "metatile": 530, "layer": "full"},
+      "floor": {"primary": "pri16", "tileset": "sec41", "metatile": 514, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri16", "tileset": "sec41", "metatile": 515, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri16", "tileset": "sec41", "metatile": 515, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri16", "tileset": "sec41", "metatile": 515, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri16", "tileset": "sec41", "metatile": 534, "layer": "full"},
+        {"primary": "pri16", "tileset": "sec41", "metatile": 535, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 517, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 518, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 519, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 525, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 526, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 527, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 618, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 619, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 620, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 626, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 627, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 628, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    },
+    "museum_tile": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri16", "tileset": "sec24", "metatile": 516, "layer": "full"},
+      "wall_lower": {"primary": "pri16", "tileset": "sec24", "metatile": 524, "layer": "full"},
+      "partition_top_w": {"primary": "pri16", "tileset": "sec41", "metatile": 520, "layer": "full"},
+      "partition_top_h": {"primary": "pri16", "tileset": "sec41", "metatile": 521, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri16", "tileset": "sec41", "metatile": 530, "layer": "full"},
+      "floor": {"primary": "pri16", "tileset": "sec24", "metatile": 513, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri16", "tileset": "sec24", "metatile": 514, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri16", "tileset": "sec24", "metatile": 514, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri16", "tileset": "sec24", "metatile": 514, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri16", "tileset": "sec24", "metatile": 522, "layer": "full"},
+        {"primary": "pri16", "tileset": "sec24", "metatile": 523, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 517, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 518, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 519, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 525, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 526, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 527, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 618, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 619, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 620, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 626, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 627, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 628, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    },
+    "space_tech": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri00", "tileset": "sec29", "metatile": 537, "layer": "full"},
+      "wall_lower": {"primary": "pri00", "tileset": "sec29", "metatile": 697, "layer": "full"},
+      "partition_top_w": {"primary": "pri00", "tileset": "sec29", "metatile": 536, "layer": "full"},
+      "partition_top_h": {"primary": "pri00", "tileset": "sec29", "metatile": 537, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri00", "tileset": "sec29", "metatile": 537, "layer": "full"},
+      "floor": {"primary": "pri00", "tileset": "sec29", "metatile": 752, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri00", "tileset": "sec29", "metatile": 870, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri00", "tileset": "sec29", "metatile": 753, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri00", "tileset": "sec29", "metatile": 887, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri00", "tileset": "sec29", "metatile": 518, "layer": "full"},
+        {"primary": "pri00", "tileset": "sec29", "metatile": 519, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 691, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 692, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 693, "layer": "full"}
+        ],
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 699, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 700, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 701, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 707, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 708, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 709, "layer": "full"}
+        ],
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 715, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 716, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 717, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    },
+    "hall_marble": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri16", "tileset": "sec43", "metatile": 607, "layer": "full"},
+      "wall_lower": {"primary": "pri16", "tileset": "sec43", "metatile": 615, "layer": "full"},
+      "partition_top_w": {"primary": "pri16", "tileset": "sec43", "metatile": 607, "layer": "full"},
+      "partition_top_h": {"primary": "pri16", "tileset": "sec43", "metatile": 607, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri16", "tileset": "sec43", "metatile": 607, "layer": "full"},
+      "floor": {"primary": "pri16", "tileset": "sec43", "metatile": 594, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri16", "tileset": "sec43", "metatile": 634, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri16", "tileset": "sec43", "metatile": 626, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri16", "tileset": "sec43", "metatile": 618, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri16", "tileset": "sec43", "metatile": 518, "layer": "full"},
+        {"primary": "pri16", "tileset": "sec43", "metatile": 519, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec43", "metatile": 636, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec43", "metatile": 637, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec43", "metatile": 638, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec43", "metatile": 644, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec43", "metatile": 645, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec43", "metatile": 646, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 618, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 619, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 620, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 626, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 627, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 628, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    },
+    "clinic_clean": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri16", "tileset": "sec18", "metatile": 523, "layer": "full"},
+      "wall_lower": {"primary": "pri16", "tileset": "sec18", "metatile": 518, "layer": "full"},
+      "partition_top_w": {"primary": "pri16", "tileset": "sec41", "metatile": 520, "layer": "full"},
+      "partition_top_h": {"primary": "pri16", "tileset": "sec41", "metatile": 521, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri16", "tileset": "sec41", "metatile": 530, "layer": "full"},
+      "floor": {"primary": "pri16", "tileset": "sec18", "metatile": 514, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri16", "tileset": "sec18", "metatile": 544, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri16", "tileset": "sec18", "metatile": 544, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri16", "tileset": "sec18", "metatile": 544, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri16", "tileset": "sec18", "metatile": 515, "layer": "full"},
+        {"primary": "pri16", "tileset": "sec18", "metatile": 516, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 517, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 518, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 519, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 525, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 526, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 527, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 618, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 619, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 620, "layer": "full"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec41", "metatile": 626, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 627, "layer": "full"},
+          {"primary": "pri16", "tileset": "sec41", "metatile": 628, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    },
+    "stone_shrine": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri00", "tileset": "sec29", "metatile": 751, "layer": "full"},
+      "wall_lower": {"primary": "pri00", "tileset": "sec29", "metatile": 759, "layer": "full"},
+      "partition_top_w": {"primary": "pri00", "tileset": "sec29", "metatile": 751, "layer": "full"},
+      "partition_top_h": {"primary": "pri00", "tileset": "sec29", "metatile": 751, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri00", "tileset": "sec29", "metatile": 751, "layer": "full"},
+      "floor": {"primary": "pri00", "tileset": "sec29", "metatile": 742, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri00", "tileset": "sec29", "metatile": 743, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri00", "tileset": "sec29", "metatile": 806, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri00", "tileset": "sec29", "metatile": 743, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri00", "tileset": "sec29", "metatile": 518, "layer": "full"},
+        {"primary": "pri00", "tileset": "sec29", "metatile": 519, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 691, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 692, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 693, "layer": "full"}
+        ],
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 699, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 700, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 701, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 707, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 708, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 709, "layer": "full"}
+        ],
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 715, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 716, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 717, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    },
+    "abandoned_wood": {
+      "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
+      "wall_upper": {"primary": "pri00", "tileset": "sec56", "metatile": 520, "layer": "full"},
+      "wall_lower": {"primary": "pri00", "tileset": "sec56", "metatile": 528, "layer": "full"},
+      "partition_top_w": {"primary": "pri00", "tileset": "sec56", "metatile": 520, "layer": "full"},
+      "partition_top_h": {"primary": "pri00", "tileset": "sec56", "metatile": 521, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri00", "tileset": "sec56", "metatile": 520, "layer": "full"},
+      "floor": {"primary": "pri00", "tileset": "sec56", "metatile": 514, "layer": "full"},
+      "floor_shadow_n": {"primary": "pri00", "tileset": "sec56", "metatile": 515, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri00", "tileset": "sec56", "metatile": 515, "layer": "full"},
+      "floor_shadow_nw": {"primary": "pri00", "tileset": "sec56", "metatile": 515, "layer": "full"},
+      "door_mat_2x1": [
+        {"primary": "pri00", "tileset": "sec56", "metatile": 667, "layer": "full"},
+        {"primary": "pri00", "tileset": "sec56", "metatile": 668, "layer": "full"}
+      ],
+      "stairs_up_3x2": [
+        [
+          {"primary": "pri00", "tileset": "sec12", "metatile": 571, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec12", "metatile": 572, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec12", "metatile": 573, "layer": "full"}
+        ],
+        [
+          {"primary": "pri00", "tileset": "sec12", "metatile": 579, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec12", "metatile": 580, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec12", "metatile": 581, "layer": "full"}
+        ]
+      ],
+      "stairs_down_3x2": [
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 707, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 708, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 709, "layer": "full"}
+        ],
+        [
+          {"primary": "pri00", "tileset": "sec29", "metatile": 715, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 716, "layer": "full"},
+          {"primary": "pri00", "tileset": "sec29", "metatile": 717, "layer": "full"}
+        ]
+      ],
+      "rug_3x3": [
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 565, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 566, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 567, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 573, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 574, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 575, "layer": "l1"}
+        ],
+        [
+          {"primary": "pri16", "tileset": "sec47", "metatile": 581, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 582, "layer": "l1"},
+          {"primary": "pri16", "tileset": "sec47", "metatile": 583, "layer": "l1"}
+        ]
+      ]
+    }
+  },
+  "indoor_fixtures": {
+    "em_wall_pilaster_1x2": {"w": 1, "h": 2, "base_rows": 0, "layer": "full", "primary": "pri16", "tileset": "sec41", "cells": [[529], [529]]},
+    "em_painting_gold_2x2": {"w": 2, "h": 2, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec41", "cells": [[536, 537], [544, 545]]},
+    "em_painting_meadow_2x2": {"w": 2, "h": 2, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec41", "cells": [[538, 539], [546, 547]]},
+    "em_painting_sphere_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec41", "cells": [[540]]},
+    "em_painting_vase_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec41", "cells": [[541]]},
+    "em_wall_window_2x1": {"w": 2, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec42", "cells": [[605, 606]]},
+    "em_wall_window_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec42", "cells": [[605]]},
+    "em_wall_map_2x1": {"w": 2, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec18", "cells": [[525, 526]]},
+    "em_wall_clock_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec17", "cells": [[653]]},
+    "em_wall_notice_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec17", "cells": [[651]]},
+    "em_chair_w_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[556]]},
+    "em_chair_e_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[555]]},
+    "em_chair_green_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri16", "tileset": "sec43", "cells": [[577]]},
+    "em_stool_1x1": {"w": 1, "h": 1, "base_rows": 0, "layer": "l1", "primary": "pri00", "tileset": "sec29", "cells": [[865]]},
+    "em_bookshelf_2x2": {"w": 2, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec43", "cells": [[556, 557], [564, 565]]},
+    "em_pc_desk_2x2": {"w": 2, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec43", "cells": [[656, 657], [664, 665]]},
+    "em_potted_plant_1x2": {"w": 1, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec18", "cells": [[522], [530]]},
+    "em_potted_tree_1x2": {"w": 1, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[657], [665]]},
+    "em_wood_table_2x2": {"w": 2, "h": 2, "base_rows": 2, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[584, 585], [592, 593]]},
+    "em_sofa_2x2": {"w": 2, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[643, 644], [651, 652]]},
+    "em_trash_can_1x1": {"w": 1, "h": 1, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec43", "cells": [[630]]}
   },
   "gaps": [
     {

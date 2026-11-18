@@ -136,61 +136,192 @@ static func build_emerald_atlas(
 	jf.store_string(orig_json_text)
 	jf.close()
 
-	# Build indoor surface strip emerald_indoor_v1.{png,json} (classes 0..16, 17 x 32x32 = 544x32; Item 57)
-	var indoor_ts_cfg: Dictionary = cfg.get("indoor_tilesets", {})
-	var indoor_map_cfg: Dictionary = cfg.get("indoor_tile_map", {})
-	var indoor_tiles_written := 0
-	var out_indoor_png := tiles_dir.path_join("emerald_indoor_v1.png")
-	var out_indoor_json := tiles_dir.path_join("emerald_indoor_v1.json")
-	if not indoor_map_cfg.is_empty():
-		var indoor_decoded: Dictionary = {}
-		for its_name_v in indoor_ts_cfg.keys():
-			var its_name := str(its_name_v)
-			var its_index := int(indoor_ts_cfg[its_name_v])
-			var idec := Gen3TilesRef.decode_tileset_record(rom, its_index)
-			if not bool(idec.get("ok", false)):
-				return {"ok": false, "error": "Indoor tileset %s decode failed: %s" % [its_name, str(idec.get("error", ""))]}
-			indoor_decoded[its_name] = idec
-
-		var indoor_count := 17
-		var indoor_img := Image.create(indoor_count * tile_px, tile_px, false, Image.FORMAT_RGBA8)
-		indoor_img.fill(Color8(0, 0, 0, 255))
-		var indoor_rows: Array = []
-		for icls in range(indoor_count):
-			var ikey := str(icls)
-			if indoor_map_cfg.has(ikey):
-				var irule: Dictionary = indoor_map_cfg[ikey]
-				var ipri_name := str(irule.get("primary", "pri16"))
-				if not indoor_decoded.has(ipri_name):
-					return {"ok": false, "error": "Missing indoor primary '%s' for indoor class %d" % [ipri_name, icls]}
-				var ipri: Dictionary = indoor_decoded[ipri_name]
-				var isec: Variant = null
-				if irule.has("tileset"):
-					var isec_name := str(irule.get("tileset", ""))
-					if not indoor_decoded.has(isec_name):
-						return {"ok": false, "error": "Missing indoor secondary '%s' for indoor class %d" % [isec_name, icls]}
-					isec = indoor_decoded[isec_name]
-				var imt := int(irule.get("metatile", 0))
-				var icell := Gen3TilesRef.render_metatile_32(ipri, isec, imt)
-				indoor_img.blit_rect(icell, Rect2i(0, 0, tile_px, tile_px), Vector2i(icls * tile_px, 0))
-				indoor_tiles_written += 1
-			indoor_rows.append({"class": icls, "col": icls})
-
-		var isave_err := indoor_img.save_png(out_indoor_png)
-		if isave_err != OK:
-			return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_indoor_png, isave_err]}
-		var ijf := FileAccess.open(out_indoor_json, FileAccess.WRITE)
-		if ijf == null:
-			return {"ok": false, "error": "Failed to write " + out_indoor_json}
-		ijf.store_string(JSON.stringify({"format": "emerald_indoor_v1", "tile_px": tile_px, "count": indoor_count, "columns": indoor_rows}, "\t") + "\n")
-		ijf.close()
+	var indoor_res := _build_indoor_atlas_files(rom, cfg, tiles_dir, tile_px, cfg_text.sha256_text())
+	if not bool(indoor_res.get("ok", false)):
+		return indoor_res
 
 	return {
 		"ok": true,
 		"png": out_png,
 		"json": out_json,
-		"indoor_png": out_indoor_png,
-		"indoor_json": out_indoor_json,
+		"indoor_png": str(indoor_res.get("png", "")),
+		"indoor_json": str(indoor_res.get("json", "")),
 		"tiles_written": tiles_written,
-		"indoor_tiles_written": indoor_tiles_written,
+		"indoor_tiles_written": int(indoor_res.get("written", 0)),
 	}
+
+
+static func _render_indoor_descriptor(desc: Dictionary, indoor_decoded: Dictionary, ctx: String) -> Dictionary:
+	var ipri_name := str(desc.get("primary", "pri16"))
+	if not indoor_decoded.has(ipri_name):
+		return {"ok": false, "error": "Missing indoor primary '%s' for %s" % [ipri_name, ctx]}
+	var ipri: Dictionary = indoor_decoded[ipri_name]
+	var isec: Variant = null
+	if desc.has("tileset") and not str(desc.get("tileset", "")).is_empty():
+		var isec_name := str(desc.get("tileset", ""))
+		if not indoor_decoded.has(isec_name):
+			return {"ok": false, "error": "Missing indoor secondary '%s' for %s" % [isec_name, ctx]}
+		isec = indoor_decoded[isec_name]
+	var imt := int(desc.get("metatile", 0))
+	var ilayer := str(desc.get("layer", "full"))
+	var img := Gen3TilesRef.render_metatile_layer1_32(ipri, isec, imt) if ilayer == "l1" else Gen3TilesRef.render_indoor_metatile_32(ipri, isec, imt)
+	return {"ok": true, "image": img}
+
+
+static func _register_indoor_descriptor(
+	desc: Dictionary,
+	unique_descs: Array,
+	key_to_idx: Dictionary,
+	cols: int
+) -> Array:
+	var pri := str(desc.get("primary", "pri16"))
+	var ts := str(desc.get("tileset", ""))
+	var mt := int(desc.get("metatile", 0))
+	var lyr := str(desc.get("layer", "full"))
+	var key := "%s|%s|%d|%s" % [pri, ts, mt, lyr]
+	var idx: int
+	if key_to_idx.has(key):
+		idx = int(key_to_idx[key])
+	else:
+		idx = cols + unique_descs.size()
+		key_to_idx[key] = idx
+		unique_descs.append({
+			"primary": pri,
+			"tileset": ts,
+			"metatile": mt,
+			"layer": lyr,
+		})
+	return [idx % cols, int(idx / cols)]
+
+
+static func _build_indoor_atlas_files(
+	rom: Variant,
+	cfg: Dictionary,
+	tiles_dir: String,
+	tile_px: int,
+	cfg_sha256: String = ""
+) -> Dictionary:
+	var indoor_ts_cfg: Dictionary = cfg.get("indoor_tilesets", {})
+	var indoor_map_cfg: Dictionary = cfg.get("indoor_tile_map", {})
+	var indoor_kits_cfg: Dictionary = cfg.get("indoor_kits", {})
+	var indoor_fixtures_cfg: Dictionary = cfg.get("indoor_fixtures", {})
+	var out_indoor_png := tiles_dir.path_join("emerald_indoor_v1.png")
+	var out_indoor_json := tiles_dir.path_join("emerald_indoor_v1.json")
+	if indoor_map_cfg.is_empty():
+		return {"ok": true, "png": out_indoor_png, "json": out_indoor_json, "written": 0}
+
+	var indoor_decoded: Dictionary = {}
+	for its_name_v in indoor_ts_cfg.keys():
+		var its_name := str(its_name_v)
+		var its_index := int(indoor_ts_cfg[its_name_v])
+		var idec := Gen3TilesRef.decode_tileset_record(rom, its_index)
+		if not bool(idec.get("ok", false)):
+			return {"ok": false, "error": "Indoor tileset %s decode failed: %s" % [its_name, str(idec.get("error", ""))]}
+		indoor_decoded[its_name] = idec
+
+	var indoor_cols := 17
+	var unique_descs: Array = []
+	var key_to_idx: Dictionary = {}
+
+	var kits_meta: Dictionary = {}
+	var kit_names := indoor_kits_cfg.keys()
+	kit_names.sort()
+	for kit_name_v in kit_names:
+		var kit_name := str(kit_name_v)
+		var kit_spec: Dictionary = indoor_kits_cfg[kit_name_v]
+		var kit_out: Dictionary = {}
+		var slot_names := kit_spec.keys()
+		slot_names.sort()
+		for slot_v in slot_names:
+			var slot_name := str(slot_v)
+			var val: Variant = kit_spec[slot_v]
+			if val is Dictionary:
+				kit_out[slot_name] = _register_indoor_descriptor(val, unique_descs, key_to_idx, indoor_cols)
+			elif val is Array:
+				var arr := val as Array
+				if not arr.is_empty() and arr[0] is Array:
+					var mat_out: Array = []
+					for row_v in arr:
+						var row_out: Array = []
+						for cell_v in (row_v as Array):
+							row_out.append(_register_indoor_descriptor(cell_v, unique_descs, key_to_idx, indoor_cols))
+						mat_out.append(row_out)
+					kit_out[slot_name] = mat_out
+				else:
+					var row_out2: Array = []
+					for cell_v in arr:
+						row_out2.append(_register_indoor_descriptor(cell_v, unique_descs, key_to_idx, indoor_cols))
+					kit_out[slot_name] = row_out2
+		kits_meta[kit_name] = kit_out
+
+	var fixtures_meta: Dictionary = {}
+	var fx_names := indoor_fixtures_cfg.keys()
+	fx_names.sort()
+	for fx_v in fx_names:
+		var fx_name := str(fx_v)
+		var fx_spec: Dictionary = indoor_fixtures_cfg[fx_v]
+		var fpri := str(fx_spec.get("primary", "pri16"))
+		var fsec := str(fx_spec.get("tileset", ""))
+		var flayer := str(fx_spec.get("layer", "l1"))
+		var fcells: Array = fx_spec.get("cells", [])
+		var out_cells: Array = []
+		for row_v in fcells:
+			var out_row: Array = []
+			for mt_v in (row_v as Array):
+				var desc := {"primary": fpri, "tileset": fsec, "metatile": int(mt_v), "layer": flayer}
+				out_row.append(_register_indoor_descriptor(desc, unique_descs, key_to_idx, indoor_cols))
+			out_cells.append(out_row)
+		fixtures_meta[fx_name] = {
+			"w": int(fx_spec.get("w", 1)),
+			"h": int(fx_spec.get("h", 1)),
+			"base_rows": int(fx_spec.get("base_rows", 1)),
+			"layer": flayer,
+			"cells": out_cells,
+		}
+
+	var total_slots := indoor_cols + unique_descs.size()
+	var total_rows := maxi(1, int((total_slots + indoor_cols - 1) / indoor_cols))
+	var indoor_img := Image.create(indoor_cols * tile_px, total_rows * tile_px, false, Image.FORMAT_RGBA8)
+	indoor_img.fill(Color(0, 0, 0, 0))
+
+	var indoor_written := 0
+	var indoor_rows: Array = []
+	for icls in range(indoor_cols):
+		var ikey := str(icls)
+		if indoor_map_cfg.has(ikey):
+			var rres := _render_indoor_descriptor(indoor_map_cfg[ikey], indoor_decoded, "indoor class %d" % icls)
+			if not bool(rres.get("ok", false)):
+				return rres
+			indoor_img.blit_rect(rres["image"], Rect2i(0, 0, tile_px, tile_px), Vector2i(icls * tile_px, 0))
+			indoor_written += 1
+		indoor_rows.append({"class": icls, "col": icls})
+
+	for u_idx in range(unique_descs.size()):
+		var atlas_idx := indoor_cols + u_idx
+		var col := atlas_idx % indoor_cols
+		var row := int(atlas_idx / indoor_cols)
+		var ures := _render_indoor_descriptor(unique_descs[u_idx], indoor_decoded, "indoor slot %d" % atlas_idx)
+		if not bool(ures.get("ok", false)):
+			return ures
+		indoor_img.blit_rect(ures["image"], Rect2i(0, 0, tile_px, tile_px), Vector2i(col * tile_px, row * tile_px))
+		indoor_written += 1
+
+	var isave_err := indoor_img.save_png(out_indoor_png)
+	if isave_err != OK:
+		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_indoor_png, isave_err]}
+	var ijf := FileAccess.open(out_indoor_json, FileAccess.WRITE)
+	if ijf == null:
+		return {"ok": false, "error": "Failed to write " + out_indoor_json}
+	ijf.store_string(JSON.stringify({
+		"format": "emerald_indoor_v2",
+		"cfg_sha256": cfg_sha256,
+		"tile_px": tile_px,
+		"cols": indoor_cols,
+		"rows": total_rows,
+		"count": indoor_cols,
+		"columns": indoor_rows,
+		"kits": kits_meta,
+		"fixtures": fixtures_meta,
+	}, "\t") + "\n")
+	ijf.close()
+	return {"ok": true, "png": out_indoor_png, "json": out_indoor_json, "written": indoor_written}

@@ -19,10 +19,14 @@ const ERR_INTERIOR_NEEDS_DEMO: String = "[FAIL] --interior needs --demo"
 const ERR_FLOOR_NEEDS_INTERIOR: String = "[FAIL] --floor needs --interior"
 const ERR_UNKNOWN_INTERIOR: String = "[FAIL] unknown interior %s"
 const ERR_UNKNOWN_FLOOR: String = "[FAIL] unknown floor %s"
+const ERR_UNSUPPORTED_INTERIOR_VIEW: String = "[FAIL] unsupported interior-view %s"
+const ERR_INTERIOR_VIEW_NEEDS_INTERIOR: String = "[FAIL] --interior-view needs --interior"
+const ERR_INTERIOR_FALLBACK_NEEDS_INTERIOR: String = "[FAIL] --interior-fallback needs --interior"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
 const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
 const SUPPORTED_SCREENS: Array = ["map", "town_map", "board", "city"]
+const SUPPORTED_INTERIOR_VIEWS: Array = ["whole", "compare", "door"]
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""
@@ -41,6 +45,10 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var floor_str := ""
 	var has_floor := false
 	var floor_val := 0
+	var interior_view_str := ""
+	var has_interior_view := false
+	var interior_view_val := "whole"
+	var interior_fallback := false
 	var has_demo := false
 	var has_screenshot := false
 
@@ -125,6 +133,18 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		elif arg == "--floor":
 			has_floor = true
 			floor_str = ""
+		elif arg.begins_with("--interior-view="):
+			has_interior_view = true
+			interior_view_str = arg.trim_prefix("--interior-view=").strip_edges()
+		elif arg == "--interior-view" and i + 1 < user_args.size():
+			has_interior_view = true
+			interior_view_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--interior-view":
+			has_interior_view = true
+			interior_view_str = ""
+		elif arg == "--interior-fallback":
+			interior_fallback = true
 		i += 1
 
 	# Refusal 0: --area, --screen=city, and --interior are demo-only (standing constraint 22, §4.3, §10.12, §11.3 D)
@@ -137,6 +157,14 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		return {"ok": false, "error": ERR_CITY_NEEDS_DEMO, "exit_code": 2}
 	if has_floor and not has_interior:
 		return {"ok": false, "error": ERR_FLOOR_NEEDS_INTERIOR, "exit_code": 2}
+	if has_interior_view and not has_interior:
+		return {"ok": false, "error": ERR_INTERIOR_VIEW_NEEDS_INTERIOR, "exit_code": 2}
+	if interior_fallback and not has_interior:
+		return {"ok": false, "error": ERR_INTERIOR_FALLBACK_NEEDS_INTERIOR, "exit_code": 2}
+	if has_interior_view:
+		if not (interior_view_str in SUPPORTED_INTERIOR_VIEWS):
+			return {"ok": false, "error": ERR_UNSUPPORTED_INTERIOR_VIEW % interior_view_str, "exit_code": 2}
+		interior_view_val = interior_view_str
 	if has_interior:
 		if not has_demo:
 			return {"ok": false, "error": ERR_INTERIOR_NEEDS_DEMO, "exit_code": 2}
@@ -153,7 +181,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			return {"ok": false, "error": ERR_UNKNOWN_FLOOR % (floor_str if has_floor else str(floor_val)), "exit_code": 2}
 
 	if not has_screenshot:
-		return {"ok": true, "is_screenshot": false, "area": area_str, "interior": interior_str, "floor": floor_val}
+		return {"ok": true, "is_screenshot": false, "area": area_str, "interior": interior_str, "floor": floor_val, "interior_view": interior_view_val, "interior_fallback": interior_fallback}
 
 	# Refusal 1: Headless refusal (§7.4 rule 2)
 	if is_headless:
@@ -219,4 +247,6 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"area": area_str,
 		"interior": interior_str,
 		"floor": floor_val,
+		"interior_view": interior_view_val,
+		"interior_fallback": interior_fallback,
 	}

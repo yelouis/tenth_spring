@@ -86,6 +86,17 @@ def parse_args():
         help="Optional 0-based floor index when --interior is set (default: 0)."
     )
     parser.add_argument(
+        "--interior-view",
+        choices=["whole", "compare", "door"],
+        default=None,
+        help="Optional interior camera framing (whole, compare, or door)."
+    )
+    parser.add_argument(
+        "--interior-fallback",
+        action="store_true",
+        help="Force procedural fallback indoor atlas when --interior is set (no ROM)."
+    )
+    parser.add_argument(
         "--resolution",
         type=str,
         default="1280x720",
@@ -193,6 +204,10 @@ def main():
             godot_cmd.append(f"--interior={args.interior}")
         if args.floor is not None:
             godot_cmd.append(f"--floor={args.floor}")
+        if args.interior_view:
+            godot_cmd.append(f"--interior-view={args.interior_view}")
+        if args.interior_fallback:
+            godot_cmd.append("--interior-fallback")
         if args.focus:
             godot_cmd.append(f"--focus={args.focus}")
         if args.screen:

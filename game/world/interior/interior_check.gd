@@ -21,6 +21,14 @@ static func compile_and_check(doc: Dictionary) -> Dictionary:
 static func _in_bounds(x: int, y: int, w: int, h: int) -> bool:
 	return x >= 0 and x < w and y >= 0 and y < h
 
+static func _mark_solid_footprint(mask: PackedByteArray, w: int, h: int, at: Vector2i, sw: int, sh: int, base_rows: int) -> void:
+	for ty in range(sh - base_rows, sh):
+		for tx in range(sw):
+			var gx := at.x + tx
+			var gy := at.y + ty
+			if _in_bounds(gx, gy, w, h):
+				mask[gy * w + gx] = 1
+
 static func _build_block_mask(floor_dict: Dictionary, open_gates: Dictionary, allow_clearable: bool, include_non_gating: bool) -> PackedByteArray:
 	var w: int = int(floor_dict["w"])
 	var h: int = int(floor_dict["h"])
@@ -43,15 +51,14 @@ static func _build_block_mask(floor_dict: Dictionary, open_gates: Dictionary, al
 		else:
 			if not include_non_gating:
 				continue
-		var at: Vector2i = st["at"]
-		var sw := int(st["w"])
-		var sh := int(st["h"])
-		for ty in range(sh - base_rows, sh):
-			for tx in range(sw):
-				var gx := at.x + tx
-				var gy := at.y + ty
-				if _in_bounds(gx, gy, w, h):
-					mask[gy * w + gx] = 1
+		_mark_solid_footprint(mask, w, h, st["at"] as Vector2i, int(st["w"]), int(st["h"]), base_rows)
+	if include_non_gating:
+		for fx_v in (floor_dict.get("fixtures", []) as Array):
+			var fx: Dictionary = fx_v
+			var fbase := int(fx.get("base_rows", 0))
+			if fbase <= 0:
+				continue
+			_mark_solid_footprint(mask, w, h, fx["at"] as Vector2i, int(fx["w"]), int(fx["h"]), fbase)
 	return mask
 
 static func _is_tile_passable(floor_dict: Dictionary, block_mask: PackedByteArray, x: int, y: int) -> bool:
@@ -257,34 +264,10 @@ static func check(compiled: Dictionary) -> Dictionary:
 			solid_occupied.resize(w * h)
 			solid_occupied.fill(0)
 
-			for st_v in (fd["stamps"] as Array):
-				var st: Dictionary = st_v
-				var at: Vector2i = st["at"]
-				var sw := int(st["w"])
-				var sh := int(st["h"])
-				var sbase := int(st["base_rows"])
-				var sname := str(st["id"])
+			_validate_placement_list(fd["stamps"] as Array, "stamp", "id", fid, w, h, tiles, solid_occupied, rule_errors)
+			_validate_placement_list(fd.get("fixtures", []) as Array, "fixture", "fixture", fid, w, h, tiles, solid_occupied, rule_errors)
 
-				if at.x < 0 or at.y < 0 or at.x + sw > w or at.y + sh > h:
-					(rule_errors["I5"] as Array).append("floor %s stamp %s at %s exceeds %dx%d bounds" % [fid, sname, str(at), w, h])
-					continue
-
-				for ty in range(sh):
-					var is_base := (sbase > 0 and ty >= sh - sbase)
-					for tx in range(sw):
-						var gx := at.x + tx
-						var gy := at.y + ty
-						var cls := int(tiles[gy * w + gx])
-						if cls == InteriorTiles.TILE_INT_VOID_BLACK or cls == InteriorTiles.TILE_INT_WALL_TOP or cls == InteriorTiles.TILE_INT_DOOR_MAT:
-							(rule_errors["I5"] as Array).append("floor %s stamp %s overlaps illegal tile class %d at (%d,%d)" % [fid, sname, cls, gx, gy])
-						if is_base:
-							if not InteriorTiles.is_walkable(cls) or cls == InteriorTiles.TILE_INT_STAIRS_UP or cls == InteriorTiles.TILE_INT_STAIRS_DOWN:
-								(rule_errors["I5"] as Array).append("floor %s stamp %s solid base overlaps non-floor class %d at (%d,%d)" % [fid, sname, cls, gx, gy])
-							if solid_occupied[gy * w + gx] != 0:
-								(rule_errors["I5"] as Array).append("floor %s stamp %s solid base overlaps another solid stamp at (%d,%d)" % [fid, sname, gx, gy])
-							solid_occupied[gy * w + gx] = 1
-
-			# Hallway pass-lane check: non-gating solid props must not increase walkable components
+			# Hallway pass-lane check: non-gating solid props & fixtures must not increase walkable components
 			var empty_gates: Dictionary = {}
 			var bm_bare := _build_block_mask(fd, empty_gates, true, false)
 			var bm_with_props := _build_block_mask(fd, empty_gates, true, true)
@@ -293,26 +276,9 @@ static func check(compiled: Dictionary) -> Dictionary:
 			if comps_props > comps_bare:
 				(rule_errors["I5"] as Array).append("floor %s non-gating stamp blocks hallway pass lane (components %d -> %d)" % [fid, comps_bare, comps_props])
 
-			# Also check each non-gating solid prop has >= 1 walkable pass tile adjacent to its base
-			for st_v2 in (fd["stamps"] as Array):
-				var st2: Dictionary = st_v2
-				var sbase2 := int(st2["base_rows"])
-				if sbase2 <= 0 or not str(st2.get("gate_id", "")).is_empty() or bool(st2.get("clearable", false)):
-					continue
-				var at2: Vector2i = st2["at"]
-				var sw2 := int(st2["w"])
-				var sh2 := int(st2["h"])
-				if at2.x < 0 or at2.y < 0 or at2.x + sw2 > w or at2.y + sh2 > h:
-					continue
-				var adj_walk := 0
-				for ty2 in range(sh2 - sbase2, sh2):
-					for tx2 in range(sw2):
-						for d in DIRS:
-							var np2 := Vector2i(at2.x + tx2, at2.y + ty2) + d
-							if _is_tile_passable(fd, bm_with_props, np2.x, np2.y):
-								adj_walk += 1
-				if adj_walk == 0:
-					(rule_errors["I5"] as Array).append("floor %s stamp %s leaves 0 walkable pass tiles beside base" % [fid, str(st2["id"])])
+			# Also check each non-gating solid prop & fixture has >= 1 walkable pass tile adjacent to its base
+			_check_pass_adjacency(fd, fd["stamps"] as Array, "stamp", "id", fid, w, h, bm_with_props, rule_errors)
+			_check_pass_adjacency(fd, fd.get("fixtures", []) as Array, "fixture", "fixture", fid, w, h, bm_with_props, rule_errors)
 
 	# -------------------------------------------------------------
 	# I3: Valid walkable stair/warp endpoints
@@ -469,3 +435,74 @@ static func format_summary(res: Dictionary) -> String:
 	var failed: Array = res.get("failed_rules", [])
 	var status := "PASS" if ok else ("FAIL " + ",".join(PackedStringArray(failed)))
 	return "INTERIOR %s floors=%d stamps=%d art_pending=%d %s" % [id_str, n_floors, n_stamps, n_pending, status]
+
+static func _validate_placement_list(
+	items: Array,
+	kind_label: String,
+	name_key: String,
+	fid: String,
+	w: int,
+	h: int,
+	tiles: PackedByteArray,
+	solid_occupied: PackedByteArray,
+	rule_errors: Dictionary
+) -> void:
+	for item_v in items:
+		var item: Dictionary = item_v
+		var at: Vector2i = item["at"]
+		var sw := int(item["w"])
+		var sh := int(item["h"])
+		var sbase := int(item["base_rows"])
+		var sname := str(item.get(name_key, ""))
+
+		if at.x < 0 or at.y < 0 or at.x + sw > w or at.y + sh > h:
+			(rule_errors["I5"] as Array).append("floor %s %s %s at %s exceeds %dx%d bounds" % [fid, kind_label, sname, str(at), w, h])
+			continue
+
+		for ty in range(sh):
+			var is_base := (sbase > 0 and ty >= sh - sbase)
+			for tx in range(sw):
+				var gx := at.x + tx
+				var gy := at.y + ty
+				var cls := int(tiles[gy * w + gx])
+				if cls == InteriorTiles.TILE_INT_VOID_BLACK or cls == InteriorTiles.TILE_INT_DOOR_MAT:
+					(rule_errors["I5"] as Array).append("floor %s %s %s overlaps illegal tile class %d at (%d,%d)" % [fid, kind_label, sname, cls, gx, gy])
+				if is_base:
+					if not InteriorTiles.is_walkable(cls) or cls == InteriorTiles.TILE_INT_STAIRS_UP or cls == InteriorTiles.TILE_INT_STAIRS_DOWN:
+						(rule_errors["I5"] as Array).append("floor %s %s %s solid base overlaps non-floor class %d at (%d,%d)" % [fid, kind_label, sname, cls, gx, gy])
+					if solid_occupied[gy * w + gx] != 0:
+						(rule_errors["I5"] as Array).append("floor %s %s %s solid base overlaps another solid prop at (%d,%d)" % [fid, kind_label, sname, gx, gy])
+					solid_occupied[gy * w + gx] = 1
+				elif cls == InteriorTiles.TILE_INT_STAIRS_UP or cls == InteriorTiles.TILE_INT_STAIRS_DOWN:
+					(rule_errors["I5"] as Array).append("floor %s %s %s overhang overlaps stair tile %d at (%d,%d)" % [fid, kind_label, sname, cls, gx, gy])
+
+static func _check_pass_adjacency(
+	fd: Dictionary,
+	items: Array,
+	kind_label: String,
+	name_key: String,
+	fid: String,
+	w: int,
+	h: int,
+	bm_with_props: PackedByteArray,
+	rule_errors: Dictionary
+) -> void:
+	for item_v in items:
+		var item: Dictionary = item_v
+		var sbase := int(item.get("base_rows", 0))
+		if sbase <= 0 or not str(item.get("gate_id", "")).is_empty() or bool(item.get("clearable", false)):
+			continue
+		var at: Vector2i = item["at"]
+		var sw := int(item["w"])
+		var sh := int(item["h"])
+		if at.x < 0 or at.y < 0 or at.x + sw > w or at.y + sh > h:
+			continue
+		var adj_walk := 0
+		for ty in range(sh - sbase, sh):
+			for tx in range(sw):
+				for d in DIRS:
+					var np := Vector2i(at.x + tx, at.y + ty) + d
+					if _is_tile_passable(fd, bm_with_props, np.x, np.y):
+						adj_walk += 1
+		if adj_walk == 0:
+			(rule_errors["I5"] as Array).append("floor %s %s %s leaves 0 walkable pass tiles beside base" % [fid, kind_label, str(item.get(name_key, ""))])

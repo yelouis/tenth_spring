@@ -31,7 +31,7 @@ func _ready() -> void:
 	if s_cfg.get("is_screenshot", false):
 		var interior_id := str(s_cfg.get("interior", ""))
 		if not interior_id.is_empty():
-			var iv := open_interior_view(interior_id, int(s_cfg.get("floor", 0)))
+			var iv := open_interior_view(interior_id, int(s_cfg.get("floor", 0)), bool(s_cfg.get("interior_fallback", false)))
 			if iv == null:
 				printerr("[FAIL] failed to load interior %s" % interior_id)
 				get_tree().quit(1)
@@ -40,7 +40,8 @@ func _ready() -> void:
 			iv.setup_screenshot(
 				str(s_cfg.get("screenshot_path", "")),
 				float(s_cfg.get("zoom", 1.0)),
-				int(s_cfg.get("frames", 10))
+				int(s_cfg.get("frames", 10)),
+				str(s_cfg.get("interior_view", "whole"))
 			)
 			return
 
@@ -196,12 +197,12 @@ func clear_current_view() -> void:
 		elif child.name.begins_with("MapViewer") or child.name.begins_with("HomeHub") or child.name.begins_with("TownMap") or child.name.begins_with("InteriorView"):
 			child.queue_free()
 
-func open_interior_view(interior_id: String, floor_index: int = 0) -> InteriorView:
+func open_interior_view(interior_id: String, floor_index: int = 0, force_fallback: bool = false) -> InteriorView:
 	clear_current_view()
 	var iv := InteriorView.new()
 	iv.name = "InteriorView"
 	add_child(iv)
-	if not iv.load_interior(interior_id, floor_index):
+	if not iv.load_interior(interior_id, floor_index, AssetDB.DEFAULT_CACHE_DIR, force_fallback):
 		iv.queue_free()
 		return null
 	return iv
