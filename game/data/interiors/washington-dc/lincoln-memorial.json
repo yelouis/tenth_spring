@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "id": "dc:lincoln-memorial",
+  "area_id": "hood:washington-dc:lincoln-memorial",
+  "title": "Lincoln Memorial",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Marble Chamber",
+      "theme": "marble",
+      "width": 22,
+      "height": 16,
+      "grid": [
+        "######################",
+        "#====================#",
+        "#MMMMMMMMMMMMMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMdM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMCCCCMMMMMMMM#",
+        "#MMMMMMMMMDDMMMMMMMMM#",
+        "######################"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [19, 3], "to_floor": "B1", "to": [21, 13], "dir": "down"}
+      ],
+      "switches": [],
+      "stamps": [
+        {"stamp": "int_lincoln_statue", "at": [9, 1]},
+        {"stamp": "int_undercroft_pillar", "at": [3, 3]},
+        {"stamp": "int_undercroft_pillar", "at": [3, 9]},
+        {"stamp": "int_undercroft_pillar", "at": [16, 3]},
+        {"stamp": "int_undercroft_pillar", "at": [16, 9]},
+        {"stamp": "int_item_ball", "at": [2, 13]}
+      ],
+      "npcs": [
+        {"id": "npc_memorial_warden", "name": "Chamber Envoy", "at": [7, 7], "role": "warden"}
+      ],
+      "items": [
+        {"id": "dc_lincoln_1f_kings", "at": [2, 13], "name": "King's Rock"}
+      ],
+      "signs": [
+        {"at": [5, 2], "text": "North Inscription — With Malice Toward None"},
+        {"at": [14, 2], "text": "South Inscription — That These Dead Shall Not Have Died in Vain"}
+      ]
+    },
+    {
+      "floor_id": "B1",
+      "label": "B1 — Pillared Undercroft",
+      "theme": "stone",
+      "width": 24,
+      "height": 16,
+      "grid": [
+        "########################",
+        "#======================#",
+        "#.......CCCCCCCC.......#",
+        "#.......CCCCCCCC.......#",
+        "#.......CCCCCCCC.......#",
+        "########===..===########",
+        "#......................#",
+        "#.........CCCC.........#",
+        "#.........CCCC.........#",
+        "#.........CCCC.........#",
+        "#.........CCCC.........#",
+        "#.........CCCC.........#",
+        "#....................U.#",
+        "#......................#",
+        "#......................#",
+        "########################"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [21, 12], "to_floor": "1F", "to": [19, 4], "dir": "up"}
+      ],
+      "switches": [
+        {"id": "sw_sanctum", "at": [3, 13], "opens": ["gate_cobalion"]}
+      ],
+      "stamps": [
+        {"stamp": "int_cobalion_dais", "at": [10, 2], "capstone": true},
+        {"stamp": "int_metal_gate", "at": [11, 4], "gate_id": "gate_cobalion"},
+        {"stamp": "int_undercroft_pillar", "at": [4, 6]},
+        {"stamp": "int_undercroft_pillar", "at": [4, 10]},
+        {"stamp": "int_undercroft_pillar", "at": [18, 6]},
+        {"stamp": "int_undercroft_pillar", "at": [18, 10]},
+        {"stamp": "int_push_boulder", "at": [11, 8], "clearable": true},
+        {"stamp": "int_smash_rubble", "at": [8, 12], "clearable": true},
+        {"stamp": "int_switch_lever", "at": [3, 13]},
+        {"stamp": "int_item_ball", "at": [20, 13]}
+      ],
+      "npcs": [],
+      "items": [
+        {"id": "dc_lincoln_b1_sacred", "at": [20, 13], "name": "Sacred Sword Scroll"}
+      ],
+      "signs": [
+        {"at": [10, 6], "text": "Fair Fights — Only an Equal Stand Opens the Iron Will's Dais"}
+      ]
+    }
+  ]
+}

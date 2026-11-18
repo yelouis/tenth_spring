@@ -77,7 +77,7 @@ const SALT_DECAL_POS := 20
 const SALT_BLOCK_DESIGN := 21
 const SALT_LEDGE := 22
 
-# Stamp metadata table 1..109 (0 reserved; kinds: landmark, prop, house, shell, block, decal; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43, Item 52)
+# Stamp metadata table 1..134 (0 reserved; kinds: landmark, prop, house, shell, block, decal; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43, Item 52, Item 57)
 const STAMP_TABLE: Dictionary = {
 	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
 	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
@@ -187,7 +187,32 @@ const STAMP_TABLE: Dictionary = {
 	106: {"id": "dc_healy_hall", "kind": "landmark", "path": "landmarks/dc_healy_hall.png", "w": 9, "h": 14, "base_rows": 5, "door": [4, 13], "tiles": [".........", "....+....", "....+...+", "...+++.++", "+.+++++++", "+++++++++", "+++++++++", "+++++++++", "+++++++++", "#########", "#########", "#########", "#########", "#########"]},
 	107: {"id": "dc_zoo_gate", "kind": "landmark", "path": "landmarks/dc_zoo_gate.png", "w": 7, "h": 5, "base_rows": 2, "door": null, "tiles": [".+.+.+.", "+++++++", "+++.+++", "###.+##", "##+.+##"]},
 	108: {"id": "dc_aviary", "kind": "landmark", "path": "landmarks/dc_aviary.png", "w": 8, "h": 8, "base_rows": 3, "door": null, "tiles": ["...++...", ".++++++.", ".++++++.", ".++++++.", "++++++++", "+######+", "+######+", ".+####+."]},
-	109: {"id": "dc_dupont_fountain", "kind": "landmark", "path": "landmarks/dc_dupont_fountain.png", "w": 3, "h": 4, "base_rows": 2, "door": null, "tiles": ["+++", "+++", "###", "###"]}
+	109: {"id": "dc_dupont_fountain", "kind": "landmark", "path": "landmarks/dc_dupont_fountain.png", "w": 3, "h": 4, "base_rows": 2, "door": null, "tiles": ["+++", "+++", "###", "###"]},
+	110: {"id": "int_item_ball", "kind": "prop", "path": "interiors/int_item_ball.png", "w": 1, "h": 1, "base_rows": 1, "door": null, "tiles": ["#"]},
+	111: {"id": "int_switch_lever", "kind": "prop", "path": "interiors/int_switch_lever.png", "w": 1, "h": 1, "base_rows": 1, "door": null, "tiles": ["+"]},
+	112: {"id": "int_metal_gate", "kind": "prop", "path": "interiors/int_metal_gate.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
+	113: {"id": "int_warp_pad", "kind": "prop", "path": "interiors/int_warp_pad.png", "w": 2, "h": 2, "base_rows": 0, "door": null, "tiles": ["++", "++"]},
+	114: {"id": "int_push_boulder", "kind": "prop", "path": "interiors/int_push_boulder.png", "w": 1, "h": 1, "base_rows": 1, "door": null, "tiles": ["#"]},
+	115: {"id": "int_smash_rubble", "kind": "prop", "path": "interiors/int_smash_rubble.png", "w": 1, "h": 1, "base_rows": 1, "door": null, "tiles": ["#"]},
+	116: {"id": "int_supply_crate", "kind": "prop", "path": "interiors/int_supply_crate.png", "w": 2, "h": 2, "base_rows": 2, "door": null, "tiles": ["##", "##"]},
+	117: {"id": "int_elevator_cage", "kind": "prop", "path": "interiors/int_elevator_cage.png", "w": 2, "h": 3, "base_rows": 2, "door": null, "tiles": ["++", "##", "##"]},
+	118: {"id": "int_wind_grate", "kind": "prop", "path": "interiors/int_wind_grate.png", "w": 1, "h": 1, "base_rows": 0, "door": null, "tiles": ["+"]},
+	119: {"id": "int_obs_slit_window", "kind": "prop", "path": "interiors/int_obs_slit_window.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
+	120: {"id": "int_suspended_flyer", "kind": "prop", "path": "interiors/int_suspended_flyer.png", "w": 6, "h": 3, "base_rows": 0, "door": null, "tiles": ["......", "++++++", "++++++"]},
+	121: {"id": "int_space_capsule", "kind": "prop", "path": "interiors/int_space_capsule.png", "w": 3, "h": 3, "base_rows": 2, "door": null, "tiles": ["+++", "+#+", "###"]},
+	122: {"id": "int_radio_console", "kind": "prop", "path": "interiors/int_radio_console.png", "w": 2, "h": 2, "base_rows": 2, "door": null, "tiles": ["#+", "##"]},
+	123: {"id": "int_glass_case", "kind": "prop", "path": "interiors/int_glass_case.png", "w": 2, "h": 2, "base_rows": 2, "door": null, "tiles": ["##", "##"]},
+	124: {"id": "int_archive_bookshelf", "kind": "prop", "path": "interiors/int_archive_bookshelf.png", "w": 3, "h": 3, "base_rows": 2, "door": null, "tiles": ["+++", "###", "###"]},
+	125: {"id": "int_reading_table_lamp", "kind": "prop", "path": "interiors/int_reading_table_lamp.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["+++", "+++"]},
+	126: {"id": "int_octagon_desk", "kind": "prop", "path": "interiors/int_octagon_desk.png", "w": 4, "h": 3, "base_rows": 2, "door": null, "tiles": ["++++", "####", "+##+"]},
+	127: {"id": "int_calder_cipher_desk", "kind": "prop", "path": "interiors/int_calder_cipher_desk.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["+++", "+++"]},
+	128: {"id": "int_lincoln_statue", "kind": "prop", "path": "interiors/int_lincoln_statue.png", "w": 4, "h": 4, "base_rows": 2, "door": null, "tiles": [".++.", "+++.", "+##+", "###+"]},
+	129: {"id": "int_undercroft_pillar", "kind": "prop", "path": "interiors/int_undercroft_pillar.png", "w": 2, "h": 3, "base_rows": 1, "door": null, "tiles": ["++", "++", "++"]},
+	130: {"id": "int_cobalion_dais", "kind": "prop", "path": "interiors/int_cobalion_dais.png", "w": 4, "h": 3, "base_rows": 2, "door": null, "tiles": ["++++", "####", "####"]},
+	131: {"id": "int_canal_sluice_wheel", "kind": "prop", "path": "interiors/int_canal_sluice_wheel.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "+#"]},
+	132: {"id": "int_keystone_pedestal", "kind": "prop", "path": "interiors/int_keystone_pedestal.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
+	133: {"id": "int_vet_kennel_bank", "kind": "prop", "path": "interiors/int_vet_kennel_bank.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["+++", "###"]},
+	134: {"id": "int_surgery_table", "kind": "prop", "path": "interiors/int_surgery_table.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["++.", "++#"]}
 }
 
 static var _landmark_art_loaded := false

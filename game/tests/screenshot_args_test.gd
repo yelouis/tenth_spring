@@ -191,5 +191,31 @@ func run_test() -> bool:
 		push_error("Valid --screen=city config test failed: %s" % str(r_city_ok))
 		return false
 
+	# 8. Item 57 (§11.3 D & standing constraint 22): --interior and --floor demo-only & bounds validation
+	var r_int_no_demo: Dictionary = ScreenshotConfig.parse_args(["--screenshot=/tmp/out_test.png", "--interior=res://tests/fixtures/interior_fixture.json"], false, repo_root)
+	if r_int_no_demo.get("ok", true) != false or r_int_no_demo.get("exit_code", 0) != 2 or r_int_no_demo.get("error", "") != "[FAIL] --interior needs --demo":
+		push_error("--interior without --demo failed: %s" % str(r_int_no_demo))
+		return false
+
+	var r_floor_no_int: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--floor=0"], false, repo_root)
+	if r_floor_no_int.get("ok", true) != false or r_floor_no_int.get("exit_code", 0) != 2 or r_floor_no_int.get("error", "") != "[FAIL] --floor needs --interior":
+		push_error("--floor without --interior failed: %s" % str(r_floor_no_int))
+		return false
+
+	var r_int_unknown: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--interior=dc:nonexistent-room"], false, repo_root)
+	if r_int_unknown.get("ok", true) != false or r_int_unknown.get("exit_code", 0) != 2 or r_int_unknown.get("error", "") != "[FAIL] unknown interior dc:nonexistent-room":
+		push_error("--interior unknown id failed: %s" % str(r_int_unknown))
+		return false
+
+	var r_floor_bad: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--interior=res://tests/fixtures/interior_fixture.json", "--floor=5"], false, repo_root)
+	if r_floor_bad.get("ok", true) != false or r_floor_bad.get("exit_code", 0) != 2 or r_floor_bad.get("error", "") != "[FAIL] unknown floor 5":
+		push_error("--floor out of range failed: %s" % str(r_floor_bad))
+		return false
+
+	var r_int_ok: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--interior=res://tests/fixtures/interior_fixture.json", "--floor=1"], false, repo_root)
+	if not r_int_ok.get("ok", false) or r_int_ok.get("interior", "") != "res://tests/fixtures/interior_fixture.json" or int(r_int_ok.get("floor", -1)) != 1:
+		push_error("Valid --interior --floor=1 config test failed: %s" % str(r_int_ok))
+		return false
+
 	print("screenshot_args_test checks passed")
 	return true

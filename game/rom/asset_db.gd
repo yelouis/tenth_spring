@@ -50,8 +50,10 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	var abs_dir := ProjectSettings.globalize_path(norm)
 	var png_path := abs_dir.path_join("tiles/emerald_v1.png")
 	var json_path := abs_dir.path_join("tiles/emerald_v1.json")
+	var indoor_png_path := abs_dir.path_join("tiles/emerald_indoor_v1.png")
+	var indoor_json_path := abs_dir.path_join("tiles/emerald_indoor_v1.json")
 
-	if not FileAccess.file_exists(png_path):
+	if not FileAccess.file_exists(png_path) or not FileAccess.file_exists(indoor_png_path):
 		var default_norm := DEFAULT_CACHE_DIR.trim_suffix("/")
 		if norm == default_norm and not _auto_import_gba_attempted:
 			var gba_env := OS.get_environment("TENTH_SPRING_ROM_GBA").strip_edges()
@@ -76,8 +78,26 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	if not (parsed is Dictionary):
 		return null
 	var result := {"texture": tex, "json": parsed}
+	if FileAccess.file_exists(indoor_png_path) and FileAccess.file_exists(indoor_json_path):
+		var ipng_bytes := FileAccess.get_file_as_bytes(indoor_png_path)
+		var iimg := Image.new()
+		if not ipng_bytes.is_empty() and iimg.load_png_from_buffer(ipng_bytes) == OK and not iimg.is_empty():
+			iimg.convert(Image.FORMAT_RGBA8)
+			var iparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(indoor_json_path))
+			if iparsed is Dictionary:
+				result["indoor_texture"] = ImageTexture.create_from_image(iimg)
+				result["indoor_json"] = iparsed
 	_tile_atlas_cache[norm] = result
 	return result
+
+static func indoor_tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
+	var base: Variant = tile_atlas(cache_dir)
+	if not (base is Dictionary):
+		return null
+	var d: Dictionary = base
+	if not d.has("indoor_texture") or not d.has("indoor_json"):
+		return null
+	return {"texture": d["indoor_texture"], "json": d["indoor_json"]}
 
 static func clear_memory_cache() -> void:
 	_json_cache_by_dir.clear()

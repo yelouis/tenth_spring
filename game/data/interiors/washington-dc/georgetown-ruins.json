@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "id": "dc:georgetown-ruins",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Old Canal Lockhouse",
+  "atmosphere": "haunted",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Flooded Sluice Hall",
+      "theme": "stone",
+      "width": 24,
+      "height": 17,
+      "grid": [
+        "########################",
+        "#======================#",
+        "#.......########.......#",
+        "#.......#======#.......#",
+        "#.......#......#.......#",
+        "#.......#......#.......#",
+        "#.......===WW===.......#",
+        "#......................#",
+        "#~~~~WW~~~~~~~~~~WW~~~~#",
+        "#~~~~WW~~~~~~~~~~WW~~~~#",
+        "#......................#",
+        "#.........----.........#",
+        "#.........-OO-.........#",
+        "#.........----.........#",
+        "#......................#",
+        "#..........DD..........#",
+        "########################"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [
+        {"id": "sw_canal_lock", "at": [3, 5], "opens": ["gate_canal_keystone"]}
+      ],
+      "stamps": [
+        {"stamp": "int_keystone_pedestal", "at": [11, 3], "capstone": true},
+        {"stamp": "int_metal_gate", "at": [11, 5], "gate_id": "gate_canal_keystone"},
+        {"stamp": "int_canal_sluice_wheel", "at": [4, 2]},
+        {"stamp": "int_canal_sluice_wheel", "at": [18, 2]},
+        {"stamp": "int_switch_lever", "at": [3, 5]},
+        {"stamp": "int_supply_crate", "at": [2, 12]},
+        {"stamp": "int_supply_crate", "at": [20, 12]},
+        {"stamp": "int_smash_rubble", "at": [17, 7], "clearable": true},
+        {"stamp": "int_item_ball", "at": [21, 3]}
+      ],
+      "npcs": [],
+      "items": [
+        {"id": "dc_gt_dusk_stone", "at": [21, 3], "name": "Dusk Stone"}
+      ],
+      "signs": [
+        {"at": [9, 10], "text": "Lock #4 Sluice Log — Water Still Runs Beneath the Stopped Towpath"}
+      ]
+    }
+  ]
+}

@@ -7,6 +7,7 @@ const Grid := preload("res://world/grid.gd")
 const MapStore := preload("res://world/region_import/map_store.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
+const InteriorView := preload("res://world/interior/interior_view.gd")
 
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
@@ -28,6 +29,21 @@ func _ready() -> void:
 	RevealEngine.apply(DB)
 
 	if s_cfg.get("is_screenshot", false):
+		var interior_id := str(s_cfg.get("interior", ""))
+		if not interior_id.is_empty():
+			var iv := open_interior_view(interior_id, int(s_cfg.get("floor", 0)))
+			if iv == null:
+				printerr("[FAIL] failed to load interior %s" % interior_id)
+				get_tree().quit(1)
+				return
+			iv.screenshot_timeout_sec = float(s_cfg.get("timeout", 120))
+			iv.setup_screenshot(
+				str(s_cfg.get("screenshot_path", "")),
+				float(s_cfg.get("zoom", 1.0)),
+				int(s_cfg.get("frames", 10))
+			)
+			return
+
 		if s_cfg.get("screen", "map") == "town_map":
 			var town_map = open_town_map()
 			if town_map != null and town_map.has_method("setup_screenshot"):
@@ -177,8 +193,18 @@ func clear_current_view() -> void:
 	for child in get_children():
 		if child is CanvasLayer:
 			child.queue_free()
-		elif child.name.begins_with("MapViewer") or child.name.begins_with("HomeHub") or child.name.begins_with("TownMap"):
+		elif child.name.begins_with("MapViewer") or child.name.begins_with("HomeHub") or child.name.begins_with("TownMap") or child.name.begins_with("InteriorView"):
 			child.queue_free()
+
+func open_interior_view(interior_id: String, floor_index: int = 0) -> InteriorView:
+	clear_current_view()
+	var iv := InteriorView.new()
+	iv.name = "InteriorView"
+	add_child(iv)
+	if not iv.load_interior(interior_id, floor_index):
+		iv.queue_free()
+		return null
+	return iv
 
 func open_map_view() -> Node:
 	clear_current_view()

@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "id": "fixture:watchtower",
+  "area_id": "camp:fixture-city",
+  "title": "Fixture Watchtower",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Entry Hall",
+      "theme": "stone",
+      "width": 14,
+      "height": 12,
+      "grid": [
+        "##############",
+        "#============#",
+        "#..CCCCCCCC..#",
+        "#..C......C..#",
+        "#..C......C..#",
+        "#............#",
+        "#....>>>>....#",
+        "#............#",
+        "#..CCCCCCCC..#",
+        "#.....DD.....#",
+        "#.....DD.....#",
+        "##############"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [11, 2], "to_floor": "2F", "to": [11, 3], "dir": "up"}
+      ],
+      "switches": [
+        {"id": "sw_vault", "at": [2, 5], "opens": ["gate_2f"]}
+      ],
+      "stamps": [
+        {"stamp": "int_switch_lever", "at": [2, 5]},
+        {"stamp": "int_supply_crate", "at": [2, 8]},
+        {"stamp": "int_push_boulder", "at": [9, 5], "clearable": true}
+      ],
+      "npcs": [
+        {"id": "npc_keeper", "name": "Caretaker", "at": [6, 4], "role": "talk"}
+      ],
+      "items": [],
+      "signs": [
+        {"at": [4, 2], "text": "Watchtower Logbook"}
+      ]
+    },
+    {
+      "floor_id": "2F",
+      "label": "2F — Signal Loft",
+      "theme": "wood",
+      "width": 14,
+      "height": 10,
+      "grid": [
+        "##############",
+        "#============#",
+        "#WWWWWWWWWWWW#",
+        "#WWWWWWWWWWdW#",
+        "#####=WW=#####",
+        "#WWWWWWWWWWWW#",
+        "#WWWWWWWWWWWW#",
+        "#WWWWWWWWWWWW#",
+        "#WWWWWWWWWWWW#",
+        "##############"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [11, 3], "to_floor": "1F", "to": [11, 3], "dir": "down"}
+      ],
+      "switches": [],
+      "stamps": [
+        {"stamp": "int_metal_gate", "at": [6, 3], "gate_id": "gate_2f"},
+        {"stamp": "int_radio_console", "at": [3, 6], "capstone": true},
+        {"stamp": "int_item_ball", "at": [10, 7]}
+      ],
+      "npcs": [],
+      "items": [
+        {"id": "fix_item_1", "at": [10, 7], "name": "Potion"}
+      ],
+      "signs": []
+    }
+  ]
+}

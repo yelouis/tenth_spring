@@ -1,0 +1,57 @@
+{
+  "schema": 1,
+  "id": "dc:woodley-vet",
+  "area_id": "hood:washington-dc:woodley-park",
+  "title": "Old Animal Hospital",
+  "atmosphere": "haunted",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Quarantine Clinic Wards",
+      "theme": "stone",
+      "width": 24,
+      "height": 16,
+      "grid": [
+        "########################",
+        "#======================#",
+        "#.......#======#.......#",
+        "#.......#MMMMMM#.......#",
+        "#.......#MMMMMM#.......#",
+        "#.......===MM===.......#",
+        "#.........MMMM.........#",
+        "#.......#MMMMMM#.......#",
+        "#.......=MMMMMM=.......#",
+        "#........MMMMMM........#",
+        "#.......#MMMMMM#.......#",
+        "#.......#MMMMMM#.......#",
+        "#.......=MMMMMM=.......#",
+        "#........MMMMMM........#",
+        "#..........DD..........#",
+        "########################"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [
+        {"id": "sw_vet_quarantine", "at": [3, 6], "opens": ["gate_vet_keystone"]}
+      ],
+      "stamps": [
+        {"stamp": "int_keystone_pedestal", "at": [11, 2], "capstone": true},
+        {"stamp": "int_metal_gate", "at": [11, 4], "gate_id": "gate_vet_keystone"},
+        {"stamp": "int_vet_kennel_bank", "at": [1, 1]},
+        {"stamp": "int_vet_kennel_bank", "at": [5, 1]},
+        {"stamp": "int_surgery_table", "at": [18, 3]},
+        {"stamp": "int_surgery_table", "at": [18, 10]},
+        {"stamp": "int_switch_lever", "at": [3, 6]},
+        {"stamp": "int_supply_crate", "at": [2, 11]},
+        {"stamp": "int_item_ball", "at": [21, 13]}
+      ],
+      "npcs": [],
+      "items": [
+        {"id": "dc_vet_reaper", "at": [21, 13], "name": "Reaper Cloth"}
+      ],
+      "signs": [
+        {"at": [9, 13], "text": "Quarantine Intake — All Kennels Unlatched Before the Evacuation"}
+      ]
+    }
+  ]
+}

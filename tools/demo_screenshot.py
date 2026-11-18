@@ -74,6 +74,18 @@ def parse_args():
         help="Optional caricature area id to focus (e.g. camp:washington-dc). Passed through to Godot."
     )
     parser.add_argument(
+        "--interior",
+        type=str,
+        default=None,
+        help="Optional interior id to capture (e.g. dc:washington-monument or washington-monument)."
+    )
+    parser.add_argument(
+        "--floor",
+        type=int,
+        default=None,
+        help="Optional 0-based floor index when --interior is set (default: 0)."
+    )
+    parser.add_argument(
         "--resolution",
         type=str,
         default="1280x720",
@@ -128,6 +140,10 @@ def main():
     for z in zooms:
         if args.filename:
             out_png = os.path.join(real_out, args.filename)
+        elif args.interior:
+            slug = args.interior.replace(":", "_").replace("/", "_")
+            fl = args.floor if args.floor is not None else 0
+            out_png = os.path.join(real_out, f"shot_interior_{slug}_f{fl}.png")
         elif args.screen == "town_map":
             out_png = os.path.join(real_out, "shot_town_map.png")
         elif args.screen == "board":
@@ -173,6 +189,10 @@ def main():
             godot_cmd.append("--preview-cleared")
         if args.area:
             godot_cmd.append(f"--area={args.area}")
+        if args.interior:
+            godot_cmd.append(f"--interior={args.interior}")
+        if args.floor is not None:
+            godot_cmd.append(f"--floor={args.floor}")
         if args.focus:
             godot_cmd.append(f"--focus={args.focus}")
         if args.screen:

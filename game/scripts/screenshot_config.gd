@@ -5,6 +5,7 @@ extends RefCounted
 # Contract: docs/implementation_plan_world_generation.md §7.4 & docs/agent_execution_guide.md §6
 
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const InteriorMap := preload("res://world/interior/interior_map.gd")
 
 const ERR_IN_REPO: String = "[FAIL] screenshot path must be outside the repository"
 const ERR_UNSUPPORTED_ZOOM: String = "[FAIL] unsupported zoom %s"
@@ -14,6 +15,10 @@ const ERR_HEADLESS: String = "[FAIL] screenshots need a window"
 const ERR_AREA_NEEDS_DEMO: String = "[FAIL] --area needs --demo"
 const ERR_UNKNOWN_AREA: String = "[FAIL] unknown area %s"
 const ERR_CITY_NEEDS_DEMO: String = "[FAIL] --screen=city needs --demo"
+const ERR_INTERIOR_NEEDS_DEMO: String = "[FAIL] --interior needs --demo"
+const ERR_FLOOR_NEEDS_INTERIOR: String = "[FAIL] --floor needs --interior"
+const ERR_UNKNOWN_INTERIOR: String = "[FAIL] unknown interior %s"
+const ERR_UNKNOWN_FLOOR: String = "[FAIL] unknown floor %s"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
 const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
@@ -31,6 +36,11 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var screen_val := "map"
 	var area_str := ""
 	var has_area := false
+	var interior_str := ""
+	var has_interior := false
+	var floor_str := ""
+	var has_floor := false
+	var floor_val := 0
 	var has_demo := false
 	var has_screenshot := false
 
@@ -95,9 +105,29 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		elif arg == "--area":
 			has_area = true
 			area_str = ""
+		elif arg.begins_with("--interior="):
+			has_interior = true
+			interior_str = arg.trim_prefix("--interior=").strip_edges()
+		elif arg == "--interior" and i + 1 < user_args.size():
+			has_interior = true
+			interior_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--interior":
+			has_interior = true
+			interior_str = ""
+		elif arg.begins_with("--floor="):
+			has_floor = true
+			floor_str = arg.trim_prefix("--floor=").strip_edges()
+		elif arg == "--floor" and i + 1 < user_args.size():
+			has_floor = true
+			floor_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--floor":
+			has_floor = true
+			floor_str = ""
 		i += 1
 
-	# Refusal 0: --area and --screen=city are demo-only (standing constraint 22, §4.3, §10.12)
+	# Refusal 0: --area, --screen=city, and --interior are demo-only (standing constraint 22, §4.3, §10.12, §11.3 D)
 	if has_area:
 		if not has_demo:
 			return {"ok": false, "error": ERR_AREA_NEEDS_DEMO, "exit_code": 2}
@@ -105,9 +135,25 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			return {"ok": false, "error": ERR_UNKNOWN_AREA % area_str, "exit_code": 2}
 	if screen_str == "city" and not has_demo:
 		return {"ok": false, "error": ERR_CITY_NEEDS_DEMO, "exit_code": 2}
+	if has_floor and not has_interior:
+		return {"ok": false, "error": ERR_FLOOR_NEEDS_INTERIOR, "exit_code": 2}
+	if has_interior:
+		if not has_demo:
+			return {"ok": false, "error": ERR_INTERIOR_NEEDS_DEMO, "exit_code": 2}
+		var ipath := InteriorMap.resolve_interior_path(interior_str)
+		if interior_str.is_empty() or ipath.is_empty():
+			return {"ok": false, "error": ERR_UNKNOWN_INTERIOR % interior_str, "exit_code": 2}
+		var idoc := InteriorMap.load_json(ipath)
+		var ifloors: Array = idoc.get("floors", []) if idoc.get("floors", []) is Array else []
+		if has_floor:
+			if not floor_str.is_valid_int():
+				return {"ok": false, "error": ERR_UNKNOWN_FLOOR % floor_str, "exit_code": 2}
+			floor_val = floor_str.to_int()
+		if floor_val < 0 or floor_val >= ifloors.size():
+			return {"ok": false, "error": ERR_UNKNOWN_FLOOR % (floor_str if has_floor else str(floor_val)), "exit_code": 2}
 
 	if not has_screenshot:
-		return {"ok": true, "is_screenshot": false, "area": area_str}
+		return {"ok": true, "is_screenshot": false, "area": area_str, "interior": interior_str, "floor": floor_val}
 
 	# Refusal 1: Headless refusal (§7.4 rule 2)
 	if is_headless:
@@ -170,5 +216,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"timeout": timeout_val,
 		"focus": focus_val,
 		"screen": screen_val,
-		"area": area_str
+		"area": area_str,
+		"interior": interior_str,
+		"floor": floor_val,
 	}

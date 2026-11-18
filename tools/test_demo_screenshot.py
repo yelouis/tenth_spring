@@ -208,5 +208,35 @@ class TestDemoScreenshotWrapper(unittest.TestCase):
         self.assertIn("--screen=city", seen[0])
         self.assertTrue(any(a.endswith("shot_city.png") for a in seen[0]))
 
+    def test_interior_and_floor_forwarded(self):
+        """Item 57: --interior and --floor forward cleanly and default to shot_interior_<slug>_f<n>.png."""
+        import importlib.util
+        import tempfile
+        from unittest import mock
+
+        spec = importlib.util.spec_from_file_location("demo_screenshot_under_test", self.wrapper_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        seen = []
+
+        def fake_run(cmd, **kwargs):
+            seen.append(cmd)
+            return mock.Mock(returncode=2)
+
+        with tempfile.TemporaryDirectory() as out_dir:
+            argv = ["demo_screenshot.py", "--out-dir", out_dir, "--interior", "dc:washington-monument", "--floor", "2"]
+            with mock.patch.object(sys, "argv", argv), \
+                    mock.patch.dict(os.environ, {"TENTH_SPRING_MEMGUARD_HELD": "1"}), \
+                    mock.patch.object(module.subprocess, "run", fake_run):
+                with self.assertRaises(SystemExit) as raised, \
+                        contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    module.main()
+        self.assertEqual(raised.exception.code, 2)
+        self.assertEqual(len(seen), 1)
+        self.assertIn("--interior=dc:washington-monument", seen[0])
+        self.assertIn("--floor=2", seen[0])
+        self.assertTrue(any(a.endswith("shot_interior_dc_washington-monument_f2.png") for a in seen[0]))
+
 if __name__ == "__main__":
     unittest.main()

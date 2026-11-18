@@ -136,9 +136,61 @@ static func build_emerald_atlas(
 	jf.store_string(orig_json_text)
 	jf.close()
 
+	# Build indoor surface strip emerald_indoor_v1.{png,json} (classes 0..16, 17 x 32x32 = 544x32; Item 57)
+	var indoor_ts_cfg: Dictionary = cfg.get("indoor_tilesets", {})
+	var indoor_map_cfg: Dictionary = cfg.get("indoor_tile_map", {})
+	var indoor_tiles_written := 0
+	var out_indoor_png := tiles_dir.path_join("emerald_indoor_v1.png")
+	var out_indoor_json := tiles_dir.path_join("emerald_indoor_v1.json")
+	if not indoor_map_cfg.is_empty():
+		var indoor_decoded: Dictionary = {}
+		for its_name_v in indoor_ts_cfg.keys():
+			var its_name := str(its_name_v)
+			var its_index := int(indoor_ts_cfg[its_name_v])
+			var idec := Gen3TilesRef.decode_tileset_record(rom, its_index)
+			if not bool(idec.get("ok", false)):
+				return {"ok": false, "error": "Indoor tileset %s decode failed: %s" % [its_name, str(idec.get("error", ""))]}
+			indoor_decoded[its_name] = idec
+
+		var indoor_count := 17
+		var indoor_img := Image.create(indoor_count * tile_px, tile_px, false, Image.FORMAT_RGBA8)
+		indoor_img.fill(Color8(0, 0, 0, 255))
+		var indoor_rows: Array = []
+		for icls in range(indoor_count):
+			var ikey := str(icls)
+			if indoor_map_cfg.has(ikey):
+				var irule: Dictionary = indoor_map_cfg[ikey]
+				var ipri_name := str(irule.get("primary", "pri16"))
+				if not indoor_decoded.has(ipri_name):
+					return {"ok": false, "error": "Missing indoor primary '%s' for indoor class %d" % [ipri_name, icls]}
+				var ipri: Dictionary = indoor_decoded[ipri_name]
+				var isec: Variant = null
+				if irule.has("tileset"):
+					var isec_name := str(irule.get("tileset", ""))
+					if not indoor_decoded.has(isec_name):
+						return {"ok": false, "error": "Missing indoor secondary '%s' for indoor class %d" % [isec_name, icls]}
+					isec = indoor_decoded[isec_name]
+				var imt := int(irule.get("metatile", 0))
+				var icell := Gen3TilesRef.render_metatile_32(ipri, isec, imt)
+				indoor_img.blit_rect(icell, Rect2i(0, 0, tile_px, tile_px), Vector2i(icls * tile_px, 0))
+				indoor_tiles_written += 1
+			indoor_rows.append({"class": icls, "col": icls})
+
+		var isave_err := indoor_img.save_png(out_indoor_png)
+		if isave_err != OK:
+			return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_indoor_png, isave_err]}
+		var ijf := FileAccess.open(out_indoor_json, FileAccess.WRITE)
+		if ijf == null:
+			return {"ok": false, "error": "Failed to write " + out_indoor_json}
+		ijf.store_string(JSON.stringify({"format": "emerald_indoor_v1", "tile_px": tile_px, "count": indoor_count, "columns": indoor_rows}, "\t") + "\n")
+		ijf.close()
+
 	return {
 		"ok": true,
 		"png": out_png,
 		"json": out_json,
+		"indoor_png": out_indoor_png,
+		"indoor_json": out_indoor_json,
 		"tiles_written": tiles_written,
+		"indoor_tiles_written": indoor_tiles_written,
 	}

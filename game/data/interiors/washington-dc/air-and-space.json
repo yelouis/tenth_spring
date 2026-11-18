@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "id": "dc:air-and-space",
+  "area_id": "hood:washington-dc:national-mall",
+  "title": "National Air & Space Museum",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Milestones Atrium & Relay Wings",
+      "theme": "marble",
+      "width": 28,
+      "height": 18,
+      "grid": [
+        "############################",
+        "#==========================#",
+        "#MMMMMMM#==========#MMMMMMM#",
+        "#MMMMMMM#MMMMMMMMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM=MMMCCCCMMM=MMMMMMM#",
+        "#MMMMMMMMMMMCCCCMMMMMMMMMMM#",
+        "#MMMMMMMMMMMCCCCMMMMMMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
+        "#MMMMMMM#MMMMDDMMMM#MMMMMMM#",
+        "############################"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [
+        {"id": "sw_relay_wing", "at": [3, 6], "opens": ["gate_relay_wing"]}
+      ],
+      "stamps": [
+        {"stamp": "int_suspended_flyer", "at": [11, 3]},
+        {"stamp": "int_space_capsule", "at": [13, 10]},
+        {"stamp": "int_glass_case", "at": [9, 10]},
+        {"stamp": "int_glass_case", "at": [17, 10]},
+        {"stamp": "int_supply_crate", "at": [2, 3]},
+        {"stamp": "int_supply_crate", "at": [2, 12]},
+        {"stamp": "int_smash_rubble", "at": [7, 8], "clearable": true},
+        {"stamp": "int_switch_lever", "at": [3, 6]},
+        {"stamp": "int_metal_gate", "at": [19, 8], "gate_id": "gate_relay_wing"},
+        {"stamp": "int_radio_console", "at": [23, 4], "capstone": true},
+        {"stamp": "int_glass_case", "at": [23, 12]},
+        {"stamp": "int_item_ball", "at": [5, 14]},
+        {"stamp": "int_item_ball", "at": [25, 15]}
+      ],
+      "npcs": [
+        {"id": "npc_telemetry_curator", "name": "Curator Lin", "at": [11, 14], "role": "scholar"}
+      ],
+      "items": [
+        {"id": "dc_airspace_magnet", "at": [5, 14], "name": "Magnet"},
+        {"id": "dc_airspace_upgrade", "at": [25, 15], "name": "Up-Grade"}
+      ],
+      "signs": [
+        {"at": [14, 8], "text": "Milestones of Flight — Early Glider & Orbital Return Capsule"},
+        {"at": [22, 4], "text": "Emergency Telemetry Console — Awaiting Carrier Lock"}
+      ]
+    }
+  ]
+}

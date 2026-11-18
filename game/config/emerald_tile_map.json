@@ -518,6 +518,35 @@
   },
   "buildings": {},
   "compositions": {},
+  "indoor_tilesets": {
+    "pri00": 0,
+    "pri16": 16,
+    "sec12": 12,
+    "sec17": 17,
+    "sec42": 42,
+    "sec43": 43,
+    "sec45": 45,
+    "sec53": 53
+  },
+  "indoor_tile_map": {
+    "0": {"primary": "pri16", "metatile": 0},
+    "1": {"primary": "pri16", "tileset": "sec43", "metatile": 594},
+    "2": {"primary": "pri16", "tileset": "sec45", "metatile": 513},
+    "3": {"primary": "pri16", "tileset": "sec43", "metatile": 623},
+    "4": {"primary": "pri16", "tileset": "sec42", "metatile": 673},
+    "5": {"primary": "pri16", "tileset": "sec53", "metatile": 616},
+    "6": {"primary": "pri16", "tileset": "sec43", "metatile": 607},
+    "7": {"primary": "pri16", "tileset": "sec43", "metatile": 518},
+    "8": {"primary": "pri16", "tileset": "sec43", "metatile": 645},
+    "9": {"primary": "pri16", "tileset": "sec43", "metatile": 643},
+    "10": {"primary": "pri00", "tileset": "sec12", "metatile": 567},
+    "11": {"primary": "pri00", "tileset": "sec12", "metatile": 515},
+    "12": {"primary": "pri16", "tileset": "sec53", "metatile": 675},
+    "13": {"primary": "pri16", "tileset": "sec53", "metatile": 673},
+    "15": {"primary": "pri16", "tileset": "sec53", "metatile": 674},
+    "14": {"primary": "pri16", "tileset": "sec53", "metatile": 672},
+    "16": {"primary": "pri16", "tileset": "sec45", "metatile": 515}
+  },
   "gaps": [
     {
       "id": "buildings_stay_original",

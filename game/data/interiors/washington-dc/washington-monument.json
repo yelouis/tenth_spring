@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "id": "dc:washington-monument",
+  "area_id": "hood:washington-dc:national-mall",
+  "title": "Washington Monument",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Entry Lobby",
+      "theme": "marble",
+      "width": 20,
+      "height": 16,
+      "grid": [
+        "####################",
+        "#==================#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMUM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#####=MMCCCCMM=#####",
+        "#=====MMCCCCMM=====#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMCCCCMMMMMMM#",
+        "#MMMMMMMMDDMMMMMMMM#",
+        "####################"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [17, 3], "to_floor": "2F", "to": [17, 4], "dir": "up"}
+      ],
+      "switches": [
+        {"id": "sw_monument_lift", "at": [4, 9], "opens": ["gate_monument_lift"]}
+      ],
+      "stamps": [
+        {"stamp": "int_elevator_cage", "at": [9, 1]},
+        {"stamp": "int_metal_gate", "at": [9, 5], "gate_id": "gate_monument_lift"},
+        {"stamp": "int_switch_lever", "at": [4, 9]},
+        {"stamp": "int_supply_crate", "at": [2, 11]},
+        {"stamp": "int_item_ball", "at": [16, 12]}
+      ],
+      "npcs": [
+        {"id": "npc_monument_keeper", "name": "Shaft Watchman", "at": [6, 11], "role": "warden"}
+      ],
+      "items": [
+        {"id": "dc_monument_1f_coat", "at": [16, 12], "name": "Metal Coat"}
+      ],
+      "signs": [
+        {"at": [13, 2], "text": "Memorial Dedication Stone — 555 Feet Above the Mall"}
+      ]
+    },
+    {
+      "floor_id": "2F",
+      "label": "2F — Wind-Gust Shaft",
+      "theme": "stone",
+      "width": 20,
+      "height": 16,
+      "grid": [
+        "####################",
+        "#==================#",
+        "#..................#",
+        "#................d.#",
+        "#....>>>>..>>>>....#",
+        "#..^............v..#",
+        "#..^.----..----.v..#",
+        "#..^.-OOOOOOOO-.v..#",
+        "#..^.-OOOOOOOO-.v..#",
+        "#..^.----..----.v..#",
+        "#..^............v..#",
+        "#....<<<<..<<<<....#",
+        "#..U...............#",
+        "#..................#",
+        "#..................#",
+        "####################"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [17, 3], "to_floor": "1F", "to": [17, 4], "dir": "down"},
+        {"at": [3, 12], "to_floor": "3F", "to": [3, 11], "dir": "up"}
+      ],
+      "switches": [],
+      "stamps": [
+        {"stamp": "int_wind_grate", "at": [5, 5]},
+        {"stamp": "int_wind_grate", "at": [14, 5]},
+        {"stamp": "int_wind_grate", "at": [5, 10]},
+        {"stamp": "int_wind_grate", "at": [14, 10]},
+        {"stamp": "int_push_boulder", "at": [9, 4], "clearable": true},
+        {"stamp": "int_item_ball", "at": [16, 13]}
+      ],
+      "npcs": [],
+      "items": [
+        {"id": "dc_monument_2f_float", "at": [16, 13], "name": "Float Stone"}
+      ],
+      "signs": [
+        {"at": [9, 2], "text": "Crosswind Shaft — Step Past the Grates to Ride the Updrafts"}
+      ]
+    },
+    {
+      "floor_id": "3F",
+      "label": "3F — Apex Observation Deck",
+      "theme": "marble",
+      "width": 18,
+      "height": 14,
+      "grid": [
+        "##################",
+        "#================#",
+        "#MMMMMMMMMMMMMMMM#",
+        "#MMMMCCCCCCCCMMMM#",
+        "#MMMMC......CMMMM#",
+        "#MMMMC.----.CMMMM#",
+        "#MMMMC.-OO-.CMMMM#",
+        "#MMMMC.----.CMMMM#",
+        "#MMMMC......CMMMM#",
+        "#MMMMCCCCCCCCMMMM#",
+        "#MMMMMMMMMMMMMMMM#",
+        "#MMdMMMMMMMMMMMMM#",
+        "#MMMMMMMMMMMMMMMM#",
+        "##################"
+      ],
+      "warps": [
+        {"at": [12, 10], "to_floor": "1F", "to": [10, 11], "kind": "warp_pad"}
+      ],
+      "stairs": [
+        {"at": [3, 11], "to_floor": "2F", "to": [3, 11], "dir": "down"}
+      ],
+      "switches": [],
+      "stamps": [
+        {"stamp": "int_obs_slit_window", "at": [3, 1]},
+        {"stamp": "int_obs_slit_window", "at": [8, 1], "capstone": true},
+        {"stamp": "int_obs_slit_window", "at": [13, 1]},
+        {"stamp": "int_warp_pad", "at": [12, 9]},
+        {"stamp": "int_item_ball", "at": [14, 4]}
+      ],
+      "npcs": [
+        {"id": "npc_apex_scout", "name": "Lookout Scout", "at": [6, 9], "role": "talk"}
+      ],
+      "items": [
+        {"id": "dc_monument_3f_scope", "at": [14, 4], "name": "Scope Lens"}
+      ],
+      "signs": [
+        {"at": [8, 3], "text": "North Slit — Across the Quiet Mall, the Stillness Holds"}
+      ]
+    }
+  ]
+}

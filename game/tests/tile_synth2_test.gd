@@ -1659,9 +1659,14 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	# (y.5) F68 (d): Recompute all landmark and Item-52 DC stamp "tiles" maps from game/assets/original/<path> and verify
-	#       that flipping 128 pixels' alpha in tile (7, 23) of an in-memory copy of arch.png fails the check.
-	var landmark_sids := [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 59, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109]
+	# (y.5) F68 (d): Recompute all landmark, Item-52 DC, and Item-57 interior stamp "tiles" maps from game/assets/original/<path>
+	#       and verify exact w*16 x h*16 PNG dimensions and that flipping 128 pixels' alpha in tile (7, 23) of arch.png fails.
+	var landmark_sids := [
+		1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 59,
+		98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109,
+		110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122,
+		123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134,
+	]
 	for sid in landmark_sids:
 		var s_def: Dictionary = TileSynth2.get_stamp_def(sid)
 		var s_path: String = str(s_def.get("path", ""))
@@ -1672,6 +1677,11 @@ func run_test() -> bool:
 		var img := Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/" + s_path))
 		if img == null or img.is_empty():
 			push_error("(y.5) Failed to load res://assets/original/%s" % s_path)
+			store.close()
+			_cleanup()
+			return false
+		if img.get_width() != s_w * 16 or img.get_height() != s_h * 16:
+			push_error("(y.5) Stamp %d (%s) wrong PNG dimensions %dx%d (expected %dx%d)" % [sid, s_path, img.get_width(), img.get_height(), s_w * 16, s_h * 16])
 			store.close()
 			_cleanup()
 			return false

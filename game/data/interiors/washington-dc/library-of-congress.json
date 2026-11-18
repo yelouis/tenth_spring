@@ -1,0 +1,114 @@
+{
+  "schema": 1,
+  "id": "dc:library-of-congress",
+  "area_id": "hood:washington-dc:capitol-hill",
+  "title": "Library of Congress",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F — Great Octagon Reading Room",
+      "theme": "wood",
+      "width": 26,
+      "height": 18,
+      "grid": [
+        "##########################",
+        "#========================#",
+        "#WWWWWWWWWWWWWWWWWWWWWWWW#",
+        "#WWWWWWWWWWWCCWWWWWWWWUWW#",
+        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
+        "#WWWWWWWWCCCCCCCCWWWWWWWW#",
+        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
+        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
+        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
+        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
+        "#WWWWWWWWCWWWWWWCWWWWWWWW#",
+        "#WWWWWWWWCCCCCCCCWWWWWWWW#",
+        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
+        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
+        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
+        "#WWWWWWWWWWWCCWWWWWWWWWWW#",
+        "#WWWWWWWWWWWDDWWWWWWWWWWW#",
+        "##########################"
+      ],
+      "warps": [],
+      "stairs": [
+        {"at": [22, 3], "to_floor": "2F", "to": [21, 3], "dir": "up"}
+      ],
+      "switches": [],
+      "stamps": [
+        {"stamp": "int_archive_bookshelf", "at": [2, 1]},
+        {"stamp": "int_archive_bookshelf", "at": [7, 1]},
+        {"stamp": "int_archive_bookshelf", "at": [15, 1]},
+        {"stamp": "int_archive_bookshelf", "at": [19, 1]},
+        {"stamp": "int_octagon_desk", "at": [11, 7]},
+        {"stamp": "int_reading_table_lamp", "at": [3, 6]},
+        {"stamp": "int_reading_table_lamp", "at": [3, 11]},
+        {"stamp": "int_reading_table_lamp", "at": [20, 6]},
+        {"stamp": "int_reading_table_lamp", "at": [20, 11]},
+        {"stamp": "int_item_ball", "at": [2, 15]}
+      ],
+      "npcs": [
+        {"id": "npc_marcus_bell", "name": "Marcus Bell", "at": [10, 10], "role": "scholar"}
+      ],
+      "items": [
+        {"id": "dc_loc_1f_wise", "at": [2, 15], "name": "Wise Glasses"}
+      ],
+      "signs": [
+        {"at": [13, 11], "text": "Main Reading Room — Silence Keeps the Archive Whole"}
+      ]
+    },
+    {
+      "floor_id": "2F",
+      "label": "2F — Calder Cipher Stack & Vault",
+      "theme": "wood",
+      "width": 24,
+      "height": 16,
+      "grid": [
+        "########################",
+        "#======================#",
+        "#WWWWWWWWWWWWWWWW#=====#",
+        "#WWWWWWWWWWWWWWWW#WWdWW#",
+        "#WWWWWWWWWWWWWWWW#WWWWW#",
+        "#WWWWWWWWWWWWWWWW=WWWWW#",
+        "#WWWWWWWW------WWWWWWWW#",
+        "#WWWWWWWW-OOOO-WWWWWWWW#",
+        "#WWWWWWWW-OOOO-WWWWWWWW#",
+        "#WWWWWWWW------WWWWWWWW#",
+        "#WWWWWWWWWWWWWWWW#=====#",
+        "#WWWWWWWWWWWWWWWW=WWWWW#",
+        "#WWWWWWWWWWWWWWWWWWWWWW#",
+        "#WWWWWWWWWWWWWWWW#WWWWW#",
+        "#WWWWWWWWWWWWWWWW#WWWWW#",
+        "########################"
+      ],
+      "warps": [
+        {"at": [19, 13], "to_floor": "1F", "to": [12, 13], "kind": "warp_pad"}
+      ],
+      "stairs": [
+        {"at": [20, 3], "to_floor": "1F", "to": [22, 4], "dir": "down"}
+      ],
+      "switches": [
+        {"id": "sw_cipher_vault", "at": [3, 13], "opens": ["gate_cipher_vault"]}
+      ],
+      "stamps": [
+        {"stamp": "int_archive_bookshelf", "at": [2, 1]},
+        {"stamp": "int_archive_bookshelf", "at": [7, 1]},
+        {"stamp": "int_archive_bookshelf", "at": [12, 1]},
+        {"stamp": "int_reading_table_lamp", "at": [2, 8]},
+        {"stamp": "int_switch_lever", "at": [3, 13]},
+        {"stamp": "int_metal_gate", "at": [16, 11], "gate_id": "gate_cipher_vault"},
+        {"stamp": "int_calder_cipher_desk", "at": [19, 10], "capstone": true},
+        {"stamp": "int_warp_pad", "at": [19, 13]},
+        {"stamp": "int_item_ball", "at": [14, 13]}
+      ],
+      "npcs": [],
+      "items": [
+        {"id": "dc_loc_2f_spell", "at": [14, 13], "name": "Spell Tag"}
+      ],
+      "signs": [
+        {"at": [11, 5], "text": "Rare Book Folio — Calder's Margin Notes Point South-East"}
+      ]
+    }
+  ]
+}
