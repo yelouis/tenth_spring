@@ -77,7 +77,7 @@ const SALT_DECAL_POS := 20
 const SALT_BLOCK_DESIGN := 21
 const SALT_LEDGE := 22
 
-# Stamp metadata table 1..134 (0 reserved; kinds: landmark, prop, house, shell, block, decal; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43, Item 52, Item 57)
+# Stamp metadata table 1..137 (0 reserved; kinds: landmark, prop, house, shell, block, decal; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43, Item 52, Item 57, Item 61)
 const STAMP_TABLE: Dictionary = {
 	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
 	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
@@ -212,7 +212,10 @@ const STAMP_TABLE: Dictionary = {
 	131: {"id": "int_canal_sluice_wheel", "kind": "prop", "path": "interiors/int_canal_sluice_wheel.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "+#"]},
 	132: {"id": "int_keystone_pedestal", "kind": "prop", "path": "interiors/int_keystone_pedestal.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
 	133: {"id": "int_vet_kennel_bank", "kind": "prop", "path": "interiors/int_vet_kennel_bank.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["+++", "###"]},
-	134: {"id": "int_surgery_table", "kind": "prop", "path": "interiors/int_surgery_table.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["++.", "++#"]}
+	134: {"id": "int_surgery_table", "kind": "prop", "path": "interiors/int_surgery_table.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["++.", "++#"]},
+	135: {"id": "int_speech_tablet", "kind": "prop", "path": "interiors/int_speech_tablet.png", "w": 2, "h": 2, "base_rows": 0, "door": null, "tiles": ["++", "++"]},
+	136: {"id": "int_plaster_rubble", "kind": "prop", "path": "interiors/int_plaster_rubble.png", "w": 1, "h": 1, "base_rows": 0, "door": null, "tiles": ["+"]},
+	137: {"id": "int_wall_cobweb_crack", "kind": "prop", "path": "interiors/int_wall_cobweb_crack.png", "w": 1, "h": 2, "base_rows": 0, "door": null, "tiles": ["+", "+"]}
 }
 
 static var _landmark_art_loaded := false

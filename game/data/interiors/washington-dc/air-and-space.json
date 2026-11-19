@@ -9,58 +9,81 @@
       "floor_id": "1F",
       "label": "1F — Milestones Atrium & Relay Wings",
       "theme": "marble",
-      "width": 28,
-      "height": 18,
+      "kit": "space_tech",
+      "width": 22,
+      "height": 14,
       "grid": [
-        "############################",
-        "#==========================#",
-        "#MMMMMMM#==========#MMMMMMM#",
-        "#MMMMMMM#MMMMMMMMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM=MMMCCCCMMM=MMMMMMM#",
-        "#MMMMMMMMMMMCCCCMMMMMMMMMMM#",
-        "#MMMMMMMMMMMCCCCMMMMMMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMCCCCMMM#MMMMMMM#",
-        "#MMMMMMM#MMMMDDMMMM#MMMMMMM#",
-        "############################"
+        "######################",
+        "======================",
+        "MMMMMM#MMMMMMMM#MMMMMM",
+        "MMMMMM#MMMMMMMM=MMMMMM",
+        "MMMMMM#MMMMMMMMMMMMMMM",
+        "MMMMMM#MMMMMMMM##MM###",
+        "MMMMMM=MMMMMMMM==MM===",
+        "MMMMMMMMMMMMMMM#MMMMMM",
+        "MMMMMM#MMMMMMMM#MMMMMM",
+        "MMMMMM#MMMMMMMM#MMMMMM",
+        "MMMMMM#MMMMMMMM#MMMMMM",
+        "MMMMMM#MMMMMMMM#MMMMMM",
+        "MMMMMM#MMMMMMMM#MMMMMM",
+        "MMMMMM=MMMDDMMM=MMMMMM"
       ],
       "warps": [],
       "stairs": [],
       "switches": [
-        {"id": "sw_relay_wing", "at": [3, 6], "opens": ["gate_relay_wing"]}
+        {"id": "sw_relay_wing", "at": [4, 8], "opens": ["gate_relay_wing"]}
       ],
       "stamps": [
-        {"stamp": "int_suspended_flyer", "at": [11, 3]},
-        {"stamp": "int_space_capsule", "at": [13, 10]},
-        {"stamp": "int_glass_case", "at": [9, 10]},
-        {"stamp": "int_glass_case", "at": [17, 10]},
-        {"stamp": "int_supply_crate", "at": [2, 3]},
-        {"stamp": "int_supply_crate", "at": [2, 12]},
-        {"stamp": "int_smash_rubble", "at": [7, 8], "clearable": true},
-        {"stamp": "int_switch_lever", "at": [3, 6]},
-        {"stamp": "int_metal_gate", "at": [19, 8], "gate_id": "gate_relay_wing"},
-        {"stamp": "int_radio_console", "at": [23, 4], "capstone": true},
-        {"stamp": "int_glass_case", "at": [23, 12]},
-        {"stamp": "int_item_ball", "at": [5, 14]},
-        {"stamp": "int_item_ball", "at": [25, 15]}
+        {"stamp": "int_suspended_flyer", "at": [8, 2]},
+        {"stamp": "int_space_capsule", "at": [9, 6]},
+        {"stamp": "int_glass_case", "at": [7, 10]},
+        {"stamp": "int_glass_case", "at": [13, 10]},
+        {"stamp": "int_supply_crate", "at": [0, 9]},
+        {"stamp": "int_supply_crate", "at": [0, 11]},
+        {"stamp": "int_smash_rubble", "at": [6, 7], "clearable": true},
+        {"stamp": "int_switch_lever", "at": [4, 8]},
+        {"stamp": "int_metal_gate", "at": [17, 5], "gate_id": "gate_relay_wing"},
+        {"stamp": "int_radio_console", "at": [17, 8], "capstone": true},
+        {"stamp": "int_glass_case", "at": [20, 8]},
+        {"stamp": "int_item_ball", "at": [4, 11]},
+        {"stamp": "int_item_ball", "at": [20, 11]}
+      ],
+      "fixtures": [
+        {"fixture": "em_space_drawer_1x2", "at": [0, 0]},
+        {"fixture": "em_space_console_2x2", "at": [1, 0]},
+        {"fixture": "em_wall_map_2x1", "at": [3, 0]},
+        {"fixture": "em_space_drawer_1x2", "at": [7, 0]},
+        {"fixture": "em_space_window_1x2", "at": [8, 0]},
+        {"fixture": "em_space_window_1x2", "at": [9, 0]},
+        {"fixture": "em_space_window_1x2", "at": [10, 0]},
+        {"fixture": "em_space_window_1x2", "at": [11, 0]},
+        {"fixture": "em_space_window_1x2", "at": [12, 0]},
+        {"fixture": "em_space_window_1x2", "at": [13, 0]},
+        {"fixture": "em_space_drawer_1x2", "at": [14, 0]},
+        {"fixture": "em_space_window_1x2", "at": [16, 0]},
+        {"fixture": "em_space_window_1x2", "at": [17, 0]},
+        {"fixture": "em_space_window_1x2", "at": [18, 0]},
+        {"fixture": "em_space_console_2x2", "at": [19, 0]},
+        {"fixture": "em_display_dais_6x3", "at": [8, 2]},
+        {"fixture": "em_display_dais_5x4", "at": [8, 6]},
+        {"fixture": "em_rocket_table_2x2", "at": [1, 3]},
+        {"fixture": "em_stool_1x1", "at": [1, 5]},
+        {"fixture": "em_stool_1x1", "at": [2, 5]},
+        {"fixture": "em_space_desk_2x2", "at": [17, 2]},
+        {"fixture": "em_stool_1x1", "at": [19, 4]},
+        {"fixture": "em_potted_plant_1x2", "at": [21, 2]},
+        {"fixture": "em_rocket_table_2x2", "at": [16, 11]}
       ],
       "npcs": [
-        {"id": "npc_telemetry_curator", "name": "Curator Lin", "at": [11, 14], "role": "scholar"}
+        {"id": "npc_telemetry_curator", "name": "Curator Lin", "at": [9, 10], "role": "scholar"}
       ],
       "items": [
-        {"id": "dc_airspace_magnet", "at": [5, 14], "name": "Magnet"},
-        {"id": "dc_airspace_upgrade", "at": [25, 15], "name": "Up-Grade"}
+        {"id": "dc_airspace_magnet", "at": [4, 11], "name": "Magnet"},
+        {"id": "dc_airspace_upgrade", "at": [20, 11], "name": "Up-Grade"}
       ],
       "signs": [
-        {"at": [14, 8], "text": "Milestones of Flight — Early Glider & Orbital Return Capsule"},
-        {"at": [22, 4], "text": "Emergency Telemetry Console — Awaiting Carrier Lock"}
+        {"at": [13, 5], "text": "Milestones of Flight — Early Glider & Orbital Return Capsule"},
+        {"at": [16, 8], "text": "Emergency Telemetry Console — Awaiting Carrier Lock"}
       ]
     }
   ]

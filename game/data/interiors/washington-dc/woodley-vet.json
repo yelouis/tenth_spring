@@ -9,48 +9,65 @@
       "floor_id": "1F",
       "label": "1F — Quarantine Clinic Wards",
       "theme": "stone",
-      "width": 24,
-      "height": 16,
+      "kit": "clinic_clean",
+      "width": 20,
+      "height": 14,
       "grid": [
-        "########################",
-        "#======================#",
-        "#.......#======#.......#",
-        "#.......#MMMMMM#.......#",
-        "#.......#MMMMMM#.......#",
-        "#.......===MM===.......#",
-        "#.........MMMM.........#",
-        "#.......#MMMMMM#.......#",
-        "#.......=MMMMMM=.......#",
-        "#........MMMMMM........#",
-        "#.......#MMMMMM#.......#",
-        "#.......#MMMMMM#.......#",
-        "#.......=MMMMMM=.......#",
-        "#........MMMMMM........#",
-        "#..........DD..........#",
-        "########################"
+        "####################",
+        "====================",
+        "MMMMMM#MMMMMM#MMMMMM",
+        "MMMMMM#MMMMMM#MMMMMM",
+        "MMMMMM#MMMMMM#MMMMMM",
+        "MMMMMM###MM###MMMMMM",
+        "MMMMMM===MM===MMMMMM",
+        "MMMMMMMMMMMMMMMMMMMM",
+        "MMMMMMMMRRRRMMMMMMMM",
+        "MMMMMMMMRRRRMMMMMMMM",
+        "MMMMMMMMRRRRMMMMMMMM",
+        "MMMMMMMMRRRRMMMMMMMM",
+        "MMMMMMMMMMMMMMMMMMMM",
+        "MMMMMMMMMDDMMMMMMMMM"
       ],
       "warps": [],
       "stairs": [],
       "switches": [
-        {"id": "sw_vet_quarantine", "at": [3, 6], "opens": ["gate_vet_keystone"]}
+        {"id": "sw_vet_quarantine", "at": [3, 9], "opens": ["gate_vet_keystone"]}
       ],
       "stamps": [
-        {"stamp": "int_keystone_pedestal", "at": [11, 2], "capstone": true},
-        {"stamp": "int_metal_gate", "at": [11, 4], "gate_id": "gate_vet_keystone"},
+        {"stamp": "int_keystone_pedestal", "at": [9, 2], "capstone": true},
+        {"stamp": "int_metal_gate", "at": [9, 5], "gate_id": "gate_vet_keystone"},
         {"stamp": "int_vet_kennel_bank", "at": [1, 1]},
-        {"stamp": "int_vet_kennel_bank", "at": [5, 1]},
-        {"stamp": "int_surgery_table", "at": [18, 3]},
-        {"stamp": "int_surgery_table", "at": [18, 10]},
-        {"stamp": "int_switch_lever", "at": [3, 6]},
-        {"stamp": "int_supply_crate", "at": [2, 11]},
-        {"stamp": "int_item_ball", "at": [21, 13]}
+        {"stamp": "int_vet_kennel_bank", "at": [1, 6]},
+        {"stamp": "int_surgery_table", "at": [15, 6]},
+        {"stamp": "int_surgery_table", "at": [15, 10]},
+        {"stamp": "int_switch_lever", "at": [3, 9]},
+        {"stamp": "int_supply_crate", "at": [1, 11]},
+        {"stamp": "int_item_ball", "at": [18, 12]},
+        {"stamp": "int_wall_cobweb_crack", "at": [3, 0]},
+        {"stamp": "int_wall_cobweb_crack", "at": [11, 5]},
+        {"stamp": "int_wall_cobweb_crack", "at": [19, 0]},
+        {"stamp": "int_plaster_rubble", "at": [6, 9]},
+        {"stamp": "int_plaster_rubble", "at": [12, 8]},
+        {"stamp": "int_plaster_rubble", "at": [8, 12]}
+      ],
+      "fixtures": [
+        {"fixture": "em_wall_map_2x1", "at": [1, 0]},
+        {"fixture": "em_wall_notice_1x1", "at": [14, 0]},
+        {"fixture": "em_wall_clock_1x1", "at": [16, 0]},
+        {"fixture": "em_medicine_shelf_2x3", "at": [4, 0]},
+        {"fixture": "em_pc_desk_2x2", "at": [14, 1]},
+        {"fixture": "em_medicine_shelf_2x3", "at": [17, 0]},
+        {"fixture": "em_medicine_cabinet_2x2", "at": [4, 6]},
+        {"fixture": "em_trash_can_1x1", "at": [6, 11]},
+        {"fixture": "em_potted_plant_1x2", "at": [7, 11]},
+        {"fixture": "em_potted_plant_1x2", "at": [12, 11]}
       ],
       "npcs": [],
       "items": [
-        {"id": "dc_vet_reaper", "at": [21, 13], "name": "Reaper Cloth"}
+        {"id": "dc_vet_reaper", "at": [18, 12], "name": "Reaper Cloth"}
       ],
       "signs": [
-        {"at": [9, 13], "text": "Quarantine Intake — All Kennels Unlatched Before the Evacuation"}
+        {"at": [13, 9], "text": "Quarantine Intake — All Kennels Unlatched Before the Evacuation"}
       ]
     }
   ]

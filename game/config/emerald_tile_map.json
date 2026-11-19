@@ -788,9 +788,9 @@
       "void": {"primary": "pri16", "metatile": 0, "layer": "full"},
       "wall_upper": {"primary": "pri16", "tileset": "sec18", "metatile": 523, "layer": "full"},
       "wall_lower": {"primary": "pri16", "tileset": "sec18", "metatile": 518, "layer": "full"},
-      "partition_top_w": {"primary": "pri16", "tileset": "sec41", "metatile": 520, "layer": "full"},
-      "partition_top_h": {"primary": "pri16", "tileset": "sec41", "metatile": 521, "layer": "full"},
-      "partition_top_end_e": {"primary": "pri16", "tileset": "sec41", "metatile": 530, "layer": "full"},
+      "partition_top_w": {"primary": "pri16", "tileset": "sec18", "metatile": 523, "layer": "full"},
+      "partition_top_h": {"primary": "pri16", "tileset": "sec18", "metatile": 523, "layer": "full"},
+      "partition_top_end_e": {"primary": "pri16", "tileset": "sec18", "metatile": 523, "layer": "full"},
       "floor": {"primary": "pri16", "tileset": "sec18", "metatile": 514, "layer": "full"},
       "floor_shadow_n": {"primary": "pri16", "tileset": "sec18", "metatile": 544, "layer": "full"},
       "floor_shadow_w": {"primary": "pri16", "tileset": "sec18", "metatile": 544, "layer": "full"},
@@ -850,7 +850,7 @@
       "partition_top_end_e": {"primary": "pri00", "tileset": "sec29", "metatile": 751, "layer": "full"},
       "floor": {"primary": "pri00", "tileset": "sec29", "metatile": 742, "layer": "full"},
       "floor_shadow_n": {"primary": "pri00", "tileset": "sec29", "metatile": 743, "layer": "full"},
-      "floor_shadow_w": {"primary": "pri00", "tileset": "sec29", "metatile": 806, "layer": "full"},
+      "floor_shadow_w": {"primary": "pri00", "tileset": "sec29", "metatile": 743, "layer": "full"},
       "floor_shadow_nw": {"primary": "pri00", "tileset": "sec29", "metatile": 743, "layer": "full"},
       "door_mat_2x1": [
         {"primary": "pri00", "tileset": "sec29", "metatile": 518, "layer": "full"},
@@ -977,7 +977,16 @@
     "em_potted_tree_1x2": {"w": 1, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[657], [665]]},
     "em_wood_table_2x2": {"w": 2, "h": 2, "base_rows": 2, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[584, 585], [592, 593]]},
     "em_sofa_2x2": {"w": 2, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec47", "cells": [[643, 644], [651, 652]]},
-    "em_trash_can_1x1": {"w": 1, "h": 1, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec43", "cells": [[630]]}
+    "em_trash_can_1x1": {"w": 1, "h": 1, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec43", "cells": [[630]]},
+    "em_medicine_shelf_2x3": {"w": 2, "h": 3, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec17", "cells": [[555, 556], [563, 564], [571, 572]]},
+    "em_medicine_cabinet_2x2": {"w": 2, "h": 2, "base_rows": 1, "layer": "l1", "primary": "pri16", "tileset": "sec17", "cells": [[682, 683], [690, 691]]},
+    "em_display_dais_5x4": {"w": 5, "h": 4, "base_rows": 0, "underlay": true, "layer": "l1", "primary": "pri16", "tileset": "sec41", "cells": [[570, 571, 571, 571, 572], [578, 579, 579, 579, 580], [586, 587, 587, 587, 588], [594, 595, 595, 595, 596]]},
+    "em_display_dais_6x3": {"w": 6, "h": 3, "base_rows": 0, "underlay": true, "layer": "l1", "primary": "pri16", "tileset": "sec41", "cells": [[570, 571, 571, 571, 571, 572], [578, 579, 579, 579, 579, 580], [594, 595, 595, 595, 595, 596]]},
+    "em_space_window_1x2": {"w": 1, "h": 2, "base_rows": 0, "layer": "full", "primary": "pri00", "tileset": "sec29", "cells": [[760], [768]]},
+    "em_space_console_2x2": {"w": 2, "h": 2, "base_rows": 0, "layer": "full", "primary": "pri00", "tileset": "sec29", "cells": [[537, 537], [696, 697]]},
+    "em_space_drawer_1x2": {"w": 1, "h": 2, "base_rows": 0, "layer": "full", "primary": "pri00", "tileset": "sec29", "cells": [[536], [698]]},
+    "em_rocket_table_2x2": {"w": 2, "h": 2, "base_rows": 2, "layer": "l1", "primary": "pri00", "tileset": "sec29", "cells": [[872, 873], [880, 881]]},
+    "em_space_desk_2x2": {"w": 2, "h": 2, "base_rows": 2, "layer": "l1", "primary": "pri00", "tileset": "sec29", "cells": [[867, 868], [875, 876]]}
   },
   "gaps": [
     {

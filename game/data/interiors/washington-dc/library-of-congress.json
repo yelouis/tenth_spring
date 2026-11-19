@@ -28,7 +28,7 @@
       ],
       "warps": [],
       "stairs": [
-        {"at": [16, 1], "to_floor": "2F", "to": [21, 3], "dir": "up"}
+        {"at": [16, 1], "to_floor": "2F", "to": [16, 2], "dir": "up"}
       ],
       "switches": [],
       "stamps": [
@@ -80,52 +80,61 @@
       "floor_id": "2F",
       "label": "2F — Calder Cipher Stack & Vault",
       "theme": "wood",
-      "width": 24,
-      "height": 16,
+      "kit": "gallery_wood",
+      "width": 20,
+      "height": 12,
       "grid": [
-        "########################",
-        "#======================#",
-        "#WWWWWWWWWWWWWWWW#=====#",
-        "#WWWWWWWWWWWWWWWW#WWdWW#",
-        "#WWWWWWWWWWWWWWWW#WWWWW#",
-        "#WWWWWWWWWWWWWWWW=WWWWW#",
-        "#WWWWWWWW------WWWWWWWW#",
-        "#WWWWWWWW-OOOO-WWWWWWWW#",
-        "#WWWWWWWW-OOOO-WWWWWWWW#",
-        "#WWWWWWWW------WWWWWWWW#",
-        "#WWWWWWWWWWWWWWWW#=====#",
-        "#WWWWWWWWWWWWWWWW=WWWWW#",
-        "#WWWWWWWWWWWWWWWWWWWWWW#",
-        "#WWWWWWWWWWWWWWWW#WWWWW#",
-        "#WWWWWWWWWWWWWWWW#WWWWW#",
-        "########################"
+        "####################",
+        "================d===",
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWW------WWWWWWW",
+        "WWWWWWW-OOOO-WWWWWWW",
+        "WWWWWWW------WWWWWWW",
+        "WWWWWWWWWWWWWW#WW###",
+        "WWWWWWWRRRRWWW#WW===",
+        "WWWWWWWRRRRWWW#WWWWW",
+        "WWWWWWWRRRRWWW#WWWWW",
+        "WWWWWWWWWWWWWW=WWWWW"
       ],
       "warps": [
-        {"at": [19, 13], "to_floor": "1F", "to": [9, 10], "kind": "warp_pad"}
+        {"at": [15, 10], "to_floor": "1F", "to": [9, 10], "kind": "warp_pad"}
       ],
       "stairs": [
-        {"at": [20, 3], "to_floor": "1F", "to": [16, 2], "dir": "down"}
+        {"at": [16, 1], "to_floor": "1F", "to": [16, 2], "dir": "down"}
       ],
       "switches": [
-        {"id": "sw_cipher_vault", "at": [3, 13], "opens": ["gate_cipher_vault"]}
+        {"id": "sw_cipher_vault", "at": [2, 10], "opens": ["gate_cipher_vault"]}
       ],
       "stamps": [
-        {"stamp": "int_archive_bookshelf", "at": [2, 1]},
-        {"stamp": "int_archive_bookshelf", "at": [7, 1]},
-        {"stamp": "int_archive_bookshelf", "at": [12, 1]},
-        {"stamp": "int_reading_table_lamp", "at": [2, 8]},
-        {"stamp": "int_switch_lever", "at": [3, 13]},
-        {"stamp": "int_metal_gate", "at": [16, 11], "gate_id": "gate_cipher_vault"},
-        {"stamp": "int_calder_cipher_desk", "at": [19, 10], "capstone": true},
-        {"stamp": "int_warp_pad", "at": [19, 13]},
-        {"stamp": "int_item_ball", "at": [14, 13]}
+        {"stamp": "int_archive_bookshelf", "at": [1, 0]},
+        {"stamp": "int_archive_bookshelf", "at": [6, 0]},
+        {"stamp": "int_archive_bookshelf", "at": [11, 0]},
+        {"stamp": "int_reading_table_lamp", "at": [2, 5]},
+        {"stamp": "int_switch_lever", "at": [2, 10]},
+        {"stamp": "int_metal_gate", "at": [15, 7], "gate_id": "gate_cipher_vault"},
+        {"stamp": "int_calder_cipher_desk", "at": [17, 9], "capstone": true},
+        {"stamp": "int_warp_pad", "at": [15, 9]},
+        {"stamp": "int_item_ball", "at": [18, 3]}
+      ],
+      "fixtures": [
+        {"fixture": "em_wall_window_2x1", "at": [4, 0]},
+        {"fixture": "em_painting_gold_2x2", "at": [9, 0]},
+        {"fixture": "em_wall_window_2x1", "at": [18, 0]},
+        {"fixture": "em_potted_tree_1x2", "at": [0, 1]},
+        {"fixture": "em_potted_tree_1x2", "at": [19, 1]},
+        {"fixture": "em_chair_e_1x1", "at": [1, 6]},
+        {"fixture": "em_chair_w_1x1", "at": [5, 6]},
+        {"fixture": "em_bookshelf_2x2", "at": [4, 9]},
+        {"fixture": "em_potted_plant_1x2", "at": [0, 9]},
+        {"fixture": "em_wall_notice_1x1", "at": [14, 7]}
       ],
       "npcs": [],
       "items": [
-        {"id": "dc_loc_2f_spell", "at": [14, 13], "name": "Spell Tag"}
+        {"id": "dc_loc_2f_spell", "at": [18, 3], "name": "Spell Tag"}
       ],
       "signs": [
-        {"at": [11, 5], "text": "Rare Book Folio — Calder's Margin Notes Point South-East"}
+        {"at": [11, 4], "text": "Rare Book Folio — Calder's Margin Notes Point South-East"}
       ]
     }
   ]

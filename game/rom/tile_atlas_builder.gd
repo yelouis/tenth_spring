@@ -11,6 +11,11 @@ const Gen3TilesRef := preload("res://rom/gen3_tiles.gd")
 const ORIGINAL_PNG_PATH := "res://assets/tiles/original_v1.png"
 const ORIGINAL_JSON_PATH := "res://assets/tiles/original_v1.json"
 const DEFAULT_EMERALD_MAP_PATH := "res://config/emerald_tile_map.json"
+const INDOOR_STAMP_TO_OBJECT_CLASS := {
+	"110": "28", # int_item_ball -> Emerald item ball
+	"114": "27", # int_push_boulder -> Emerald Strength boulder
+	"115": "26", # int_smash_rubble -> Emerald Rock Smash rock
+}
 
 
 static func build_emerald_atlas(
@@ -275,11 +280,32 @@ static func _build_indoor_atlas_files(
 			"w": int(fx_spec.get("w", 1)),
 			"h": int(fx_spec.get("h", 1)),
 			"base_rows": int(fx_spec.get("base_rows", 1)),
+			"underlay": bool(fx_spec.get("underlay", false)),
 			"layer": flayer,
 			"cells": out_cells,
 		}
 
-	var total_slots := indoor_cols + unique_descs.size()
+	var obj_cfg: Dictionary = cfg.get("object_sprites", {})
+	var override_descs: Array = []
+	var stamp_overrides: Dictionary = {}
+	var sid_keys := INDOOR_STAMP_TO_OBJECT_CLASS.keys()
+	sid_keys.sort()
+	for sid_v in sid_keys:
+		var sid_str := str(sid_v)
+		var obj_cls_str := str(INDOOR_STAMP_TO_OBJECT_CLASS[sid_str])
+		if not obj_cfg.has(obj_cls_str):
+			continue
+		var atlas_idx := indoor_cols + unique_descs.size() + override_descs.size()
+		var spec: Dictionary = obj_cfg[obj_cls_str]
+		override_descs.append({
+			"col": atlas_idx % indoor_cols,
+			"row": int(atlas_idx / indoor_cols),
+			"frame_offset": int(spec.get("frame_offset", 0)),
+			"palette_offset": int(spec.get("palette_offset", 0)),
+		})
+		stamp_overrides[sid_str] = [atlas_idx % indoor_cols, int(atlas_idx / indoor_cols)]
+
+	var total_slots := indoor_cols + unique_descs.size() + override_descs.size()
 	var total_rows := maxi(1, int((total_slots + indoor_cols - 1) / indoor_cols))
 	var indoor_img := Image.create(indoor_cols * tile_px, total_rows * tile_px, false, Image.FORMAT_RGBA8)
 	indoor_img.fill(Color(0, 0, 0, 0))
@@ -306,6 +332,16 @@ static func _build_indoor_atlas_files(
 		indoor_img.blit_rect(ures["image"], Rect2i(0, 0, tile_px, tile_px), Vector2i(col * tile_px, row * tile_px))
 		indoor_written += 1
 
+	for ov_v in override_descs:
+		var ov: Dictionary = ov_v
+		var obj_img := Gen3TilesRef.render_object_transparent_32(
+			rom,
+			int(ov["frame_offset"]),
+			int(ov["palette_offset"])
+		)
+		indoor_img.blit_rect(obj_img, Rect2i(0, 0, tile_px, tile_px), Vector2i(int(ov["col"]) * tile_px, int(ov["row"]) * tile_px))
+		indoor_written += 1
+
 	var isave_err := indoor_img.save_png(out_indoor_png)
 	if isave_err != OK:
 		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_indoor_png, isave_err]}
@@ -322,6 +358,7 @@ static func _build_indoor_atlas_files(
 		"columns": indoor_rows,
 		"kits": kits_meta,
 		"fixtures": fixtures_meta,
+		"stamp_overrides": stamp_overrides,
 	}, "\t") + "\n")
 	ijf.close()
 	return {"ok": true, "png": out_indoor_png, "json": out_indoor_json, "written": indoor_written}

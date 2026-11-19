@@ -202,6 +202,7 @@ static func resolve_atlas_bundle(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, 
 					"rows": int(jd.get("rows", 1)),
 					"kits": jd.get("kits", {}),
 					"fixtures": jd.get("fixtures", {}),
+					"stamp_overrides": jd.get("stamp_overrides", {}),
 				}
 	return build_fallback_bundle()
 
@@ -400,6 +401,7 @@ static func build_fallback_bundle() -> Dictionary:
 		var fw := int(fspec.get("w", 1))
 		var fh := int(fspec.get("h", 1))
 		var fbase := int(fspec.get("base_rows", 1))
+		var funder := bool(fspec.get("underlay", false))
 		var flayer := str(fspec.get("layer", "l1"))
 		var out_cells: Array = []
 		for cy in range(fh):
@@ -407,7 +409,7 @@ static func build_fallback_bundle() -> Dictionary:
 			for cx in range(fw):
 				row_c.append(_reg_fb_slot(slot_specs, "fixture", fx_id, {"fx": fx_id, "cx": cx, "cy": cy, "w": fw, "h": fh}))
 			out_cells.append(row_c)
-		fixtures_meta[fx_id] = {"w": fw, "h": fh, "base_rows": fbase, "layer": flayer, "cells": out_cells}
+		fixtures_meta[fx_id] = {"w": fw, "h": fh, "base_rows": fbase, "underlay": funder, "layer": flayer, "cells": out_cells}
 
 	var total_slots := CLASS_COUNT + slot_specs.size()
 	var total_rows := maxi(1, int((total_slots + CLASS_COUNT - 1) / CLASS_COUNT))
@@ -577,8 +579,11 @@ static func build_fallback_bundle() -> Dictionary:
 		"source": "fallback",
 		"cols": CLASS_COUNT,
 		"rows": total_rows,
+		"count": CLASS_COUNT,
+		"columns": [],
 		"kits": kits_meta,
 		"fixtures": fixtures_meta,
+		"stamp_overrides": {},
 	}
 	return _fallback_bundle_cache
 
@@ -795,6 +800,55 @@ static func _draw_fixture16(img: Image, ox: int, oy: int, fx_id: String, cx: int
 	elif fx_id == "em_trash_can_1x1":
 		_fill_rect16(img, ox, oy, 4, 3, 8, 11, Color8(132, 138, 150, 255))
 		_fill_rect16(img, ox, oy, 5, 4, 6, 2, Color8(194, 200, 212, 255))
+	elif fx_id == "em_medicine_shelf_2x3" or fx_id == "em_medicine_cabinet_2x2":
+		var is_tall := (fx_id == "em_medicine_shelf_2x3")
+		var max_cy := 2 if is_tall else 1
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 14 if cy == max_cy else 16, Color8(72, 78, 92, 255))
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 12 if cy == max_cy else 16, Color8(186, 194, 206, 255))
+		if cy < max_cy:
+			_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 13, 13, 2, Color8(116, 124, 138, 255))
+			for bx in range(3, 13, 4):
+				_fill_rect16(img, ox, oy, bx, 5, 3, 7, Color8(216, 86, 86, 255) if (bx + cy) % 2 == 0 else Color8(82, 168, 224, 255))
+				_fill_rect16(img, ox, oy, bx + 1, 4, 1, 1, cream)
+		else:
+			_fill_rect16(img, ox, oy, 3 if cx == 0 else 1, 2, 11, 10, Color8(146, 154, 168, 255))
+			_fill_rect16(img, ox, oy, 4 if cx == 0 else 2, 6, 2, 2, dark)
+	elif fx_id.begins_with("em_display_dais"):
+		var max_cy := 3 if fx_id == "em_display_dais_5x4" else 2
+		var max_cx := 4 if fx_id == "em_display_dais_5x4" else 5
+		var x0 := 2 if cx == 0 else 0
+		var x1 := 14 if cx == max_cx else 16
+		var y0 := 3 if cy == 0 else 0
+		var y1 := 14 if cy == max_cy else 16
+		_fill_rect16(img, ox, oy, x0, y0, x1 - x0, y1 - y0, Color8(192, 188, 174, 255))
+		if cy == max_cy:
+			_fill_rect16(img, ox, oy, x0, 10, x1 - x0, 4, Color8(134, 128, 114, 255))
+			_fill_rect16(img, ox, oy, x0, 14, x1 - x0, 1, dark)
+		if cy == 0:
+			_fill_rect16(img, ox, oy, x0, y0, x1 - x0, 2, Color8(228, 224, 210, 255))
+	elif fx_id == "em_space_window_1x2":
+		_draw_kit_surface16(img, ox, oy, "wall_upper" if cy == 0 else "wall_lower", _fallback_kit_palette("space_tech"))
+		_fill_rect16(img, ox, oy, 0, 5 if cy == 0 else 0, 16, 11 if cy == 0 else 8, dark)
+		_fill_rect16(img, ox, oy, 0, 6 if cy == 0 else 0, 16, 10 if cy == 0 else 6, Color8(108, 178, 236, 255))
+		if cy == 0:
+			_fill_rect16(img, ox, oy, 3, 8, 5, 3, Color8(210, 240, 255, 255))
+	elif fx_id == "em_space_console_2x2" or fx_id == "em_space_drawer_1x2":
+		_draw_kit_surface16(img, ox, oy, "wall_upper" if cy == 0 else "wall_lower", _fallback_kit_palette("space_tech"))
+		if cy == 1:
+			_fill_rect16(img, ox, oy, 1, 2, 14, 12, Color8(118, 130, 152, 255))
+			_fill_rect16(img, ox, oy, 3, 4, 4, 3, Color8(88, 210, 156, 255))
+			_fill_rect16(img, ox, oy, 9, 4, 4, 3, Color8(224, 146, 86, 255))
+	elif fx_id == "em_rocket_table_2x2":
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 13, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 11, Color8(176, 186, 202, 255))
+		_fill_rect16(img, ox, oy, 3 if cx == 0 else 1, 4 if cy == 0 else 2, 10, 8, Color8(82, 144, 218, 255))
+		_fill_rect16(img, ox, oy, 5 if cx == 0 else 3, 6 if cy == 0 else 4, 6, 3, cream)
+	elif fx_id == "em_space_desk_2x2":
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 13, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 11, Color8(168, 178, 194, 255))
+		if cy == 0:
+			_fill_rect16(img, ox, oy, 4, 2, 8, 7, dark)
+			_fill_rect16(img, ox, oy, 5, 3, 6, 5, Color8(110, 214, 168, 255))
 
 static func _draw_arrow_tile16(img: Image, cls: int, dir: Vector2i) -> void:
 	_fill_tile16(img, cls, Color8(224, 232, 244, 255))

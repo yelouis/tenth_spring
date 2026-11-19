@@ -234,20 +234,18 @@ static func render_metatile_layer1_32(primary: Dictionary, secondary: Variant, m
 	return scale_2x_nearest(render_metatile_layer1_16(primary, secondary, metatile_id))
 
 
-static func render_object_over_metatile_32(
+static func _blit_object_on_16(
+	img16: Image,
 	rom: Variant,
-	primary: Dictionary,
-	base_metatile: int,
 	frame_offset: int,
 	palette_offset: int
-) -> Image:
-	var img16 := render_metatile_16(primary, null, base_metatile)
+) -> void:
 	if rom == null:
-		return scale_2x_nearest(img16)
+		return
 	var pal_bytes: PackedByteArray = rom.read_bytes(palette_offset, 32)
 	var frame_bytes: PackedByteArray = rom.read_bytes(frame_offset, 128)
 	if pal_bytes.size() < 32 or frame_bytes.size() < 128:
-		return scale_2x_nearest(img16)
+		return
 	var pal: Array[Color] = []
 	for c_idx in range(16):
 		var c16 := int(pal_bytes[c_idx * 2]) | (int(pal_bytes[c_idx * 2 + 1]) << 8)
@@ -256,4 +254,34 @@ static func render_object_over_metatile_32(
 	for q in range(4):
 		var pos: Vector2i = QUAD[q]
 		_blit_4bpp_tile(img16, frame_bytes, q * 32, pal, pos.x, pos.y, false, false, true)
+
+
+static func render_object_transparent_16(
+	rom: Variant,
+	frame_offset: int,
+	palette_offset: int
+) -> Image:
+	var img16 := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	img16.fill(Color(0, 0, 0, 0))
+	_blit_object_on_16(img16, rom, frame_offset, palette_offset)
+	return img16
+
+
+static func render_object_transparent_32(
+	rom: Variant,
+	frame_offset: int,
+	palette_offset: int
+) -> Image:
+	return scale_2x_nearest(render_object_transparent_16(rom, frame_offset, palette_offset))
+
+
+static func render_object_over_metatile_32(
+	rom: Variant,
+	primary: Dictionary,
+	base_metatile: int,
+	frame_offset: int,
+	palette_offset: int
+) -> Image:
+	var img16 := render_metatile_16(primary, null, base_metatile)
+	_blit_object_on_16(img16, rom, frame_offset, palette_offset)
 	return scale_2x_nearest(img16)

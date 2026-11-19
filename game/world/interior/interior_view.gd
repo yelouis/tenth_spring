@@ -27,6 +27,7 @@ var _atlas_slice_cache: Dictionary = {}
 var _backdrop: ColorRect = null
 var _tile_layer: TileMapLayer = null
 var _overlay_tile_layer: TileMapLayer = null
+var _floor_dais_layer: Node2D = null
 var _floor_flat_layer: Node2D = null
 var _ysort_layer: Node2D = null
 var _ceiling_layer: Node2D = null
@@ -54,6 +55,44 @@ func get_floor_size() -> Vector2i:
 		var fd: Dictionary = floors[_floor_index]
 		return Vector2i(int(fd.get("w", 0)), int(fd.get("h", 0)))
 	return Vector2i.ZERO
+
+func extract_rendered_stamp_image_32(sid: int) -> Image:
+	for layer in [_ysort_layer, _floor_flat_layer, _ceiling_layer]:
+		if layer == null:
+			continue
+		for ch in layer.get_children():
+			if ch is Sprite2D and ch.has_meta("stamp_id") and int(ch.get_meta("stamp_id")) == sid:
+				var sp := ch as Sprite2D
+				var tex := sp.texture
+				if tex == null:
+					return null
+				var img: Image
+				if tex is AtlasTexture:
+					var atex := tex as AtlasTexture
+					if atex.atlas == null:
+						return null
+					var full_img := atex.atlas.get_image()
+					if full_img == null:
+						return null
+					full_img.convert(Image.FORMAT_RGBA8)
+					img = full_img.get_region(Rect2i(
+						int(round(atex.region.position.x)),
+						int(round(atex.region.position.y)),
+						int(round(atex.region.size.x)),
+						int(round(atex.region.size.y))
+					))
+				else:
+					img = tex.get_image()
+					if img == null:
+						return null
+					img = img.duplicate() as Image
+					img.convert(Image.FORMAT_RGBA8)
+				var sx := int(round(sp.scale.x))
+				var sy := int(round(sp.scale.y))
+				if sx > 1 or sy > 1:
+					img.resize(img.get_width() * maxi(1, sx), img.get_height() * maxi(1, sy), Image.INTERPOLATE_NEAREST)
+				return img
+	return null
 
 func load_interior(interior_key: String, floor_index: int = 0, cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, force_fallback: bool = false) -> bool:
 	var path := InteriorMap.resolve_interior_path(interior_key)
@@ -84,6 +123,7 @@ func _clear_scene() -> void:
 	_backdrop = null
 	_tile_layer = null
 	_overlay_tile_layer = null
+	_floor_dais_layer = null
 	_floor_flat_layer = null
 	_ysort_layer = null
 	_ceiling_layer = null
@@ -219,7 +259,13 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 		_overlay_tile_layer.set_cell(oc["pos"] as Vector2i, 0, oc["atlas"] as Vector2i)
 	add_child(_overlay_tile_layer)
 
-	# 3. Flat floor/wall layer, Y-sorted upright layer, and Ceiling layer
+	# 3. Dais underlay, Flat floor/wall layer, Y-sorted upright layer, and Ceiling layer
+	_floor_dais_layer = Node2D.new()
+	_floor_dais_layer.name = "FloorDaisLayer"
+	_floor_dais_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_floor_dais_layer.z_index = 1
+	add_child(_floor_dais_layer)
+
 	_floor_flat_layer = Node2D.new()
 	_floor_flat_layer.name = "FloorFlatLayer"
 	_floor_flat_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -251,7 +297,9 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 		var at: Vector2i = fx["at"]
 		var fh := int(fx.get("h", fx_cells.size()))
 		var fbase := int(fx.get("base_rows", 1))
-		if fbase <= 0:
+		var funderlay := bool(fx_meta.get("underlay", false))
+		if funderlay or fbase <= 0:
+			var flat_target: Node2D = _floor_dais_layer if funderlay else _floor_flat_layer
 			for cy in range(fx_cells.size()):
 				var row_arr: Array = fx_cells[cy]
 				for cx in range(row_arr.size()):
@@ -261,7 +309,7 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 					fsp.centered = false
 					fsp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 					fsp.position = Vector2(float((at.x + cx) * TILE_PX), float((at.y + cy) * TILE_PX))
-					_floor_flat_layer.add_child(fsp)
+					flat_target.add_child(fsp)
 		else:
 			var holder := Node2D.new()
 			holder.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -278,23 +326,37 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 					holder.add_child(fsp)
 			_ysort_layer.add_child(holder)
 
+	var stamp_overrides: Dictionary = bundle.get("stamp_overrides", {})
 	for st_v in (fd["stamps"] as Array):
 		var st: Dictionary = st_v
 		var sid := int(st["stamp_id"])
-		var rel_p := str(st["path"])
-		var tex := _load_stamp_texture(rel_p)
-		if tex == null:
-			continue
+		var sid_str := str(sid)
 		var at: Vector2i = st["at"]
 		var sw := int(st["w"])
 		var sh := int(st["h"])
 		var sbase := int(st["base_rows"])
 
 		var sp := Sprite2D.new()
-		sp.texture = tex
+		sp.set_meta("stamp_id", sid)
 		sp.centered = false
 		sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		sp.scale = Vector2(STAMP_SCALE, STAMP_SCALE)
+		var use_rom_obj := false
+		if stamp_overrides.has(sid_str):
+			var ov_coords: Array = stamp_overrides[sid_str] as Array
+			if ov_coords.size() >= 2:
+				sp.texture = _get_atlas_cell_tex(strip_tex, int(ov_coords[0]), int(ov_coords[1]))
+				sp.scale = Vector2(1.0, 1.0)
+				sp.set_meta("stamp_source", "rom_object")
+				use_rom_obj = true
+		if not use_rom_obj:
+			var rel_p := str(st["path"])
+			var tex := _load_stamp_texture(rel_p)
+			if tex == null:
+				sp.free()
+				continue
+			sp.texture = tex
+			sp.scale = Vector2(STAMP_SCALE, STAMP_SCALE)
+			sp.set_meta("stamp_source", "fallback_stamp")
 
 		if sid == 120:
 			# Ceiling-hung suspended flyer: draw subtle shadow on floor below + sprite overhead
@@ -306,13 +368,13 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 			sp.position = Vector2(float(at.x * TILE_PX), float(at.y * TILE_PX))
 			_ceiling_layer.add_child(sp)
 		elif sbase <= 0:
-			# Flat floor prop (int_warp_pad, int_wind_grate)
+			# Flat floor/wall prop (int_warp_pad, int_wind_grate, int_speech_tablet, etc.)
 			sp.position = Vector2(float(at.x * TILE_PX), float(at.y * TILE_PX))
 			_floor_flat_layer.add_child(sp)
 		else:
 			# Upright Y-sorted prop sorted by bottom edge
 			sp.position = Vector2(float(at.x * TILE_PX), float((at.y + sh) * TILE_PX))
-			sp.offset = Vector2(0.0, float(-sh * 16))
+			sp.offset = Vector2(0.0, float(-sh * TILE_PX if use_rom_obj else -sh * 16))
 			_ysort_layer.add_child(sp)
 
 	# 4. NPC sprites in Y-sort layer

@@ -35,14 +35,14 @@ static func resolve_stamp_id(raw_stamp: Variant) -> int:
 	_ensure_stamp_lookup()
 	if typeof(raw_stamp) == TYPE_INT or (typeof(raw_stamp) == TYPE_FLOAT and float(raw_stamp) == floor(float(raw_stamp))):
 		var sid := int(raw_stamp)
-		if sid >= 1 and sid <= 134 and TileSynth2.STAMP_TABLE.has(sid):
+		if sid >= 1 and sid <= 137 and TileSynth2.STAMP_TABLE.has(sid):
 			return sid
 		return -1
 	if typeof(raw_stamp) == TYPE_STRING:
 		var s := str(raw_stamp).strip_edges()
 		if s.is_valid_int():
 			var sid_s := s.to_int()
-			if sid_s >= 1 and sid_s <= 134 and TileSynth2.STAMP_TABLE.has(sid_s):
+			if sid_s >= 1 and sid_s <= 137 and TileSynth2.STAMP_TABLE.has(sid_s):
 				return sid_s
 			return -1
 		return int(_stamp_num_by_id.get(s, -1))
@@ -212,8 +212,8 @@ static func compile(doc: Dictionary) -> Dictionary:
 					art_pending += 1
 					(rule_errors["I6"] as Array).append("floor %s stamp has art=pending" % fid)
 				var sid := resolve_stamp_id(std.get("stamp", null))
-				if sid < 1 or sid > 134:
-					(rule_errors["I6"] as Array).append("floor %s invalid stamp '%s' (outside 1..134)" % [fid, str(std.get("stamp", ""))])
+				if sid < 1 or sid > 137:
+					(rule_errors["I6"] as Array).append("floor %s invalid stamp '%s' (outside 1..137)" % [fid, str(std.get("stamp", ""))])
 					continue
 				var at_p: Variant = _parse_vec2i(std.get("at", null))
 				if not (at_p is Vector2i):

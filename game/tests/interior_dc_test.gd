@@ -8,17 +8,19 @@ const InteriorCheck := preload("res://world/interior/interior_check.gd")
 const InteriorView := preload("res://world/interior/interior_view.gd")
 const RomImporter := preload("res://rom/importer.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
+const GbaRom := preload("res://rom/gba_rom.gd")
+const Gen3Tiles := preload("res://rom/gen3_tiles.gd")
 
 const CACHE_EMPTY := "user://test/interior_dc_empty"
 const CACHE_EMERALD := "user://test/interior_dc_emerald"
 
 const PINNED_SHA256: Dictionary = {
-	"res://data/interiors/washington-dc/air-and-space.json": "ebe5629f41b2fb3194fc7cecd05032f3798bcf4300b13c5055871c52bb42e4f6",
-	"res://data/interiors/washington-dc/georgetown-ruins.json": "c6f5185db206a980d8c50532affaf20bfb85ad29cfd697b47cc664cc3b48f497",
-	"res://data/interiors/washington-dc/library-of-congress.json": "49808d17830850bab93cf992d128e65cdbf939e95b34b93af01d4586933d941d",
-	"res://data/interiors/washington-dc/lincoln-memorial.json": "e2f2ce5d452b529503e8ac40e11069e65d80baafd60cd4847e992fbd01897046",
-	"res://data/interiors/washington-dc/washington-monument.json": "086a70d5cdad609e31b24921bc266c9ff1bff07c1d4205a9049267894400a8e1",
-	"res://data/interiors/washington-dc/woodley-vet.json": "b962a93fb904f7359676c09b44cfbfa7ee154aa63989ce0c32c29834b8fade4a",
+	"res://data/interiors/washington-dc/air-and-space.json": "3d57937dad12c63f9476c716dea045c6c6ad7600337ccdda6c13832782368ee9",
+	"res://data/interiors/washington-dc/georgetown-ruins.json": "501c13ab10f7fd3f2232808f38f1ffa0e01b8d1176a94c5b2846d30e78afe9fb",
+	"res://data/interiors/washington-dc/library-of-congress.json": "c38256dbae7061c7fae40e334c4bd0fb605915fdb96eef9f8b5115ca22e29bbc",
+	"res://data/interiors/washington-dc/lincoln-memorial.json": "1da6124d38029f3b2ec5593afb7694fef694026af815d146b17d2a8c0059f946",
+	"res://data/interiors/washington-dc/washington-monument.json": "4dcae42fdbcadd64c6fbb0305e4198be5bf4ae3981a9599883d1b61943550e20",
+	"res://data/interiors/washington-dc/woodley-vet.json": "29e823ce21422026832b1db8e8acb4b68ba1e06dac2bf466e7b3704849fbcb1d",
 }
 
 const EXPECTED_FLOOR_COUNTS: Dictionary = {
@@ -55,6 +57,59 @@ func _cleanup() -> void:
 	_rm_tree(CACHE_EMPTY)
 	_rm_tree(CACHE_EMERALD)
 
+func _load_fallback_stamp_32(rel_path: String) -> Image:
+	var img := Image.new()
+	var bytes := FileAccess.get_file_as_bytes("res://assets/original/" + rel_path)
+	if bytes.is_empty() or img.load_png_from_buffer(bytes) != OK or img.is_empty():
+		return null
+	img.convert(Image.FORMAT_RGBA8)
+	img.resize(img.get_width() * 2, img.get_height() * 2, Image.INTERPOLATE_NEAREST)
+	return img
+
+func _decode_expected_rom_obj_32(rom: GbaRom, frame_offset: int, palette_offset: int) -> Image:
+	var pal_bytes := rom.read_bytes(palette_offset, 32)
+	var frame_bytes := rom.read_bytes(frame_offset, 128)
+	if pal_bytes.size() < 32 or frame_bytes.size() < 128:
+		return null
+	var pal: Array[Color] = []
+	for c_idx in range(16):
+		var c16 := int(pal_bytes[c_idx * 2]) | (int(pal_bytes[c_idx * 2 + 1]) << 8)
+		pal.append(Gen3Tiles.bgr555_to_color(c16))
+	var img16 := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	img16.fill(Color(0, 0, 0, 0))
+	const QUAD := [Vector2i(0, 0), Vector2i(8, 0), Vector2i(0, 8), Vector2i(8, 8)]
+	for q in range(4):
+		var qpos: Vector2i = QUAD[q]
+		var toff := q * 32
+		for py in range(8):
+			var row_base := toff + py * 4
+			for px in range(8):
+				var b := int(frame_bytes[row_base + (px >> 1)])
+				var c_idx := (b & 0x0F) if (px & 1) == 0 else (b >> 4)
+				if c_idx != 0:
+					img16.set_pixel(qpos.x + px, qpos.y + py, pal[c_idx])
+	img16.resize(32, 32, Image.INTERPOLATE_NEAREST)
+	return img16
+
+func _images_equal(a: Image, b: Image) -> bool:
+	if a == null or b == null or a.get_size() != b.get_size():
+		return false
+	for y in range(a.get_height()):
+		for x in range(a.get_width()):
+			if a.get_pixel(x, y) != b.get_pixel(x, y):
+				return false
+	return true
+
+func _count_transparent_pixels(img: Image) -> int:
+	if img == null:
+		return 0
+	var n := 0
+	for y in range(img.get_height()):
+		for x in range(img.get_width()):
+			if img.get_pixel(x, y).a8 == 0:
+				n += 1
+	return n
+
 func _fail(msg: String) -> bool:
 	push_error("interior_dc_test: " + msg)
 	_cleanup()
@@ -68,6 +123,7 @@ func run_test() -> bool:
 
 	var total_floors := 0
 	var used_stamp_ids: Dictionary = {}
+	var stamp_counts: Dictionary = {110: 0, 114: 0, 115: 0}
 
 	for p in paths:
 		if not PINNED_SHA256.has(p):
@@ -97,9 +153,11 @@ func run_test() -> bool:
 			var fd: Dictionary = floors[fi]
 			for st_v in (fd["stamps"] as Array):
 				var sid := int((st_v as Dictionary)["stamp_id"])
-				if sid < 110 or sid > 134:
-					return _fail("Interior %s floor %d placed stamp %d outside 110..134" % [iid, fi, sid])
+				if sid < 110 or sid > 137:
+					return _fail("Interior %s floor %d placed stamp %d outside 110..137" % [iid, fi, sid])
 				used_stamp_ids[sid] = true
+				if stamp_counts.has(sid):
+					stamp_counts[sid] = int(stamp_counts[sid]) + 1
 
 			# Exercise InteriorView fallback draw path on every floor
 			var iv := InteriorView.new()
@@ -115,12 +173,32 @@ func run_test() -> bool:
 	if total_floors != 10:
 		return _fail("Expected 10 total DC interior floors, got %d" % total_floors)
 
-	# Verify all 25 Tier-5 interior stamps (110..134) are placed across DC's 6 interiors
-	for sid in range(110, 135):
+	if int(stamp_counts[110]) != 11 or int(stamp_counts[114]) != 2 or int(stamp_counts[115]) != 3:
+		return _fail("Expected ROM-object counts {110:11, 114:2, 115:3}, got %s" % str(stamp_counts))
+
+	# Verify all 28 Tier-5 interior stamps (110..137) are placed across DC's 6 interiors
+	for sid in range(110, 138):
 		if not used_stamp_ids.has(sid):
 			return _fail("Tier-5 interior stamp %d is never placed in any DC interior" % sid)
 
-	# Optional ROM-gated check: when TENTH_SPRING_ROM_GBA is set, verify Emerald indoor atlas path too
+	# Without-ROM fallback check: 110 (item ball), 114 (boulder), 115 (Rock Smash rock) draw original stamps
+	const OBJ_CASES := [
+		{"iid": "dc:library-of-congress", "floor": 0, "sid": 110, "obj_cls": "28", "rel": "interiors/int_item_ball.png"},
+		{"iid": "dc:washington-monument", "floor": 1, "sid": 114, "obj_cls": "27", "rel": "interiors/int_push_boulder.png"},
+		{"iid": "dc:air-and-space", "floor": 0, "sid": 115, "obj_cls": "26", "rel": "interiors/int_smash_rubble.png"},
+	]
+	for oc in OBJ_CASES:
+		var iv_no_rom := InteriorView.new()
+		add_child(iv_no_rom)
+		var ok_nr := iv_no_rom.load_interior(str(oc["iid"]), int(oc["floor"]), CACHE_EMPTY, true)
+		var fb_rendered := iv_no_rom.extract_rendered_stamp_image_32(int(oc["sid"]))
+		remove_child(iv_no_rom)
+		iv_no_rom.free()
+		var expected_fb := _load_fallback_stamp_32(str(oc["rel"]))
+		if not ok_nr or not _images_equal(fb_rendered, expected_fb):
+			return _fail("Fallback check failed for stamp %d (%s): rendered != fallback PNG" % [int(oc["sid"]), str(oc["iid"])])
+
+	# Optional ROM-gated check: when TENTH_SPRING_ROM_GBA is set, verify Emerald indoor atlas + ROM object overrides
 	var rom_env := OS.get_environment("TENTH_SPRING_ROM_GBA").strip_edges()
 	if not rom_env.is_empty():
 		var imp := RomImporter.import_gba_rom(rom_env, CACHE_EMERALD)
@@ -138,6 +216,35 @@ func run_test() -> bool:
 		var iimg := itex.get_image()
 		if iimg == null or iimg.get_pixel(0, 0) != Color8(0, 0, 0, 255):
 			return _fail("Expected class 0 Emerald void pixel (0,0) to be pure #000000")
+
+		var cfg_parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://config/emerald_tile_map.json"))
+		var obj_cfg: Dictionary = (cfg_parsed as Dictionary).get("object_sprites", {}) if cfg_parsed is Dictionary else {}
+		var rom_open := GbaRom.open_rom(rom_env, false, true)
+		if not bool(rom_open.get("ok", false)):
+			return _fail("ROM-gated open_rom failed: %s" % str(rom_open))
+		var rom_inst: GbaRom = rom_open["rom"]
+		for oc in OBJ_CASES:
+			var sid := int(oc["sid"])
+			var spec: Dictionary = obj_cfg.get(str(oc["obj_cls"]), {})
+			var exp_rom_32 := _decode_expected_rom_obj_32(rom_inst, int(spec.get("frame_offset", 0)), int(spec.get("palette_offset", 0)))
+			var exp_fb_32 := _load_fallback_stamp_32(str(oc["rel"]))
+			if exp_rom_32 == null or _count_transparent_pixels(exp_rom_32) == 0:
+				rom_inst.close()
+				return _fail("Expected decoded ROM sprite %d to have transparent background pixels" % sid)
+			var iv_obj := InteriorView.new()
+			add_child(iv_obj)
+			var ok_obj := iv_obj.load_interior(str(oc["iid"]), int(oc["floor"]), CACHE_EMERALD, false)
+			var em_rendered := iv_obj.extract_rendered_stamp_image_32(sid)
+			remove_child(iv_obj)
+			iv_obj.free()
+			if not ok_obj or not _images_equal(em_rendered, exp_rom_32):
+				rom_inst.close()
+				return _fail("ROM object check failed for stamp %d (%s): rendered does not match transparent 2x ROM sprite" % [sid, str(oc["iid"])])
+			if _images_equal(em_rendered, exp_fb_32):
+				rom_inst.close()
+				return _fail("ROM object check failed for stamp %d (%s): rendered still equals fallback stamp" % [sid, str(oc["iid"])])
+		rom_inst.close()
+
 		var iv_em := InteriorView.new()
 		add_child(iv_em)
 		var ok_em := iv_em.load_interior("dc:library-of-congress", 0, CACHE_EMERALD, false)
