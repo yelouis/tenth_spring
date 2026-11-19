@@ -299,7 +299,7 @@ static func resolve_kit_cells(fd: Dictionary, kit_def: Dictionary) -> Dictionary
 				continue
 			var cls := int(tiles[y * w + x])
 			var atlas_v := Vector2i(cls, 0)
-			if cls == TILE_INT_VOID_BLACK:
+			if cls == TILE_INT_VOID_BLACK or cls == TILE_INT_PIT_CHASM:
 				atlas_v = void_c
 			elif cls == TILE_INT_WALL_TOP:
 				var south_cls := int(tiles[(y + 1) * w + x]) if (y + 1 < h) else TILE_INT_VOID_BLACK
@@ -510,12 +510,8 @@ static func build_fallback_bundle() -> Dictionary:
 		_px16(strip16, TILE_INT_STAIRS_DOWN, 0, i, Color8(152, 158, 170, 255))
 		_px16(strip16, TILE_INT_STAIRS_DOWN, 15, i, Color8(152, 158, 170, 255))
 
-	# 10: pit_chasm — dark chasm opening inside jagged stone rim
-	_fill_tile16(strip16, TILE_INT_PIT_CHASM, Color8(136, 142, 154, 255))
-	for y in range(2, 14):
-		for x in range(2, 14):
-			if (x + y > 4) and (x + (15 - y) > 4) and ((15 - x) + y > 4) and ((15 - x) + (15 - y) > 4):
-				_px16(strip16, TILE_INT_PIT_CHASM, x, y, Color8(36, 40, 54, 255))
+	# 10: pit_chasm — pure black drop opening inside wooden/marble railing
+	_fill_tile16(strip16, TILE_INT_PIT_CHASM, Color8(0, 0, 0, 255))
 
 	# 11: water_channel — indoor canal water with ripple
 	_fill_tile16(strip16, TILE_INT_WATER_CHANNEL, Color8(74, 126, 208, 255))

@@ -94,6 +94,97 @@ func extract_rendered_stamp_image_32(sid: int) -> Image:
 				return img
 	return null
 
+func _get_tile_atlas_image() -> Image:
+	if _tile_layer == null or _tile_layer.tile_set == null:
+		return null
+	var src := _tile_layer.tile_set.get_source(0) as TileSetAtlasSource
+	if src == null or src.texture == null:
+		return null
+	var img := src.texture.get_image()
+	if img != null and img.get_format() != Image.FORMAT_RGBA8:
+		img = img.duplicate() as Image
+		img.convert(Image.FORMAT_RGBA8)
+	return img
+
+static func _blend_tile_cell_px(dst: Color, layer: TileMapLayer, atlas_img: Image, cell: Vector2i, local: Vector2i) -> Color:
+	if layer == null or atlas_img == null or layer.get_cell_source_id(cell) == -1:
+		return dst
+	var ac := layer.get_cell_atlas_coords(cell)
+	var ax := ac.x * TILE_PX + local.x
+	var ay := ac.y * TILE_PX + local.y
+	if ax < 0 or ay < 0 or ax >= atlas_img.get_width() or ay >= atlas_img.get_height():
+		return dst
+	var src := atlas_img.get_pixel(ax, ay)
+	if src.a <= 0.0:
+		return dst
+	return Color(
+		src.r * src.a + dst.r * (1.0 - src.a),
+		src.g * src.a + dst.g * (1.0 - src.a),
+		src.b * src.a + dst.b * (1.0 - src.a),
+		1.0
+	)
+
+static func _composite_tint_rect(dst: Color, cr: ColorRect) -> Color:
+	var c := cr.color
+	if cr.material is CanvasItemMaterial and (cr.material as CanvasItemMaterial).blend_mode == CanvasItemMaterial.BLEND_MODE_MUL:
+		var mul := Color(dst.r * c.r, dst.g * c.g, dst.b * c.b, 1.0)
+		return dst.lerp(mul, c.a)
+	return Color(
+		c.r * c.a + dst.r * (1.0 - c.a),
+		c.g * c.a + dst.g * (1.0 - c.a),
+		c.b * c.a + dst.b * (1.0 - c.a),
+		1.0
+	)
+
+static func _to_color8_opaque(c: Color) -> Color:
+	return Color8(
+		int(round(clampf(c.r, 0.0, 1.0) * 255.0)),
+		int(round(clampf(c.g, 0.0, 1.0) * 255.0)),
+		int(round(clampf(c.b, 0.0, 1.0) * 255.0)),
+		255
+	)
+
+func _sample_base_world_px(world_px: Vector2, atlas_img: Image) -> Color:
+	var dst := _backdrop.color if (_backdrop != null and Rect2(_backdrop.position, _backdrop.size).has_point(world_px)) else Color(0, 0, 0, 1)
+	if world_px.x >= 0.0 and world_px.y >= 0.0:
+		var cell := Vector2i(int(floor(world_px.x / float(TILE_PX))), int(floor(world_px.y / float(TILE_PX))))
+		var local := Vector2i(int(floor(world_px.x)) - cell.x * TILE_PX, int(floor(world_px.y)) - cell.y * TILE_PX)
+		dst = _blend_tile_cell_px(dst, _tile_layer, atlas_img, cell, local)
+		dst = _blend_tile_cell_px(dst, _overlay_tile_layer, atlas_img, cell, local)
+	return dst
+
+func get_untinted_base_pixel_at_world(world_px: Vector2) -> Color:
+	return _to_color8_opaque(_sample_base_world_px(world_px, _get_tile_atlas_image()))
+
+func _sample_world_px_with_atlas(world_px: Vector2, atlas_img: Image) -> Color:
+	var dst := _sample_base_world_px(world_px, atlas_img)
+	for ch in get_children():
+		if ch is ColorRect and ch != _backdrop and ch.visible and ch.z_index > 0:
+			var cr := ch as ColorRect
+			if Rect2(cr.position, cr.size).has_point(world_px):
+				dst = _composite_tint_rect(dst, cr)
+	if _hud_canvas != null:
+		for hch in _hud_canvas.get_children():
+			if hch is ColorRect and hch.visible:
+				var hcr := hch as ColorRect
+				var full_anchors := is_zero_approx(hcr.anchor_left) and is_zero_approx(hcr.anchor_top) and is_equal_approx(hcr.anchor_right, 1.0) and is_equal_approx(hcr.anchor_bottom, 1.0)
+				if full_anchors:
+					dst = _composite_tint_rect(dst, hcr)
+	return _to_color8_opaque(dst)
+
+func sample_rendered_pixel_at_world(world_px: Vector2) -> Color:
+	return _sample_world_px_with_atlas(world_px, _get_tile_atlas_image())
+
+func render_view_cell_32(cell: Vector2i) -> Image:
+	var atlas_img := _get_tile_atlas_image()
+	var out := Image.create(TILE_PX, TILE_PX, false, Image.FORMAT_RGBA8)
+	var ox := float(cell.x * TILE_PX)
+	var oy := float(cell.y * TILE_PX)
+	for py in range(TILE_PX):
+		for px in range(TILE_PX):
+			out.set_pixel(px, py, _sample_world_px_with_atlas(Vector2(ox + float(px) + 0.5, oy + float(py) + 0.5), atlas_img))
+	return out
+
 func load_interior(interior_key: String, floor_index: int = 0, cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, force_fallback: bool = false) -> bool:
 	var path := InteriorMap.resolve_interior_path(interior_key)
 	if path.is_empty():
@@ -409,10 +500,15 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	if str(_compiled.get("atmosphere", "normal")) == "haunted":
 		_tint_rect = ColorRect.new()
 		_tint_rect.name = "HauntedTint"
-		_tint_rect.color = Color(0.20, 0.16, 0.34, 0.18)
-		_tint_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_tint_rect.color = Color(0.84, 0.80, 0.95, 1.0)
+		var mul_mat := CanvasItemMaterial.new()
+		mul_mat.blend_mode = CanvasItemMaterial.BLEND_MODE_MUL
+		_tint_rect.material = mul_mat
+		_tint_rect.position = Vector2.ZERO
+		_tint_rect.size = Vector2(world_w, world_h)
+		_tint_rect.z_index = 6
 		_tint_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		_hud_canvas.add_child(_tint_rect)
+		add_child(_tint_rect)
 
 	_banner = PanelContainer.new()
 	_banner.position = Vector2(12.0, 10.0)

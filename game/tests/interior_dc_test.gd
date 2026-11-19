@@ -115,6 +115,86 @@ func _fail(msg: String) -> bool:
 	_cleanup()
 	return false
 
+func _check_rendered_pit_cells(cache_dir: String, force_fallback: bool) -> String:
+	const PIT_CASES := [
+		{"iid": "dc:library-of-congress", "floor": 1, "cells": [Vector2i(8, 5), Vector2i(9, 5), Vector2i(10, 5), Vector2i(11, 5)]},
+		{"iid": "dc:washington-monument", "floor": 1, "cells": [Vector2i(5, 6), Vector2i(12, 6)]},
+		{"iid": "dc:washington-monument", "floor": 2, "cells": [Vector2i(8, 5), Vector2i(9, 5)]},
+	]
+	var black := Color8(0, 0, 0, 255)
+	var mode_tag := "fallback" if force_fallback else "emerald"
+	for pc in PIT_CASES:
+		var iid := str(pc["iid"])
+		var fl := int(pc["floor"])
+		var iv := InteriorView.new()
+		add_child(iv)
+		var ok := iv.load_interior(iid, fl, cache_dir, force_fallback)
+		if not ok:
+			remove_child(iv)
+			iv.free()
+			return "Rendered pit check load failed for %s floor %d (%s)" % [iid, fl, mode_tag]
+		for cell_v in (pc["cells"] as Array):
+			var cell := cell_v as Vector2i
+			var img := iv.render_view_cell_32(cell)
+			for py in range(img.get_height()):
+				for px in range(img.get_width()):
+					var col := img.get_pixel(px, py)
+					if col != black:
+						remove_child(iv)
+						iv.free()
+						return "Rendered pit check failed (%s) on %s floor %d cell %s at px (%d,%d): got RGB(%d,%d,%d) expected #000000" % [
+							mode_tag, iid, fl, str(cell), px, py, col.r8, col.g8, col.b8
+						]
+		remove_child(iv)
+		iv.free()
+	return ""
+
+func _check_rendered_haunted_surround(cache_dir: String, force_fallback: bool) -> String:
+	const HAUNTED_CASES := [
+		{"iid": "dc:georgetown-ruins", "floor": 0, "sample_cell": Vector2i(8, 7)},
+		{"iid": "dc:woodley-vet", "floor": 0, "sample_cell": Vector2i(7, 7)},
+	]
+	var black := Color8(0, 0, 0, 255)
+	var mode_tag := "fallback" if force_fallback else "emerald"
+	for hc in HAUNTED_CASES:
+		var iid := str(hc["iid"])
+		var fl := int(hc["floor"])
+		var iv := InteriorView.new()
+		add_child(iv)
+		var ok := iv.load_interior(iid, fl, cache_dir, force_fallback)
+		if not ok:
+			remove_child(iv)
+			iv.free()
+			return "Rendered haunted check load failed for %s (%s)" % [iid, mode_tag]
+		var fsz := iv.get_floor_size()
+		var ww := float(fsz.x * InteriorView.TILE_PX)
+		var wh := float(fsz.y * InteriorView.TILE_PX)
+		var void_pts: Array[Vector2] = [
+			Vector2(-16.0, -16.0),
+			Vector2(ww + 16.0, -16.0),
+			Vector2(-16.0, wh + 16.0),
+			Vector2(ww + 16.0, wh + 16.0),
+		]
+		for pt in void_pts:
+			var got := iv.sample_rendered_pixel_at_world(pt)
+			if got != black:
+				remove_child(iv)
+				iv.free()
+				return "Rendered haunted surround check failed (%s) on %s at world %s: got RGB(%d,%d,%d) expected #000000" % [
+					mode_tag, iid, str(pt), got.r8, got.g8, got.b8
+				]
+		var sc := hc["sample_cell"] as Vector2i
+		var room_pt := Vector2(float(sc.x * InteriorView.TILE_PX) + 16.0, float(sc.y * InteriorView.TILE_PX) + 16.0)
+		var untinted := iv.get_untinted_base_pixel_at_world(room_pt)
+		var tinted := iv.sample_rendered_pixel_at_world(room_pt)
+		remove_child(iv)
+		iv.free()
+		if tinted == untinted:
+			return "Rendered haunted room tint check failed (%s) on %s: interior pixel %s was not tinted (got %s)" % [
+				mode_tag, iid, str(room_pt), str(tinted)
+			]
+	return ""
+
 func run_test() -> bool:
 	_cleanup()
 	var paths := InteriorMap.list_dc_interior_paths()
@@ -198,6 +278,13 @@ func run_test() -> bool:
 		if not ok_nr or not _images_equal(fb_rendered, expected_fb):
 			return _fail("Fallback check failed for stamp %d (%s): rendered != fallback PNG" % [int(oc["sid"]), str(oc["iid"])])
 
+	var fb_pit_err := _check_rendered_pit_cells(CACHE_EMPTY, true)
+	if not fb_pit_err.is_empty():
+		return _fail(fb_pit_err)
+	var fb_haunt_err := _check_rendered_haunted_surround(CACHE_EMPTY, true)
+	if not fb_haunt_err.is_empty():
+		return _fail(fb_haunt_err)
+
 	# Optional ROM-gated check: when TENTH_SPRING_ROM_GBA is set, verify Emerald indoor atlas + ROM object overrides
 	var rom_env := OS.get_environment("TENTH_SPRING_ROM_GBA").strip_edges()
 	if not rom_env.is_empty():
@@ -256,6 +343,12 @@ func run_test() -> bool:
 			return _fail("Expected InteriorView to select 'emerald' indoor atlas, got %s" % src_em)
 		if loc_sz.x > 21 or loc_sz.y > 14:
 			return _fail("Expected Library of Congress 1F <= 21x14 Emerald reference size, got %s" % str(loc_sz))
+		var em_pit_err := _check_rendered_pit_cells(CACHE_EMERALD, false)
+		if not em_pit_err.is_empty():
+			return _fail(em_pit_err)
+		var em_haunt_err := _check_rendered_haunted_surround(CACHE_EMERALD, false)
+		if not em_haunt_err.is_empty():
+			return _fail(em_haunt_err)
 
 	_cleanup()
 	return true

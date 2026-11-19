@@ -547,7 +547,7 @@
     "7": {"primary": "pri16", "tileset": "sec43", "metatile": 518},
     "8": {"primary": "pri16", "tileset": "sec43", "metatile": 645},
     "9": {"primary": "pri16", "tileset": "sec43", "metatile": 643},
-    "10": {"primary": "pri00", "tileset": "sec12", "metatile": 567},
+    "10": {"primary": "pri16", "metatile": 0},
     "11": {"primary": "pri00", "tileset": "sec12", "metatile": 515},
     "12": {"primary": "pri16", "tileset": "sec53", "metatile": 675},
     "13": {"primary": "pri16", "tileset": "sec53", "metatile": 673},

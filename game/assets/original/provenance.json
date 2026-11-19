@@ -1742,7 +1742,7 @@
     "prompt": "Picture 1 is a style sheet: indoor furniture and stone objects drawn as bold chunky 16-bit pixel art. Draw ONLY ONE standalone carved pale marble inscription tablet in the exact chunky pixel-art style of Picture 1: big crisp flat square colour blocks with zero anti-aliasing, zero blur, and zero fine noise texture; EVERY outer top, bottom, left, and right outer boundary edge of the stone slab MUST be traced continuously by a solid dark slate-grey 1-pixel outline (#404854, ZERO pale white outer rim); centered cleanly with generous flat pure solid magenta (#FF00FF) margin completely surrounding all four edges.\n\nThe prop to draw: one upright straight-on strictly left-right mirror-symmetrical rectangular carved marble memorial speech tablet panel (strictly orthogonal flat front elevation, left half mirroring right half pixel-for-pixel, ZERO angled sides): a continuous solid dark-slate (#404854) outer 1-pixel border outline enclosing a clean beveled medium-slate (#8C94A0) inner frame molding around a bright pale cream-white (#F6F2E0) rectangular marble face; carved symmetrically down the center of the cream face are ONLY FOUR clean unbroken solid horizontal medium-slate (#687280) rectangular bar strips (clean solid horizontal stripes, alternating medium-wide and slightly shorter, ZERO small dots, ZERO broken dashes, ZERO readable letters, ZERO numbers), drawn with crisp coarse blocks on a 32x32 pixel grid and at most 6 flat marble/slate tones total.\n\nShape: tall-balanced upright 1:1 rectangular bevelled stone slab on a clean chunky 32x32 pixel grid (left edge mirroring right edge closely), centered cleanly with generous flat pure magenta (#FF00FF) margin around all four outer edges.\n\nIt must read at a glance as: a framed symmetrical cream-marble wall tablet with four clean horizontal carved groove bars and zero text or dots.",
     "passed": "checks",
     "missed": [],
-    "approval": "2026-11-18 (Decision 68 / Item 61 PAUSE 2 candidate)"
+    "approval": "2026-11-18 (Decision 69 / Item 61 PAUSE 2)"
   },
   {
     "asset": "int_plaster_rubble",
@@ -1757,11 +1757,11 @@
     "style_sheet": "style_key_v1_interiors.png",
     "style_sheet_sha256": "2ab80532f4c68b34b29e687b050fbd0d9bcd3415d63f0953dea3ef314f2e0f3a",
     "prompt": "Picture 1 is a style sheet: indoor furniture and stone objects drawn as bold chunky 16-bit top-down pixel art. Draw ONLY ONE new standalone interior prop in the exact chunky pixel-art style of Picture 1: big crisp flat square colour blocks with zero anti-aliasing, zero blur, and zero fine noise texture; every outer edge traced with a clean 1-pixel dark tinted outline (about 30% brightness dark brown or dark slate, never pure black); only two or three flat tones per material. Do not copy any piece from Picture 1, do not show a room, floor, drop shadow, or picture frame, and draw only this single prop centered cleanly with generous flat pure solid magenta (#FF00FF) margin completely surrounding all four sides out to every edge.\n\nThe prop to draw: three BOLD LARGE FLAT chunky angular slabs and broken chunks of pale warm cream-white wall plaster lying low together in a compact loose ground cluster on a coarse 16x16 pixel grid (ONLY 3 BIG flat pale-cream chunks with crisp 1-pixel dark brown-grey outlines around every outer edge, NEVER tiny 1-pixel pebbles, NEVER grey boulders, NEVER a tall mound): one large flat irregular pentagon slab of pale cream plaster on the left-center, one medium flat angular warm-cream plaster slab slightly overlapping on the right-center, and one smaller chunky cream-tan triangle shard resting just beside them, together occupying about 45 percent of the middle square (chunky 50x50px giant blocks per sprite pixel!) with solid flat cream-white upper faces, medium dusty-tan bevel edges, and complete dark warm-umber (#484038) 1-pixel outer outlines around every outer chunk edge; generous pure solid magenta (#FF00FF) margin completely surrounding top, bottom, left, and right edges, at most 6 flat colours total.\n\nShape: compact loose cluster of 3 big chunky low flat cream-white plaster chunks drawn in giant bold 48x48px square blocks on an ultra-coarse 16x16 pixel grid (filling ~45% of the central square), with wide generous flat pure magenta (#FF00FF) margin on every outer edge.\n\nIt must read at a glance as: three chunky low flat chunks of pale cream broken plaster with bold dark outlines, clearly flat slabs and not a grey rock pile.",
-    "passed": "closest_candidate_pending_pause2",
+    "passed": "human_exception",
     "missed": [
       "edge_not_pale: 0.4138 vs <= 0.40 before outline repair (passed outline & style; pale plaster chunks)"
     ],
-    "approval": "2026-11-18 (Decision 68 / Item 61 PAUSE 2 closest candidate)"
+    "approval": "2026-11-18 (Decision 69 / Item 61 PAUSE 2)"
   },
   {
     "asset": "int_wall_cobweb_crack",
@@ -1776,12 +1776,12 @@
     "style_sheet": "style_key_v1_interiors.png",
     "style_sheet_sha256": "2ab80532f4c68b34b29e687b050fbd0d9bcd3415d63f0953dea3ef314f2e0f3a",
     "prompt": "Picture 1 is a style sheet: chunky 16-bit pixel art objects with hard crisp square pixels, zero anti-aliasing, zero blur, and at most 6 flat colours. Draw ONLY TWO floating bold overlay marks directly on a completely empty pure flat solid magenta (#FF00FF) background filling the ENTIRE rectangle edge to edge (STRICTLY ZERO grey wall slab, ZERO stone backdrop, ZERO tile rectangle, ZERO border box behind them \u2014 ONLY pure #FF00FF magenta everywhere else):\n\nThe prop to draw: 1) across the upper corner floats ONE bold simple symmetrical off-white / pale silver-grey corner cobweb made strictly of three thick crisp 2-pixel-wide straight diagonal spokes joined cleanly by two simple curved chunky white silk strands (ZERO thin 1px spiderweb tangles, ZERO dense netting, ZERO spider); 2) starting slightly below the cobweb and running down the center floats ONE bold sharp zigzag dark charcoal-slate fracture crack line (2 to 3 chunky sprite-pixels wide, shaped like a bold jagged lightning crack made of 3 clean diagonal segments with a 1-pixel pale-slate rim highlight along one edge), floating cleanly with generous pure solid magenta (#FF00FF) around both pieces on all four outer edges, at most 6 flat colours total.\n\nShape: bold vertical 1:2 overlay composition on a coarse chunky 16x32 pixel grid (~32x32 picture pixels per sprite block), floating cleanly over pure flat magenta (#FF00FF) with clear magenta margin on every outer edge.\n\nIt must read at a glance as: a bold dark zigzag wall crack and a simple pale chunky corner cobweb floating freely on flat magenta.",
-    "passed": "closest_candidate_pending_pause2",
+    "passed": "human_exception",
     "missed": [
       "drawn_at_pixel_scale: 0.6425 (< 0.75)",
       "background_clear: 0.882 edge, 0.000 gap",
       "edge_not_pale: 0.50"
     ],
-    "approval": "2026-11-18 (Decision 68 / Item 61 PAUSE 2 closest candidate)"
+    "approval": "2026-11-18 (Decision 69 / Item 61 PAUSE 2)"
   }
 ]
