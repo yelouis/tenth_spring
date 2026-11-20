@@ -275,5 +275,129 @@ func run_test() -> bool:
 		push_error("caricature_check_test: 1-tile shifted opening expected C0 and C1 failure, got %s" % str(city_shifted))
 		return false
 
+	# -------------------------------------------------------------
+	# 7. Item 62: Emerald-way check_town T1-T6 tests & falsifiers
+	# -------------------------------------------------------------
+	var tg_base := _blank_32_grid(".")
+	for tx in range(3, 29):
+		tg_base[15][tx] = "#" if tx % 5 != 0 else "-"
+		tg_base[16][tx] = "#"
+	var t_signs := [
+		{"at": [8, 8], "text": "nw"}, {"at": [18, 8], "text": "ne"},
+		{"at": [8, 18], "text": "sw"}, {"at": [18, 18], "text": "se"},
+		{"at": [13, 13], "text": "c"}, {"at": [24, 13], "text": "e"},
+		{"at": [13, 24], "text": "s"}, {"at": [24, 24], "text": "es"},
+	]
+	var t_map := {
+		"schema": 1,
+		"id": "camp:fixture-city",
+		"town": [[3, 3, 26, 26]],
+		"rows": [],
+		"objects": [],
+		"fixtures": [{"kind": "em_fountain", "at": [15, 14]}],
+		"people": [],
+		"street_pokemon": [],
+		"signs": t_signs,
+		"lamp": [14, 14],
+	}
+	for r in tg_base:
+		(t_map["rows"] as Array).append("".join(r))
+	var c_tok := CaricatureMap.compile(camp_area, t_map)
+	if not bool(c_tok.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: town baseline compile failed: %s" % str(c_tok.get("errors", [])))
+		return false
+	var res_tok := CaricatureCheck.check_town(c_tok, camp_area)
+	if not bool(res_tok.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: expected synthetic town T1-T6 PASS, got %s" % str(res_tok))
+		return false
+
+	# T1 falsifier: remove signs so only fixture + lamp exist -> must FAIL T1
+	var t_no_things := t_map.duplicate(true)
+	t_no_things["signs"] = []
+	var res_t1 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_no_things), camp_area)
+	if bool(res_t1.get("ok", true)) or not (res_t1["failed_rules"] as Array).has("T1"):
+		_cleanup()
+		push_error("caricature_check_test: expected T1 failure when only fixture/lamp present, got %s" % str(res_t1))
+		return false
+
+	# T2 falsifier: tall grass inside town -> must FAIL T2
+	var t_grass := t_map.duplicate(true)
+	t_grass["rows"][10] = str(t_grass["rows"][10]).substr(0, 10) + "," + str(t_grass["rows"][10]).substr(11)
+	var res_t2 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_grass), camp_area)
+	if bool(res_t2.get("ok", true)) or not (res_t2["failed_rules"] as Array).has("T2"):
+		_cleanup()
+		push_error("caricature_check_test: expected T2 failure for tall grass in town, got %s" % str(res_t2))
+		return false
+
+	# T3 falsifier: large touching worn block (>5% wear, touching wear) -> must FAIL T3
+	var t_wear := t_map.duplicate(true)
+	t_wear["town"] = [[0, 0, 1, 1]] # non-town map with lots of plaza wear, then check_town with town_rect_override
+	var res_t3 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_wear), camp_area, [[3, 3, 26, 26]])
+	if bool(res_t3.get("ok", true)) or not (res_t3["failed_rules"] as Array).has("T3"):
+		_cleanup()
+		push_error("caricature_check_test: expected T3 failure when outside-town wear >5%% checked as town, got %s" % str(res_t3))
+		return false
+
+	# T4 falsifier: identical 9x9 building placed twice inside town creates repeating 8x8 patches -> must FAIL T4
+	var t_rep := t_map.duplicate(true)
+	t_rep["fixtures"] = []
+	t_rep["lamp"] = [14, 14]
+	t_rep["signs"] = [
+		{"at": [15, 7], "text": "n"}, {"at": [25, 7], "text": "ne"},
+		{"at": [7, 15], "text": "w"}, {"at": [15, 22], "text": "sw"},
+		{"at": [7, 27], "text": "s"}, {"at": [27, 27], "text": "se"},
+	]
+	t_rep["objects"] = [
+		{"stamp": "standing_block_9x9_a", "at": [3, 3]},
+		{"stamp": "standing_block_9x9_a", "at": [18, 18]},
+	]
+	var c_rep := CaricatureMap.compile(camp_area, t_rep)
+	if not bool(c_rep.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: t_rep compile failed: %s" % str(c_rep.get("errors", [])))
+		return false
+	var res_t4 := CaricatureCheck.check_town(c_rep, camp_area)
+	if bool(res_t4.get("ok", true)) or not (res_t4["failed_rules"] as Array).has("T4"):
+		_cleanup()
+		push_error("caricature_check_test: expected T4 failure for repeated 8x8 patch in town, got %s" % str(res_t4))
+		return false
+
+	# T5 falsifier: missing interior on open door fails T5
+	var t_bad_door := t_map.duplicate(true)
+	t_bad_door["objects"] = [{"stamp": "standing_block_8x7_a", "at": [10, 5], "interior": "dc:camp-nonexistent-house"}]
+	var c_bad_door := CaricatureMap.compile(camp_area, t_bad_door)
+	if not bool(c_bad_door.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: t_bad_door compile failed: %s" % str(c_bad_door.get("errors", [])))
+		return false
+	var res_t5 := CaricatureCheck.check_town(c_bad_door, camp_area)
+	if bool(res_t5.get("ok", true)) or not (res_t5["failed_rules"] as Array).has("T5") or int(res_t5.get("open_house_doors", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected T5 fail + double-door dedup open_house_doors==1, got %s" % str(res_t5))
+		return false
+
+	# T6 falsifier: 16x14 block in town + invalid street_pokemon dex -> fails T6
+	var t_t6 := t_map.duplicate(true)
+	t_t6["fixtures"] = []
+	t_t6["lamp"] = [25, 25]
+	t_t6["signs"] = [
+		{"at": [24, 8], "text": "n"}, {"at": [24, 22], "text": "e"},
+		{"at": [8, 22], "text": "sw"}, {"at": [4, 22], "text": "w"},
+	]
+	t_t6["objects"] = [{"stamp": "ruined_block_16x14_a", "at": [5, 5]}]
+	t_t6["street_pokemon"] = [{"dex": 999, "at": [24, 24]}]
+	var c_t6 := CaricatureMap.compile(camp_area, t_t6)
+	if not bool(c_t6.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: t_t6 compile failed: %s" % str(c_t6.get("errors", [])))
+		return false
+	var res_t6 := CaricatureCheck.check_town(c_t6, camp_area)
+	if bool(res_t6.get("ok", true)) or not (res_t6["failed_rules"] as Array).has("T6") or int(res_t6.get("oversized_buildings", 0)) != 1 or int(res_t6.get("invalid_pokemon", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected T6 fail (oversized=1, invalid_pkm=1), got %s" % str(res_t6))
+		return false
+
 	_cleanup()
 	return true

@@ -141,9 +141,18 @@ static func build_emerald_atlas(
 	jf.store_string(orig_json_text)
 	jf.close()
 
-	var indoor_res := _build_indoor_atlas_files(rom, cfg, tiles_dir, tile_px, cfg_text.sha256_text())
+	var cfg_sha := cfg_text.sha256_text()
+	var indoor_res := _build_indoor_atlas_files(rom, cfg, tiles_dir, tile_px, cfg_sha)
 	if not bool(indoor_res.get("ok", false)):
 		return indoor_res
+
+	var outdoor_fx_res := _build_outdoor_fx_atlas_files(cfg, tiles_dir, tile_px, cfg_sha, primary_ts, decoded_tilesets)
+	if not bool(outdoor_fx_res.get("ok", false)):
+		return outdoor_fx_res
+
+	var people_res := _build_people_atlas_files(rom, cfg, tiles_dir, cfg_sha)
+	if not bool(people_res.get("ok", false)):
+		return people_res
 
 	return {
 		"ok": true,
@@ -151,6 +160,10 @@ static func build_emerald_atlas(
 		"json": out_json,
 		"indoor_png": str(indoor_res.get("png", "")),
 		"indoor_json": str(indoor_res.get("json", "")),
+		"outdoor_fx_png": str(outdoor_fx_res.get("png", "")),
+		"outdoor_fx_json": str(outdoor_fx_res.get("json", "")),
+		"people_png": str(people_res.get("png", "")),
+		"people_json": str(people_res.get("json", "")),
 		"tiles_written": tiles_written,
 		"indoor_tiles_written": int(indoor_res.get("written", 0)),
 	}
@@ -362,3 +375,158 @@ static func _build_indoor_atlas_files(
 	}, "\t") + "\n")
 	ijf.close()
 	return {"ok": true, "png": out_indoor_png, "json": out_indoor_json, "written": indoor_written}
+
+
+static func _write_json_doc(path: String, doc: Dictionary) -> Dictionary:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	if f == null:
+		return {"ok": false, "error": "Failed to write " + path}
+	f.store_string(JSON.stringify(doc, "\t") + "\n")
+	f.close()
+	return {"ok": true}
+
+
+static func _build_outdoor_fx_atlas_files(
+	cfg: Dictionary,
+	tiles_dir: String,
+	tile_px: int,
+	cfg_sha256: String,
+	primary_ts: Dictionary,
+	decoded_tilesets: Dictionary
+) -> Dictionary:
+	var fx_cfg: Dictionary = cfg.get("outdoor_fixtures", {})
+	var out_png := tiles_dir.path_join("emerald_outdoor_fx_v1.png")
+	var out_json := tiles_dir.path_join("emerald_outdoor_fx_v1.json")
+	if fx_cfg.is_empty():
+		var img0 := Image.create(tile_px, tile_px, false, Image.FORMAT_RGBA8)
+		img0.save_png(out_png)
+		var w0 := _write_json_doc(out_json, {"format": "emerald_outdoor_fx_v1", "cfg_sha256": cfg_sha256, "tile_px": tile_px, "fixtures": {}})
+		if not bool(w0.get("ok", false)):
+			return w0
+		return {"ok": true, "png": out_png, "json": out_json, "written": 0}
+
+	var max_row_px := 512
+	var cur_x := 0
+	var cur_y := 0
+	var row_h_px := 0
+	var placed: Dictionary = {}
+	var placements: Array = []
+
+	var keys := fx_cfg.keys()
+	keys.sort()
+	for kv in keys:
+		var kind := str(kv)
+		var spec: Dictionary = fx_cfg[kv]
+		var tw := maxi(1, int(spec.get("w", 1)))
+		var th := maxi(1, int(spec.get("h", 1)))
+		var pw := tw * tile_px
+		var ph := th * tile_px
+		if cur_x > 0 and cur_x + pw > max_row_px:
+			cur_x = 0
+			cur_y += row_h_px
+			row_h_px = 0
+		var item := {
+			"kind": kind,
+			"spec": spec,
+			"x": cur_x,
+			"y": cur_y,
+			"w": pw,
+			"h": ph,
+			"tile_w": tw,
+			"tile_h": th,
+			"base_rows": int(spec.get("base_rows", 1)),
+		}
+		placements.append(item)
+		placed[kind] = {
+			"x": cur_x,
+			"y": cur_y,
+			"w": pw,
+			"h": ph,
+			"tile_w": tw,
+			"tile_h": th,
+			"base_rows": item["base_rows"],
+		}
+		cur_x += pw
+		row_h_px = maxi(row_h_px, ph)
+
+	var total_w := maxi(tile_px, max_row_px)
+	var total_h := maxi(tile_px, cur_y + row_h_px)
+	var atlas := Image.create(total_w, total_h, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0, 0, 0, 0))
+
+	for pv in placements:
+		var p: Dictionary = pv
+		var spec: Dictionary = p["spec"]
+		var ts_name := str(spec.get("tileset", "primary"))
+		var sec: Variant = null if (ts_name == "primary" or ts_name == "pri00") else decoded_tilesets.get(ts_name, null)
+		if ts_name != "primary" and ts_name != "pri00" and not (sec is Dictionary):
+			return {"ok": false, "error": "Missing tileset '%s' for outdoor fixture %s" % [ts_name, str(p["kind"])]}
+		var layer := str(spec.get("layer", "top"))
+		var cells: Array = spec.get("cells", [])
+		for ry in range(cells.size()):
+			var row_arr: Array = cells[ry]
+			for cx in range(row_arr.size()):
+				var mt_id := int(row_arr[cx])
+				if mt_id < 0:
+					continue
+				var tile_img := Gen3TilesRef.render_metatile_cutout_32(primary_ts, sec, mt_id, layer)
+				atlas.blit_rect(tile_img, Rect2i(0, 0, tile_px, tile_px), Vector2i(int(p["x"]) + cx * tile_px, int(p["y"]) + ry * tile_px))
+
+	var err := atlas.save_png(out_png)
+	if err != OK:
+		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_png, err]}
+	var wres := _write_json_doc(out_json, {"format": "emerald_outdoor_fx_v1", "cfg_sha256": cfg_sha256, "tile_px": tile_px, "fixtures": placed})
+	if not bool(wres.get("ok", false)):
+		return wres
+	return {"ok": true, "png": out_png, "json": out_json, "written": placements.size()}
+
+
+static func _build_people_atlas_files(
+	rom: Variant,
+	cfg: Dictionary,
+	tiles_dir: String,
+	cfg_sha256: String
+) -> Dictionary:
+	var ppl_cfg: Dictionary = cfg.get("people_sprites", {})
+	var out_png := tiles_dir.path_join("emerald_people_v1.png")
+	var out_json := tiles_dir.path_join("emerald_people_v1.json")
+	var keys := ppl_cfg.keys()
+	keys.sort()
+	if keys.is_empty():
+		var img0 := Image.create(32, 64, false, Image.FORMAT_RGBA8)
+		img0.save_png(out_png)
+		var w0 := _write_json_doc(out_json, {"format": "emerald_people_v1", "cfg_sha256": cfg_sha256, "sprite_w": 32, "sprite_h": 64, "people": {}})
+		if not bool(w0.get("ok", false)):
+			return w0
+		return {"ok": true, "png": out_png, "json": out_json, "written": 0}
+
+	var atlas := Image.create(128, keys.size() * 64, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0, 0, 0, 0))
+	var people_meta: Dictionary = {}
+	var dirs := ["S", "N", "W", "E"]
+	for i in range(keys.size()):
+		var k := str(keys[i])
+		var spec: Dictionary = ppl_cfg[keys[i]]
+		var frames: Array = spec.get("frame_offsets", [])
+		var pal_off := int(spec.get("palette_offset", 0))
+		if frames.size() < 3 or pal_off <= 0:
+			continue
+		var dir_rects: Dictionary = {}
+		for d_idx in range(4):
+			var d_name: String = dirs[d_idx]
+			var f_idx := d_idx if d_idx < 3 else 2
+			var hflip := (d_idx == 3)
+			var img := Gen3TilesRef.render_person_transparent_32(rom, int(frames[f_idx]), pal_off, hflip)
+			var dst_x := d_idx * 32
+			var dst_y := i * 64
+			atlas.blit_rect(img, Rect2i(0, 0, 32, 64), Vector2i(dst_x, dst_y))
+			dir_rects[d_name] = [dst_x, dst_y, 32, 64]
+		people_meta[k] = dir_rects
+
+	var err := atlas.save_png(out_png)
+	if err != OK:
+		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_png, err]}
+	var wres := _write_json_doc(out_json, {"format": "emerald_people_v1", "cfg_sha256": cfg_sha256, "sprite_w": 32, "sprite_h": 64, "people": people_meta})
+	if not bool(wres.get("ok", false)):
+		return wres
+	return {"ok": true, "png": out_png, "json": out_json, "written": people_meta.size()}

@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "id": "dc:gt-boathouse",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Riverfront Boathouse",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Riverfront Boathouse",
+      "theme": "wood",
+      "kit": "cottage_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "............",
+        "............",
+        "............",
+        "....RRRR....",
+        "....RRRR....",
+        "....RRRR....",
+        "............",
+        ".....DD....."
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            1,
+            4
+          ]
+        },
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            9,
+            4
+          ]
+        },
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            5,
+            5
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_wall_map_2x1",
+          "at": [
+            2,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_notice_1x1",
+          "at": [
+            6,
+            0
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_stool_1x1",
+          "at": [
+            3,
+            6
+          ]
+        },
+        {
+          "fixture": "em_stool_1x1",
+          "at": [
+            8,
+            6
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_boathouse_netball",
+          "at": [
+            5,
+            5
+          ],
+          "name": "Net Ball"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            4,
+            2
+          ],
+          "text": "Tide peg: Oars stacked overhead. Do not cast off past the concrete pylons."
+        }
+      ]
+    }
+  ]
+}

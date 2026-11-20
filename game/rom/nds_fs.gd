@@ -16,6 +16,8 @@ const CLEAN_SHA1 := {
 
 const SPRITE_NARC_PATH := "/a/0/0/4"
 const SPRITE_NARC_FALLBACK_ID := 246
+const BOX_ICON_NARC_PATH := "/a/0/0/7"
+const BOX_ICON_NARC_FALLBACK_ID := 249
 const ITEM_ICON_NARC_PATH := "/a/0/2/5"
 const ITEM_ICON_NARC_FALLBACK_ID := 267
 

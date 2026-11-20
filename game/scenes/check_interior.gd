@@ -44,7 +44,7 @@ func _ready() -> void:
 			return
 		paths.append(resolved)
 	else:
-		paths = InteriorMap.list_dc_interior_paths()
+		paths = InteriorMap.list_all_dc_interior_paths()
 		if paths.is_empty():
 			printerr("[FAIL] no DC interior JSON files found in %s" % InteriorMap.DC_INTERIOR_DIR)
 			get_tree().quit(2)

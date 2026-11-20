@@ -31,7 +31,8 @@ func _ready() -> void:
 	if s_cfg.get("is_screenshot", false):
 		var interior_id := str(s_cfg.get("interior", ""))
 		if not interior_id.is_empty():
-			var iv := open_interior_view(interior_id, int(s_cfg.get("floor", 0)), bool(s_cfg.get("interior_fallback", false)))
+			var use_fallback: bool = bool(s_cfg.get("interior_fallback", false)) or bool(s_cfg.get("no_rom", false))
+			var iv := open_interior_view(interior_id, int(s_cfg.get("floor", 0)), use_fallback)
 			if iv == null:
 				printerr("[FAIL] failed to load interior %s" % interior_id)
 				get_tree().quit(1)
@@ -120,6 +121,9 @@ func _ready() -> void:
 			return
 
 		var area_id := str(s_cfg.get("area", ""))
+		var no_rom := bool(s_cfg.get("no_rom", false))
+		var has_tile := bool(s_cfg.get("has_tile", false))
+		var tile_pos: Vector2i = s_cfg.get("tile", Vector2i(-1, -1))
 		if not area_id.is_empty():
 			var area_dict: Dictionary = Neighbourhoods.area(area_id)
 			var area_place_id := str(area_dict.get("place_id", ""))
@@ -128,7 +132,7 @@ func _ready() -> void:
 				printerr("[FAIL] demo_force_open failed for %s: %s" % [area_id, str(force_res.get("error", ""))])
 				get_tree().quit(1)
 				return
-			var map_view_area = open_map_view()
+			var map_view_area = open_map_view(no_rom, has_tile, tile_pos)
 			if map_view_area != null:
 				if map_view_area.has_method("force_caricature_area"):
 					map_view_area.force_caricature_area(area_id)
@@ -147,7 +151,7 @@ func _ready() -> void:
 			return
 
 		var resume_place_id := get_resume_place_id()
-		var map_view = open_map_view()
+		var map_view = open_map_view(no_rom)
 		if map_view != null:
 			if not resume_place_id.is_empty() and map_view.has_method("load_place"):
 				map_view.load_place(resume_place_id, false)
@@ -207,11 +211,13 @@ func open_interior_view(interior_id: String, floor_index: int = 0, force_fallbac
 		return null
 	return iv
 
-func open_map_view() -> Node:
+func open_map_view(force_no_rom: bool = false, has_tile: bool = false, tile_pos: Vector2i = Vector2i(-1, -1)) -> Node:
 	clear_current_view()
 	var map_view_scene = load("res://world/map_view.tscn")
 	if map_view_scene != null:
 		var map_view = map_view_scene.instantiate()
+		if map_view.has_method("set_screenshot_options"):
+			map_view.set_screenshot_options(force_no_rom, has_tile, tile_pos)
 		add_child(map_view)
 		return map_view
 	return null

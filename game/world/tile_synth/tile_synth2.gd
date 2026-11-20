@@ -3206,7 +3206,7 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 	}
 
 ## Finalize 32x32 cell output buffer (variants & 4-neighbour masks) from 40x40 work grids (§4.1 step 10, dc_trial §3.8)
-static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, grid_variant: PackedByteArray, grid_mask: PackedByteArray, world_seed: int, road_v1_thresh: float) -> PackedByteArray:
+static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, grid_variant: PackedByteArray, grid_mask: PackedByteArray, world_seed: int, road_v1_thresh: float, preserve_road_variant: bool = false) -> PackedByteArray:
 	var output := PackedByteArray()
 	output.resize(OUTPUT_BUFFER_SIZE)
 	var out_idx := 0
@@ -3224,7 +3224,10 @@ static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, 
 				TILE_GRASS:
 					variant = floori(u_rand(gx, gy, world_seed, SALT_GRASS_VARIANT) * 4.0)
 				TILE_ROAD:
-					variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < road_v1_thresh else 0
+					if preserve_road_variant:
+						variant = grid_variant[idx]
+					else:
+						variant = 1 if u_rand(gx, gy, world_seed, SALT_ROAD_CRACKS) < road_v1_thresh else 0
 				TILE_TREE:
 					variant = 1 if u_rand(gx, gy, world_seed, SALT_TREE_VARIANT) < 0.30 else 0
 				TILE_PATH, TILE_PLAZA, TILE_ROOF, TILE_WALL, TILE_DOOR, TILE_SIGN, TILE_RUBBLE, TILE_STAMP, TILE_LEDGE, TILE_STAIRS:

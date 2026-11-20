@@ -9,13 +9,13 @@ const CaricatureCheck := preload("res://world/caricature/caricature_check.gd")
 const MapConstants := preload("res://world/map_constants.gd")
 
 const PINNED_SHA256: Dictionary = {
-	"camp:washington-dc": "ed66fae446a61fc5df8db4e3dc6f17d928443512ae058df739b462a4cb92ea80",
+	"camp:washington-dc": "deca3a2fad1aed957838cd4b571d2d7c26e3b52361fe1a6f3b057dae6efa156a",
 	"hood:washington-dc:national-mall": "a82a456da467599c576c7913003b178defe5f186454b9fda999c800dcbcf055a",
 	"hood:washington-dc:tidal-basin": "cf77afd2c9dd22c7058b58b73cdc5a430368c6db0fd14c1eaea62061d0161fcf",
 	"hood:washington-dc:dupont-circle": "e0d11df7b9a164bb24698caffe0e2927acc288ffa035d8a7d01162c9d176c6d0",
 	"hood:washington-dc:capitol-hill": "f34dd25c14b6bc38cd4f75cf93147d1bf8ed0d396b8d74f60c196a92911a5ce7",
 	"hood:washington-dc:union-station": "a9aa9434065479f887cc4b3516581520f407ff750ac6fea6775862313c7e9420",
-	"hood:washington-dc:georgetown": "88dfc0f99ff78b0687e2ebc1f5fc79d1586644b4e5ef7fcf72f24efeb3a57ded",
+	"hood:washington-dc:georgetown": "7a946dacabf23653981061d9e89bfe259ae2062f347d6c9cfffa6720e6f0258f",
 	"hood:washington-dc:woodley-park": "982551e323b0734d06c30937ee5fe71e10cfb3636bd9e8e93a8f6d3012f6f887",
 	"hood:washington-dc:lincoln-memorial": "b4701a757749ab7148e549a5234251e74ea5279c0934c74b9220f119e9168456",
 	"route:washington-dc:monument-grounds#1": "db59aada938685b6deff8e3ab9e177144652b065f14a14f42a60471006032e5b",
@@ -95,6 +95,12 @@ func run_test() -> bool:
 
 		compiled_by_id[area_id] = compiled
 		measures_by_id[area_id] = m
+
+		if area_id == "camp:washington-dc" or area_id == "hood:washington-dc:georgetown":
+			var tc := CaricatureCheck.check_town(compiled, area)
+			if not bool(tc.get("ok", false)):
+				push_error("caricature_dc_test: %s failed check_town (%s): %s" % [area_id, str(tc.get("failed_rules", [])), str(tc)])
+				return false
 
 		var cells := Neighbourhoods.block_cells(area)
 		var sha1 := _hash_all_cells(compiled, area, cells)

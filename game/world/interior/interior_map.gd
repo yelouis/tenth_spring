@@ -64,6 +64,31 @@ static func list_dc_interior_paths() -> Array[String]:
 			out.append(p)
 	return out
 
+static func list_dc_house_interior_paths() -> Array[String]:
+	var house_dir := DC_INTERIOR_DIR + "/houses"
+	var out: Array[String] = []
+	var da := DirAccess.open(house_dir)
+	if da == null:
+		return out
+	var names: Array[String] = []
+	da.list_dir_begin()
+	var fn := da.get_next()
+	while not fn.is_empty():
+		if not da.current_is_dir() and fn.ends_with(".json"):
+			names.append(fn)
+		fn = da.get_next()
+	da.list_dir_end()
+	names.sort()
+	for n in names:
+		out.append(house_dir + "/" + n)
+	return out
+
+static func list_all_dc_interior_paths() -> Array[String]:
+	var out := list_dc_interior_paths()
+	for hp in list_dc_house_interior_paths():
+		out.append(hp)
+	return out
+
 static func resolve_interior_path(interior_key: String) -> String:
 	var k := interior_key.strip_edges()
 	if k.is_empty():
@@ -80,7 +105,10 @@ static func resolve_interior_path(interior_key: String) -> String:
 	var direct := DC_INTERIOR_DIR + "/" + slug + ".json"
 	if FileAccess.file_exists(direct):
 		return direct
-	for p in list_dc_interior_paths():
+	var house_direct := DC_INTERIOR_DIR + "/houses/" + slug + ".json"
+	if FileAccess.file_exists(house_direct):
+		return house_direct
+	for p in list_all_dc_interior_paths():
 		var doc := load_json(p)
 		if str(doc.get("id", "")) == k:
 			return p

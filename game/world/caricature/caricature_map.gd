@@ -9,6 +9,7 @@ const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const MapConstants := preload("res://world/map_constants.gd")
 const CellClassifier := preload("res://world/cell_classifier.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const OutdoorFixtures := preload("res://world/caricature/outdoor_fixtures.gd")
 
 const BORDER: int = 3
 
@@ -118,6 +119,19 @@ static func _seed_gy(origin: Vector2i, rows: int, y: int) -> int:
 	var cy: int = origin.y + rows - 1 - int(y / 32)
 	var ty: int = y % 32
 	return cy * 32 + (31 - ty)
+
+static func _road_v1_thresh_for(ruin_level: String) -> float:
+	match ruin_level:
+		"camp":
+			return 0.10
+		"near":
+			return 0.20
+		"mid":
+			return 0.35
+		"far":
+			return 0.50
+	return 0.20
+
 
 static func _fail_result(errors: Array[String], origin: Vector2i, cols: int, rows: int, area_kind: String = "hood") -> Dictionary:
 	return {
@@ -560,19 +574,173 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			path_thresh = 0.55
 			plaza_thresh = 0.50
 
+	var road_v1_thresh := _road_v1_thresh_for(ruin_level)
+	var town_mask := PackedByteArray()
+	town_mask.resize(total)
+	town_mask.fill(0)
+	var town_rects_out: Array = []
+	var town_v: Variant = map.get("town", [])
+	if map.has("town") and not (town_v is Array):
+		errors.append("M1: town must be an array of [x, y, w, h] rectangles")
+	elif town_v is Array:
+		for rv in (town_v as Array):
+			if rv is Array and (rv as Array).size() >= 4:
+				var rx0 := clampi(int(rv[0]), 0, w)
+				var ry0 := clampi(int(rv[1]), 0, h)
+				var rw := clampi(int(rv[2]), 0, w - rx0)
+				var rh := clampi(int(rv[3]), 0, h - ry0)
+				if rw > 0 and rh > 0:
+					town_rects_out.append([rx0, ry0, rw, rh])
+					for ry in range(ry0, ry0 + rh):
+						for rx in range(rx0, rx0 + rw):
+							town_mask[ry * w + rx] = 1
+	var has_town_rules := not town_rects_out.is_empty()
+
+	var fixtures_out: Array[Dictionary] = []
+	for fv in (map.get("fixtures", []) as Array if map.get("fixtures", []) is Array else []):
+		if not (fv is Dictionary):
+			continue
+		var fd: Dictionary = fv
+		var fk := str(fd.get("kind", "")).strip_edges()
+		var fat: Variant = fd.get("at", null)
+		if fk.is_empty() or not (fat is Array) or (fat as Array).size() != 2 or not _is_integral(fat[0]) or not _is_integral(fat[1]):
+			errors.append("M3: fixture missing valid kind or [x, y]")
+			continue
+		var fx := int(fat[0])
+		var fy := int(fat[1])
+		var fmeta := OutdoorFixtures.fixture_meta(fk)
+		var fw: int = int(fd.get("w", fmeta["w"]))
+		var fh: int = int(fd.get("h", fmeta["h"]))
+		var fbr: int = int(fd.get("base_rows", fmeta["base_rows"]))
+		if fx < BORDER or fy < BORDER or fx + fw > w - BORDER or fy + fh > h - BORDER:
+			errors.append("M3: fixture '%s' at (%d, %d) violates BORDER=%d" % [fk, fx, fy, BORDER])
+			continue
+		fixtures_out.append({
+			"kind": fk,
+			"x": fx,
+			"y": fy,
+			"w": fw,
+			"h": fh,
+			"base_rows": fbr,
+			"solid": bool(fd.get("solid", fbr > 0)),
+			"anchor_gx": _global_col(origin, fx),
+			"anchor_gy": _screen_row(origin, rows, fy),
+		})
+
+	var people_out: Array[Dictionary] = []
+	for pv in (map.get("people", []) as Array if map.get("people", []) is Array else []):
+		if not (pv is Dictionary):
+			continue
+		var pd: Dictionary = pv
+		var pat: Variant = pd.get("at", null)
+		if not (pat is Array) or (pat as Array).size() != 2 or not _is_integral(pat[0]) or not _is_integral(pat[1]):
+			errors.append("M3: person missing valid 'at' [x, y]")
+			continue
+		var px := int(pat[0])
+		var py := int(pat[1])
+		if px < BORDER or py < BORDER or px >= w - BORDER or py >= h - BORDER:
+			errors.append("M3: person at (%d, %d) violates BORDER=%d" % [px, py, BORDER])
+			continue
+		people_out.append({
+			"id": str(pd.get("id", "")),
+			"name": str(pd.get("name", "")),
+			"x": px,
+			"y": py,
+			"facing": str(pd.get("facing", "S")),
+			"sprite": str(pd.get("sprite", "")),
+			"role": str(pd.get("role", "talk")),
+			"lines": pd.get("lines", []) if pd.get("lines", []) is Array else [],
+			"anchor_gx": _global_col(origin, px),
+			"anchor_gy": _screen_row(origin, rows, py - 1),
+		})
+
+	var street_pokemon_out: Array[Dictionary] = []
+	for kv in (map.get("street_pokemon", []) as Array if map.get("street_pokemon", []) is Array else []):
+		if not (kv is Dictionary):
+			continue
+		var kd: Dictionary = kv
+		var kat: Variant = kd.get("at", null)
+		if not (kat is Array) or (kat as Array).size() != 2 or not _is_integral(kat[0]) or not _is_integral(kat[1]):
+			errors.append("M3: street_pokemon missing valid 'at' [x, y]")
+			continue
+		var kx := int(kat[0])
+		var ky := int(kat[1])
+		if kx < BORDER or ky < BORDER or kx >= w - BORDER or ky >= h - BORDER:
+			errors.append("M3: street_pokemon at (%d, %d) violates BORDER=%d" % [kx, ky, BORDER])
+			continue
+		street_pokemon_out.append({
+			"dex": int(kd.get("dex", 0)),
+			"x": kx,
+			"y": ky,
+			"zone": str(kd.get("zone", "")),
+			"anchor_gx": _global_col(origin, kx),
+			"anchor_gy": _screen_row(origin, rows, ky),
+		})
+
+	var hidden_items_out: Array[Dictionary] = []
+	for hv in (map.get("hidden_items", []) as Array if map.get("hidden_items", []) is Array else []):
+		if not (hv is Dictionary):
+			continue
+		var hd: Dictionary = hv
+		var hat: Variant = hd.get("at", null)
+		if not (hat is Array) or (hat as Array).size() != 2 or not _is_integral(hat[0]) or not _is_integral(hat[1]):
+			errors.append("M3: hidden_item missing valid 'at' [x, y]")
+			continue
+		var hx := int(hat[0])
+		var hy := int(hat[1])
+		if hx < BORDER or hy < BORDER or hx >= w - BORDER or hy >= h - BORDER:
+			errors.append("M3: hidden_item at (%d, %d) violates BORDER=%d" % [hx, hy, BORDER])
+			continue
+		hidden_items_out.append({
+			"x": hx,
+			"y": hy,
+			"item": str(hd.get("item", "")),
+			"note": str(hd.get("note", "")),
+		})
+
 	for y in range(h):
 		var gy: int = _seed_gy(origin, rows, y)
 		for x in range(w):
 			var idx: int = y * w + x
 			var t_cls: int = cls_buf[idx]
-			if t_cls == TileSynth2.TILE_PATH:
-				var gx: int = _global_col(origin, x)
-				if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PATH_OVERGROWTH) < path_thresh:
-					var_buf[idx] = 1
-			elif t_cls == TileSynth2.TILE_PLAZA:
-				var gx: int = _global_col(origin, x)
-				if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PLAZA_WEEDS) < plaza_thresh:
-					var_buf[idx] = 1
+			var in_town: bool = has_town_rules and town_mask[idx] == 1
+			if in_town:
+				if t_cls == TileSynth2.TILE_PATH or t_cls == TileSynth2.TILE_PLAZA or t_cls == TileSynth2.TILE_ROAD:
+					var gx: int = _global_col(origin, x)
+					var_buf[idx] = 0
+					if t_cls == TileSynth2.TILE_PATH and TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PATH_OVERGROWTH ^ 0x4B21) < 0.015:
+						var has_adj_worn := false
+						for dy in range(-1, 2):
+							for dx in range(-1, 2):
+								if dx == 0 and dy == 0:
+									continue
+								var nx: int = x + dx
+								var ny: int = y + dy
+								if nx < 0 or nx >= w or ny < 0 or ny >= h:
+									continue
+								var nidx: int = ny * w + nx
+								if town_mask[nidx] == 1 and var_buf[nidx] == 1:
+									var ncls: int = cls_buf[nidx]
+									if ncls == TileSynth2.TILE_PATH or ncls == TileSynth2.TILE_PLAZA or ncls == TileSynth2.TILE_ROAD:
+										has_adj_worn = true
+										break
+							if has_adj_worn:
+								break
+						if not has_adj_worn:
+							var_buf[idx] = 1
+			else:
+				if t_cls == TileSynth2.TILE_PATH:
+					var gx: int = _global_col(origin, x)
+					if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PATH_OVERGROWTH) < path_thresh:
+						var_buf[idx] = 1
+				elif t_cls == TileSynth2.TILE_PLAZA:
+					var gx: int = _global_col(origin, x)
+					if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PLAZA_WEEDS) < plaza_thresh:
+						var_buf[idx] = 1
+				elif has_town_rules and t_cls == TileSynth2.TILE_ROAD:
+					var gx: int = _global_col(origin, x)
+					if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_ROAD_CRACKS) < road_v1_thresh:
+						var_buf[idx] = 1
 
 	# -------------------------------------------------------------
 	# Step 4: Objects in file order (§3.3, §3.4, §3.5)
@@ -602,9 +770,10 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			var lm_name := str(obj.get("name", ""))
 			if lm_name.is_empty():
 				lm_name = str(lm_meta.get("name", ""))
+			var is_ord_search := (s_kind == "house" or s_kind == "block") and lm_interior.is_empty()
 			_write_stamp(
 				s_num, s_def, x0, y0, origin, rows,
-				0, false, false, lm_interior, lm_name,
+				0, false, is_ord_search, lm_interior, lm_name,
 				cls_buf, var_buf, mask_buf, w, stamps_out, doors_out
 			)
 			placed_objects.append({
@@ -977,6 +1146,31 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			"local_outer": op_rec["local_outer"],
 		})
 
+	var solid_mask := PackedByteArray()
+	solid_mask.resize(total)
+	solid_mask.fill(0)
+	var protected_doors: Dictionary = {}
+	for d in doors_out:
+		protected_doors[Vector2i(d["x"], d["y"])] = true
+		protected_doors[Vector2i(d["x"], d["y"] + 1)] = true
+	for fix in fixtures_out:
+		if not bool(fix.get("solid", true)):
+			continue
+		var fx0: int = fix["x"]
+		var fy0: int = fix["y"]
+		var fw2: int = fix["w"]
+		var fh2: int = fix["h"]
+		var fbr2: int = mini(fh2, maxi(0, int(fix.get("base_rows", 1))))
+		for sy in range(fy0 + (fh2 - fbr2), fy0 + fh2):
+			for sx in range(fx0, fx0 + fw2):
+				var sp := Vector2i(sx, sy)
+				if not protected_doors.has(sp):
+					solid_mask[sy * w + sx] = 1
+	for pe in people_out:
+		var pp := Vector2i(pe["x"], pe["y"])
+		if not protected_doors.has(pp):
+			solid_mask[pp.y * w + pp.x] = 1
+
 	return {
 		"ok": true,
 		"errors": errors,
@@ -989,6 +1183,14 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 		"class": cls_buf,
 		"variant": var_buf,
 		"mask": mask_buf,
+		"solid_mask": solid_mask,
+		"town": town_rects_out,
+		"town_mask": town_mask,
+		"has_town_rules": has_town_rules,
+		"fixtures": fixtures_out,
+		"people": people_out,
+		"street_pokemon": street_pokemon_out,
+		"hidden_items": hidden_items_out,
 		"stamps": stamps_out,
 		"signs": signs_out,
 		"cell_signs": cell_sign_lists,
@@ -1179,19 +1381,11 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 			grid_mask[dst_idx] = mask_src[src_idx]
 
 	var ruin_level := str(area.get("ruin_level", "near"))
-	var road_v1_thresh := 0.20
-	match ruin_level:
-		"camp":
-			road_v1_thresh = 0.10
-		"near":
-			road_v1_thresh = 0.20
-		"mid":
-			road_v1_thresh = 0.35
-		"far":
-			road_v1_thresh = 0.50
+	var road_v1_thresh := _road_v1_thresh_for(ruin_level)
+	var preserve_road := bool(compiled.get("has_town_rules", false))
 
 	var output := TileSynth2.finalize_cell_output(
-		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh
+		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road
 	)
 
 	# Gather every compiled stamp whose box touches this cell (§3.8 step 4, tile_synth2.gd:1664)
@@ -1246,10 +1440,39 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 		if d_cell == cell and not lm_ids_in_cell.has(iid):
 			lm_ids_in_cell.append(iid)
 
+	var cell_fixtures: Array[Dictionary] = []
+	for fv in (compiled.get("fixtures", []) as Array):
+		var f: Dictionary = fv
+		var fgx: int = int(f["anchor_gx"])
+		var fgy: int = int(f["anchor_gy"])
+		var fw: int = int(f["w"])
+		var fh: int = int(f["h"])
+		if fgx + fw > cell_c0 and fgx < cell_c0 + 32 and fgy + fh > cell_r0 and fgy < cell_r0 + 32:
+			cell_fixtures.append(f)
+
+	var cell_people: Array[Dictionary] = []
+	for pv in (compiled.get("people", []) as Array):
+		var p: Dictionary = pv
+		var pgx: int = int(p["anchor_gx"])
+		var pgy: int = int(p["anchor_gy"])
+		if pgx + 1 > cell_c0 and pgx < cell_c0 + 32 and pgy + 2 > cell_r0 and pgy < cell_r0 + 32:
+			cell_people.append(p)
+
+	var cell_pokemon: Array[Dictionary] = []
+	for kv in (compiled.get("street_pokemon", []) as Array):
+		var k: Dictionary = kv
+		var kgx: int = int(k["anchor_gx"])
+		var kgy: int = int(k["anchor_gy"])
+		if kgx >= cell_c0 and kgx < cell_c0 + 32 and kgy >= cell_r0 and kgy < cell_r0 + 32:
+			cell_pokemon.append(k)
+
 	return {
 		"tiles": output,
 		"signs": PackedStringArray(signs_arr),
 		"stamps": cell_stamps,
+		"fixtures": cell_fixtures,
+		"people": cell_people,
+		"street_pokemon": cell_pokemon,
 		"zone": zone_str,
 		"biome": biome_str,
 		"region": region_str,

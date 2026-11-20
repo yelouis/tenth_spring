@@ -257,6 +257,23 @@ static func import_bw_rom(
 						icon_img.save_png(icons_dir.path_join("%d.png" % k))
 						item_icons_decoded += 1
 
+	var box_icons_decoded := 0
+	var box_fid := NdsFsRef.resolve_archive_id(
+		fh, hdr, fat, NdsFsRef.BOX_ICON_NARC_PATH, NdsFsRef.BOX_ICON_NARC_FALLBACK_ID
+	)
+	if box_fid >= 0:
+		var box_span := fat[box_fid]
+		var box_narc := NarcArchiveRef.parse(fh, box_span.x, box_span.y)
+		if box_narc != null and box_narc.file_count() > 7 + 649 * 2:
+			var box_pal_lz := NitroLzRef.decompress(box_narc.read_subfile(fh, 0))
+			var box_palettes := NitroGfxRef.parse_nclr_multi(box_pal_lz["data"], 8) if bool(box_pal_lz.get("ok", false)) else []
+			if not box_palettes.is_empty():
+				var box_dir := staging_dir.path_join("icons/pokemon_box")
+				DirAccess.make_dir_recursive_absolute(box_dir)
+				for dex in range(1, 650):
+					if _extract_box_icon_to_dir(fh, box_narc, sp_narc, box_palettes, dex, box_dir):
+						box_icons_decoded += 1
+
 	fh.close()
 
 	var val_res := validate_rom_staging(staging_dir)
@@ -450,3 +467,72 @@ static func validate_data_staging(staging_dir: String) -> Dictionary:
 			return {"ok": false, "error": "Fan sprite %s failed quality gate" % p, "failed_check": "fan_sprite_metrics"}
 
 	return {"ok": true}
+
+
+static func _extract_box_icon_to_dir(
+	fh: FileAccess,
+	box_narc: Variant,
+	sp_narc: Variant,
+	box_palettes: Array,
+	dex: int,
+	box_dir: String
+) -> bool:
+	var icon_idx := 7 + dex * 2
+	if icon_idx < 0 or icon_idx >= box_narc.file_count():
+		return false
+	var icon_lz := NitroLzRef.decompress(box_narc.read_subfile(fh, icon_idx))
+	if not bool(icon_lz.get("ok", false)):
+		return false
+	var front_pal: Array = []
+	var pal_idx := dex * 20 + 18
+	if sp_narc != null and pal_idx < sp_narc.file_count():
+		var pal_lz := NitroLzRef.decompress(sp_narc.read_subfile(fh, pal_idx))
+		if bool(pal_lz.get("ok", false)):
+			front_pal = NitroGfxRef.parse_nclr(pal_lz["data"])
+	var img := NitroGfxRef.decode_box_icon_32(icon_lz["data"], box_palettes, front_pal)
+	if img == null or img.is_empty():
+		return false
+	return img.save_png(box_dir.path_join("%d.png" % dex)) == OK
+
+
+static func import_bw_pokemon_icons(
+	rom_path: String,
+	dex_ids: Array,
+	cache_dir: String = DEFAULT_CACHE_DIR,
+	allow_test_user_dir: bool = false
+) -> Dictionary:
+	var hdr := NdsFsRef.read_header(rom_path, true, allow_test_user_dir)
+	if not bool(hdr.get("ok", false)):
+		return hdr
+	var abs_path := str(hdr["path"])
+	var fh := FileAccess.open(abs_path, FileAccess.READ)
+	if fh == null:
+		return {"ok": false, "error": "Cannot open BW ROM file."}
+	var fat := NdsFsRef.read_fat(fh, int(hdr["fat_offset"]), int(hdr["fat_size"]))
+	var sprite_fid := NdsFsRef.resolve_archive_id(fh, hdr, fat, NdsFsRef.SPRITE_NARC_PATH, NdsFsRef.SPRITE_NARC_FALLBACK_ID)
+	var box_fid := NdsFsRef.resolve_archive_id(fh, hdr, fat, NdsFsRef.BOX_ICON_NARC_PATH, NdsFsRef.BOX_ICON_NARC_FALLBACK_ID)
+	if box_fid < 0:
+		fh.close()
+		return {"ok": false, "error": "Could not locate /a/0/0/7 box icon NARC in ROM."}
+	var sp_narc: Variant = NarcArchiveRef.parse(fh, fat[sprite_fid].x, fat[sprite_fid].y) if sprite_fid >= 0 else null
+	var box_narc := NarcArchiveRef.parse(fh, fat[box_fid].x, fat[box_fid].y)
+	if box_narc == null or box_narc.file_count() < 10:
+		fh.close()
+		return {"ok": false, "error": "Invalid /a/0/0/7 box icon NARC."}
+	var box_pal_lz := NitroLzRef.decompress(box_narc.read_subfile(fh, 0))
+	var box_palettes := NitroGfxRef.parse_nclr_multi(box_pal_lz["data"], 8) if bool(box_pal_lz.get("ok", false)) else []
+	if box_palettes.is_empty():
+		fh.close()
+		return {"ok": false, "error": "Failed to parse /a/0/0/7 palette."}
+
+	var box_dir := ProjectSettings.globalize_path(cache_dir.trim_suffix("/")).path_join("icons/pokemon_box")
+	DirAccess.make_dir_recursive_absolute(box_dir)
+	var written := 0
+	for dv in dex_ids:
+		var dex := int(dv)
+		if dex < 1 or dex > 649:
+			continue
+		if _extract_box_icon_to_dir(fh, box_narc, sp_narc, box_palettes, dex, box_dir):
+			written += 1
+	fh.close()
+	return {"ok": true, "written": written, "cache_dir": cache_dir}

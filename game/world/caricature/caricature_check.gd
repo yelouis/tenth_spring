@@ -8,6 +8,9 @@ extends RefCounted
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const InteriorMap := preload("res://world/interior/interior_map.gd")
+const InteriorCheck := preload("res://world/interior/interior_check.gd")
+const OutdoorFixtures := preload("res://world/caricature/outdoor_fixtures.gd")
 
 # §5.2 & §10.5 Playable-size contract thresholds (Decisions 58–59)
 const MAX_UNREACHED: int = 0
@@ -296,10 +299,12 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 			var cls: int = cls_buf[idx]
 			if cls == TileSynth2.TILE_ITEM_BALL:
 				item_balls += 1
-			var is_base_w := TileSynth2.is_walkable(cls, var_buf[idx], mask_buf[idx])
+			var solid_mask: PackedByteArray = compiled.get("solid_mask", PackedByteArray())
+			var blocked_by_entity: bool = (solid_mask.size() == total and solid_mask[idx] == 1)
+			var is_base_w := (not blocked_by_entity) and TileSynth2.is_walkable(cls, var_buf[idx], mask_buf[idx])
 			if is_base_w:
 				base_flags[idx] = 1
-			if is_base_w or TileSynth2.is_field_clearable(cls):
+			if is_base_w or ((not blocked_by_entity) and TileSynth2.is_field_clearable(cls)):
 				walkable_flags[idx] = 1
 				walkable_count += 1
 
@@ -1081,3 +1086,424 @@ static func _nearest_box_neighbour_steps(x0: int, y0: int, ow: int, oh: int, dis
 				if st >= 0 and (best == -1 or st < best):
 					best = st
 	return best
+
+
+static var _spawn_pool_cache: Dictionary = {}
+
+static func _georgetown_allowed_dex_set() -> Dictionary:
+	if _spawn_pool_cache.has("georgetown"):
+		return _spawn_pool_cache["georgetown"]
+	var allowed: Dictionary = {}
+	var path := "res://config/spawn_tables.json"
+	if FileAccess.file_exists(path):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if parsed is Dictionary:
+			var zones: Dictionary = (parsed as Dictionary).get("zones", {})
+			for z_name in ["retail", "ruins", "waterfront"]:
+				var zd: Dictionary = zones.get(z_name, {})
+				for sub in ["regular", "haunted"]:
+					for ev in (zd.get(sub, []) as Array):
+						if ev is Dictionary:
+							var dex := int((ev as Dictionary).get("dex", 0))
+							if dex >= 1 and dex <= 649:
+								allowed[dex] = true
+	_spawn_pool_cache["georgetown"] = allowed
+	return allowed
+
+
+static func check_town(compiled: Dictionary, area: Dictionary, town_rect_override: Array = []) -> Dictionary:
+	var w: int = int(compiled.get("w", 0))
+	var h: int = int(compiled.get("h", 0))
+	var origin: Vector2i = compiled.get("origin", Vector2i.ZERO)
+	var cols: int = int(compiled.get("cols", 1))
+	var rows: int = int(compiled.get("rows", 1))
+	var total: int = w * h
+	var aid := str(area.get("id", ""))
+	var is_camp := (aid == "camp:washington-dc")
+	var is_georgetown := (aid == "hood:washington-dc:georgetown")
+
+	var rects: Array = town_rect_override if not town_rect_override.is_empty() else (compiled.get("town", []) as Array)
+	var town_mask := PackedByteArray()
+	town_mask.resize(total)
+	town_mask.fill(0)
+	var town_tile_count := 0
+	for rv in rects:
+		if rv is Array and (rv as Array).size() >= 4:
+			var rx0 := clampi(int(rv[0]), 0, w)
+			var ry0 := clampi(int(rv[1]), 0, h)
+			var rw := clampi(int(rv[2]), 0, w - rx0)
+			var rh := clampi(int(rv[3]), 0, h - ry0)
+			for ry in range(ry0, ry0 + rh):
+				for rx in range(rx0, rx0 + rw):
+					var tidx := ry * w + rx
+					if town_mask[tidx] == 0:
+						town_mask[tidx] = 1
+						town_tile_count += 1
+
+	# Collect rendered buffer slices across all cells for T2, T3, T4
+	var rend_cls := PackedByteArray()
+	rend_cls.resize(total)
+	var rend_var := PackedByteArray()
+	rend_var.resize(total)
+	var rend_mask := PackedByteArray()
+	rend_mask.resize(total)
+	var tile_stamp := PackedInt32Array()
+	tile_stamp.resize(total)
+	tile_stamp.fill(0)
+	var tile_fix := PackedInt32Array()
+	tile_fix.resize(total)
+	tile_fix.fill(0)
+
+	var fix_id_map: Dictionary = {}
+	for fxv in (compiled.get("fixtures", []) as Array):
+		var fx: Dictionary = fxv
+		var fkind := str(fx.get("kind", ""))
+		if not fix_id_map.has(fkind):
+			fix_id_map[fkind] = fix_id_map.size() + 1
+		var fid: int = int(fix_id_map[fkind])
+		var fx0: int = int(fx["x"])
+		var fy0: int = int(fx["y"])
+		for fy in range(fy0, mini(h, fy0 + int(fx["h"]))):
+			for fx_x in range(fx0, mini(w, fx0 + int(fx["w"]))):
+				tile_fix[fy * w + fx_x] = fid * 1024 + (fy - fy0) * 32 + (fx_x - fx0)
+
+	for pv in (compiled.get("placed_objects", []) as Array):
+		var po: Dictionary = pv
+		var sid := int(po.get("stamp_id", 0))
+		if sid <= 0:
+			continue
+		var bx0: int = int(po["x"])
+		var by0: int = int(po["y"])
+		for sy in range(by0, mini(h, by0 + int(po["h"]))):
+			for sx in range(bx0, mini(w, bx0 + int(po["w"]))):
+				tile_stamp[sy * w + sx] = sid * 1024 + (sy - by0) * 32 + (sx - bx0)
+
+	for r_cell in range(rows):
+		var cy: int = origin.y + rows - 1 - r_cell
+		for c_cell in range(cols):
+			var cx: int = origin.x + c_cell
+			var cres := CaricatureMap.cell_result(compiled, Vector2i(cx, cy), area)
+			var cbuf: PackedByteArray = cres.get("tiles", PackedByteArray())
+			if cbuf.size() < 32 * 32 * 3:
+				continue
+			for ty in range(32):
+				var my: int = r_cell * 32 + ty
+				for tx in range(32):
+					var mx: int = c_cell * 32 + tx
+					var cidx := (ty * 32 + tx) * 3
+					var gidx := my * w + mx
+					rend_cls[gidx] = cbuf[cidx]
+					rend_var[gidx] = cbuf[cidx + 1]
+					rend_mask[gidx] = cbuf[cidx + 2]
+
+	# Reachability & walkable flags
+	var m_res := measure(compiled, area)
+	var openings: Array = compiled.get("openings", [])
+	var opening_mask := _build_opening_mask(w, h, openings)
+	var solid_mask: PackedByteArray = compiled.get("solid_mask", PackedByteArray())
+	var walk_flags := PackedByteArray()
+	walk_flags.resize(total)
+	walk_flags.fill(0)
+	for y in range(h):
+		for x in range(w):
+			if not _in_play_bounds(x, y, w, h, opening_mask):
+				continue
+			var i := y * w + x
+			var blocked := (solid_mask.size() == total and solid_mask[i] == 1)
+			if not blocked and (TileSynth2.is_walkable(rend_cls[i], rend_var[i], rend_mask[i]) or TileSynth2.is_field_clearable(rend_cls[i])):
+				walk_flags[i] = 1
+	var arrival: Vector2i = compiled.get("arrival", Vector2i.ZERO)
+	var graph := _build_directed_graph(w, h, compiled["class"], compiled["variant"], compiled["mask"], opening_mask, walk_flags)
+	var dist := _bfs_from_sources([arrival], w, h, walk_flags, graph["fwd"])
+
+	# T1: Interactive things in town
+	var things_map: Dictionary = {} # Vector2i -> count
+	var doors_arr: Array = compiled.get("doors", [])
+	var door_tile_meta: Dictionary = {}
+	for dv_meta in doors_arr:
+		var dm: Dictionary = dv_meta
+		door_tile_meta[Vector2i(int(dm["x"]), int(dm["y"]))] = {
+			"stamp_id": int(dm.get("stamp_id", 0)),
+			"interior": str(dm.get("interior", "")),
+		}
+	var total_doorways := 0
+	var open_doors_in_town := 0
+	var open_house_doors := 0
+	var bad_doors := 0
+	var door_interior_survivors := 0
+	var checked_interiors: Dictionary = {}
+	for dv in doors_arr:
+		var d: Dictionary = dv
+		var dx: int = int(d["x"])
+		var dy: int = int(d["y"])
+		var sid := int(d.get("stamp_id", 0))
+		var iid := str(d.get("interior", ""))
+		var pos := Vector2i(dx, dy)
+		var left_pos := Vector2i(dx - 1, dy)
+		var is_second_half := false
+		if door_tile_meta.has(left_pos):
+			var lm: Dictionary = door_tile_meta[left_pos]
+			if int(lm["stamp_id"]) == sid and str(lm["interior"]) == iid:
+				is_second_half = true
+		if not is_second_half:
+			total_doorways += 1
+		if iid.is_empty():
+			continue
+		var in_town_d := (dx >= 0 and dx < w and dy >= 0 and dy < h and town_mask[dy * w + dx] == 1)
+		if in_town_d and not is_second_half:
+			open_doors_in_town += 1
+			if iid.begins_with("dc:camp-") or iid.begins_with("dc:gt-") or iid.find("house") != -1:
+				open_house_doors += 1
+			things_map[pos] = int(things_map.get(pos, 0)) + 1
+		var ipath := InteriorMap.resolve_interior_path(iid)
+		if ipath.is_empty():
+			bad_doors += 1
+			continue
+		var idoc := InteriorMap.load_json(ipath)
+		var ic := InteriorCheck.compile_and_check(idoc)
+		if not bool(ic.get("ok", false)):
+			bad_doors += 1
+		if not checked_interiors.has(ipath):
+			checked_interiors[ipath] = true
+			for flv in (idoc.get("floors", []) as Array):
+				if flv is Dictionary:
+					door_interior_survivors += ((flv as Dictionary).get("npcs", []) as Array).size()
+		var d_south_y := dy + 1
+		if not _in_play_bounds(dx, d_south_y, w, h, opening_mask) or dist[d_south_y * w + dx] < 0:
+			bad_doors += 1
+
+	var people_arr: Array = compiled.get("people", [])
+	for pv in people_arr:
+		var p: Dictionary = pv
+		var ppos := Vector2i(int(p["x"]), int(p["y"]))
+		if town_mask[ppos.y * w + ppos.x] == 1:
+			things_map[ppos] = int(things_map.get(ppos, 0)) + 1
+
+	for sv in (compiled.get("signs", []) as Array):
+		var s: Dictionary = sv
+		var spos := Vector2i(int(s["x"]), int(s["y"]))
+		if town_mask[spos.y * w + spos.x] == 1:
+			things_map[spos] = int(things_map.get(spos, 0)) + 1
+
+	var street_pkm: Array = compiled.get("street_pokemon", [])
+	for kv in street_pkm:
+		var k: Dictionary = kv
+		var kpos := Vector2i(int(k["x"]), int(k["y"]))
+		if town_mask[kpos.y * w + kpos.x] == 1:
+			things_map[kpos] = int(things_map.get(kpos, 0)) + 1
+
+	var hidden_arr: Array = compiled.get("hidden_items", [])
+	var hidden_in_route := 0
+	for hv in hidden_arr:
+		var h_dict: Dictionary = hv
+		var hpos := Vector2i(int(h_dict["x"]), int(h_dict["y"]))
+		if town_mask[hpos.y * w + hpos.x] == 1:
+			things_map[hpos] = int(things_map.get(hpos, 0)) + 1
+		else:
+			hidden_in_route += 1
+
+	var items_in_route := 0
+	var walk_in_town := 0
+	var town_tall_grass := 0
+	var ground_total := 0
+	var worn_total := 0
+	var worn_mask := PackedByteArray()
+	worn_mask.resize(total)
+	worn_mask.fill(0)
+	var route_tiles := 0
+
+	for y in range(h):
+		for x in range(w):
+			var i := y * w + x
+			var cls: int = rend_cls[i]
+			var rv: int = rend_var[i]
+			if town_mask[i] == 1:
+				if walk_flags[i] == 1:
+					walk_in_town += 1
+				if cls == TileSynth2.TILE_ITEM_BALL:
+					var ipos := Vector2i(x, y)
+					things_map[ipos] = int(things_map.get(ipos, 0)) + 1
+				if cls == TileSynth2.TILE_TALL_GRASS:
+					town_tall_grass += 1
+				if cls == TileSynth2.TILE_PATH or cls == TileSynth2.TILE_PLAZA or cls == TileSynth2.TILE_ROAD:
+					ground_total += 1
+					if rv == 1:
+						worn_total += 1
+						worn_mask[i] = 1
+			elif _in_interior(x, y, w, h):
+				route_tiles += 1
+				if cls == TileSynth2.TILE_ITEM_BALL:
+					items_in_route += 1
+
+	var total_windows := 0
+	var empty_windows := 0
+	for wy in range(0, maxi(1, h - 9), 5):
+		for wx in range(0, maxi(1, w - 14), 5):
+			var tw_walk := 0
+			for yy in range(wy, mini(h, wy + 10)):
+				for xx in range(wx, mini(w, wx + 15)):
+					var ti := yy * w + xx
+					if town_mask[ti] == 1 and walk_flags[ti] == 1:
+						tw_walk += 1
+			if tw_walk < 75:
+				continue
+			total_windows += 1
+			var win_things := 0
+			for pt_v in things_map.keys():
+				var pt: Vector2i = pt_v
+				if pt.x >= wx and pt.x < wx + 15 and pt.y >= wy and pt.y < wy + 10:
+					win_things += int(things_map[pt_v])
+			if win_things == 0:
+				empty_windows += 1
+
+	var things_in_town := 0
+	for cnt in things_map.values():
+		things_in_town += int(cnt)
+	var empty_share: float = 1.0 if total_windows == 0 else (float(empty_windows) / float(total_windows))
+	var things_per_150: float = float(things_in_town) / maxf(1.0, float(walk_in_town) / 150.0)
+	var wear_pct: float = 0.0 if ground_total == 0 else (float(worn_total) / float(ground_total))
+
+	var wear_touch := 0
+	for y in range(h):
+		for x in range(w):
+			var i := y * w + x
+			if worn_mask[i] == 0:
+				continue
+			for nd in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(-1, 1)]:
+				var nx: int = x + nd.x
+				var ny: int = y + nd.y
+				if nx >= 0 and nx < w and ny >= 0 and ny < h and worn_mask[ny * w + nx] == 1:
+					wear_touch += 1
+
+	# T4: Repeated non-uniform 8x8 patches inside town
+	var patch_seen: Dictionary = {}
+	var repeat_8x8 := 0
+	for y0 in range(0, maxi(0, h - 7)):
+		for x0 in range(0, maxi(0, w - 7)):
+			var all_town := true
+			var first_cls := int(rend_cls[y0 * w + x0])
+			var uniform := true
+			var parts := PackedStringArray()
+			parts.resize(64)
+			var p_i := 0
+			for dy in range(8):
+				var row_off := (y0 + dy) * w + x0
+				for dx in range(8):
+					var gi := row_off + dx
+					if town_mask[gi] == 0:
+						all_town = false
+						break
+					var c_here := int(rend_cls[gi])
+					var v_here := int(rend_var[gi])
+					var m_here := int(rend_mask[gi])
+					var st_here := int(tile_stamp[gi])
+					var fx_here := int(tile_fix[gi])
+					if c_here != first_cls or st_here != 0 or fx_here != 0:
+						uniform = false
+					parts[p_i] = "%d:%d:%d:%d:%d" % [c_here, v_here, m_here, st_here, fx_here]
+					p_i += 1
+				if not all_town:
+					break
+			if not all_town or uniform:
+				continue
+			var key := ",".join(parts)
+			if patch_seen.has(key):
+				repeat_8x8 += 1
+			else:
+				patch_seen[key] = true
+
+	# T6: Sizes & entity counts
+	var oversized_town_buildings := 0
+	for pv in (compiled.get("placed_objects", []) as Array):
+		var po: Dictionary = pv
+		var ow: int = int(po.get("w", 0))
+		var oh: int = int(po.get("h", 0))
+		if ow <= 11 and oh <= 13:
+			continue
+		var sid := int(po.get("stamp_id", 0))
+		var s_def: Dictionary = TileSynth2.STAMP_TABLE.get(sid, {})
+		var s_kind := str(s_def.get("kind", ""))
+		if s_kind == "landmark" or s_kind == "prop" or s_kind == "decal" or s_kind == "field_obj":
+			continue
+		var bx0: int = int(po.get("x", 0))
+		var by0: int = int(po.get("y", 0))
+		var touches_town := false
+		for by in range(by0, mini(h, by0 + oh)):
+			for bx in range(bx0, mini(w, bx0 + ow)):
+				if town_mask[by * w + bx] == 1:
+					touches_town = true
+					break
+			if touches_town:
+				break
+		if touches_town:
+			oversized_town_buildings += 1
+
+	var allowed_dex := _georgetown_allowed_dex_set()
+	var invalid_pokemon := 0
+	for kv in street_pkm:
+		var k: Dictionary = kv
+		var dex := int(k.get("dex", 0))
+		if dex < 1 or dex > 649 or (is_georgetown and not allowed_dex.is_empty() and not allowed_dex.has(dex)):
+			invalid_pokemon += 1
+
+	var total_survivors: int = people_arr.size() + door_interior_survivors
+	var route_screens: float = float(route_tiles) / 150.0
+	var route_items_per_5_screens: float = 0.0 if route_screens <= 0.0 else (float(items_in_route + hidden_in_route) / (route_screens / 5.0))
+
+	var failed_rules: Array[String] = []
+	if total_windows == 0 or empty_share > 0.10 or things_per_150 < 1.0:
+		failed_rules.append("T1")
+	if town_tall_grass > 0:
+		failed_rules.append("T2")
+	if wear_pct > 0.05 or wear_touch > 0:
+		failed_rules.append("T3")
+	if repeat_8x8 > 0:
+		failed_rules.append("T4")
+	var t5_ok := (bad_doors == 0)
+	if is_camp and (open_house_doors < 4 or open_house_doors > 6 or total_doorways > 8):
+		t5_ok = false
+	elif is_georgetown and (open_house_doors < 8 or open_house_doors > 12):
+		t5_ok = false
+	if not t5_ok:
+		failed_rules.append("T5")
+
+	var t6_ok := (oversized_town_buildings == 0 and invalid_pokemon == 0)
+	if is_camp:
+		if people_arr.size() < 10 or people_arr.size() > 16:
+			t6_ok = false
+	elif is_georgetown:
+		if town_tile_count < 6000 or town_tile_count > 7000:
+			t6_ok = false
+		if total_survivors < 3 or total_survivors > 6:
+			t6_ok = false
+		if street_pkm.size() < 6 or street_pkm.size() > 12:
+			t6_ok = false
+		if route_items_per_5_screens < 1.0:
+			t6_ok = false
+	if not t6_ok:
+		failed_rules.append("T6")
+
+	return {
+		"ok": failed_rules.is_empty(),
+		"failed_rules": failed_rules,
+		"town_tiles": town_tile_count,
+		"windows": total_windows,
+		"empty_windows": empty_windows,
+		"empty_screens": empty_share,
+		"things_in_town": things_in_town,
+		"things_per_150": things_per_150,
+		"town_tall_grass": town_tall_grass,
+		"wear_pct": wear_pct,
+		"wear_touch": wear_touch,
+		"repeat_8x8": repeat_8x8,
+		"open_doors": open_doors_in_town,
+		"open_house_doors": open_house_doors,
+		"bad_doors": bad_doors,
+		"oversized_buildings": oversized_town_buildings,
+		"people": people_arr.size(),
+		"survivors": total_survivors,
+		"street_pokemon": street_pkm.size(),
+		"invalid_pokemon": invalid_pokemon,
+		"route_items": items_in_route + hidden_in_route,
+		"route_items_per_5_screens": route_items_per_5_screens,
+	}

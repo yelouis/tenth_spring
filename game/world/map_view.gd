@@ -13,6 +13,8 @@ const RevealEngine := preload("res://world/reveal_engine.gd")
 const Grid := preload("res://world/grid.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
+const OutdoorFixtures := preload("res://world/caricature/outdoor_fixtures.gd")
+const PeopleSprites := preload("res://world/people_sprites.gd")
 
 const CELL_SIZE_PX := 1024.0
 const TILE_SIZE_PX := 32
@@ -167,6 +169,9 @@ var _focused_area_id: String = ""
 var _focused_area_tiles: Vector2i = Vector2i.ZERO
 var _focused_city_cells: Vector2i = Vector2i.ZERO
 var _screenshot_area_id: String = ""
+var _force_no_rom: bool = false
+var _has_screenshot_tile: bool = false
+var _screenshot_tile: Vector2i = Vector2i(-1, -1)
 
 var _map_fetcher = MapFetcher.new()
 var _pending_region: Dictionary = {}
@@ -453,7 +458,7 @@ func _clear_rendered_layers() -> void:
 	_requested_cells.clear()
 
 func _init_tile_sets() -> void:
-	var atlas_data: Variant = AssetDB.tile_atlas()
+	var atlas_data: Variant = null if _force_no_rom else AssetDB.tile_atlas()
 	var texture: Texture2D = null
 	var json_dict: Dictionary = {}
 
@@ -675,6 +680,14 @@ func force_caricature_area(area_id: String) -> void:
 	var a_dict: Dictionary = Neighbourhoods.area(area_id)
 	_forced_caricature_place_id = str(a_dict.get("place_id", ""))
 
+func set_screenshot_options(no_rom: bool, has_tile: bool = false, tile_pos: Vector2i = Vector2i(-1, -1)) -> void:
+	var changed_no_rom := (_force_no_rom != no_rom)
+	_force_no_rom = no_rom
+	_has_screenshot_tile = has_tile
+	_screenshot_tile = tile_pos
+	if changed_no_rom and is_inside_tree():
+		_init_tile_sets()
+
 func focus_on_area(area_id: String, whole: bool = false) -> void:
 	var a_dict: Dictionary = Neighbourhoods.area(area_id)
 	if a_dict.is_empty():
@@ -687,7 +700,11 @@ func focus_on_area(area_id: String, whole: bool = false) -> void:
 	_focused_area_tiles = Vector2i(cols * 32, rows * 32)
 	_focused_city_cells = Vector2i.ZERO
 	if _camera != null:
-		if whole:
+		if _has_screenshot_tile:
+			var tgx: int = origin.x * 32 + _screenshot_tile.x
+			var tgy: int = (-(origin.y + rows - 1) - 1) * 32 + _screenshot_tile.y
+			_camera.position = Vector2((float(tgx) + 0.5) * float(TILE_SIZE_PX), (float(tgy) + 0.5) * float(TILE_SIZE_PX))
+		elif whole:
 			_camera.position = Vector2(
 				(float(origin.x) + float(cols) * 0.5) * CELL_SIZE_PX,
 				-(float(origin.y) + float(rows) * 0.5) * CELL_SIZE_PX
@@ -1564,6 +1581,9 @@ func _drain_worker_results() -> void:
 			"buf": res["tiles"],
 			"signs": res["signs"],
 			"stamps": res.get("stamps", []),
+			"fixtures": res.get("fixtures", []),
+			"people": res.get("people", []),
+			"street_pokemon": res.get("street_pokemon", []),
 			"has_data": res["has_data"],
 			"image": res.get("image", null),
 			"thread_id": res.get("thread_id", 0),
@@ -1648,6 +1668,25 @@ func _blit_cell_to_overview_chunk(cx: int, cy: int, cell_img: Image) -> void:
 	chunk_img_ref.blit_rect(cell_img, Rect2i(0, 0, 32, 32), Vector2i(dst_x, dst_y))
 	_dirty_overview_chunks[chunk_key] = true
 
+func _sign_pavement_neighbor(tile_buf: PackedByteArray, tx: int, ty: int) -> Vector2i:
+	var best := Vector2i(-1, 0)
+	var hits := 0
+	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		var nx: int = tx + d.x
+		var ny: int = ty + d.y
+		if nx < 0 or nx >= 32 or ny < 0 or ny >= 32:
+			continue
+		var nidx := (ny * 32 + nx) * 3
+		if nidx + 2 >= tile_buf.size():
+			continue
+		var ncls: int = tile_buf[nidx]
+		if ncls == TileSynth2.TILE_PLAZA or ncls == TileSynth2.TILE_PATH or ncls == TileSynth2.TILE_ROAD or ncls == TileSynth2.TILE_SAND:
+			hits += 1
+			if best.x < 0 or ncls == TileSynth2.TILE_PLAZA or ncls == TileSynth2.TILE_ROAD:
+				best = Vector2i(ncls, int(tile_buf[nidx + 2]))
+	return best if hits >= 2 else Vector2i(-1, 0)
+
+
 func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 	var cell := Vector2i(cx, cy)
 	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
@@ -1672,6 +1711,10 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 					var mask: int = tile_buf[idx + 2]
 					var st := _screen_tile(cx, cy, tx, ty)
 					var base_coord := get_atlas_coords(cls, v, mask)
+					if not _force_no_rom and cls == TileSynth2.TILE_SIGN:
+						var nb := _sign_pavement_neighbor(tile_buf, tx, ty)
+						if nb.x >= 0:
+							base_coord = get_atlas_coords(nb.x, 0, nb.y)
 					target_layer.set_cell(st, 0, base_coord)
 					other_layer.erase_cell(st)
 					var top_st := st + Vector2i(0, -1)
@@ -1851,6 +1894,9 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 			"buf": res["tiles"],
 			"signs": res["signs"],
 			"stamps": res.get("stamps", []),
+			"fixtures": res.get("fixtures", []),
+			"people": res.get("people", []),
+			"street_pokemon": res.get("street_pokemon", []),
 			"has_data": res["has_data"],
 			"image": res.get("image", null),
 			"thread_id": res.get("thread_id", 0),
@@ -1868,6 +1914,9 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 			"buf": c_res.get("tiles", PackedByteArray()),
 			"signs": c_res.get("signs", []),
 			"stamps": c_res.get("stamps", []),
+			"fixtures": c_res.get("fixtures", []),
+			"people": c_res.get("people", []),
+			"street_pokemon": c_res.get("street_pokemon", []),
 			"has_data": true,
 			"thread_id": OS.get_thread_caller_id(),
 			"reveal_state": reveal_state
@@ -2017,13 +2066,60 @@ func _get_stamp_texture(sid: int, sw: int, sh: int, def: Dictionary) -> Texture2
 	_stamp_textures[sid] = tex
 	return tex
 
+func _add_sliced_sprite_to_layers(cx: int, cell_r0: int, agx: int, agy: int, sw: int, sh: int, split_ty: int, tex: Texture2D, tex_tile_px: int, sprite_scale: float, known_mat: Material, created: Array[Sprite2D]) -> void:
+	if tex == null or sw <= 0 or sh <= 0:
+		return
+	var tx0: int = maxi(0, cx * 32 - agx)
+	var tx1: int = mini(sw, (cx + 1) * 32 - agx)
+	var ty0: int = maxi(0, cell_r0 - agy)
+	var ty1: int = mini(sh, cell_r0 + 32 - agy)
+	if tx0 >= tx1 or ty0 >= ty1:
+		return
+
+	if ty0 < split_ty and _stamp_overhang_layer != null:
+		var o_ty0: int = ty0
+		var o_ty1: int = mini(ty1, split_ty)
+		var o_sp := Sprite2D.new()
+		o_sp.centered = false
+		o_sp.texture = tex
+		o_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		o_sp.region_enabled = true
+		o_sp.region_rect = Rect2(float(tx0 * tex_tile_px), float(o_ty0 * tex_tile_px), float((tx1 - tx0) * tex_tile_px), float((o_ty1 - o_ty0) * tex_tile_px))
+		o_sp.scale = Vector2(sprite_scale, sprite_scale)
+		o_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
+		o_sp.offset = Vector2(0.0, float((o_ty0 - sh) * tex_tile_px))
+		o_sp.material = known_mat
+		_stamp_overhang_layer.add_child(o_sp)
+		created.append(o_sp)
+
+	if ty1 > split_ty:
+		var b_ty0: int = maxi(ty0, split_ty)
+		var b_ty1: int = ty1
+		var b_sp := Sprite2D.new()
+		b_sp.centered = false
+		b_sp.texture = tex
+		b_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		b_sp.region_enabled = true
+		b_sp.region_rect = Rect2(float(tx0 * tex_tile_px), float(b_ty0 * tex_tile_px), float((tx1 - tx0) * tex_tile_px), float((b_ty1 - b_ty0) * tex_tile_px))
+		b_sp.scale = Vector2(sprite_scale, sprite_scale)
+		b_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
+		b_sp.offset = Vector2(0.0, float((b_ty0 - sh) * tex_tile_px))
+		b_sp.material = known_mat
+		_stamp_base_layer.add_child(b_sp)
+		created.append(b_sp)
+
+
 func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 	var cell := Vector2i(cx, cy)
 	_clear_cell_stamps(cell)
 	if _stamp_base_layer == null:
 		return
 	var stamps: Array = item.get("stamps", [])
-	if stamps.is_empty():
+	var fixtures: Array = item.get("fixtures", [])
+	var people: Array = item.get("people", [])
+	var street_pokemon: Array = item.get("street_pokemon", [])
+	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
+	if stamps.is_empty() and fixtures.is_empty() and people.is_empty() and street_pokemon.is_empty() and (_force_no_rom or tile_buf.is_empty()):
 		return
 	var reveal_state: int = int(item.get("reveal_state", 1))
 	if reveal_state <= 0:
@@ -2031,6 +2127,7 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 	var is_known_look: bool = (reveal_state == 1 and not _preview_cleared)
 	var known_mat: Material = _world_known.material if (is_known_look and _world_known != null) else null
 	var created: Array[Sprite2D] = []
+	var cell_r0: int = (-cy - 1) * 32
 
 	var sorted_stamps: Array = stamps.duplicate()
 	sorted_stamps.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -2044,7 +2141,6 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 			return ax < bx
 		return int(a.get("stamp_id", 0)) < int(b.get("stamp_id", 0))
 	)
-	var cell_r0: int = (-cy - 1) * 32
 
 	for st in sorted_stamps:
 		var sid: int = int(st.get("stamp_id", -1))
@@ -2058,51 +2154,68 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 		if def.is_empty():
 			continue
 		var tex: Texture2D = _get_stamp_texture(sid, sw, sh, def)
-		if tex == null:
-			continue
-
-		var tx0: int = maxi(0, cx * 32 - agx)
-		var tx1: int = mini(sw, (cx + 1) * 32 - agx)
-		var ty0: int = maxi(0, cell_r0 - agy)
-		var ty1: int = mini(sh, cell_r0 + 32 - agy)
-		if tx0 >= tx1 or ty0 >= ty1:
-			continue
-
 		var base_rows: int = sh if bool(def.get("tiled", false)) else int(def.get("base_rows", sh))
 		var s_kind := str(def.get("kind", ""))
 		var split_ty: int = (sh - base_rows) if ((s_kind == "landmark" or s_kind == "prop") and base_rows > 0 and sh > base_rows) else 0
+		_add_sliced_sprite_to_layers(cx, cell_r0, agx, agy, sw, sh, split_ty, tex, 16, 2.0, known_mat, created)
 
-		if ty0 < split_ty and _stamp_overhang_layer != null:
-			var o_ty0: int = ty0
-			var o_ty1: int = mini(ty1, split_ty)
-			var o_sp := Sprite2D.new()
-			o_sp.centered = false
-			o_sp.texture = tex
-			o_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			o_sp.region_enabled = true
-			o_sp.region_rect = Rect2(float(tx0 * 16), float(o_ty0 * 16), float((tx1 - tx0) * 16), float((o_ty1 - o_ty0) * 16))
-			o_sp.scale = Vector2(2.0, 2.0)
-			o_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
-			o_sp.offset = Vector2(0.0, float((o_ty0 - sh) * 16))
-			o_sp.material = known_mat
-			_stamp_overhang_layer.add_child(o_sp)
-			created.append(o_sp)
+	# Outdoor town fixtures (32 px/tile -> scale 1.0)
+	for fv in fixtures:
+		var f: Dictionary = fv
+		var fkind := str(f.get("kind", ""))
+		var resolved := OutdoorFixtures.resolve_texture(fkind, _force_no_rom)
+		var ftex: Texture2D = resolved.get("texture", null)
+		var fw: int = int(f.get("w", resolved.get("tile_w", 1)))
+		var fh: int = int(f.get("h", resolved.get("tile_h", 1)))
+		var fbr: int = mini(fh, maxi(0, int(f.get("base_rows", resolved.get("base_rows", 1)))))
+		var split_ty: int = (fh - fbr) if (fbr > 0 and fh > fbr) else 0
+		_add_sliced_sprite_to_layers(cx, cell_r0, int(f.get("anchor_gx", 0)), int(f.get("anchor_gy", 0)), fw, fh, split_ty, ftex, 32, 1.0, known_mat, created)
 
-		if ty1 > split_ty:
-			var b_ty0: int = maxi(ty0, split_ty)
-			var b_ty1: int = ty1
-			var b_sp := Sprite2D.new()
-			b_sp.centered = false
-			b_sp.texture = tex
-			b_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			b_sp.region_enabled = true
-			b_sp.region_rect = Rect2(float(tx0 * 16), float(b_ty0 * 16), float((tx1 - tx0) * 16), float((b_ty1 - b_ty0) * 16))
-			b_sp.scale = Vector2(2.0, 2.0)
-			b_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
-			b_sp.offset = Vector2(0.0, float((b_ty0 - sh) * 16))
-			b_sp.material = known_mat
-			_stamp_base_layer.add_child(b_sp)
-			created.append(b_sp)
+	# Outdoor overworld people (1x2 tiles = 32x64 -> overhang top half + feet base half)
+	for pv in people:
+		var p: Dictionary = pv
+		var ptex := PeopleSprites.resolve_texture(str(p.get("sprite", "")), str(p.get("facing", "S")), str(p.get("role", "talk")), _force_no_rom)
+		_add_sliced_sprite_to_layers(cx, cell_r0, int(p.get("anchor_gx", 0)), int(p.get("anchor_gy", 0)), 1, 2, 1, ptex, 32, 1.0, known_mat, created)
+
+	# BW /a/0/0/7 street Pokemon box icons (32x32 -> scale 1.0; omitted when null / --no-rom)
+	for kv in street_pokemon:
+		var k: Dictionary = kv
+		var pkm_tex := AssetDB.pokemon_box_icon(int(k.get("dex", 0)), AssetDB.DEFAULT_CACHE_DIR, _force_no_rom)
+		if pkm_tex == null:
+			continue
+		var psp := Sprite2D.new()
+		psp.centered = false
+		psp.texture = pkm_tex
+		psp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		psp.scale = Vector2(1.0, 1.0)
+		psp.position = Vector2(float(int(k.get("anchor_gx", 0)) * 32), float(int(k.get("anchor_gy", 0)) * 32))
+		psp.material = known_mat
+		_stamp_base_layer.add_child(psp)
+		created.append(psp)
+
+	# Signs standing on paved/path/road/sand tiles draw transparent wood_sign over the pavement
+	if not _force_no_rom and tile_buf.size() >= 32 * 32 * 3:
+		var sign_res: Variant = null
+		var sign_tex: Texture2D = null
+		for ty in 32:
+			for tx in 32:
+				var tidx := (ty * 32 + tx) * 3
+				if int(tile_buf[tidx]) == TileSynth2.TILE_SIGN:
+					var nb := _sign_pavement_neighbor(tile_buf, tx, ty)
+					if nb.x >= 0:
+						if sign_res == null:
+							sign_res = OutdoorFixtures.resolve_texture("em_wood_sign", false)
+							sign_tex = (sign_res as Dictionary).get("texture", null)
+						if sign_tex != null:
+							var ssp := Sprite2D.new()
+							ssp.centered = false
+							ssp.texture = sign_tex
+							ssp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+							ssp.scale = Vector2(1.0, 1.0)
+							ssp.position = Vector2(float((cx * 32 + tx) * 32), float((cell_r0 + ty) * 32))
+							ssp.material = known_mat
+							_stamp_base_layer.add_child(ssp)
+							created.append(ssp)
 
 	if not created.is_empty():
 		_cell_stamp_sprites[cell] = created

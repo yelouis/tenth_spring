@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "id": "dc:gt-rowhouse-west",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "West Brick Rowhouse",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 West Brick Rowhouse",
+      "theme": "wood",
+      "kit": "cottage_rowhouse",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            9,
+            7
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_cot_kitchen_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_cot_bed_1x2",
+          "at": [
+            1,
+            5
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            5,
+            4
+          ]
+        },
+        {
+          "fixture": "em_chair_e_1x1",
+          "at": [
+            4,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            10,
+            4
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_rowhouse_west_ether",
+          "at": [
+            9,
+            7
+          ],
+          "name": "Ether"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            6,
+            3
+          ],
+          "text": "A folded note on the table: Gone east to the camp waypost. Shutters bolted behind us."
+        }
+      ]
+    }
+  ]
+}

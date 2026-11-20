@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "id": "dc:gt-bakery-ruin",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Brick Corner Bakery",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Brick Corner Bakery",
+      "theme": "wood",
+      "kit": "cottage_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWRRRRRWWWW",
+        "WWWRRRRRWWWW",
+        "WWWRRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            1,
+            5
+          ]
+        },
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            9,
+            5
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_cot_kitchen_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            3,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_clock_1x1",
+          "at": [
+            6,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_notice_1x1",
+          "at": [
+            8,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            5,
+            4
+          ]
+        },
+        {
+          "fixture": "em_potted_tree_1x2",
+          "at": [
+            10,
+            1
+          ]
+        },
+        {
+          "fixture": "em_trash_can_1x1",
+          "at": [
+            10,
+            8
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_bakery_milk",
+          "at": [
+            9,
+            5
+          ],
+          "name": "Moomoo Milk"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            7,
+            2
+          ],
+          "text": "Chalk board: Trade tin flour or honey for spare clean jars. Ring brass bell twice."
+        }
+      ]
+    }
+  ]
+}

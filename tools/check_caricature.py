@@ -27,6 +27,12 @@ def parse_args():
         help="Print the compiled map as text.",
     )
     parser.add_argument(
+        "--town-rect",
+        type=str,
+        default=None,
+        help="Optional x,y,w,h town rect override to run town checks (T1–T6) on a map.",
+    )
+    parser.add_argument(
         "--roster",
         type=str,
         default="res://config/neighbourhoods.json",
@@ -68,6 +74,8 @@ def main():
     ]
     if args.area is not None:
         godot_cmd.append(f"--area={args.area}")
+    if args.town_rect is not None:
+        godot_cmd.append(f"--town-rect={args.town_rect}")
     if args.preview:
         godot_cmd.append("--preview")
 
@@ -75,7 +83,7 @@ def main():
 
     produced_caricature_line = False
     for line in proc.stdout.splitlines():
-        if line.startswith(("CARICATURE ", "CARICATURE_ROUTE ", "CARICATURE_CITY ")):
+        if line.startswith(("CARICATURE ", "CARICATURE_TOWN ", "CARICATURE_ROUTE ", "CARICATURE_CITY ")):
             print(line)
             produced_caricature_line = True
         elif line.startswith("PREVIEW:"):

@@ -36,6 +36,7 @@ func _ready() -> void:
 	var roster_path := Neighbourhoods.DEFAULT_CONFIG_PATH
 	var target_area_id := ""
 	var show_preview := false
+	var town_rect_override: Array = []
 
 	var i := 0
 	while i < user_args.size():
@@ -48,6 +49,12 @@ func _ready() -> void:
 			i += 2
 		elif arg.begins_with("--area="):
 			target_area_id = arg.trim_prefix("--area=").strip_edges()
+			i += 1
+		elif arg == "--town-rect" and i + 1 < user_args.size():
+			town_rect_override = _parse_town_rect_arg(str(user_args[i + 1]))
+			i += 2
+		elif arg.begins_with("--town-rect="):
+			town_rect_override = _parse_town_rect_arg(arg.trim_prefix("--town-rect="))
 			i += 1
 		elif arg == "--roster" and i + 1 < user_args.size():
 			roster_path = str(user_args[i + 1]).strip_edges()
@@ -75,7 +82,7 @@ func _ready() -> void:
 			return
 		var _comp_single := {}
 		var _m_single := {}
-		if not _check_one_area(single_area, show_preview, _comp_single, _m_single):
+		if not _check_one_area(single_area, show_preview, _comp_single, _m_single, town_rect_override):
 			any_failed = true
 	else:
 		var raw_txt := FileAccess.get_file_as_string(roster_path)
@@ -100,7 +107,7 @@ func _ready() -> void:
 				var measures_by_id: Dictionary = {}
 				var show_each_preview: bool = show_preview and not has_routes
 				for a_entry in Neighbourhoods.areas_of(pid):
-					if not _check_one_area(a_entry as Dictionary, show_each_preview, compiled_by_id, measures_by_id):
+					if not _check_one_area(a_entry as Dictionary, show_each_preview, compiled_by_id, measures_by_id, town_rect_override):
 						any_failed = true
 
 				if has_routes:
@@ -150,7 +157,17 @@ func _ready() -> void:
 	Neighbourhoods.set_config_path_for_tests("")
 	get_tree().quit(1 if any_failed else 0)
 
-func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dictionary, measures_by_id: Dictionary) -> bool:
+func _parse_town_rect_arg(spec: String) -> Array:
+	var parts := spec.strip_edges().split(",")
+	if parts.size() != 4:
+		return []
+	for p in parts:
+		if not p.strip_edges().is_valid_int():
+			return []
+	return [[parts[0].strip_edges().to_int(), parts[1].strip_edges().to_int(), parts[2].strip_edges().to_int(), parts[3].strip_edges().to_int()]]
+
+
+func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dictionary, measures_by_id: Dictionary, town_rect_override: Array = []) -> bool:
 	var area_id := str(area.get("id", ""))
 	var is_route := (str(area.get("kind", "")) == "route" or area_id.begins_with("route:"))
 	var map_path := CaricatureMap.resolve_map_path(str(area.get("map", "")))
@@ -217,6 +234,32 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 
 	if show_preview:
 		_print_preview(compiled)
+
+	if bool(compiled.get("has_town_rules", false)) or not town_rect_override.is_empty():
+		var t_res := CaricatureCheck.check_town(compiled, area, town_rect_override)
+		var t_ok := bool(t_res.get("ok", false))
+		var t_failed: Array = t_res.get("failed_rules", [])
+		var t_status := "PASS" if t_ok else ("FAIL " + ",".join(PackedStringArray(t_failed)))
+		print(
+			"CARICATURE_TOWN %s tiles=%d empty_screens=%.2f things_per_150=%.2f wear_pct=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d route_items_5=%.2f %s" % [
+				area_id,
+				int(t_res["town_tiles"]),
+				float(t_res["empty_screens"]),
+				float(t_res["things_per_150"]),
+				float(t_res["wear_pct"]),
+				int(t_res["wear_touch"]),
+				int(t_res["repeat_8x8"]),
+				int(t_res["open_house_doors"]),
+				int(t_res["open_doors"]),
+				int(t_res["people"]),
+				int(t_res["survivors"]),
+				int(t_res["street_pokemon"]),
+				float(t_res["route_items_per_5_screens"]),
+				t_status,
+			]
+		)
+		if not t_ok:
+			passed = false
 
 	return passed
 

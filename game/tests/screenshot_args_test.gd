@@ -233,5 +233,21 @@ func run_test() -> bool:
 		push_error("Valid --interior-view=door --interior-fallback test failed: %s" % str(r_iv_ok))
 		return false
 
+	# 10. Item 62: --tile and --no-rom parsing and validation
+	var r_tile_no_area: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--tile=31,25"], false, repo_root)
+	if r_tile_no_area.get("ok", true) != false or r_tile_no_area.get("error", "") != "[FAIL] --tile needs --area":
+		push_error("--tile without --area failed: %s" % str(r_tile_no_area))
+		return false
+
+	var r_tile_bad: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--area=camp:washington-dc", "--tile=bad"], false, repo_root)
+	if r_tile_bad.get("ok", true) != false or r_tile_bad.get("error", "") != "[FAIL] invalid --tile bad":
+		push_error("--tile=bad refusal failed: %s" % str(r_tile_bad))
+		return false
+
+	var r_tile_ok: Dictionary = ScreenshotConfig.parse_args(["--demo", "--screenshot=/tmp/out_test.png", "--area=camp:washington-dc", "--tile=31,25", "--no-rom"], false, repo_root)
+	if not r_tile_ok.get("ok", false) or not bool(r_tile_ok.get("has_tile", false)) or r_tile_ok.get("tile", Vector2i.ZERO) != Vector2i(31, 25) or not bool(r_tile_ok.get("no_rom", false)):
+		push_error("Valid --tile=31,25 --no-rom test failed: %s" % str(r_tile_ok))
+		return false
+
 	print("screenshot_args_test checks passed")
 	return true

@@ -22,6 +22,8 @@ const ERR_UNKNOWN_FLOOR: String = "[FAIL] unknown floor %s"
 const ERR_UNSUPPORTED_INTERIOR_VIEW: String = "[FAIL] unsupported interior-view %s"
 const ERR_INTERIOR_VIEW_NEEDS_INTERIOR: String = "[FAIL] --interior-view needs --interior"
 const ERR_INTERIOR_FALLBACK_NEEDS_INTERIOR: String = "[FAIL] --interior-fallback needs --interior"
+const ERR_TILE_NEEDS_AREA: String = "[FAIL] --tile needs --area"
+const ERR_INVALID_TILE: String = "[FAIL] invalid --tile %s"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
 const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
@@ -49,6 +51,10 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var has_interior_view := false
 	var interior_view_val := "whole"
 	var interior_fallback := false
+	var no_rom := false
+	var tile_str := ""
+	var has_tile := false
+	var tile_val := Vector2i(-1, -1)
 	var has_demo := false
 	var has_screenshot := false
 
@@ -145,6 +151,18 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			interior_view_str = ""
 		elif arg == "--interior-fallback":
 			interior_fallback = true
+		elif arg == "--no-rom":
+			no_rom = true
+		elif arg.begins_with("--tile="):
+			has_tile = true
+			tile_str = arg.trim_prefix("--tile=").strip_edges()
+		elif arg == "--tile" and i + 1 < user_args.size():
+			has_tile = true
+			tile_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--tile":
+			has_tile = true
+			tile_str = ""
 		i += 1
 
 	# Refusal 0: --area, --screen=city, and --interior are demo-only (standing constraint 22, §4.3, §10.12, §11.3 D)
@@ -153,6 +171,15 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			return {"ok": false, "error": ERR_AREA_NEEDS_DEMO, "exit_code": 2}
 		if area_str.is_empty() or Neighbourhoods.area(area_str).is_empty():
 			return {"ok": false, "error": ERR_UNKNOWN_AREA % area_str, "exit_code": 2}
+	if has_tile:
+		if not has_area:
+			return {"ok": false, "error": ERR_TILE_NEEDS_AREA, "exit_code": 2}
+		var tparts := tile_str.split(",")
+		if tparts.size() != 2 or not tparts[0].strip_edges().is_valid_int() or not tparts[1].strip_edges().is_valid_int():
+			return {"ok": false, "error": ERR_INVALID_TILE % tile_str, "exit_code": 2}
+		tile_val = Vector2i(tparts[0].strip_edges().to_int(), tparts[1].strip_edges().to_int())
+		if tile_val.x < 0 or tile_val.y < 0:
+			return {"ok": false, "error": ERR_INVALID_TILE % tile_str, "exit_code": 2}
 	if screen_str == "city" and not has_demo:
 		return {"ok": false, "error": ERR_CITY_NEEDS_DEMO, "exit_code": 2}
 	if has_floor and not has_interior:
@@ -181,7 +208,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 			return {"ok": false, "error": ERR_UNKNOWN_FLOOR % (floor_str if has_floor else str(floor_val)), "exit_code": 2}
 
 	if not has_screenshot:
-		return {"ok": true, "is_screenshot": false, "area": area_str, "interior": interior_str, "floor": floor_val, "interior_view": interior_view_val, "interior_fallback": interior_fallback}
+		return {"ok": true, "is_screenshot": false, "area": area_str, "interior": interior_str, "floor": floor_val, "interior_view": interior_view_val, "interior_fallback": interior_fallback, "no_rom": no_rom, "has_tile": has_tile, "tile": tile_val}
 
 	# Refusal 1: Headless refusal (§7.4 rule 2)
 	if is_headless:
@@ -249,4 +276,7 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		"floor": floor_val,
 		"interior_view": interior_view_val,
 		"interior_fallback": interior_fallback,
+		"no_rom": no_rom,
+		"has_tile": has_tile,
+		"tile": tile_val,
 	}

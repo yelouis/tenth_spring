@@ -376,6 +376,9 @@ func _process_request(req: Dictionary) -> Dictionary:
 	var tile_buf: PackedByteArray
 	var signs_list: Array = []
 	var stamps_list: Array = []
+	var fixtures_list: Array = []
+	var people_list: Array = []
+	var street_pokemon_list: Array = []
 	var has_map_data := false
 
 	var caricature_entry: Variant = null
@@ -396,6 +399,9 @@ func _process_request(req: Dictionary) -> Dictionary:
 		tile_buf = c_res.get("tiles", PackedByteArray())
 		signs_list = c_res.get("signs", [])
 		stamps_list = c_res.get("stamps", [])
+		fixtures_list = c_res.get("fixtures", [])
+		people_list = c_res.get("people", [])
+		street_pokemon_list = c_res.get("street_pokemon", [])
 		has_map_data = true
 	else:
 		# Assemble 3x3 neighbourhood area for TileSynth2
@@ -457,6 +463,9 @@ func _process_request(req: Dictionary) -> Dictionary:
 		"tiles": tile_buf,
 		"signs": signs_list,
 		"stamps": stamps_list,
+		"fixtures": fixtures_list,
+		"people": people_list,
+		"street_pokemon": street_pokemon_list,
 		"has_data": has_map_data,
 		"image": overview_image,
 		"thread_id": caller_id,

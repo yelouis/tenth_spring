@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "id": "dc:camp-workshop",
+  "area_id": "camp:washington-dc",
+  "title": "Lamplighter Workshop",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Lamplighter Workshop",
+      "theme": "wood",
+      "kit": "gallery_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_reading_table_lamp",
+          "at": [
+            4,
+            4
+          ]
+        },
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            9,
+            5
+          ]
+        },
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            1,
+            8
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_pc_desk_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_map_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_notice_1x1",
+          "at": [
+            7,
+            0
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_stool_1x1",
+          "at": [
+            3,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_tree_1x2",
+          "at": [
+            10,
+            7
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "npc_camp_owen_bell",
+          "name": "Owen Bell",
+          "at": [
+            7,
+            6
+          ],
+          "facing": "W",
+          "sprite": "lamplighter",
+          "role": "lamplighter"
+        }
+      ],
+      "items": [
+        {
+          "id": "dc_camp_workshop_rope",
+          "at": [
+            1,
+            8
+          ],
+          "name": "Escape Rope"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            5,
+            2
+          ],
+          "text": "Brass wicks trimmed and dipped. Next convoy checks Dupont fountain by sunrise."
+        }
+      ]
+    }
+  ]
+}

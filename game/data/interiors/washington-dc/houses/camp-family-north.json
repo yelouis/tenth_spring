@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "id": "dc:camp-family-north",
+  "area_id": "camp:washington-dc",
+  "title": "Reid Family Cottage",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Reid Family Cottage",
+      "theme": "wood",
+      "kit": "cottage_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_reading_table_lamp",
+          "at": [
+            5,
+            4
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_cot_kitchen_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_clock_1x1",
+          "at": [
+            7,
+            0
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_cot_bed_1x2",
+          "at": [
+            1,
+            5
+          ]
+        },
+        {
+          "fixture": "em_chair_e_1x1",
+          "at": [
+            4,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            10,
+            7
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "npc_camp_mara_reid",
+          "name": "Mara Reid",
+          "at": [
+            8,
+            5
+          ],
+          "facing": "W",
+          "sprite": "town_woman",
+          "role": "talk"
+        }
+      ],
+      "items": [],
+      "signs": [
+        {
+          "at": [
+            3,
+            3
+          ],
+          "text": "A warm pot of soup simmers on the stove. Names are chalked inside the cupboard door."
+        }
+      ]
+    }
+  ]
+}

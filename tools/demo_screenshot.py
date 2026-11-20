@@ -97,6 +97,17 @@ def parse_args():
         help="Force procedural fallback indoor atlas when --interior is set (no ROM)."
     )
     parser.add_argument(
+        "--no-rom",
+        action="store_true",
+        help="Render without ROM assets (uses original/procedural stand-ins outdoors and indoors, hides BW street Pokemon)."
+    )
+    parser.add_argument(
+        "--tile",
+        type=str,
+        default=None,
+        help="Optional area-local X,Y tile center when --area is set (e.g. --tile 32,32)."
+    )
+    parser.add_argument(
         "--resolution",
         type=str,
         default="1280x720",
@@ -208,6 +219,10 @@ def main():
             godot_cmd.append(f"--interior-view={args.interior_view}")
         if args.interior_fallback:
             godot_cmd.append("--interior-fallback")
+        if args.no_rom:
+            godot_cmd.append("--no-rom")
+        if args.tile:
+            godot_cmd.append(f"--tile={args.tile}")
         if args.focus:
             godot_cmd.append(f"--focus={args.focus}")
         if args.screen:

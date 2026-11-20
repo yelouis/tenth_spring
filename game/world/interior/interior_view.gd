@@ -11,6 +11,7 @@ extends Node2D
 const InteriorTiles := preload("res://world/interior/interior_tiles.gd")
 const InteriorMap := preload("res://world/interior/interior_map.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
+const PeopleSprites := preload("res://world/people_sprites.gd")
 
 const TILE_PX: int = 32
 const STAMP_SCALE: float = 2.0
@@ -240,42 +241,8 @@ func _load_stamp_texture(rel_path: String) -> Texture2D:
 	_stamp_tex_cache[rel_path] = tex
 	return tex
 
-func _get_npc_texture(role: String) -> Texture2D:
-	var key := role.to_lower()
-	if _npc_tex_cache.has(key):
-		return _npc_tex_cache[key]
-	var img := Image.create(16, 20, false, Image.FORMAT_RGBA8)
-	img.fill(Color(0, 0, 0, 0))
-	var coat := Color8(66, 108, 176, 255)
-	if key == "scholar" or key == "archivist":
-		coat = Color8(146, 92, 58, 255)
-	elif key == "warden":
-		coat = Color8(88, 72, 142, 255)
-	var outline := Color8(36, 40, 54, 255)
-	var skin := Color8(238, 202, 168, 255)
-	var hair := Color8(72, 56, 46, 255)
-	# Simple crisp 16x20 front-facing handheld RPG NPC sprite
-	for y in range(2, 9):
-		for x in range(4, 12):
-			var edge := (x == 4 or x == 11 or y == 2 or y == 8)
-			if edge:
-				img.set_pixel(x, y, outline)
-			elif y <= 4:
-				img.set_pixel(x, y, hair)
-			else:
-				img.set_pixel(x, y, skin)
-	img.set_pixel(6, 6, outline)
-	img.set_pixel(9, 6, outline)
-	for y in range(9, 17):
-		for x in range(3, 13):
-			var edge := (x == 3 or x == 12 or y == 9 or y == 16)
-			img.set_pixel(x, y, outline if edge else coat)
-	for y in range(17, 20):
-		for x in [5, 6, 9, 10]:
-			img.set_pixel(x, y, outline)
-	var tex := ImageTexture.create_from_image(img)
-	_npc_tex_cache[key] = tex
-	return tex
+func _get_npc_texture(role: String, sprite_key: String = "", facing: String = "S", force_fallback: bool = false, cache_dir: String = AssetDB.DEFAULT_CACHE_DIR) -> Texture2D:
+	return PeopleSprites.resolve_texture(sprite_key, facing, role, force_fallback, cache_dir)
 
 func _build_tileset(strip_tex: Texture2D, cols: int = InteriorTiles.CLASS_COUNT, rows: int = 1) -> TileSet:
 	var ts := TileSet.new()
@@ -468,20 +435,26 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 			sp.offset = Vector2(0.0, float(-sh * TILE_PX if use_rom_obj else -sh * 16))
 			_ysort_layer.add_child(sp)
 
-	# 4. NPC sprites in Y-sort layer
+	# 4. NPC sprites in Y-sort layer (shared Emerald 16x32 -> 32x64 sprites + fallback)
 	for npc_v in (fd["npcs"] as Array):
 		var npc: Dictionary = npc_v
 		var np_at: Variant = InteriorMap._parse_vec2i(npc.get("at", null))
 		if np_at is Vector2i:
 			var np_pos: Vector2i = np_at
-			var ntex := _get_npc_texture(str(npc.get("role", "talk")))
+			var ntex := _get_npc_texture(
+				str(npc.get("role", "talk")),
+				str(npc.get("sprite", "")),
+				str(npc.get("facing", "S")),
+				force_fallback,
+				cache_dir
+			)
 			var nsp := Sprite2D.new()
 			nsp.texture = ntex
 			nsp.centered = false
 			nsp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			nsp.scale = Vector2(STAMP_SCALE, STAMP_SCALE)
+			nsp.scale = Vector2(1.0, 1.0)
 			nsp.position = Vector2(float(np_pos.x * TILE_PX), float((np_pos.y + 1) * TILE_PX))
-			nsp.offset = Vector2(0.0, -20.0)
+			nsp.offset = Vector2(0.0, -64.0)
 			_ysort_layer.add_child(nsp)
 
 	# 5. Camera centered on floor

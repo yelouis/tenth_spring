@@ -234,6 +234,47 @@ static func render_metatile_layer1_32(primary: Dictionary, secondary: Variant, m
 	return scale_2x_nearest(render_metatile_layer1_16(primary, secondary, metatile_id))
 
 
+static func render_metatile_cutout_32(primary: Dictionary, secondary: Variant, metatile_id: int, layer: String = "top") -> Image:
+	if layer == "top" or layer == "l1":
+		return render_metatile_layer1_32(primary, secondary, metatile_id)
+	return scale_2x_nearest(_render_metatile_subrange_16(primary, secondary, metatile_id, Color(0, 0, 0, 0), 0, 8))
+
+
+static func _read_palette(rom: Variant, palette_offset: int) -> Array[Color]:
+	var pal: Array[Color] = []
+	if rom == null:
+		return pal
+	var pal_bytes: PackedByteArray = rom.read_bytes(palette_offset, 32)
+	if pal_bytes.size() < 32:
+		return pal
+	for c_idx in range(16):
+		var c16 := int(pal_bytes[c_idx * 2]) | (int(pal_bytes[c_idx * 2 + 1]) << 8)
+		pal.append(bgr555_to_color(c16))
+	return pal
+
+
+static func render_person_transparent_32(
+	rom: Variant,
+	frame_offset: int,
+	palette_offset: int,
+	hflip: bool = false
+) -> Image:
+	var img16 := Image.create(16, 32, false, Image.FORMAT_RGBA8)
+	img16.fill(Color(0, 0, 0, 0))
+	if rom == null:
+		return scale_2x_nearest(img16)
+	var pal := _read_palette(rom, palette_offset)
+	var frame_bytes: PackedByteArray = rom.read_bytes(frame_offset, 256)
+	if pal.size() < 16 or frame_bytes.size() < 256:
+		return scale_2x_nearest(img16)
+	for ty in range(4):
+		for tx in range(2):
+			var tidx := ty * 2 + tx
+			var dx := (1 - tx) * 8 if hflip else tx * 8
+			_blit_4bpp_tile(img16, frame_bytes, tidx * 32, pal, dx, ty * 8, hflip, false, true)
+	return scale_2x_nearest(img16)
+
+
 static func _blit_object_on_16(
 	img16: Image,
 	rom: Variant,
@@ -242,14 +283,10 @@ static func _blit_object_on_16(
 ) -> void:
 	if rom == null:
 		return
-	var pal_bytes: PackedByteArray = rom.read_bytes(palette_offset, 32)
+	var pal := _read_palette(rom, palette_offset)
 	var frame_bytes: PackedByteArray = rom.read_bytes(frame_offset, 128)
-	if pal_bytes.size() < 32 or frame_bytes.size() < 128:
+	if pal.size() < 16 or frame_bytes.size() < 128:
 		return
-	var pal: Array[Color] = []
-	for c_idx in range(16):
-		var c16 := int(pal_bytes[c_idx * 2]) | (int(pal_bytes[c_idx * 2 + 1]) << 8)
-		pal.append(bgr555_to_color(c16))
 	const QUAD := [Vector2i(0, 0), Vector2i(8, 0), Vector2i(0, 8), Vector2i(8, 8)]
 	for q in range(4):
 		var pos: Vector2i = QUAD[q]

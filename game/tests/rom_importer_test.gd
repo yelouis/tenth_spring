@@ -516,8 +516,30 @@ func _test_env_gated_real_imports() -> bool:
 		if chand_tex == null or bool(chand_tex.get_meta("is_placeholder", true)):
 			push_error("Expected real decoded texture for #609 after ROM import")
 			return false
+		# Item 62: BW /a/0/0/7 box icons + --no-rom / missing cache null behavior
+		var pikachu_box := AssetDBRef.pokemon_box_icon(25, e2e_cache, false)
+		if pikachu_box == null or pikachu_box.get_width() != 32 or pikachu_box.get_height() != 32:
+			push_error("Expected 32x32 BW /a/0/0/7 box icon for #25 after import")
+			return false
+		if AssetDBRef.pokemon_box_icon(25, e2e_cache, true) != null:
+			push_error("Expected AssetDB.pokemon_box_icon with no_rom=true to return null")
+			return false
+		if AssetDBRef.pokemon_box_icon(0, e2e_cache, false) != null or AssetDBRef.pokemon_box_icon(650, e2e_cache, false) != null:
+			push_error("Expected out-of-range AssetDB.pokemon_box_icon to return null")
+			return false
+		var auto_cache := TEST_ROOT + "/auto_bw_cache"
+		var auto_pikachu := AssetDBRef.pokemon_box_icon(25, auto_cache, false)
+		DataPackImporterRef._remove_dir_recursive(ProjectSettings.globalize_path(auto_cache))
+		if auto_pikachu == null or auto_pikachu.get_width() != 32 or auto_pikachu.get_height() != 32:
+			push_error("Expected AssetDB.pokemon_box_icon to auto-import 32x32 icon under user://test when TENTH_SPRING_ROM_BW set")
+			return false
 	else:
 		print("SKIPPED real Black/White ROM import — TENTH_SPRING_ROM_BW not set")
+		var empty_bw := TEST_ROOT + "/missing_bw_cache"
+		DataPackImporterRef._remove_dir_recursive(ProjectSettings.globalize_path(empty_bw))
+		if AssetDBRef.pokemon_box_icon(25, empty_bw, false) != null:
+			push_error("Expected AssetDB.pokemon_box_icon without BW ROM to return null")
+			return false
 
 	var dp_dir := OS.get_environment("TENTH_SPRING_DATA_PACK").strip_edges()
 	if dp_dir != "" and DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(dp_dir)):

@@ -273,6 +273,24 @@ func run_test() -> bool:
 					if em_img.get_pixel(px, row_y + py) != orig_img.get_pixel(px, row_y + py):
 						return _fail("F Rule B pixel diff on class %d row %d at (%d,%d)" % [r_cls, int(r_entry["row"]), px, py])
 
-	print("[EMERALD HYBRID OK] base_trapped falsifier, cliff/puzzle checks, synthetic GBA, and ROM hybrid verified")
+	# G. Item 62: OutdoorFixtures and PeopleSprites ROM + procedural fallback resolution
+	var OutFix := load("res://world/caricature/outdoor_fixtures.gd")
+	var PplSprites := load("res://world/people_sprites.gd")
+	var fb_fountain: Dictionary = OutFix.resolve_texture("em_fountain", true, CACHE_EMPTY)
+	var rom_fountain: Dictionary = OutFix.resolve_texture("em_fountain", false, CACHE_IMPORT)
+	if fb_fountain.get("texture", null) == null or bool(fb_fountain.get("is_rom", true)):
+		return _fail("G expected OutdoorFixtures fallback for em_fountain")
+	if rom_fountain.get("texture", null) == null or not bool(rom_fountain.get("is_rom", false)):
+		return _fail("G expected OutdoorFixtures ROM atlas for em_fountain after GBA import")
+	var fb_healer: Texture2D = PplSprites.resolve_texture("healer", "S", "healer", true, CACHE_EMPTY)
+	var rom_healer: Texture2D = PplSprites.resolve_texture("healer", "S", "healer", false, CACHE_IMPORT)
+	if fb_healer == null or rom_healer == null:
+		return _fail("G expected non-null PeopleSprites fallback and ROM textures")
+	var fh_img := fb_healer.get_image()
+	var rh_img := rom_healer.get_image()
+	if fh_img == null or rh_img == null or fh_img.get_data() == rh_img.get_data():
+		return _fail("G expected Emerald ROM healer sprite to differ from procedural fallback")
+
+	print("[EMERALD HYBRID OK] base_trapped falsifier, cliff/puzzle checks, synthetic GBA, outdoor/people ROM + fallback verified")
 	_cleanup()
 	return true

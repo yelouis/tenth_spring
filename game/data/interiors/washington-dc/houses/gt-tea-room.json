@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "id": "dc:gt-tea-room",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Quiet Corner Tea Room",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Quiet Corner Tea Room",
+      "theme": "wood",
+      "kit": "cottage_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            9,
+            7
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_cot_kitchen_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_painting_sphere_1x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            6,
+            0
+          ]
+        },
+        {
+          "fixture": "em_potted_tree_1x2",
+          "at": [
+            10,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            3,
+            4
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            7,
+            4
+          ]
+        },
+        {
+          "fixture": "em_chair_e_1x1",
+          "at": [
+            2,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            1,
+            7
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_tearoom_root",
+          "at": [
+            9,
+            7
+          ],
+          "name": "Energy Root"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            5,
+            2
+          ],
+          "text": "Barter slate: dried mint or lemon peel traded for clean rainwater tins."
+        }
+      ]
+    }
+  ]
+}

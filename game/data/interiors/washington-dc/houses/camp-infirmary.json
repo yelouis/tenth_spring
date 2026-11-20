@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "id": "dc:camp-infirmary",
+  "area_id": "camp:washington-dc",
+  "title": "Waypost Infirmary",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Waypost Infirmary",
+      "theme": "clinic",
+      "kit": "clinic_clean",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "............",
+        "............",
+        "....RRRR....",
+        "....RRRR....",
+        "....RRRR....",
+        "............",
+        "............",
+        ".....DD....."
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            9,
+            6
+          ]
+        },
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            10,
+            8
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_medicine_shelf_2x3",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_medicine_cabinet_2x2",
+          "at": [
+            3,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            6,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_clock_1x1",
+          "at": [
+            9,
+            0
+          ]
+        },
+        {
+          "fixture": "em_cot_bed_1x2",
+          "at": [
+            1,
+            5
+          ]
+        },
+        {
+          "fixture": "em_cot_bed_1x2",
+          "at": [
+            1,
+            7
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            10,
+            1
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "npc_camp_nurse_hana",
+          "name": "Nurse Hana",
+          "at": [
+            6,
+            3
+          ],
+          "facing": "S",
+          "sprite": "healer",
+          "role": "healer"
+        }
+      ],
+      "items": [
+        {
+          "id": "dc_camp_infirmary_potion",
+          "at": [
+            10,
+            8
+          ],
+          "name": "Super Potion"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            8,
+            2
+          ],
+          "text": "Fresh boil water first. Keep bandages dry in the tin by the second cot."
+        }
+      ]
+    }
+  ]
+}

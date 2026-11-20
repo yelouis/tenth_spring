@@ -350,5 +350,20 @@ func run_test() -> bool:
 		if not em_haunt_err.is_empty():
 			return _fail(em_haunt_err)
 
+	# Item 62: Verify 6 famous interiors vs all 22 DC interiors (6 famous + 16 small houses)
+	var famous_paths := InteriorMap.list_dc_interior_paths()
+	if famous_paths.size() != 6:
+		return _fail("Expected list_dc_interior_paths() == 6, got %d" % famous_paths.size())
+	var all_dc_paths := InteriorMap.list_all_dc_interior_paths()
+	if all_dc_paths.size() != 22:
+		return _fail("Expected list_all_dc_interior_paths() == 22, got %d" % all_dc_paths.size())
+	for dp in all_dc_paths:
+		var doc := InteriorMap.load_json(dp)
+		if doc.is_empty():
+			return _fail("Failed to load DC interior %s" % dp)
+		var chk := InteriorCheck.compile_and_check(doc)
+		if not bool(chk.get("ok", false)):
+			return _fail("DC interior %s failed check_interior: %s" % [dp, str(chk)])
+
 	_cleanup()
 	return true

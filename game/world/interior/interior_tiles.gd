@@ -607,6 +607,8 @@ static func _fallback_kit_palette(kit_name: String) -> Dictionary:
 		"clinic_clean": {"wu": [244, 240, 222], "wl": [238, 170, 106], "fa": [248, 244, 198], "fb": [232, 226, 174], "sn": [206, 194, 144], "mat": [224, 128, 72], "trim": [182, 148, 114]},
 		"stone_shrine": {"wu": [148, 162, 182], "wl": [116, 130, 152], "fa": [168, 164, 148], "fb": [150, 146, 132], "sn": [118, 114, 102], "mat": [198, 104, 104], "trim": [88, 98, 116]},
 		"abandoned_wood": {"wu": [174, 162, 112], "wl": [138, 126, 92], "fa": [184, 136, 92], "fb": [162, 116, 76], "sn": [132, 110, 68], "mat": [212, 172, 132], "trim": [96, 86, 62]},
+		"cottage_wood": {"wu": [242, 232, 184], "wl": [208, 184, 132], "fa": [216, 178, 112], "fb": [192, 156, 96], "sn": [158, 126, 76], "mat": [232, 134, 118], "trim": [182, 148, 98]},
+		"cottage_rowhouse": {"wu": [234, 238, 244], "wl": [204, 212, 224], "fa": [224, 198, 144], "fb": [204, 178, 126], "sn": [166, 144, 102], "mat": [108, 148, 214], "trim": [156, 168, 188]},
 	}
 	return PALS.get(kit_name, PALS["gallery_wood"]) as Dictionary
 
@@ -793,6 +795,20 @@ static func _draw_fixture16(img: Image, ox: int, oy: int, fx_id: String, cx: int
 		var body_c := Color8(216, 186, 128, 255) if fx_id == "em_wood_table_2x2" else cream
 		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 13, dark)
 		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 11, body_c)
+	elif fx_id == "em_cot_cabinet_2x2":
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 14 if cy == 1 else 16, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 12 if cy == 1 else 16, Color8(186, 136, 84, 255))
+		_fill_rect16(img, ox, oy, 3 if cx == 0 else 1, 5 if cy == 0 else 3, 11, 8, Color8(138, 178, 208, 255) if cy == 0 else Color8(146, 102, 58, 255))
+	elif fx_id == "em_cot_kitchen_2x2":
+		_fill_rect16(img, ox, oy, 1 if cx == 0 else 0, 2 if cy == 0 else 0, 15, 14 if cy == 1 else 16, dark)
+		_fill_rect16(img, ox, oy, 2 if cx == 0 else 0, 3 if cy == 0 else 0, 13, 12 if cy == 1 else 16, Color8(214, 210, 198, 255))
+		if cy == 1:
+			_fill_rect16(img, ox, oy, 3 if cx == 0 else 2, 4, 10, 6, Color8(136, 156, 176, 255) if cx == 1 else Color8(88, 92, 104, 255))
+	elif fx_id == "em_cot_bed_1x2":
+		_fill_rect16(img, ox, oy, 2, 2 if cy == 0 else 0, 12, 14, dark)
+		_fill_rect16(img, ox, oy, 3, 3 if cy == 0 else 0, 10, 12, Color8(232, 234, 240, 255) if cy == 0 else Color8(102, 154, 212, 255))
+		if cy == 0:
+			_fill_rect16(img, ox, oy, 4, 5, 8, 5, Color8(244, 246, 250, 255))
 	elif fx_id == "em_trash_can_1x1":
 		_fill_rect16(img, ox, oy, 4, 3, 8, 11, Color8(132, 138, 150, 255))
 		_fill_rect16(img, ox, oy, 5, 4, 6, 2, Color8(194, 200, 212, 255))

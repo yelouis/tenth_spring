@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "id": "dc:gt-student-flat",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Hilltop Dorm Flat",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Hilltop Dorm Flat",
+      "theme": "wood",
+      "kit": "cottage_rowhouse",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_reading_table_lamp",
+          "at": [
+            4,
+            4
+          ]
+        },
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            10,
+            7
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_pc_desk_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_cot_bed_1x2",
+          "at": [
+            1,
+            5
+          ]
+        },
+        {
+          "fixture": "em_chair_green_1x1",
+          "at": [
+            3,
+            4
+          ]
+        },
+        {
+          "fixture": "em_trash_can_1x1",
+          "at": [
+            10,
+            5
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_dorm_heal",
+          "at": [
+            10,
+            7
+          ],
+          "name": "Paralyze Heal"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            6,
+            2
+          ],
+          "text": "Desk note: Ghost types gather around the old lockhouse after dark. Bring bright lanterns."
+        }
+      ]
+    }
+  ]
+}

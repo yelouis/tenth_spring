@@ -1,0 +1,122 @@
+{
+  "schema": 1,
+  "id": "dc:camp-trading-post",
+  "area_id": "camp:washington-dc",
+  "title": "Waypost Trading Post",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Waypost Trading Post",
+      "theme": "wood",
+      "kit": "cottage_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            1,
+            3
+          ]
+        },
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            9,
+            3
+          ]
+        },
+        {
+          "stamp": "int_reading_table_lamp",
+          "at": [
+            4,
+            4
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_map_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_notice_1x1",
+          "at": [
+            7,
+            0
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_potted_tree_1x2",
+          "at": [
+            1,
+            7
+          ]
+        },
+        {
+          "fixture": "em_trash_can_1x1",
+          "at": [
+            10,
+            8
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "npc_camp_trader_tomas",
+          "name": "Trader Tomas",
+          "at": [
+            7,
+            4
+          ],
+          "facing": "S",
+          "sprite": "shopkeeper",
+          "role": "trader"
+        }
+      ],
+      "items": [],
+      "signs": [
+        {
+          "at": [
+            5,
+            2
+          ],
+          "text": "Barter board: spare batteries, lamp oil, berry seeds, and clean twine."
+        }
+      ]
+    }
+  ]
+}

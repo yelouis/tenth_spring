@@ -1,0 +1,108 @@
+{
+  "schema": 1,
+  "id": "dc:gt-canal-office",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Towpath Dispatch Office",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Towpath Dispatch Office",
+      "theme": "wood",
+      "kit": "cottage_rowhouse",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            1,
+            5
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_pc_desk_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wall_map_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_clock_1x1",
+          "at": [
+            7,
+            0
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            5,
+            4
+          ]
+        },
+        {
+          "fixture": "em_chair_w_1x1",
+          "at": [
+            7,
+            5
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "npc_gt_hector",
+          "name": "Hector Ruiz",
+          "at": [
+            4,
+            5
+          ],
+          "facing": "S",
+          "sprite": "hiker",
+          "role": "lockkeeper"
+        }
+      ],
+      "items": [],
+      "signs": [
+        {
+          "at": [
+            6,
+            2
+          ],
+          "text": "Lock log: high water at mile zero held steady all week. Keep lanterns lit past dusk."
+        }
+      ]
+    }
+  ]
+}

@@ -35,10 +35,12 @@ static var _silhouette_cache: Dictionary = {}
 static var _item_placeholder_tex: ImageTexture = null
 static var _tile_atlas_cache: Dictionary = {}
 static var _auto_import_gba_attempted: bool = false
+static var _auto_import_bw_icons_attempted: Dictionary = {}
 
 static func clear_tile_atlas_cache() -> void:
 	_tile_atlas_cache.clear()
 	_auto_import_gba_attempted = false
+	_auto_import_bw_icons_attempted.clear()
 
 static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	var norm := cache_dir.strip_edges().trim_suffix("/")
@@ -52,12 +54,35 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	var json_path := abs_dir.path_join("tiles/emerald_v1.json")
 	var indoor_png_path := abs_dir.path_join("tiles/emerald_indoor_v1.png")
 	var indoor_json_path := abs_dir.path_join("tiles/emerald_indoor_v1.json")
+	var out_fx_png_path := abs_dir.path_join("tiles/emerald_outdoor_fx_v1.png")
+	var out_fx_json_path := abs_dir.path_join("tiles/emerald_outdoor_fx_v1.json")
+	var ppl_png_path := abs_dir.path_join("tiles/emerald_people_v1.png")
+	var ppl_json_path := abs_dir.path_join("tiles/emerald_people_v1.json")
 
-	var need_import := not FileAccess.file_exists(png_path) or not FileAccess.file_exists(indoor_png_path) or not FileAccess.file_exists(indoor_json_path)
+	var need_import := (
+		not FileAccess.file_exists(png_path)
+		or not FileAccess.file_exists(indoor_png_path)
+		or not FileAccess.file_exists(indoor_json_path)
+		or not FileAccess.file_exists(out_fx_png_path)
+		or not FileAccess.file_exists(out_fx_json_path)
+		or not FileAccess.file_exists(ppl_png_path)
+		or not FileAccess.file_exists(ppl_json_path)
+	)
 	if not need_import:
 		var cached_iparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(indoor_json_path))
+		var cached_fx: Variant = JSON.parse_string(FileAccess.get_file_as_string(out_fx_json_path))
+		var cached_ppl: Variant = JSON.parse_string(FileAccess.get_file_as_string(ppl_json_path))
 		var expected_sha := FileAccess.get_file_as_string("res://config/emerald_tile_map.json").sha256_text()
-		if not (cached_iparsed is Dictionary) or str((cached_iparsed as Dictionary).get("format", "")) != "emerald_indoor_v2" or str((cached_iparsed as Dictionary).get("cfg_sha256", "")) != expected_sha or not (cached_iparsed as Dictionary).has("stamp_overrides"):
+		if (
+			not (cached_iparsed is Dictionary)
+			or str((cached_iparsed as Dictionary).get("format", "")) != "emerald_indoor_v2"
+			or str((cached_iparsed as Dictionary).get("cfg_sha256", "")) != expected_sha
+			or not (cached_iparsed as Dictionary).has("stamp_overrides")
+			or not (cached_fx is Dictionary)
+			or str((cached_fx as Dictionary).get("cfg_sha256", "")) != expected_sha
+			or not (cached_ppl is Dictionary)
+			or str((cached_ppl as Dictionary).get("cfg_sha256", "")) != expected_sha
+		):
 			need_import = true
 	if need_import:
 		var default_norm := DEFAULT_CACHE_DIR.trim_suffix("/")
@@ -84,15 +109,24 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	if not (parsed is Dictionary):
 		return null
 	var result := {"texture": tex, "json": parsed}
-	if FileAccess.file_exists(indoor_png_path) and FileAccess.file_exists(indoor_json_path):
-		var ipng_bytes := FileAccess.get_file_as_bytes(indoor_png_path)
-		var iimg := Image.new()
-		if not ipng_bytes.is_empty() and iimg.load_png_from_buffer(ipng_bytes) == OK and not iimg.is_empty():
-			iimg.convert(Image.FORMAT_RGBA8)
-			var iparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(indoor_json_path))
-			if iparsed is Dictionary:
-				result["indoor_texture"] = ImageTexture.create_from_image(iimg)
-				result["indoor_json"] = iparsed
+	var extras := [
+		["indoor", indoor_png_path, indoor_json_path],
+		["outdoor_fx", out_fx_png_path, out_fx_json_path],
+		["people", ppl_png_path, ppl_json_path],
+	]
+	for pair_v in extras:
+		var prefix := str(pair_v[0])
+		var epng := str(pair_v[1])
+		var ejson := str(pair_v[2])
+		if FileAccess.file_exists(epng) and FileAccess.file_exists(ejson):
+			var ebytes := FileAccess.get_file_as_bytes(epng)
+			var eimg := Image.new()
+			if not ebytes.is_empty() and eimg.load_png_from_buffer(ebytes) == OK and not eimg.is_empty():
+				eimg.convert(Image.FORMAT_RGBA8)
+				var eparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(ejson))
+				if eparsed is Dictionary:
+					result[prefix + "_texture"] = ImageTexture.create_from_image(eimg)
+					result[prefix + "_json"] = eparsed
 	_tile_atlas_cache[norm] = result
 	return result
 
@@ -105,11 +139,30 @@ static func indoor_tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 		return null
 	return {"texture": d["indoor_texture"], "json": d["indoor_json"]}
 
+static func outdoor_fixture_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
+	var base: Variant = tile_atlas(cache_dir)
+	if not (base is Dictionary):
+		return null
+	var d: Dictionary = base
+	if not d.has("outdoor_fx_texture") or not d.has("outdoor_fx_json"):
+		return null
+	return {"texture": d["outdoor_fx_texture"], "json": d["outdoor_fx_json"]}
+
+static func people_sprite_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
+	var base: Variant = tile_atlas(cache_dir)
+	if not (base is Dictionary):
+		return null
+	var d: Dictionary = base
+	if not d.has("people_texture") or not d.has("people_json"):
+		return null
+	return {"texture": d["people_texture"], "json": d["people_json"]}
+
 static func clear_memory_cache() -> void:
 	_json_cache_by_dir.clear()
 	_texture_lru_map.clear()
 	_texture_lru_order.clear()
 	_tile_atlas_cache.clear()
+	_auto_import_bw_icons_attempted.clear()
 	_auto_import_gba_attempted = false
 
 static func _norm_dir(cache_dir: String) -> String:
@@ -343,6 +396,34 @@ static func item_icon(id: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Texture
 		_item_placeholder_tex = ImageTexture.create_from_image(img)
 		_item_placeholder_tex.set_meta("is_placeholder", true)
 	return _item_placeholder_tex
+
+static func pokemon_box_icon(
+	dex: int,
+	cache_dir: String = DEFAULT_CACHE_DIR,
+	no_rom: bool = false
+) -> Texture2D:
+	if no_rom or dex < 1 or dex > 649:
+		return null
+	var cdir := _norm_dir(cache_dir)
+	var p := cdir.path_join("icons/pokemon_box/%d.png" % dex)
+	var tex := _load_or_cache_texture(p)
+	if tex != null:
+		return tex
+	var default_norm := DEFAULT_CACHE_DIR.trim_suffix("/")
+	var attempt_key := "%s:%d" % [cdir, dex]
+	if not _auto_import_bw_icons_attempted.has(attempt_key):
+		var bw_env := OS.get_environment("TENTH_SPRING_ROM_BW").strip_edges()
+		if not bw_env.is_empty() and (cdir == default_norm or cdir.begins_with("user://test/")):
+			_auto_import_bw_icons_attempted[attempt_key] = true
+			var imp_script := load("res://rom/importer.gd")
+			if imp_script != null:
+				imp_script.call("import_bw_pokemon_icons", bw_env, [dex], cdir, cdir.begins_with("user://test/"))
+				tex = _load_or_cache_texture(p)
+				if tex != null:
+					return tex
+		else:
+			_auto_import_bw_icons_attempted[attempt_key] = true
+	return null
 
 static func name(kind: String, id: int, cache_dir: String = DEFAULT_CACHE_DIR) -> String:
 	return display_name(kind, id, cache_dir)
