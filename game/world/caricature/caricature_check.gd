@@ -1088,27 +1088,59 @@ static func _nearest_box_neighbour_steps(x0: int, y0: int, ow: int, oh: int, dis
 	return best
 
 
+const MIN_THINGS_PER_150_TOWN: float = 4.0
+const MAX_OPEN_GROUND_TOWN: float = 0.05
+const MAX_TOWN_SIGNS_CAMP: int = 19
+const MAX_TOWN_ITEMS_CAMP: int = 8
+const MAX_TOWN_SIGNS_HOOD: int = 38
+const MAX_TOWN_ITEMS_HOOD: int = 8
+
 static var _spawn_pool_cache: Dictionary = {}
 
-static func _georgetown_allowed_dex_set() -> Dictionary:
-	if _spawn_pool_cache.has("georgetown"):
-		return _spawn_pool_cache["georgetown"]
-	var allowed: Dictionary = {}
+static func _load_spawn_zones() -> Dictionary:
+	if _spawn_pool_cache.has("zones"):
+		return _spawn_pool_cache["zones"]
+	var zones_out: Dictionary = {}
 	var path := "res://config/spawn_tables.json"
 	if FileAccess.file_exists(path):
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 		if parsed is Dictionary:
-			var zones: Dictionary = (parsed as Dictionary).get("zones", {})
-			for z_name in ["retail", "ruins", "waterfront"]:
-				var zd: Dictionary = zones.get(z_name, {})
+			var raw_zones: Dictionary = (parsed as Dictionary).get("zones", {})
+			for z_v in raw_zones.keys():
+				var z_name := str(z_v).strip_edges().to_lower()
+				var zd: Dictionary = raw_zones[z_v]
+				var dex_set: Dictionary = {}
 				for sub in ["regular", "haunted"]:
 					for ev in (zd.get(sub, []) as Array):
 						if ev is Dictionary:
 							var dex := int((ev as Dictionary).get("dex", 0))
 							if dex >= 1 and dex <= 649:
-								allowed[dex] = true
-	_spawn_pool_cache["georgetown"] = allowed
-	return allowed
+								dex_set[dex] = true
+				zones_out[z_name] = dex_set
+	_spawn_pool_cache["zones"] = zones_out
+	return zones_out
+
+static func _allowed_dex_pools_for_area(area: Dictionary, rend_cls: PackedByteArray) -> Dictionary:
+	var all_zones := _load_spawn_zones()
+	var area_zones: Dictionary = {}
+	var primary_z := str(area.get("zone", "")).strip_edges().to_lower()
+	if not primary_z.is_empty():
+		area_zones[primary_z] = true
+	var haunt_z := str(area.get("haunt_site", "")).strip_edges().to_lower()
+	if not haunt_z.is_empty():
+		area_zones[haunt_z] = true
+	for i in range(rend_cls.size()):
+		if rend_cls[i] == TileSynth2.TILE_WATER:
+			area_zones["waterfront"] = true
+			break
+	var all_dex: Dictionary = {}
+	var by_zone: Dictionary = {}
+	for z_key in area_zones.keys():
+		var z_dex: Dictionary = all_zones.get(z_key, {})
+		by_zone[z_key] = z_dex
+		for dex in z_dex.keys():
+			all_dex[dex] = true
+	return {"zones": area_zones, "by_zone": by_zone, "all_dex": all_dex}
 
 
 static func check_town(compiled: Dictionary, area: Dictionary, town_rect_override: Array = []) -> Dictionary:
@@ -1119,8 +1151,10 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 	var rows: int = int(compiled.get("rows", 1))
 	var total: int = w * h
 	var aid := str(area.get("id", ""))
-	var is_camp := (aid == "camp:washington-dc")
-	var is_georgetown := (aid == "hood:washington-dc:georgetown")
+	var akind := str(area.get("kind", str(compiled.get("kind", ""))))
+	var is_camp := (akind == "camp" or aid.begins_with("camp:"))
+	var is_route := (akind == "route" or aid.begins_with("route:"))
+	var is_hood := (not is_camp and not is_route)
 
 	var rects: Array = town_rect_override if not town_rect_override.is_empty() else (compiled.get("town", []) as Array)
 	var town_mask := PackedByteArray()
@@ -1250,12 +1284,12 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		if iid.is_empty():
 			continue
 		var in_town_d := (dx >= 0 and dx < w and dy >= 0 and dy < h and town_mask[dy * w + dx] == 1)
+		var ipath := InteriorMap.resolve_interior_path(iid)
 		if in_town_d and not is_second_half:
 			open_doors_in_town += 1
-			if iid.begins_with("dc:camp-") or iid.begins_with("dc:gt-") or iid.find("house") != -1:
+			if ipath.find("/houses/") != -1:
 				open_house_doors += 1
 			things_map[pos] = int(things_map.get(pos, 0)) + 1
-		var ipath := InteriorMap.resolve_interior_path(iid)
 		if ipath.is_empty():
 			bad_doors += 1
 			continue
@@ -1279,10 +1313,12 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		if town_mask[ppos.y * w + ppos.x] == 1:
 			things_map[ppos] = int(things_map.get(ppos, 0)) + 1
 
+	var town_signs := 0
 	for sv in (compiled.get("signs", []) as Array):
 		var s: Dictionary = sv
 		var spos := Vector2i(int(s["x"]), int(s["y"]))
-		if town_mask[spos.y * w + spos.x] == 1:
+		if spos.x >= 0 and spos.x < w and spos.y >= 0 and spos.y < h and town_mask[spos.y * w + spos.x] == 1:
+			town_signs += 1
 			things_map[spos] = int(things_map.get(spos, 0)) + 1
 
 	var street_pkm: Array = compiled.get("street_pokemon", [])
@@ -1293,20 +1329,25 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 			things_map[kpos] = int(things_map.get(kpos, 0)) + 1
 
 	var hidden_arr: Array = compiled.get("hidden_items", [])
+	var hidden_in_town := 0
 	var hidden_in_route := 0
 	for hv in hidden_arr:
 		var h_dict: Dictionary = hv
 		var hpos := Vector2i(int(h_dict["x"]), int(h_dict["y"]))
-		if town_mask[hpos.y * w + hpos.x] == 1:
+		if hpos.x >= 0 and hpos.x < w and hpos.y >= 0 and hpos.y < h and town_mask[hpos.y * w + hpos.x] == 1:
+			hidden_in_town += 1
 			things_map[hpos] = int(things_map.get(hpos, 0)) + 1
 		else:
 			hidden_in_route += 1
 
+	var items_in_town := hidden_in_town
 	var items_in_route := 0
 	var walk_in_town := 0
 	var town_tall_grass := 0
-	var ground_total := 0
-	var worn_total := 0
+	var town_ground_total := 0
+	var town_worn_total := 0
+	var route_ground_total := 0
+	var route_worn_total := 0
 	var worn_mask := PackedByteArray()
 	worn_mask.resize(total)
 	worn_mask.fill(0)
@@ -1317,23 +1358,55 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 			var i := y * w + x
 			var cls: int = rend_cls[i]
 			var rv: int = rend_var[i]
+			var is_paving := (cls == TileSynth2.TILE_PATH or cls == TileSynth2.TILE_PLAZA or cls == TileSynth2.TILE_ROAD)
 			if town_mask[i] == 1:
 				if walk_flags[i] == 1:
 					walk_in_town += 1
 				if cls == TileSynth2.TILE_ITEM_BALL:
+					items_in_town += 1
 					var ipos := Vector2i(x, y)
 					things_map[ipos] = int(things_map.get(ipos, 0)) + 1
 				if cls == TileSynth2.TILE_TALL_GRASS:
 					town_tall_grass += 1
-				if cls == TileSynth2.TILE_PATH or cls == TileSynth2.TILE_PLAZA or cls == TileSynth2.TILE_ROAD:
-					ground_total += 1
+				if is_paving and _in_play_bounds(x, y, w, h, opening_mask):
+					town_ground_total += 1
 					if rv == 1:
-						worn_total += 1
+						town_worn_total += 1
 						worn_mask[i] = 1
-			elif _in_interior(x, y, w, h):
-				route_tiles += 1
-				if cls == TileSynth2.TILE_ITEM_BALL:
-					items_in_route += 1
+			else:
+				if _in_interior(x, y, w, h):
+					route_tiles += 1
+					if cls == TileSynth2.TILE_ITEM_BALL:
+						items_in_route += 1
+				if is_paving and _in_play_bounds(x, y, w, h, opening_mask):
+					route_ground_total += 1
+					if rv == 1:
+						route_worn_total += 1
+						worn_mask[i] = 1
+
+	# T7: Open ground (walkable in town whose whole 7x7 square in walk_flags is walkable)
+	var open_ground_tiles := 0
+	for y in range(h):
+		for x in range(w):
+			var i := y * w + x
+			if town_mask[i] == 0 or walk_flags[i] == 0:
+				continue
+			var all_49_walkable := true
+			for dy in range(-3, 4):
+				var ny := y + dy
+				if ny < 0 or ny >= h:
+					all_49_walkable = false
+					break
+				for dx in range(-3, 4):
+					var nx := x + dx
+					if nx < 0 or nx >= w or walk_flags[ny * w + nx] == 0:
+						all_49_walkable = false
+						break
+				if not all_49_walkable:
+					break
+			if all_49_walkable:
+				open_ground_tiles += 1
+	var open_ground_pct: float = 0.0 if walk_in_town == 0 else (float(open_ground_tiles) / float(walk_in_town))
 
 	var total_windows := 0
 	var empty_windows := 0
@@ -1361,7 +1434,11 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		things_in_town += int(cnt)
 	var empty_share: float = 1.0 if total_windows == 0 else (float(empty_windows) / float(total_windows))
 	var things_per_150: float = float(things_in_town) / maxf(1.0, float(walk_in_town) / 150.0)
-	var wear_pct: float = 0.0 if ground_total == 0 else (float(worn_total) / float(ground_total))
+	var town_wear_pct: float = 0.0 if town_ground_total == 0 else (float(town_worn_total) / float(town_ground_total))
+	var route_wear_pct: float = 0.0 if route_ground_total == 0 else (float(route_worn_total) / float(route_ground_total))
+	var whole_ground_total: int = town_ground_total + route_ground_total
+	var whole_worn_total: int = town_worn_total + route_worn_total
+	var wear_pct: float = 0.0 if whole_ground_total == 0 else (float(whole_worn_total) / float(whole_ground_total))
 
 	var wear_touch := 0
 	for y in range(h):
@@ -1375,8 +1452,8 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 				if nx >= 0 and nx < w and ny >= 0 and ny < h and worn_mask[ny * w + nx] == 1:
 					wear_touch += 1
 
-	# T4: Repeated non-uniform 8x8 patches inside town
-	var patch_seen: Dictionary = {}
+	# T4: Repeated non-uniform 8x8 patches inside town (layout key without variant byte; repeat iff distance >= 8 in x or y)
+	var patch_seen: Dictionary = {} # key -> Array[Vector2i]
 	var repeat_8x8 := 0
 	for y0 in range(0, maxi(0, h - 7)):
 		for x0 in range(0, maxi(0, w - 7)):
@@ -1394,25 +1471,31 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 						all_town = false
 						break
 					var c_here := int(rend_cls[gi])
-					var v_here := int(rend_var[gi])
 					var m_here := int(rend_mask[gi])
 					var st_here := int(tile_stamp[gi])
 					var fx_here := int(tile_fix[gi])
 					if c_here != first_cls or st_here != 0 or fx_here != 0:
 						uniform = false
-					parts[p_i] = "%d:%d:%d:%d:%d" % [c_here, v_here, m_here, st_here, fx_here]
+					parts[p_i] = "%d:%d:%d:%d" % [c_here, m_here, st_here, fx_here]
 					p_i += 1
 				if not all_town:
 					break
 			if not all_town or uniform:
 				continue
 			var key := ",".join(parts)
-			if patch_seen.has(key):
+			var coords: Array = patch_seen.get(key, [])
+			var found_far := false
+			for prior_v in coords:
+				var prior: Vector2i = prior_v
+				if absi(x0 - prior.x) >= 8 or absi(y0 - prior.y) >= 8:
+					found_far = true
+					break
+			if found_far:
 				repeat_8x8 += 1
-			else:
-				patch_seen[key] = true
+			coords.append(Vector2i(x0, y0))
+			patch_seen[key] = coords
 
-	# T6: Sizes & entity counts
+	# T6: Sizes & entity counts (generalized by area kind & area's own zone pools)
 	var oversized_town_buildings := 0
 	for pv in (compiled.get("placed_objects", []) as Array):
 		var po: Dictionary = pv
@@ -1438,12 +1521,23 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		if touches_town:
 			oversized_town_buildings += 1
 
-	var allowed_dex := _georgetown_allowed_dex_set()
+	var pool_info := _allowed_dex_pools_for_area(area, rend_cls)
+	var allowed_zones: Dictionary = pool_info["zones"]
+	var by_zone: Dictionary = pool_info["by_zone"]
+	var allowed_dex: Dictionary = pool_info["all_dex"]
 	var invalid_pokemon := 0
 	for kv in street_pkm:
 		var k: Dictionary = kv
 		var dex := int(k.get("dex", 0))
-		if dex < 1 or dex > 649 or (is_georgetown and not allowed_dex.is_empty() and not allowed_dex.has(dex)):
+		var kz := str(k.get("zone", "")).strip_edges().to_lower()
+		var bad_p := (dex < 1 or dex > 649)
+		if not bad_p and is_hood and not allowed_dex.is_empty():
+			if not allowed_dex.has(dex):
+				bad_p = true
+			elif not kz.is_empty():
+				if not allowed_zones.has(kz) or not (by_zone.get(kz, {}) as Dictionary).has(dex):
+					bad_p = true
+		if bad_p:
 			invalid_pokemon += 1
 
 	var total_survivors: int = people_arr.size() + door_interior_survivors
@@ -1451,18 +1545,18 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 	var route_items_per_5_screens: float = 0.0 if route_screens <= 0.0 else (float(items_in_route + hidden_in_route) / (route_screens / 5.0))
 
 	var failed_rules: Array[String] = []
-	if total_windows == 0 or empty_share > 0.10 or things_per_150 < 1.0:
+	if total_windows == 0 or empty_share > 0.10 or things_per_150 < MIN_THINGS_PER_150_TOWN:
 		failed_rules.append("T1")
 	if town_tall_grass > 0:
 		failed_rules.append("T2")
-	if wear_pct > 0.05 or wear_touch > 0:
+	if town_wear_pct > 0.05 or route_wear_pct > 0.05 or wear_pct > 0.05 or wear_touch > 0:
 		failed_rules.append("T3")
 	if repeat_8x8 > 0:
 		failed_rules.append("T4")
 	var t5_ok := (bad_doors == 0)
 	if is_camp and (open_house_doors < 4 or open_house_doors > 6 or total_doorways > 8):
 		t5_ok = false
-	elif is_georgetown and (open_house_doors < 8 or open_house_doors > 12):
+	elif is_hood and (open_house_doors < 8 or open_house_doors > 12):
 		t5_ok = false
 	if not t5_ok:
 		failed_rules.append("T5")
@@ -1471,7 +1565,9 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 	if is_camp:
 		if people_arr.size() < 10 or people_arr.size() > 16:
 			t6_ok = false
-	elif is_georgetown:
+		if town_signs > MAX_TOWN_SIGNS_CAMP or items_in_town > MAX_TOWN_ITEMS_CAMP:
+			t6_ok = false
+	elif is_hood:
 		if town_tile_count < 6000 or town_tile_count > 7000:
 			t6_ok = false
 		if total_survivors < 3 or total_survivors > 6:
@@ -1480,19 +1576,28 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 			t6_ok = false
 		if route_items_per_5_screens < 1.0:
 			t6_ok = false
+		if town_signs > MAX_TOWN_SIGNS_HOOD or items_in_town > MAX_TOWN_ITEMS_HOOD:
+			t6_ok = false
 	if not t6_ok:
 		failed_rules.append("T6")
+	if open_ground_pct > MAX_OPEN_GROUND_TOWN:
+		failed_rules.append("T7")
 
 	return {
 		"ok": failed_rules.is_empty(),
 		"failed_rules": failed_rules,
 		"town_tiles": town_tile_count,
+		"walk_in_town": walk_in_town,
+		"open_ground_tiles": open_ground_tiles,
+		"open_ground_pct": open_ground_pct,
 		"windows": total_windows,
 		"empty_windows": empty_windows,
 		"empty_screens": empty_share,
 		"things_in_town": things_in_town,
 		"things_per_150": things_per_150,
 		"town_tall_grass": town_tall_grass,
+		"town_wear_pct": town_wear_pct,
+		"route_wear_pct": route_wear_pct,
 		"wear_pct": wear_pct,
 		"wear_touch": wear_touch,
 		"repeat_8x8": repeat_8x8,
@@ -1504,6 +1609,8 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		"survivors": total_survivors,
 		"street_pokemon": street_pkm.size(),
 		"invalid_pokemon": invalid_pokemon,
+		"town_signs": town_signs,
+		"town_items": items_in_town,
 		"route_items": items_in_route + hidden_in_route,
 		"route_items_per_5_screens": route_items_per_5_screens,
 	}

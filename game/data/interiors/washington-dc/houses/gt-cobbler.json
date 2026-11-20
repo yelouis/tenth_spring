@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "id": "dc:gt-cobbler",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "Canal Cobbler & Repair",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Canal Cobbler & Repair",
+      "theme": "wood",
+      "kit": "cottage_rowhouse",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            2,
+            7
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            3,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            7,
+            0
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            5,
+            4
+          ]
+        },
+        {
+          "fixture": "em_stool_1x1",
+          "at": [
+            6,
+            6
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            10,
+            6
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_cobbler_wax",
+          "at": [
+            2,
+            7
+          ],
+          "name": "Super Repel"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            4,
+            3
+          ],
+          "text": "Bench tag: Resoled boots lined by the door; help yourself if a pair fits your stride."
+        }
+      ]
+    }
+  ]
+}

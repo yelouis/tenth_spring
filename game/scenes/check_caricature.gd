@@ -241,12 +241,15 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 		var t_failed: Array = t_res.get("failed_rules", [])
 		var t_status := "PASS" if t_ok else ("FAIL " + ",".join(PackedStringArray(t_failed)))
 		print(
-			"CARICATURE_TOWN %s tiles=%d empty_screens=%.2f things_per_150=%.2f wear_pct=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d route_items_5=%.2f %s" % [
+			"CARICATURE_TOWN %s tiles=%d walk=%d open=%.3f empty_screens=%.2f things_per_150=%.2f wear_town=%.3f wear_route=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d items=%d route_items_5=%.2f signs=%d tall_grass=%d %s" % [
 				area_id,
 				int(t_res["town_tiles"]),
+				int(t_res["walk_in_town"]),
+				float(t_res["open_ground_pct"]),
 				float(t_res["empty_screens"]),
 				float(t_res["things_per_150"]),
-				float(t_res["wear_pct"]),
+				float(t_res["town_wear_pct"]),
+				float(t_res["route_wear_pct"]),
 				int(t_res["wear_touch"]),
 				int(t_res["repeat_8x8"]),
 				int(t_res["open_house_doors"]),
@@ -254,7 +257,10 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 				int(t_res["people"]),
 				int(t_res["survivors"]),
 				int(t_res["street_pokemon"]),
+				int(t_res["town_items"]),
 				float(t_res["route_items_per_5_screens"]),
+				int(t_res["town_signs"]),
+				int(t_res["town_tall_grass"]),
 				t_status,
 			]
 		)

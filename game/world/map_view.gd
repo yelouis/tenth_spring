@@ -2177,21 +2177,41 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 		var ptex := PeopleSprites.resolve_texture(str(p.get("sprite", "")), str(p.get("facing", "S")), str(p.get("role", "talk")), _force_no_rom)
 		_add_sliced_sprite_to_layers(cx, cell_r0, int(p.get("anchor_gx", 0)), int(p.get("anchor_gy", 0)), 1, 2, 1, ptex, 32, 1.0, known_mat, created)
 
-	# BW /a/0/0/7 street Pokemon box icons (32x32 -> scale 1.0; omitted when null / --no-rom)
+	# BW /a/0/0/7 street Pokemon box icons at full 2x2 tiles (32x32 icon scaled 2x -> 64x64 px,
+	# 1 icon px per Emerald px), standing on their tile and depth-sorted with people; omitted under --no-rom
 	for kv in street_pokemon:
 		var k: Dictionary = kv
 		var pkm_tex := AssetDB.pokemon_box_icon(int(k.get("dex", 0)), AssetDB.DEFAULT_CACHE_DIR, _force_no_rom)
 		if pkm_tex == null:
 			continue
-		var psp := Sprite2D.new()
-		psp.centered = false
-		psp.texture = pkm_tex
-		psp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		psp.scale = Vector2(1.0, 1.0)
-		psp.position = Vector2(float(int(k.get("anchor_gx", 0)) * 32), float(int(k.get("anchor_gy", 0)) * 32))
-		psp.material = known_mat
-		_stamp_base_layer.add_child(psp)
-		created.append(psp)
+		var agx := int(k.get("anchor_gx", 0))
+		var agy := int(k.get("anchor_gy", 0))
+		var base_pos := Vector2(float(agx * 32 - 16), float((agy + 1) * 32))
+		if _stamp_overhang_layer != null:
+			var o_sp := Sprite2D.new()
+			o_sp.centered = false
+			o_sp.texture = pkm_tex
+			o_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			o_sp.region_enabled = true
+			o_sp.region_rect = Rect2(0.0, 0.0, 32.0, 16.0)
+			o_sp.scale = Vector2(2.0, 2.0)
+			o_sp.position = base_pos
+			o_sp.offset = Vector2(0.0, -32.0)
+			o_sp.material = known_mat
+			_stamp_overhang_layer.add_child(o_sp)
+			created.append(o_sp)
+		var b_sp := Sprite2D.new()
+		b_sp.centered = false
+		b_sp.texture = pkm_tex
+		b_sp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		b_sp.region_enabled = true
+		b_sp.region_rect = Rect2(0.0, 16.0, 32.0, 16.0)
+		b_sp.scale = Vector2(2.0, 2.0)
+		b_sp.position = base_pos
+		b_sp.offset = Vector2(0.0, -16.0)
+		b_sp.material = known_mat
+		_stamp_base_layer.add_child(b_sp)
+		created.append(b_sp)
 
 	# Signs standing on paved/path/road/sand tiles draw transparent wood_sign over the pavement
 	if not _force_no_rom and tile_buf.size() >= 32 * 32 * 3:

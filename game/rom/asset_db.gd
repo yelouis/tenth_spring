@@ -69,12 +69,16 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 		or not FileAccess.file_exists(ppl_json_path)
 	)
 	if not need_import:
+		var cached_main: Variant = JSON.parse_string(FileAccess.get_file_as_string(json_path)) if FileAccess.file_exists(json_path) else null
 		var cached_iparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(indoor_json_path))
 		var cached_fx: Variant = JSON.parse_string(FileAccess.get_file_as_string(out_fx_json_path))
 		var cached_ppl: Variant = JSON.parse_string(FileAccess.get_file_as_string(ppl_json_path))
 		var expected_sha := FileAccess.get_file_as_string("res://config/emerald_tile_map.json").sha256_text()
 		if (
-			not (cached_iparsed is Dictionary)
+			not (cached_main is Dictionary)
+			or not bool((cached_main as Dictionary).get("clean_worn_paving", false))
+			or str((cached_main as Dictionary).get("cfg_sha256", "")) != expected_sha
+			or not (cached_iparsed is Dictionary)
 			or str((cached_iparsed as Dictionary).get("format", "")) != "emerald_indoor_v2"
 			or str((cached_iparsed as Dictionary).get("cfg_sha256", "")) != expected_sha
 			or not (cached_iparsed as Dictionary).has("stamp_overrides")

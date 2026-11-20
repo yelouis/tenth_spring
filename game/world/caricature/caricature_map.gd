@@ -704,11 +704,21 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			var idx: int = y * w + x
 			var t_cls: int = cls_buf[idx]
 			var in_town: bool = has_town_rules and town_mask[idx] == 1
-			if in_town:
+			if has_town_rules:
 				if t_cls == TileSynth2.TILE_PATH or t_cls == TileSynth2.TILE_PLAZA or t_cls == TileSynth2.TILE_ROAD:
 					var gx: int = _global_col(origin, x)
 					var_buf[idx] = 0
-					if t_cls == TileSynth2.TILE_PATH and TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PATH_OVERGROWTH ^ 0x4B21) < 0.015:
+					var thresh := 0.0
+					if in_town:
+						thresh = 0.015 if t_cls == TileSynth2.TILE_PATH else 0.0
+					else:
+						thresh = 0.025 if t_cls == TileSynth2.TILE_PATH else 0.015
+					var salt := TileSynth2.SALT_PATH_OVERGROWTH ^ 0x4B21
+					if t_cls == TileSynth2.TILE_PLAZA:
+						salt = TileSynth2.SALT_PLAZA_WEEDS ^ 0x4B21
+					elif t_cls == TileSynth2.TILE_ROAD:
+						salt = TileSynth2.SALT_ROAD_CRACKS ^ 0x4B21
+					if thresh > 0.0 and TileSynth2.u_rand(gx, gy, world_seed, salt) < thresh:
 						var has_adj_worn := false
 						for dy in range(-1, 2):
 							for dx in range(-1, 2):
@@ -719,7 +729,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 								if nx < 0 or nx >= w or ny < 0 or ny >= h:
 									continue
 								var nidx: int = ny * w + nx
-								if town_mask[nidx] == 1 and var_buf[nidx] == 1:
+								if var_buf[nidx] == 1:
 									var ncls: int = cls_buf[nidx]
 									if ncls == TileSynth2.TILE_PATH or ncls == TileSynth2.TILE_PLAZA or ncls == TileSynth2.TILE_ROAD:
 										has_adj_worn = true
@@ -736,10 +746,6 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 				elif t_cls == TileSynth2.TILE_PLAZA:
 					var gx: int = _global_col(origin, x)
 					if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PLAZA_WEEDS) < plaza_thresh:
-						var_buf[idx] = 1
-				elif has_town_rules and t_cls == TileSynth2.TILE_ROAD:
-					var gx: int = _global_col(origin, x)
-					if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_ROAD_CRACKS) < road_v1_thresh:
 						var_buf[idx] = 1
 
 	# -------------------------------------------------------------

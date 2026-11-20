@@ -263,15 +263,35 @@ func run_test() -> bool:
 
 	# Building Roof (class 12), Wall (class 13), Door (class 14) must remain byte/pixel-identical to original_v1.png
 	var orig_rows: Array = (orig_doc_v as Dictionary).get("rows", [])
+	var clean_v0_row: Dictionary = {}
+	var clean_v1_row: Dictionary = {}
 	for r_entry_v in orig_rows:
 		var r_entry: Dictionary = r_entry_v
 		var r_cls := int(r_entry.get("class", -1))
+		var r_var := int(r_entry.get("variant", 0))
+		var r_num := int(r_entry.get("row", 0))
+		if r_cls in [7, 8, 11]:
+			if r_var == 0:
+				clean_v0_row[r_cls] = r_num
+			elif r_var == 1:
+				clean_v1_row[r_cls] = r_num
 		if r_cls in [12, 13, 14]:
-			var row_y := int(r_entry.get("row", 0)) * 32
+			var row_y := r_num * 32
 			for py in range(32):
 				for px in range(512):
 					if em_img.get_pixel(px, row_y + py) != orig_img.get_pixel(px, row_y + py):
 						return _fail("F Rule B pixel diff on class %d row %d at (%d,%d)" % [r_cls, int(r_entry["row"]), px, py])
+
+	# Decision 71 (Item 62b): worn path/road/plaza (classes 7, 8, 11 at variant 1) must draw identical to variant 0
+	for clean_cls in [7, 8, 11]:
+		if not clean_v0_row.has(clean_cls) or not clean_v1_row.has(clean_cls):
+			return _fail("F missing clean/worn row entry for class %d" % clean_cls)
+		var y0 := int(clean_v0_row[clean_cls]) * 32
+		var y1 := int(clean_v1_row[clean_cls]) * 32
+		for py in range(32):
+			for px in range(512):
+				if em_img.get_pixel(px, y1 + py) != em_img.get_pixel(px, y0 + py):
+					return _fail("F clean-worn-paving violation: class %d variant=1 row %d differs from variant=0 row %d at (%d,%d)" % [clean_cls, int(clean_v1_row[clean_cls]), int(clean_v0_row[clean_cls]), px, py])
 
 	# G. Item 62: OutdoorFixtures and PeopleSprites ROM + procedural fallback resolution
 	var OutFix := load("res://world/caricature/outdoor_fixtures.gd")
@@ -290,6 +310,16 @@ func run_test() -> bool:
 	var rh_img := rom_healer.get_image()
 	if fh_img == null or rh_img == null or fh_img.get_data() == rh_img.get_data():
 		return _fail("G expected Emerald ROM healer sprite to differ from procedural fallback")
+
+	# Item 62b (Decision 71): bench (2x1 = 64x32) and lock gate (2x3 = 64x96) stand-ins
+	var bench_res: Dictionary = OutFix.resolve_texture("standin_bench", false, CACHE_IMPORT)
+	var gate_res: Dictionary = OutFix.resolve_texture("standin_lock_gate", false, CACHE_IMPORT)
+	var btex: Texture2D = bench_res.get("texture", null)
+	var gtex: Texture2D = gate_res.get("texture", null)
+	if btex == null or btex.get_width() != 64 or btex.get_height() != 32:
+		return _fail("G expected 64x32 texture for 2x1 standin_bench, got %s" % str(btex))
+	if gtex == null or gtex.get_width() != 64 or gtex.get_height() != 96:
+		return _fail("G expected 64x96 texture for 2x3 standin_lock_gate, got %s" % str(gtex))
 
 	print("[EMERALD HYBRID OK] base_trapped falsifier, cliff/puzzle checks, synthetic GBA, outdoor/people ROM + fallback verified")
 	_cleanup()

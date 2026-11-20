@@ -17,60 +17,60 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT**............**TTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT**............**TTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTT............-----.........-----.............TTTTTTTTTT",
-    "TTTTTTTTTT............-----.........-----.............TTTTTTTTTT",
-    "TTTTTTTTTT............-----.........-----.............TTTTTTTTTT",
-    "TTTTTT**..............-----.........-----...............**TTTTTT",
-    "TTTTTT**..............-----.........-----...............**TTTTTT",
-    "TTTTTT................-----.........-----.................TTTTTT",
-    "TTTTTT..............-------.........-----.................TTTTTT",
-    "TTTTTT.......------------------------------------.........TTTTTT",
-    "TTTTTT.......------------------------------------.........TTTTTT",
-    "TTTTTT.......------------------------------------.........TTTTTT",
-    "TTTTTT.T.....................------..........................TTT",
-    "TTT.....................**############**.....................TTT",
-    "TTT.....................**############**................T....TTT",
-    "TTTTTT..................################..................TTTTTT",
-    "TTTTTT..................################..................TTTTTT",
-    "TTTTTT....--------------#######.**..####-------......----.TTTTTT",
-    "TTTTTT....--------------#######.**..####-------......----.TTTTTT",
-    "TTTTTT.T..--------------################-------......----.TTTTTT",
-    "TTTTTT..........----....################..----.......----.TTTTTT",
-    "TTTTTT.---......----....################..----.......----.TTTTTT",
-    "TTTTTT.---......----....################..----.......----.TTTTTT",
-    "TTTTTT.---......----....################..----.......----.TTTTTT",
-    "TTTTTT.---......----....################..----.......----.TTTTTT",
-    "TTTTTT.---......----....################..----.......----.TTTTTT",
-    "TTTTTT.---......----....**############**..----------.----.TTTTTT",
-    "TTTTTT.---......----....**############**..----------......TTTTTT",
-    "TTTTTT.---......----.........------.......----------.........TTT",
-    "TTT....-------------.........------.......----...............TTT",
-    "TTTTTT.-------------.........------.......----...............TTT",
-    "TTTTTT.-------------..T......------.....T.----............TTTTTT",
-    "TTTTTT.---...................------.......----............TTTTTT",
-    "TTTTTT.---.------------------------.......----............TTTTTT",
-    "TTTTTT.---.------------------------.......----............TTTTTT",
-    "TTTTTT.---.----------------*-------.*.!...------------....TTTTTT",
-    "TTTTTT.---.--.cccc--ccc.---..------.......------------....TTTTTT",
-    "TTTTTT.---.*-.cccc--ccc.---..------..........######---.T..TTTTTT",
-    "TTTTTT.---.--.cccc--ccc.-*-..------..........######.......TTTTTT",
-    "TTTTTT.....-------------*--..------.......**.######.*.....TTTTTT",
-    "TTTTTT.....----------------*.----------------######-----..TTTTTT",
-    "TTTTTT.....*-.cccc--ccc.---..----------------######-----..TTTTTT",
-    "TTTTTT.....--.cccc--ccc.---..----------------######-----..TTTTTT",
-    "TTTTTT.....--.....--....---..------..........######------.TTTTTT",
-    "TTTTTT.....------------------########..............------.TTTTTT",
-    "TTTTTT.**..------------------########......*.......---*!-*TTTTTT",
-    "TTTTTT.**..................##########..............------*TTTTTT",
-    "TTTTTT..........T..........##------##.*........T..........TTTTTT",
-    "TTTTTTTTTTTTTTTT...........##------##...........TTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTT.............------.............TTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTT..------..TTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTT..........TTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTT..........TTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTT..........TTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTT.TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.TTTT.TTTTTTTTTTTTTTT",
+    "TTTTTTTTT......TTTTTT.................TT.......T...TTTT.TTTTTTTT",
+    "TTTTTTT..-----.TTTTTT...T............T---T..............TTTTTTTT",
+    "TTTTTTT.*-----*TTTT.TTT--T...........T---.........*.T...TTTTTTTT",
+    "TTTTTTT..-F---.......TT--T...........T---...............TTTTTTTT",
+    "TTTTTTT..-F---..T....TT--T...........T---TT.............TTTTTTTT",
+    "TTTTTTTTT-F---.......TT--T...........T---TT........FFF..TTTTTTTT",
+    "TTTTTTTTT-F---.......TT--T............---.*..........F.*TTTTTTTT",
+    "TTTTTTTTT-----.........--.............---............FTTTTTTTTTT",
+    "TTTTTTTTT-----.........--.............---.............TTTTTTTTTT",
+    "TTTTTTTTT....-------------.----------.-----------.....TTTTTTTTTT",
+    "TTTTTTTTT....-------------.----------.-----------.....TTTTTTTTTT",
+    "TTTTTTTTT..*..................---..*..TTT.....*.......T.TTTTTTTT",
+    "TTTTTTTTTT......T...*..TTT....---.....TTT.....T.........TTTTTTTT",
+    "TTTTTTTT...............TTT**########**TTT*............*.TTTTTTTT",
+    "TTTTTTTT....FF....FF...TTT**########**TTT....*.......---TTTTTTTT",
+    "TTTTTTTT...............TTT############TTT............---TTTTTTTT",
+    "TTTTTT......--------------#####.**..##----------.....---..TTTTTT",
+    "TTTTTT..------------------#####.**..##----------.....---..TTTTTT",
+    "TTTTTT..------------------F##########F....--.........---..TTTTTT",
+    "TTTTTT..----....---.......##.######.##....--.........---*.TTTTTT",
+    "TTTTTT..----....---...*...############....--TT.......---..TTTTTT",
+    "TTTTTT..........---T......F##########F....--TT.......---.TTTTTTT",
+    "TTTTTT..........---T......############....--TT.......---..TTTTTT",
+    "TTTTTT..........---T.*....############....--TT.......---..TTTTTT",
+    "TTTTTTTT...*....---.......**########**.T..--.........---..TTTTTT",
+    "TTTTTTTT........---.......**########**....----------.---TTTTTTTT",
+    "TTTTTTT.........---......T....---.........----------....TTTTTTTT",
+    "TTTTTTTT..---------..TTTT.....---......TTT--...*........TTTTTTTT",
+    "TTTTTTTTTT---------..TTTT.....---......TTT--............TTTTTTTT",
+    "TTTTTTTTTT...........TTTT.....---......TTT--........*...TTTTTTTT",
+    "TTTTTTTTTT...........TTTT..F..---...F..TTT--...........TTTTTTTTT",
+    "TTTTTTTTTT...*...*...TTTT..F..---...F..TTT--.......FFF.TTTTTTTTT",
+    "TTTTTTTTTT................*...---.....!...--.*.........TTTTTTTTT",
+    "TTTTTTTTTT..---------------------...T.....--...........TTTTTTTTT",
+    "TTTTTTTTTT..---------------------.........------------.TTTTTTTTT",
+    "TTTTTTTTTT..--.ccc--ccc.--....---.........------------.TTTTTTTTT",
+    "TTTTTTTTTT..--.ccc--ccc.--....---........*........*....TTTTTTTTT",
+    "TTTTTTTTTT.*--.ccc--ccc.--..F.---..F........~~~~~......TTTTTTTTT",
+    "TTTTTTTTTTT.--------------.*..---.....*...~~~~~~~-----.TTTTTTTTT",
+    "TTTTTTTTTT..--------------....----------.-~~~~~~~-----.TTTTTTTTT",
+    "TTTTTTTTTT..--.ccc--ccc.--....----------.-~~~~~~~-.---.TTTTTTTTT",
+    "TTTTTTTTTT.*--.ccc--ccc.--.*..---.......*.~~~~~~~-.---.TTTTTTTTT",
+    "TTTTTTTTT...---------------------...........~~~~~-----.TTTTTTTTT",
+    "TTTTTTTTT...------------------#####.*....-------------.TTTTTTTTT",
+    "TTTTTTTTT..T.................######......-----------.!*TTTTTTTTT",
+    "TTTTTTTTT......*........*...*######......T....*......T.TTTTTTTTT",
+    "TTTTTTTTT.......TTTTTT.TTTTT.######....................TTTTTTTTT",
+    "TTTTTTTTTTTTT.TTTTTTTT.TTTTTT.---.TTTT..T.TTT..TTTT.TTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTT.---.TTTT.TTTTTT.TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTT.---.TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTT.....TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
@@ -96,7 +96,7 @@
       "stamp": "standing_house_s_door2",
       "at": [
         11,
-        12
+        13
       ],
       "interior": "dc:camp-family-west",
       "name": "West Lane Cottage"
@@ -105,7 +105,7 @@
       "stamp": "standing_house_m",
       "at": [
         45,
-        12
+        13
       ],
       "interior": "dc:camp-family-north",
       "name": "Reid Family Cottage"
@@ -114,7 +114,7 @@
       "stamp": "standing_block_8x7_a",
       "at": [
         9,
-        29
+        28
       ],
       "interior": "dc:camp-trading-post",
       "name": "Waypost Trading Post"
@@ -140,8 +140,8 @@
     {
       "stamp": "house_s_b_door2",
       "at": [
-        18,
-        11
+        17,
+        13
       ]
     },
     {
@@ -154,8 +154,8 @@
     {
       "stamp": "house_m_c",
       "at": [
-        6,
-        39
+        8,
+        37
       ]
     },
     {
@@ -175,14 +175,14 @@
     {
       "stamp": "tree_cherry",
       "at": [
-        44,
-        48
+        40,
+        47
       ]
     },
     {
       "stamp": "tree_cherry",
       "at": [
-        51,
+        50,
         48
       ]
     }
@@ -198,57 +198,85 @@
     {
       "kind": "em_streetlamp",
       "at": [
-        25,
-        22
+        26,
+        23
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
         37,
-        22
+        23
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        25,
-        31
+        26,
+        30
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
         37,
-        31
+        30
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        28,
+        22
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        34,
+        22
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        28,
+        33
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        34,
+        33
       ]
     },
     {
       "kind": "em_planter_box",
       "at": [
-        27,
-        23
+        28,
+        25
       ]
     },
     {
       "kind": "em_planter_box",
       "at": [
         36,
-        23
+        25
       ]
     },
     {
       "kind": "em_flower_pots",
       "at": [
-        27,
-        32
+        29,
+        28
       ]
     },
     {
       "kind": "em_flower_pots",
       "at": [
-        36,
-        32
+        33,
+        28
       ]
     },
     {
@@ -290,14 +318,14 @@
       "kind": "em_crate_wood",
       "at": [
         8,
-        25
+        24
       ]
     },
     {
       "kind": "em_crate_green",
       "at": [
         8,
-        26
+        25
       ]
     },
     {
@@ -315,10 +343,17 @@
       ]
     },
     {
+      "kind": "standin_bench",
+      "at": [
+        18,
+        27
+      ]
+    },
+    {
       "kind": "em_notice_board",
       "at": [
         40,
-        17
+        16
       ]
     },
     {
@@ -332,7 +367,7 @@
       "kind": "em_planter_tall",
       "at": [
         10,
-        14
+        15
       ]
     },
     {
@@ -345,56 +380,56 @@
     {
       "kind": "em_streetlamp",
       "at": [
-        28,
+        29,
         39
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        35,
+        34,
         39
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        28,
+        29,
         45
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        35,
+        34,
         45
       ]
     },
     {
       "kind": "em_planter_box",
       "at": [
-        28,
+        29,
         36
       ]
     },
     {
       "kind": "em_planter_box",
       "at": [
-        35,
+        34,
         36
-      ]
-    },
-    {
-      "kind": "em_white_fence_h",
-      "at": [
-        14,
-        42
       ]
     },
     {
       "kind": "em_white_fence_h",
       "at": [
         15,
+        42
+      ]
+    },
+    {
+      "kind": "em_white_fence_h",
+      "at": [
+        16,
         42
       ]
     },
@@ -415,7 +450,7 @@
     {
       "kind": "em_wood_fence_post",
       "at": [
-        13,
+        14,
         50
       ]
     },
@@ -429,7 +464,7 @@
     {
       "kind": "em_goods_urn",
       "at": [
-        12,
+        13,
         49
       ]
     },
@@ -438,6 +473,13 @@
       "at": [
         24,
         49
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        40
       ]
     },
     {
@@ -457,29 +499,29 @@
     {
       "kind": "em_statue",
       "at": [
-        47,
+        49,
         45
       ]
     },
     {
+      "kind": "standin_bench",
+      "at": [
+        44,
+        52
+      ]
+    },
+    {
       "kind": "em_flower_patch",
       "at": [
-        45,
+        41,
         46
       ]
     },
     {
       "kind": "em_flower_patch",
       "at": [
-        49,
+        50,
         46
-      ]
-    },
-    {
-      "kind": "em_iron_fence_h",
-      "at": [
-        26,
-        53
       ]
     },
     {
@@ -511,31 +553,24 @@
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "em_streetlamp",
       "at": [
-        37,
-        53
+        28,
+        51
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        27,
-        50
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        36,
-        50
+        35,
+        51
       ]
     },
     {
       "kind": "em_wood_sign",
       "at": [
         28,
-        55
+        54
       ]
     }
   ],
@@ -572,7 +607,7 @@
       "id": "camp_elder_mae",
       "name": "Elder Mae",
       "at": [
-        28,
+        29,
         30
       ],
       "facing": "E",
@@ -614,7 +649,7 @@
       "id": "camp_guard_briggs",
       "name": "Gate Guard Briggs",
       "at": [
-        32,
+        31,
         55
       ],
       "facing": "N",
@@ -628,7 +663,7 @@
       "id": "camp_gardener_tessa",
       "name": "Tessa",
       "at": [
-        18,
+        19,
         45
       ],
       "facing": "S",
@@ -656,7 +691,7 @@
       "id": "camp_kid_rose",
       "name": "Little Rose",
       "at": [
-        39,
+        40,
         34
       ],
       "facing": "N",
@@ -671,7 +706,7 @@
       "name": "Cole",
       "at": [
         45,
-        35
+        34
       ],
       "facing": "E",
       "sprite": "hiker",
@@ -684,7 +719,7 @@
       "id": "camp_archivist_rowan",
       "name": "Archivist Rowan",
       "at": [
-        41,
+        42,
         18
       ],
       "facing": "S",
@@ -698,7 +733,7 @@
       "id": "camp_runner_eli",
       "name": "Eli",
       "at": [
-        36,
+        35,
         25
       ],
       "facing": "W",
@@ -726,8 +761,8 @@
       "id": "camp_watch_hale",
       "name": "Hale",
       "at": [
-        16,
-        19
+        15,
+        18
       ],
       "facing": "S",
       "sprite": "town_man",
@@ -740,7 +775,7 @@
       "id": "camp_carpenter_nora",
       "name": "Carpenter Nora",
       "at": [
-        28,
+        30,
         40
       ],
       "facing": "E",
@@ -754,7 +789,7 @@
       "id": "camp_scout_finn",
       "name": "Scout Finn",
       "at": [
-        36,
+        33,
         48
       ],
       "facing": "W",
@@ -765,6 +800,7 @@
       ]
     }
   ],
+  "street_pokemon": [],
   "signs": [
     {
       "at": [
@@ -789,7 +825,7 @@
     },
     {
       "at": [
-        15,
+        13,
         10
       ],
       "text": "West Clearing \u2014 firewood stacked neatly under canvas."
@@ -803,7 +839,7 @@
     },
     {
       "at": [
-        49,
+        48,
         10
       ],
       "text": "North Pines \u2014 owl boxes hung on the tall oaks behind the row."
@@ -817,7 +853,7 @@
     },
     {
       "at": [
-        45,
+        44,
         24
       ],
       "text": "Carpenter's Yard \u2014 fresh-planed cedar boards drying in the breeze."
@@ -838,17 +874,17 @@
     },
     {
       "at": [
-        8,
-        45
+        12,
+        43
       ],
       "text": "Southwest Row \u2014 stacked salvage timber from old roofs."
     },
     {
       "at": [
-        35,
+        33,
         39
       ],
-      "text": "Central Walk \u2014 garden beds west, memorial pocket east, gate ahead."
+      "text": "Central Walk \u2014 garden beds west, pond east, south gate ahead."
     },
     {
       "at": [
@@ -859,7 +895,7 @@
     },
     {
       "at": [
-        27,
+        26,
         46
       ],
       "text": "South Garden Gate \u2014 keep tool handles oiled and hung in the shed."
@@ -867,7 +903,7 @@
     {
       "at": [
         14,
-        52
+        51
       ],
       "text": "South Garden Bed \u2014 frost cloth rolled in the wooden bin."
     },
@@ -887,15 +923,15 @@
     },
     {
       "at": [
-        54,
-        49
+        52,
+        50
       ],
-      "text": "East Memorial Pocket \u2014 quiet stone marker beside the cherry trees."
+      "text": "East Spring Pond \u2014 cool spring water fed from the northern ridge."
     },
     {
       "at": [
         29,
-        55
+        54
       ],
       "text": "South Gate \u2014 check out with the watch before crossing the trees."
     }
@@ -904,14 +940,14 @@
     {
       "at": [
         8,
-        12
+        11
       ],
       "item": "Antidote",
       "note": "Tucked under a mossy root near the northwest pine hollow."
     },
     {
       "at": [
-        38,
+        39,
         10
       ],
       "item": "Full Heal",
@@ -928,26 +964,26 @@
     {
       "at": [
         56,
-        19
+        15
       ],
       "item": "Super Potion",
-      "note": "Wedged inside a dry cedar box behind the east cottages."
+      "note": "Wedged inside a dry cedar box in the northeast pine nook."
     },
     {
       "at": [
         25,
-        50
+        49
       ],
       "item": "Poke Ball",
       "note": "Dropped beside the southwest garden lantern post."
     },
     {
       "at": [
-        42,
+        41,
         52
       ],
       "item": "Fresh Water",
-      "note": "Cooled bottle tucked into the sand beside the south lantern."
+      "note": "Cooled bottle set beside the spring pond bench."
     }
   ],
   "lamp": [

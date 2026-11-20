@@ -3337,23 +3337,24 @@
     {
       "id": "outdoor_benches",
       "fixtures": [
-        "bench"
+        "standin_bench"
       ],
-      "reason": "No outdoor park or towpath bench metatile exists across pri00 or sec01-sec15; coastal umbrellas/stools or planters substitute in ROM mode pending custom bench art."
-    },
-    {
-      "id": "stone_well",
-      "fixtures": [
-        "well"
+      "size": [
+        2,
+        1
       ],
-      "reason": "No outdoor stone well metatile exists across pri00 or sec01-sec15; an octagonal stone fountain substitutes pending custom well art."
+      "reason": "No outdoor park or towpath bench metatile exists across pri00 or sec01-sec15; 2x1 procedural stand-in draws until custom Decision 71 bench art."
     },
     {
       "id": "canal_lock_gate",
       "fixtures": [
-        "lock_gate"
+        "standin_lock_gate"
       ],
-      "reason": "No masonry canal lock gate metatile exists in the ROM; canal walls and wooden footbridges mark lock stages pending custom lock art."
+      "size": [
+        2,
+        3
+      ],
+      "reason": "No masonry canal lock gate metatile exists in the ROM; 2x3 procedural timber miter gates span the 3-tile canal channel until custom Decision 71 lock gate art."
     }
   ],
   "outdoor_fixtures": {

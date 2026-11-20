@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "id": "dc:gt-hardware",
+  "area_id": "hood:washington-dc:georgetown",
+  "title": "M Street Hardware Shop",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 M Street Hardware Shop",
+      "theme": "wood",
+      "kit": "cottage_wood",
+      "width": 12,
+      "height": 10,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWRRRRWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            1,
+            2
+          ]
+        },
+        {
+          "stamp": "int_item_ball",
+          "at": [
+            9,
+            6
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_painting_sphere_1x1",
+          "at": [
+            8,
+            0
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            5,
+            4
+          ]
+        },
+        {
+          "fixture": "em_chair_e_1x1",
+          "at": [
+            4,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            1,
+            6
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "id": "dc_gt_hardware_rope",
+          "at": [
+            9,
+            6
+          ],
+          "name": "Escape Rope"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            6,
+            2
+          ],
+          "text": "Chalk ledger on the counter: Left spare nails and lamp glass for the lock-keeper."
+        }
+      ]
+    }
+  ]
+}

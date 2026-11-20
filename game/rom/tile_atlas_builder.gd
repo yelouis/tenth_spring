@@ -109,6 +109,17 @@ static func build_emerald_atlas(
 				atlas_img.blit_rect(cell_img, Rect2i(0, 0, tile_px, tile_px), Vector2i(col_idx * tile_px, row_idx * tile_px))
 				tiles_written += 1
 
+	# Decision 71 (Item 62b): worn path/road/plaza (classes 7, 8, 11 at variant 1) draw the clean Emerald variant 0 row
+	for clean_cls in [7, 8, 11]:
+		var k0 := "%d:0" % clean_cls
+		var k1 := "%d:1" % clean_cls
+		if row_lookup.has(k0) and row_lookup.has(k1):
+			var r0 := int((row_lookup[k0] as Dictionary).get("row", -1))
+			var r1 := int((row_lookup[k1] as Dictionary).get("row", -1))
+			if r0 >= 0 and r1 >= 0:
+				var clean_row := atlas_img.get_region(Rect2i(0, r0 * tile_px, atlas_img.get_width(), tile_px))
+				atlas_img.blit_rect(clean_row, Rect2i(0, 0, atlas_img.get_width(), tile_px), Vector2i(0, r1 * tile_px))
+
 	# Render 16x16 field-move & item-ball object sprites (classes 25..28) composited over grass
 	var obj_cfg: Dictionary = cfg.get("object_sprites", {})
 	for obj_cls_v in obj_cfg.keys():
@@ -135,13 +146,15 @@ static func build_emerald_atlas(
 	var save_err := atlas_img.save_png(out_png)
 	if save_err != OK:
 		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_png, save_err]}
+	var cfg_sha := cfg_text.sha256_text()
+	var out_meta: Dictionary = orig_json.duplicate(true)
+	out_meta["clean_worn_paving"] = true
+	out_meta["cfg_sha256"] = cfg_sha
 	var jf := FileAccess.open(out_json, FileAccess.WRITE)
 	if jf == null:
 		return {"ok": false, "error": "Failed to write " + out_json}
-	jf.store_string(orig_json_text)
+	jf.store_string(JSON.stringify(out_meta))
 	jf.close()
-
-	var cfg_sha := cfg_text.sha256_text()
 	var indoor_res := _build_indoor_atlas_files(rom, cfg, tiles_dir, tile_px, cfg_sha)
 	if not bool(indoor_res.get("ok", false)):
 		return indoor_res

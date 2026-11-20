@@ -276,28 +276,64 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
-	# 7. Item 62: Emerald-way check_town T1-T6 tests & falsifiers
+	# 7. Item 62b (Decision 71): check_town T1-T7 tests & falsifiers
 	# -------------------------------------------------------------
 	var tg_base := _blank_32_grid(".")
 	for tx in range(3, 29):
-		tg_base[15][tx] = "#" if tx % 5 != 0 else "-"
-		tg_base[16][tx] = "#"
-	var t_signs := [
-		{"at": [8, 8], "text": "nw"}, {"at": [18, 8], "text": "ne"},
-		{"at": [8, 18], "text": "sw"}, {"at": [18, 18], "text": "se"},
-		{"at": [13, 13], "text": "c"}, {"at": [24, 13], "text": "e"},
-		{"at": [13, 24], "text": "s"}, {"at": [24, 24], "text": "es"},
+		tg_base[15][tx] = "-" if tx in [4, 7, 13, 19, 25] else "#"
+		tg_base[16][tx] = "*" if tx in [6, 17, 27] else "#"
+	tg_base[14][11] = "*"
+	tg_base[17][22] = "-"
+	# Asymmetric obstacle scatter so open 7x7 <= 5% and 0 non-uniform 8x8 repeats
+	var obs_pts := [
+		Vector2i(9, 6), Vector2i(14, 5), Vector2i(20, 6), Vector2i(25, 9),
+		Vector2i(8, 11), Vector2i(13, 10), Vector2i(19, 11), Vector2i(24, 13),
+		Vector2i(5, 14), Vector2i(10, 14), Vector2i(20, 14), Vector2i(26, 17),
+		Vector2i(9, 19), Vector2i(15, 19), Vector2i(21, 19), Vector2i(13, 23),
+		Vector2i(18, 22), Vector2i(10, 26), Vector2i(17, 27), Vector2i(27, 21),
+		Vector2i(4, 12), Vector2i(27, 11), Vector2i(11, 3), Vector2i(18, 3),
+		Vector2i(12, 28), Vector2i(20, 28), Vector2i(3, 19), Vector2i(28, 19),
+		Vector2i(3, 9), Vector2i(3, 26), Vector2i(28, 7), Vector2i(6, 20),
 	]
+	for pi in range(obs_pts.size()):
+		var op: Vector2i = obs_pts[pi]
+		tg_base[op.y][op.x] = "T" if (pi % 3 != 0) else ("*" if pi % 2 == 0 else "F")
+	var t_signs := [
+		{"at": [9, 7], "text": "nw"}, {"at": [18, 8], "text": "ne"},
+		{"at": [8, 17], "text": "sw"}, {"at": [18, 18], "text": "se"},
+		{"at": [13, 13], "text": "c"}, {"at": [24, 12], "text": "e"},
+		{"at": [14, 24], "text": "s"}, {"at": [23, 19], "text": "es"},
+	]
+	var t_people: Array = []
+	var ppl_pts := [
+		Vector2i(7, 9), Vector2i(12, 7), Vector2i(17, 6), Vector2i(21, 8),
+		Vector2i(6, 18), Vector2i(11, 20), Vector2i(16, 14), Vector2i(21, 13),
+		Vector2i(19, 25), Vector2i(25, 18),
+	]
+	for idx_p in range(ppl_pts.size()):
+		t_people.append({
+			"id": "p_%d" % idx_p,
+			"name": "Resident %d" % idx_p,
+			"at": [ppl_pts[idx_p].x, ppl_pts[idx_p].y],
+			"sprite": "town_woman",
+			"role": "talk",
+		})
 	var t_map := {
 		"schema": 1,
 		"id": "camp:fixture-city",
-		"town": [[3, 3, 26, 26]],
+		"town": [[0, 0, 32, 32]],
 		"rows": [],
-		"objects": [],
-		"fixtures": [{"kind": "em_fountain", "at": [15, 14]}],
-		"people": [],
+		"objects": [
+			{"stamp": "standing_house_s_door1", "at": [4, 4], "interior": "dc:camp-family-west"},
+			{"stamp": "standing_house_s_door2", "at": [22, 4], "interior": "dc:camp-family-north"},
+			{"stamp": "standing_house_m", "at": [4, 22], "interior": "dc:camp-infirmary"},
+			{"stamp": "standing_block_8x7_a", "at": [20, 21], "interior": "dc:camp-supply-cottage"},
+		],
+		"fixtures": [{"kind": "em_fountain", "at": [14, 20]}],
+		"people": t_people,
 		"street_pokemon": [],
 		"signs": t_signs,
+		"hidden_items": [{"at": [6, 10], "item": "Potion", "note": "n"}],
 		"lamp": [14, 14],
 	}
 	for r in tg_base:
@@ -310,94 +346,249 @@ func run_test() -> bool:
 	var res_tok := CaricatureCheck.check_town(c_tok, camp_area)
 	if not bool(res_tok.get("ok", false)):
 		_cleanup()
-		push_error("caricature_check_test: expected synthetic town T1-T6 PASS, got %s" % str(res_tok))
+		push_error("caricature_check_test: expected synthetic town T1-T7 PASS, got %s" % str(res_tok))
 		return false
 
-	# T1 falsifier: remove signs so only fixture + lamp exist -> must FAIL T1
-	var t_no_things := t_map.duplicate(true)
-	t_no_things["signs"] = []
-	var res_t1 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_no_things), camp_area)
-	if bool(res_t1.get("ok", true)) or not (res_t1["failed_rules"] as Array).has("T1"):
+	# T1 falsifier (4.0 floor): reduce people/signs/items so things_per_150 sits between 1.0 and 4.0 -> MUST FAIL T1
+	var t_low_density := t_map.duplicate(true)
+	t_low_density["signs"] = []
+	t_low_density["hidden_items"] = []
+	t_low_density["people"] = t_people.slice(0, 6)
+	var c_low := CaricatureMap.compile(camp_area, t_low_density)
+	var res_t1 := CaricatureCheck.check_town(c_low, camp_area)
+	if bool(res_t1.get("ok", true)) or not (res_t1["failed_rules"] as Array).has("T1") or float(res_t1.get("things_per_150", 0.0)) < 1.0:
 		_cleanup()
-		push_error("caricature_check_test: expected T1 failure when only fixture/lamp present, got %s" % str(res_t1))
+		push_error("caricature_check_test: expected T1 failure when 1.0 <= things_per_150 < 4.0, got %s" % str(res_t1))
+		return false
+
+	# T7 falsifier (open ground > 5%): open 32x32 blank lawn town -> MUST FAIL T7
+	var t_open := {
+		"schema": 1,
+		"id": "camp:fixture-city",
+		"town": [[0, 0, 32, 32]],
+		"rows": [],
+		"objects": [],
+		"fixtures": [],
+		"people": [],
+		"street_pokemon": [],
+		"signs": [{"at": [14, 16], "text": "c"}],
+		"lamp": [14, 14],
+	}
+	for r in _blank_32_grid("."):
+		(t_open["rows"] as Array).append("".join(r))
+	var res_t7 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_open), camp_area)
+	if bool(res_t7.get("ok", true)) or not (res_t7["failed_rules"] as Array).has("T7") or float(res_t7.get("open_ground_pct", 0.0)) <= 0.05:
+		_cleanup()
+		push_error("caricature_check_test: expected T7 failure on open lawn town, got %s" % str(res_t7))
 		return false
 
 	# T2 falsifier: tall grass inside town -> must FAIL T2
 	var t_grass := t_map.duplicate(true)
-	t_grass["rows"][10] = str(t_grass["rows"][10]).substr(0, 10) + "," + str(t_grass["rows"][10]).substr(11)
+	t_grass["rows"][10] = str(t_grass["rows"][10]).substr(0, 11) + "," + str(t_grass["rows"][10]).substr(12)
 	var res_t2 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_grass), camp_area)
 	if bool(res_t2.get("ok", true)) or not (res_t2["failed_rules"] as Array).has("T2"):
 		_cleanup()
 		push_error("caricature_check_test: expected T2 failure for tall grass in town, got %s" % str(res_t2))
 		return false
 
-	# T3 falsifier: large touching worn block (>5% wear, touching wear) -> must FAIL T3
-	var t_wear := t_map.duplicate(true)
-	t_wear["town"] = [[0, 0, 1, 1]] # non-town map with lots of plaza wear, then check_town with town_rect_override
-	var res_t3 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_wear), camp_area, [[3, 3, 26, 26]])
-	if bool(res_t3.get("ok", true)) or not (res_t3["failed_rules"] as Array).has("T3"):
+	# T3 falsifier (whole map incl. route ground): 0% town wear + >5% route wear -> must FAIL T3
+	var g_wear := _blank_32_grid(".")
+	for wy in range(22, 29):
+		for tx in range(3, 29):
+			g_wear[wy][tx] = "#"
+	var t_wear := {
+		"schema": 1,
+		"id": "camp:fixture-city",
+		"rows": [],
+		"objects": [],
+		"fixtures": [],
+		"people": [],
+		"street_pokemon": [],
+		"signs": [{"at": [10, 10], "text": "c"}],
+		"lamp": [14, 14],
+	}
+	for r in g_wear:
+		(t_wear["rows"] as Array).append("".join(r))
+	var res_t3 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_wear), camp_area, [[4, 4, 16, 16]])
+	if bool(res_t3.get("ok", true)) or not (res_t3["failed_rules"] as Array).has("T3") or float(res_t3.get("town_wear_pct", 1.0)) != 0.0 or float(res_t3.get("route_wear_pct", 0.0)) <= 0.05:
 		_cleanup()
-		push_error("caricature_check_test: expected T3 failure when outside-town wear >5%% checked as town, got %s" % str(res_t3))
+		push_error("caricature_check_test: expected T3 failure from route-ground wear alone, got %s" % str(res_t3))
 		return false
 
-	# T4 falsifier: identical 9x9 building placed twice inside town creates repeating 8x8 patches -> must FAIL T4
-	var t_rep := t_map.duplicate(true)
-	t_rep["fixtures"] = []
-	t_rep["lamp"] = [14, 14]
-	t_rep["signs"] = [
-		{"at": [15, 7], "text": "n"}, {"at": [25, 7], "text": "ne"},
-		{"at": [7, 15], "text": "w"}, {"at": [15, 22], "text": "sw"},
-		{"at": [7, 27], "text": "s"}, {"at": [27, 27], "text": "se"},
-	]
-	t_rep["objects"] = [
-		{"stamp": "standing_block_9x9_a", "at": [3, 3]},
-		{"stamp": "standing_block_9x9_a", "at": [18, 18]},
-	]
-	var c_rep := CaricatureMap.compile(camp_area, t_rep)
-	if not bool(c_rep.get("ok", false)):
-		_cleanup()
-		push_error("caricature_check_test: t_rep compile failed: %s" % str(c_rep.get("errors", [])))
-		return false
-	var res_t4 := CaricatureCheck.check_town(c_rep, camp_area)
+	# T4 falsifier (layout-only key, distance >= 8): identical non-uniform 8x8 lawn+path/building 12 tiles apart fails T4 even across random grass shading; <8 tiles overlapping alone does not
+	var t_rep := {
+		"schema": 1,
+		"id": "camp:fixture-city",
+		"town": [[0, 0, 32, 32]],
+		"rows": [],
+		"objects": [
+			{"stamp": "standing_block_9x9_a", "at": [4, 4]},
+			{"stamp": "standing_block_9x9_a", "at": [18, 18]},
+		],
+		"fixtures": [],
+		"people": [],
+		"street_pokemon": [],
+		"signs": [{"at": [27, 4], "text": "ne"}],
+		"lamp": [4, 25],
+	}
+	for r in _blank_32_grid("."):
+		(t_rep["rows"] as Array).append("".join(r))
+	var res_t4 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_rep), camp_area)
 	if bool(res_t4.get("ok", true)) or not (res_t4["failed_rules"] as Array).has("T4"):
 		_cleanup()
-		push_error("caricature_check_test: expected T4 failure for repeated 8x8 patch in town, got %s" % str(res_t4))
+		push_error("caricature_check_test: expected T4 failure for repeated 8x8 patch >=8 tiles apart, got %s" % str(res_t4))
 		return false
 
-	# T5 falsifier: missing interior on open door fails T5
+	# T5 falsifier: missing interior on open door fails T5 + double-door dedup counts 1
 	var t_bad_door := t_map.duplicate(true)
-	t_bad_door["objects"] = [{"stamp": "standing_block_8x7_a", "at": [10, 5], "interior": "dc:camp-nonexistent-house"}]
+	(t_bad_door["objects"] as Array).append({"stamp": "standing_block_8x7_a", "at": [10, 5], "interior": "dc:camp-nonexistent-house"})
 	var c_bad_door := CaricatureMap.compile(camp_area, t_bad_door)
 	if not bool(c_bad_door.get("ok", false)):
 		_cleanup()
 		push_error("caricature_check_test: t_bad_door compile failed: %s" % str(c_bad_door.get("errors", [])))
 		return false
 	var res_t5 := CaricatureCheck.check_town(c_bad_door, camp_area)
-	if bool(res_t5.get("ok", true)) or not (res_t5["failed_rules"] as Array).has("T5") or int(res_t5.get("open_house_doors", 0)) != 1:
+	if bool(res_t5.get("ok", true)) or not (res_t5["failed_rules"] as Array).has("T5") or int(res_t5.get("open_doors", 0)) != 5 or int(res_t5.get("bad_doors", 0)) != 2:
 		_cleanup()
-		push_error("caricature_check_test: expected T5 fail + double-door dedup open_house_doors==1, got %s" % str(res_t5))
+		push_error("caricature_check_test: expected T5 fail + double-door dedup open_doors==5, got %s" % str(res_t5))
 		return false
 
 	# T6 falsifier: 16x14 block in town + invalid street_pokemon dex -> fails T6
-	var t_t6 := t_map.duplicate(true)
-	t_t6["fixtures"] = []
-	t_t6["lamp"] = [25, 25]
-	t_t6["signs"] = [
-		{"at": [24, 8], "text": "n"}, {"at": [24, 22], "text": "e"},
-		{"at": [8, 22], "text": "sw"}, {"at": [4, 22], "text": "w"},
-	]
-	t_t6["objects"] = [{"stamp": "ruined_block_16x14_a", "at": [5, 5]}]
-	t_t6["street_pokemon"] = [{"dex": 999, "at": [24, 24]}]
-	var c_t6 := CaricatureMap.compile(camp_area, t_t6)
-	if not bool(c_t6.get("ok", false)):
-		_cleanup()
-		push_error("caricature_check_test: t_t6 compile failed: %s" % str(c_t6.get("errors", [])))
-		return false
-	var res_t6 := CaricatureCheck.check_town(c_t6, camp_area)
+	var t_t6 := {
+		"schema": 1,
+		"id": "camp:fixture-city",
+		"town": [[0, 0, 32, 32]],
+		"rows": [],
+		"objects": [{"stamp": "ruined_block_16x14_a", "at": [5, 5]}],
+		"fixtures": [],
+		"people": [],
+		"street_pokemon": [{"dex": 999, "at": [24, 24]}],
+		"signs": [],
+		"lamp": [25, 25],
+	}
+	for r in _blank_32_grid("."):
+		(t_t6["rows"] as Array).append("".join(r))
+	var res_t6 := CaricatureCheck.check_town(CaricatureMap.compile(camp_area, t_t6), camp_area)
 	if bool(res_t6.get("ok", true)) or not (res_t6["failed_rules"] as Array).has("T6") or int(res_t6.get("oversized_buildings", 0)) != 1 or int(res_t6.get("invalid_pokemon", 0)) != 1:
 		_cleanup()
 		push_error("caricature_check_test: expected T6 fail (oversized=1, invalid_pkm=1), got %s" % str(res_t6))
 		return false
 
+	# Decision 71 falsifiers on test copies of DC maps (sign cap, item cap, non-camp/non-Georgetown town & zone pool)
+	Neighbourhoods.set_config_path_for_tests("")
+	var dc_camp_area := Neighbourhoods.area("camp:washington-dc")
+	var dc_camp_map := CaricatureMap.load_map("res://data/caricature/washington-dc/camp.json")
+	var dc_gt_area := Neighbourhoods.area("hood:washington-dc:georgetown")
+	var dc_gt_map := CaricatureMap.load_map("res://data/caricature/washington-dc/georgetown.json")
+	var dc_dupont_area := Neighbourhoods.area("hood:washington-dc:dupont-circle")
+	var dc_dupont_map := CaricatureMap.load_map("res://data/caricature/washington-dc/dupont-circle.json")
+
+	var camp_extra_sign := _copy_with_extra_town_thing(dc_camp_area, dc_camp_map, true, 19)
+	if not bool(camp_extra_sign.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: camp_extra_sign setup failed: %s" % str(camp_extra_sign))
+		return false
+	var res_camp_sign := CaricatureCheck.check_town(camp_extra_sign["compiled"], dc_camp_area)
+	if bool(res_camp_sign.get("ok", true)) or not (res_camp_sign["failed_rules"] as Array).has("T6") or int(res_camp_sign.get("town_signs", 0)) <= 19:
+		_cleanup()
+		push_error("caricature_check_test: expected camp +1 sign to fail T6 (>19), got %s" % str(res_camp_sign))
+		return false
+
+	var camp_extra_item := _copy_with_extra_town_thing(dc_camp_area, dc_camp_map, false, 8)
+	var res_camp_item := CaricatureCheck.check_town(camp_extra_item["compiled"], dc_camp_area)
+	if bool(res_camp_item.get("ok", true)) or not (res_camp_item["failed_rules"] as Array).has("T6") or int(res_camp_item.get("town_items", 0)) <= 8:
+		_cleanup()
+		push_error("caricature_check_test: expected camp +1 item to fail T6 (>8), got %s" % str(res_camp_item))
+		return false
+
+	var gt_extra_sign := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, true, 38)
+	var res_gt_sign := CaricatureCheck.check_town(gt_extra_sign["compiled"], dc_gt_area)
+	if bool(res_gt_sign.get("ok", true)) or not (res_gt_sign["failed_rules"] as Array).has("T6") or int(res_gt_sign.get("town_signs", 0)) <= 38:
+		_cleanup()
+		push_error("caricature_check_test: expected georgetown +1 sign to fail T6 (>38), got %s" % str(res_gt_sign))
+		return false
+
+	var gt_extra_item := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, false, 8)
+	var res_gt_item := CaricatureCheck.check_town(gt_extra_item["compiled"], dc_gt_area)
+	if bool(res_gt_item.get("ok", true)) or not (res_gt_item["failed_rules"] as Array).has("T6") or int(res_gt_item.get("town_items", 0)) <= 8:
+		_cleanup()
+		push_error("caricature_check_test: expected georgetown +1 item to fail T6 (>8), got %s" % str(res_gt_item))
+		return false
+
+	# Non-camp / non-Georgetown neighbourhood with a town part runs check_town AND enforces its own zone pool
+	var dup_with_town := dc_dupont_map.duplicate(true)
+	dup_with_town["town"] = [[24, 24, 80, 80]]
+	dup_with_town["street_pokemon"] = [{"dex": 562, "at": [64, 60], "zone": "ruins"}] # Yamask: ruins only, invalid for Dupont (residential/waterfront)
+	var c_dup_town := CaricatureMap.compile(dc_dupont_area, dup_with_town)
+	if not bool(c_dup_town.get("ok", false)) or not bool(c_dup_town.get("has_town_rules", false)):
+		_cleanup()
+		push_error("caricature_check_test: dup_with_town compile failed: %s" % str(c_dup_town.get("errors", [])))
+		return false
+	var res_dup := CaricatureCheck.check_town(c_dup_town, dc_dupont_area)
+	if bool(res_dup.get("ok", true)) or not (res_dup["failed_rules"] as Array).has("T1") or not (res_dup["failed_rules"] as Array).has("T6") or int(res_dup.get("invalid_pokemon", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected non-camp/non-GT town check + zone-pool rejection (invalid_pokemon==1), got %s" % str(res_dup))
+		return false
+
 	_cleanup()
 	return true
+
+
+func _copy_with_extra_town_thing(area: Dictionary, base_map: Dictionary, add_sign: bool, min_target: int) -> Dictionary:
+	var m := base_map.duplicate(true)
+	var c0 := CaricatureMap.compile(area, m)
+	if not bool(c0.get("ok", false)):
+		return {"ok": false, "error": str(c0.get("errors", []))}
+	var w := int(c0["w"])
+	var h := int(c0["h"])
+	var town_mask: PackedByteArray = c0["town_mask"]
+	var cls_buf: PackedByteArray = c0["class"]
+	var var_buf: PackedByteArray = c0["variant"]
+	var mask_buf: PackedByteArray = c0["mask"]
+	var used: Dictionary = {}
+	for s in (m.get("signs", []) as Array):
+		used[Vector2i(int(s["at"][0]), int(s["at"][1]))] = true
+	for hi in (m.get("hidden_items", []) as Array):
+		used[Vector2i(int(hi["at"][0]), int(hi["at"][1]))] = true
+	var cur_count := 0
+	if add_sign:
+		for s in (m.get("signs", []) as Array):
+			var sx := int(s["at"][0])
+			var sy := int(s["at"][1])
+			if sx >= 0 and sx < w and sy >= 0 and sy < h and town_mask[sy * w + sx] == 1:
+				cur_count += 1
+	else:
+		for y in range(h):
+			for x in range(w):
+				if town_mask[y * w + x] == 1 and cls_buf[y * w + x] == 28:
+					cur_count += 1
+		for hi in (m.get("hidden_items", []) as Array):
+			var hx := int(hi["at"][0])
+			var hy := int(hi["at"][1])
+			if hx >= 0 and hx < w and hy >= 0 and hy < h and town_mask[hy * w + hx] == 1:
+				cur_count += 1
+	var needed := maxi(1, min_target + 1 - cur_count)
+	var added := 0
+	for y in range(4, h - 4):
+		if added >= needed:
+			break
+		for x in range(4, w - 4):
+			var idx := y * w + x
+			if town_mask[idx] == 0:
+				continue
+			var pos := Vector2i(x, y)
+			if used.has(pos):
+				continue
+			if cls_buf[idx] == 1 and var_buf[idx] == 0 and mask_buf[idx] == 0:
+				used[pos] = true
+				if add_sign:
+					(m["signs"] as Array).append({"at": [x, y], "text": "extra"})
+				else:
+					var h_arr: Array = m.get("hidden_items", [])
+					h_arr.append({"at": [x, y], "item": "Potion", "note": "extra"})
+					m["hidden_items"] = h_arr
+				added += 1
+				if added >= needed:
+					break
+	var c1 := CaricatureMap.compile(area, m)
+	return {"ok": bool(c1.get("ok", false)), "compiled": c1}

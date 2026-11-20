@@ -38,6 +38,10 @@ static func _ensure_cfg_loaded() -> void:
 
 static func fixture_meta(kind: String) -> Dictionary:
 	_ensure_cfg_loaded()
+	if kind == "standin_bench":
+		return {"w": 2, "h": 1, "base_rows": 1}
+	if kind == "standin_lock_gate":
+		return {"w": 2, "h": 3, "base_rows": 3}
 	if _cfg_fx_cache.has(kind):
 		var spec: Dictionary = _cfg_fx_cache[kind]
 		return {
@@ -202,6 +206,24 @@ static func _get_procedural_texture(kind: String, tw: int, th: int) -> Texture2D
 			_box(img, 4, 24, 40, 18, outline, Color8(214, 208, 192, 255))
 			_box(img, 14, 4, 18, 22, outline, Color8(236, 240, 248, 255))
 			_fill_rect(img, 18, 6, 8, 16, Color8(124, 184, 216, 255))
+		"standin_bench":
+			# 2x1 tiles (32x16 -> 64x32 px) straight-on wood & wrought-iron park bench
+			_box(img, 2, 2, 28, 6, outline, Color8(168, 114, 68, 255))
+			_fill_rect(img, 4, 4, 24, 1, Color8(198, 144, 90, 255))
+			_box(img, 1, 7, 30, 5, outline, Color8(146, 94, 54, 255))
+			_box(img, 2, 6, 3, 9, outline, Color8(62, 68, 84, 255))
+			_box(img, 27, 6, 3, 9, outline, Color8(62, 68, 84, 255))
+		"standin_lock_gate":
+			# 2x3 tiles (32x48 -> 64x96 px) heavy timber & iron miter lock gates across 3-tile canal
+			_box(img, 0, 1, 32, 7, outline, Color8(134, 142, 154, 255)) # balance beam walk top
+			_box(img, 1, 8, 15, 36, outline, Color8(122, 82, 48, 255)) # west timber leaf
+			_box(img, 16, 8, 15, 36, outline, Color8(112, 74, 42, 255)) # east timber leaf
+			for gy in [14, 24, 34]:
+				_fill_rect(img, 2, gy, 28, 3, outline)
+				_fill_rect(img, 3, gy + 1, 26, 1, Color8(136, 146, 160, 255))
+			for px in [5, 10, 21, 26]:
+				_fill_rect(img, px, 9, 1, 34, Color8(88, 56, 32, 255))
+			_fill_rect(img, 2, 44, 28, 3, Color8(176, 224, 244, 255)) # water sill foam
 		_:
 			_box(img, 3, 3, gw - 6, gh - 6, outline, Color8(164, 168, 180, 255))
 
