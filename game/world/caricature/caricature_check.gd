@@ -39,6 +39,7 @@ const EDGE_CLEAR_TILES: int = 5
 const MIN_THINGS_PER_150_ROUTE: float = 0.9
 const MAX_SIGN_SHARE_ROUTE: float = 1.0 / 3.0
 const MAX_ITEM_SHARE_ROUTE: float = 0.5
+const MAX_DOOR_SHARE_ROUTE: float = 1.0 / 3.0
 const MAX_OPEN_GROUND_ROUTE: float = 0.13
 const MAX_REPEAT_8X8_ROUTE: int = 5
 
@@ -1211,10 +1212,15 @@ static func _nearest_box_neighbour_steps(x0: int, y0: int, ow: int, oh: int, dis
 
 
 const MIN_THINGS_PER_150_TOWN: float = 4.0
+const MIN_THINGS_PER_150_LAND_HOOD: float = 1.85
+const MIN_WALK_LAND_PCT_HOOD: float = 0.30
+const MAX_TREE_LAND_PCT_HOOD: float = 0.25
+const MIN_TOWN_LAND_HOOD: int = 2500
+const MAX_TOWN_LAND_HOOD: int = 3500
 const MAX_OPEN_GROUND_TOWN: float = 0.05
 const MAX_TOWN_SIGNS_CAMP: int = 19
 const MAX_TOWN_ITEMS_CAMP: int = 8
-const MAX_TOWN_SIGNS_HOOD: int = 38
+const MAX_TOWN_SIGNS_HOOD: int = 13
 const MAX_TOWN_ITEMS_HOOD: int = 8
 
 static var _spawn_pool_cache: Dictionary = {}
@@ -1465,6 +1471,8 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 	var items_in_town := hidden_in_town
 	var items_in_route := 0
 	var walk_in_town := 0
+	var town_land_tiles := 0
+	var town_trees := 0
 	var town_tall_grass := 0
 	var town_ground_total := 0
 	var town_worn_total := 0
@@ -1482,6 +1490,10 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 			var rv: int = rend_var[i]
 			var is_paving := (cls == TileSynth2.TILE_PATH or cls == TileSynth2.TILE_PLAZA or cls == TileSynth2.TILE_ROAD)
 			if town_mask[i] == 1:
+				if cls != TileSynth2.TILE_WATER:
+					town_land_tiles += 1
+				if cls == TileSynth2.TILE_TREE:
+					town_trees += 1
 				if walk_flags[i] == 1:
 					walk_in_town += 1
 				if cls == TileSynth2.TILE_ITEM_BALL:
@@ -1556,6 +1568,9 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		things_in_town += int(cnt)
 	var empty_share: float = 1.0 if total_windows == 0 else (float(empty_windows) / float(total_windows))
 	var things_per_150: float = float(things_in_town) / maxf(1.0, float(walk_in_town) / 150.0)
+	var things_per_150_land: float = 0.0 if town_land_tiles == 0 else (float(things_in_town) / (float(town_land_tiles) / 150.0))
+	var walk_land_pct: float = 0.0 if town_land_tiles == 0 else (float(walk_in_town) / float(town_land_tiles))
+	var tree_land_pct: float = 0.0 if town_land_tiles == 0 else (float(town_trees) / float(town_land_tiles))
 	var town_wear_pct: float = 0.0 if town_ground_total == 0 else (float(town_worn_total) / float(town_ground_total))
 	var route_wear_pct: float = 0.0 if route_ground_total == 0 else (float(route_worn_total) / float(route_ground_total))
 	var whole_ground_total: int = town_ground_total + route_ground_total
@@ -1690,7 +1705,7 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		if town_signs > MAX_TOWN_SIGNS_CAMP or items_in_town > MAX_TOWN_ITEMS_CAMP:
 			t6_ok = false
 	elif is_hood:
-		if town_tile_count < 6000 or town_tile_count > 7000:
+		if town_land_tiles < MIN_TOWN_LAND_HOOD or town_land_tiles > MAX_TOWN_LAND_HOOD:
 			t6_ok = false
 		if total_survivors < 3 or total_survivors > 6:
 			t6_ok = false
@@ -1704,6 +1719,12 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		failed_rules.append("T6")
 	if open_ground_pct > MAX_OPEN_GROUND_TOWN:
 		failed_rules.append("T7")
+	if is_hood and things_per_150_land < MIN_THINGS_PER_150_LAND_HOOD:
+		failed_rules.append("T8")
+	if is_hood and walk_land_pct < MIN_WALK_LAND_PCT_HOOD:
+		failed_rules.append("T9")
+	if is_hood and tree_land_pct > MAX_TREE_LAND_PCT_HOOD:
+		failed_rules.append("TREES")
 
 	var town_sign_share: float = 0.0 if things_in_town == 0 else (float(town_signs) / float(things_in_town))
 	var town_item_share: float = 0.0 if things_in_town == 0 else (float(items_in_town) / float(things_in_town))
@@ -1712,7 +1733,11 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		"ok": failed_rules.is_empty(),
 		"failed_rules": failed_rules,
 		"town_tiles": town_tile_count,
+		"town_land_tiles": town_land_tiles,
 		"walk_in_town": walk_in_town,
+		"walk_land_pct": walk_land_pct,
+		"town_trees": town_trees,
+		"tree_land_pct": tree_land_pct,
 		"open_ground_tiles": open_ground_tiles,
 		"open_ground_pct": open_ground_pct,
 		"windows": total_windows,
@@ -1720,6 +1745,7 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		"empty_screens": empty_share,
 		"things_in_town": things_in_town,
 		"things_per_150": things_per_150,
+		"things_per_150_land": things_per_150_land,
 		"sign_share": town_sign_share,
 		"item_share": town_item_share,
 		"town_tall_grass": town_tall_grass,
@@ -1945,6 +1971,7 @@ static func check_route_ground(compiled: Dictionary, area: Dictionary, town_rect
 	var things_per_150: float = 0.0 if walk_in_region == 0 else (float(things) / (float(walk_in_region) / 150.0))
 	var sign_share: float = 0.0 if things == 0 else (float(signs_cnt) / float(things))
 	var item_share: float = 0.0 if things == 0 else (float(items_cnt) / float(things))
+	var door_share: float = 0.0 if things == 0 else (float(open_doors_cnt + search_doors_cnt) / float(things))
 	var open_ground_pct: float = 0.0 if walk_in_region == 0 else (float(open_ground_tiles) / float(walk_in_region))
 	var tall_grass_share: float = 0.0 if walk_in_region == 0 else (float(tall_grass_tiles) / float(walk_in_region))
 	var wear_pct: float = 0.0 if paving_total == 0 else (float(paving_worn) / float(paving_total))
@@ -2005,7 +2032,7 @@ static func check_route_ground(compiled: Dictionary, area: Dictionary, town_rect
 
 	var failed_rules: Array[String] = []
 	if walk_in_region > 0:
-		if things == 0 or things_per_150 < MIN_THINGS_PER_150_ROUTE or sign_share > (MAX_SIGN_SHARE_ROUTE + 0.000001) or item_share > (MAX_ITEM_SHARE_ROUTE + 0.000001):
+		if things == 0 or things_per_150 < MIN_THINGS_PER_150_ROUTE or sign_share > (MAX_SIGN_SHARE_ROUTE + 0.000001) or item_share > (MAX_ITEM_SHARE_ROUTE + 0.000001) or door_share > (MAX_DOOR_SHARE_ROUTE + 0.000001):
 			failed_rules.append("R1")
 		if open_ground_pct > MAX_OPEN_GROUND_ROUTE:
 			failed_rules.append("R2")
@@ -2025,6 +2052,7 @@ static func check_route_ground(compiled: Dictionary, area: Dictionary, town_rect
 		"things_per_150": things_per_150,
 		"sign_share": sign_share,
 		"item_share": item_share,
+		"door_share": door_share,
 		"wear_pct": wear_pct,
 		"wear_touch": wear_touch,
 		"repeat_8x8": repeat_8x8,

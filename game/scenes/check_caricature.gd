@@ -242,13 +242,17 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 		var t_failed: Array = t_res.get("failed_rules", [])
 		var t_status := "PASS" if t_ok else ("FAIL " + ",".join(PackedStringArray(t_failed)))
 		print(
-			"CARICATURE_TOWN %s tiles=%d walk=%d open=%.3f empty_screens=%.2f things_per_150=%.2f sign_share=%.2f item_share=%.2f wear_town=%.3f wear_route=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d items=%d route_items_5=%.2f signs=%d tall_grass=%d %s" % [
+			"CARICATURE_TOWN %s tiles=%d land=%d walk=%d walk_pct=%.3f tree_pct=%.3f open=%.3f empty_screens=%.2f things_per_150=%.2f things_per_150_land=%.2f sign_share=%.2f item_share=%.2f wear_town=%.3f wear_route=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d items=%d route_items_5=%.2f signs=%d tall_grass=%d %s" % [
 				area_id,
 				int(t_res["town_tiles"]),
+				int(t_res["town_land_tiles"]),
 				int(t_res["walk_in_town"]),
+				float(t_res["walk_land_pct"]),
+				float(t_res["tree_land_pct"]),
 				float(t_res["open_ground_pct"]),
 				float(t_res["empty_screens"]),
 				float(t_res["things_per_150"]),
+				float(t_res["things_per_150_land"]),
 				float(t_res["sign_share"]),
 				float(t_res["item_share"]),
 				float(t_res["town_wear_pct"]),
@@ -277,13 +281,14 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 			var rg_failed: Array = rg_res.get("failed_rules", [])
 			var rg_status := "PASS" if rg_ok else ("FAIL " + ",".join(PackedStringArray(rg_failed)))
 			print(
-				"CARICATURE_ROUTE_GROUND %s walk=%d open=%.3f things_per_150=%.2f sign_share=%.2f item_share=%.2f wear=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d pkm=%d items=%d signs=%d tall_grass=%.2f %s" % [
+				"CARICATURE_ROUTE_GROUND %s walk=%d open=%.3f things_per_150=%.2f sign_share=%.2f item_share=%.2f door_share=%.2f wear=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d pkm=%d items=%d signs=%d tall_grass=%.2f %s" % [
 					area_id,
 					int(rg_res["walk"]),
 					float(rg_res["open_ground_pct"]),
 					float(rg_res["things_per_150"]),
 					float(rg_res["sign_share"]),
 					float(rg_res["item_share"]),
+					float(rg_res["door_share"]),
 					float(rg_res["wear_pct"]),
 					int(rg_res["wear_touch"]),
 					int(rg_res["repeat_8x8"]),

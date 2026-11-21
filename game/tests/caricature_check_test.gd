@@ -501,11 +501,11 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected camp +1 item to fail T6 (>8), got %s" % str(res_camp_item))
 		return false
 
-	var gt_extra_sign := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, true, 38)
+	var gt_extra_sign := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, true, 13)
 	var res_gt_sign := CaricatureCheck.check_town(gt_extra_sign["compiled"], dc_gt_area)
-	if bool(res_gt_sign.get("ok", true)) or not (res_gt_sign["failed_rules"] as Array).has("T6") or int(res_gt_sign.get("town_signs", 0)) <= 38:
+	if bool(res_gt_sign.get("ok", true)) or not (res_gt_sign["failed_rules"] as Array).has("T6") or int(res_gt_sign.get("town_signs", 0)) <= 13:
 		_cleanup()
-		push_error("caricature_check_test: expected georgetown +1 sign to fail T6 (>38), got %s" % str(res_gt_sign))
+		push_error("caricature_check_test: expected georgetown >13 signs to fail T6, got %s" % str(res_gt_sign))
 		return false
 
 	var gt_extra_item := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, false, 8)
@@ -643,6 +643,74 @@ func run_test() -> bool:
 	if bool(res_rg.get("ok", true)) or not (res_rg["failed_rules"] as Array).has("R1") or not (res_rg["failed_rules"] as Array).has("R2"):
 		_cleanup()
 		push_error("caricature_check_test: expected open sparse route to fail R1 and R2, got %s" % str(res_rg))
+		return false
+
+	# Decision 73 falsifiers: compact town size (2500..3500 land), T8 (>=1.85/150 land), T9 (>=30% walk), TREES (<=25%), R1 door_share (<=1/3), camp unchanged
+	var res_camp_d73 := CaricatureCheck.check_town(c_camp_ok, dc_camp_area)
+	if not bool(res_camp_d73.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: camp:washington-dc must stay PASS under Decision 73, got %s" % str(res_camp_d73))
+		return false
+
+	# Synthetic wooded neighbourhood town: 3000 land tiles, >25% trees, <30% walkable, <1.85/150 land -> fails T8, T9, TREES
+	var d73_map := dc_dupont_map.duplicate(true)
+	var d73_rows: Array = (d73_map["rows"] as Array).duplicate()
+	for ry in range(20, 70):
+		var old_r: String = str(d73_rows[ry])
+		# Keep outer border (0..2 and 125..127) untouched for openings; inside [20, 20, 60, 50]: 45 T (75% trees) + 15 . (25% walk)
+		d73_rows[ry] = old_r.substr(0, 3) + ".".repeat(17) + "T".repeat(45) + ".".repeat(15) + ".".repeat(45) + old_r.substr(125)
+	d73_map["rows"] = d73_rows
+	d73_map["town"] = [[20, 20, 60, 50]]
+	d73_map["objects"] = []
+	d73_map["fixtures"] = []
+	d73_map["people"] = []
+	d73_map["street_pokemon"] = []
+	d73_map["signs"] = [{"at": [70, 30], "text": "s1"}]
+	d73_map["hidden_items"] = []
+	d73_map["lamp"] = [70, 40]
+	var c_d73 := CaricatureMap.compile(dc_dupont_area, d73_map)
+	if not bool(c_d73.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: d73_map compile failed: %s" % str(c_d73.get("errors", [])))
+		return false
+	var res_d73 := CaricatureCheck.check_town(c_d73, dc_dupont_area)
+	var f_d73: Array = res_d73["failed_rules"]
+	if not f_d73.has("T8") or not f_d73.has("T9") or not f_d73.has("TREES"):
+		_cleanup()
+		push_error("caricature_check_test: expected wooded sparse 3000-land town to fail T8, T9, TREES, got %s" % str(res_d73))
+		return false
+
+	# Town land size bounds: <2500 fails T6, >3500 fails T6
+	var res_small_t := CaricatureCheck.check_town(c_d73, dc_dupont_area, [[20, 20, 40, 50]])
+	if not (res_small_t["failed_rules"] as Array).has("T6") or int(res_small_t.get("town_land_tiles", 0)) != 2000:
+		_cleanup()
+		push_error("caricature_check_test: expected 2000-land town to fail T6, got %s" % str(res_small_t))
+		return false
+	var res_big_t := CaricatureCheck.check_town(c_d73, dc_dupont_area, [[20, 20, 80, 50]])
+	if not (res_big_t["failed_rules"] as Array).has("T6") or int(res_big_t.get("town_land_tiles", 0)) != 4000:
+		_cleanup()
+		push_error("caricature_check_test: expected 4000-land town to fail T6, got %s" % str(res_big_t))
+		return false
+
+	# R1 door_share falsifier: route with 4 search doors + 4 other things -> door_share=0.50 (>1/3) -> fails R1
+	var rg_door_map := rg_map.duplicate(true)
+	rg_door_map["objects"] = [
+		{"stamp": "house_s_a", "at": [6, 12]},
+		{"stamp": "house_s_b", "at": [18, 12]},
+		{"stamp": "house_s_a", "at": [6, 26]},
+		{"stamp": "house_s_b", "at": [18, 26]},
+	]
+	rg_door_map["people"] = [{"id": "t_p", "name": "Scout", "at": [14, 20], "facing": "S", "sprite": "hiker", "role": "talk", "lines": ["Hi."]}]
+	rg_door_map["street_pokemon"] = [{"dex": 16, "at": [15, 22], "zone": "parkland"}]
+	var c_rg_door := CaricatureMap.compile(rg_area, rg_door_map)
+	if not bool(c_rg_door.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: rg_door_map compile failed: %s" % str(c_rg_door.get("errors", [])))
+		return false
+	var res_rg_door := CaricatureCheck.check_route_ground(c_rg_door, rg_area)
+	if float(res_rg_door.get("door_share", 0.0)) <= 0.34 or not (res_rg_door["failed_rules"] as Array).has("R1"):
+		_cleanup()
+		push_error("caricature_check_test: expected route with door_share > 1/3 to fail R1, got %s" % str(res_rg_door))
 		return false
 
 	_cleanup()
