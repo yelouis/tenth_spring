@@ -19,15 +19,18 @@ offset_top = -200000000.0
 offset_right = 200000000.0
 offset_bottom = 200000000.0
 mouse_filter = 2
-color = Color(0.0509804, 0.0666667, 0.0980392, 1)
+color = Color(0.51, 0.525, 0.576, 1)
 
 [node name="WorldKnown" type="TileMapLayer" parent="."]
 material = SubResource("ShaderMaterial_known")
 
 [node name="WorldCleared" type="TileMapLayer" parent="."]
 
-[node name="FogLayer" type="TileMapLayer" parent="."]
+[node name="FogLayer" type="ColorRect" parent="."]
+z_index = 35
+mouse_filter = 2
 material = SubResource("ShaderMaterial_fog")
+color = Color(1, 1, 1, 1)
 
 [node name="OverviewLayer" type="Node2D" parent="."]
 

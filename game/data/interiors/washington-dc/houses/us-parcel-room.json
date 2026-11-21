@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "id": "dc:us-parcel-room",
+  "area_id": "hood:washington-dc:union-station",
+  "title": "Express Parcel Room",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Express Parcel Room",
+      "theme": "wood",
+      "kit": "cottage_rowhouse",
+      "width": 12,
+      "height": 11,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_glass_case",
+          "at": [
+            3,
+            5
+          ]
+        },
+        {
+          "stamp": "int_supply_crate",
+          "at": [
+            2,
+            8
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_painting_meadow_2x2",
+          "at": [
+            5,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_window_1x1",
+          "at": [
+            2,
+            0
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_cot_cabinet_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_sofa_2x2",
+          "at": [
+            7,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_tree_1x2",
+          "at": [
+            10,
+            7
+          ]
+        },
+        {
+          "fixture": "em_trash_can_1x1",
+          "at": [
+            1,
+            9
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "at": [
+            8,
+            8
+          ],
+          "item": "Hyper Potion"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            6,
+            2
+          ],
+          "text": "Canvas mail sacks dry-stored on timber pallets."
+        }
+      ]
+    }
+  ]
+}

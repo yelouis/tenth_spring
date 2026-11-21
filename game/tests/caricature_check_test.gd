@@ -518,6 +518,9 @@ func run_test() -> bool:
 	# Non-camp / non-Georgetown neighbourhood with a town part runs check_town AND enforces its own zone pool
 	var dup_with_town := dc_dupont_map.duplicate(true)
 	dup_with_town["town"] = [[24, 24, 80, 80]]
+	dup_with_town["people"] = []
+	dup_with_town["signs"] = []
+	dup_with_town["hidden_items"] = []
 	dup_with_town["street_pokemon"] = [{"dex": 562, "at": [64, 60], "zone": "ruins"}] # Yamask: ruins only, invalid for Dupont (residential/waterfront)
 	var c_dup_town := CaricatureMap.compile(dc_dupont_area, dup_with_town)
 	if not bool(c_dup_town.get("ok", false)) or not bool(c_dup_town.get("has_town_rules", false)):
@@ -528,6 +531,118 @@ func run_test() -> bool:
 	if bool(res_dup.get("ok", true)) or not (res_dup["failed_rules"] as Array).has("T1") or not (res_dup["failed_rules"] as Array).has("T6") or int(res_dup.get("invalid_pokemon", 0)) != 1:
 		_cleanup()
 		push_error("caricature_check_test: expected non-camp/non-GT town check + zone-pool rejection (invalid_pokemon==1), got %s" % str(res_dup))
+		return false
+
+	# Item 63a falsifier: P11 retired blocks (standing_block_16x14_a anywhere; ruined_block_23x14_b; ruined_block_16x14_a inside town)
+	var ret_map := dc_camp_map.duplicate(true)
+	var ret_rows: Array = ret_map["rows"]
+	var clear_line := "TTT" + ".".repeat(58) + "TTT"
+	for ry in range(6, 56):
+		ret_rows[ry] = clear_line
+	ret_map["rows"] = ret_rows
+	ret_map["lamp"] = [50, 50]
+	ret_map["objects"] = [{"stamp": "standing_block_16x14_a", "at": [10, 10]}]
+	ret_map["fixtures"] = []
+	ret_map["people"] = []
+	ret_map["signs"] = []
+	ret_map["hidden_items"] = []
+	var c_ret := CaricatureMap.compile(dc_camp_area, ret_map)
+	if not bool(c_ret.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: ret_map compile failed: %s" % str(c_ret.get("errors", [])))
+		return false
+	var m_ret := CaricatureCheck.measure(c_ret, dc_camp_area)
+	if not (m_ret["failed_rules"] as Array).has("P11") or int(m_ret.get("retired_blocks", 0)) < 1:
+		_cleanup()
+		push_error("caricature_check_test: expected standing_block_16x14_a to fail P11, got %s" % str(m_ret))
+		return false
+
+	var ret_ruin_b := ret_map.duplicate(true)
+	ret_ruin_b["objects"] = [{"stamp": "ruined_block_23x14_b", "at": [10, 10]}]
+	var c_ret_b := CaricatureMap.compile(dc_camp_area, ret_ruin_b)
+	if not bool(c_ret_b.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: ret_ruin_b compile failed: %s" % str(c_ret_b.get("errors", [])))
+		return false
+	var m_ret_b := CaricatureCheck.measure(c_ret_b, dc_camp_area)
+	if not (m_ret_b["failed_rules"] as Array).has("P11"):
+		_cleanup()
+		push_error("caricature_check_test: expected ruined_block_23x14_b to fail P11, got %s" % str(m_ret_b))
+		return false
+
+	var ret_town_a := ret_map.duplicate(true)
+	ret_town_a["objects"] = [{"stamp": "ruined_block_16x14_a", "at": [10, 10]}]
+	var c_ret_ta := CaricatureMap.compile(dc_camp_area, ret_town_a)
+	if not bool(c_ret_ta.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: ret_town_a compile failed: %s" % str(c_ret_ta.get("errors", [])))
+		return false
+	var m_ret_ta := CaricatureCheck.measure(c_ret_ta, dc_camp_area)
+	if not (m_ret_ta["failed_rules"] as Array).has("P11"):
+		_cleanup()
+		push_error("caricature_check_test: expected ruined_block_16x14_a touching town to fail P11, got %s" % str(m_ret_ta))
+		return false
+
+	# Item 63a falsifier: P12 5-tile edge clearance (item 2 tiles from edge fails P12; item 4 tiles from edge fails P12)
+	var c_camp_ok := CaricatureMap.compile(dc_camp_area, dc_camp_map)
+	var edge_2_compiled := c_camp_ok.duplicate(true)
+	var e2_hidden: Array = (edge_2_compiled.get("hidden_items", []) as Array).duplicate(true)
+	e2_hidden.append({"x": 20, "y": 2, "item": "Potion", "note": "2 tiles from north edge"})
+	edge_2_compiled["hidden_items"] = e2_hidden
+	var m_edge_2 := CaricatureCheck.measure(edge_2_compiled, dc_camp_area)
+	if not (m_edge_2["failed_rules"] as Array).has("P12") or int(m_edge_2.get("edge_violations", 0)) < 1:
+		_cleanup()
+		push_error("caricature_check_test: expected item 2 tiles from map edge to fail P12, got %s" % str(m_edge_2))
+		return false
+
+	var edge_bad_ball := dc_camp_map.duplicate(true)
+	var eb_rows: Array = edge_bad_ball["rows"]
+	var row4: String = str(eb_rows[4])
+	eb_rows[4] = row4.substr(0, 20) + "!" + row4.substr(21)
+	edge_bad_ball["rows"] = eb_rows
+	var c_edge_ball := CaricatureMap.compile(dc_camp_area, edge_bad_ball)
+	if not bool(c_edge_ball.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: edge_bad_ball compile failed: %s" % str(c_edge_ball.get("errors", [])))
+		return false
+	var m_edge_ball := CaricatureCheck.measure(c_edge_ball, dc_camp_area)
+	if not (m_edge_ball["failed_rules"] as Array).has("P12"):
+		_cleanup()
+		push_error("caricature_check_test: expected item ball 4 tiles from map edge to fail P12, got %s" % str(m_edge_ball))
+		return false
+
+	# Item 63a falsifier: check_route_ground R1 (density, sign_share > 1/3, item_share > 1/2), R2 (>13% open), R3 (>5 repeats)
+	var rg_area := Neighbourhoods.area("route:washington-dc:monument-grounds#1")
+	var rg_rows: Array = []
+	for ry in range(64):
+		if ry < 3 or ry >= 61:
+			rg_rows.append("T".repeat(14) + "----" + "T".repeat(14))
+		else:
+			rg_rows.append("TTT" + ".".repeat(26) + "TTT")
+	var rg_map := {
+		"schema": 1,
+		"id": "route:washington-dc:monument-grounds#1",
+		"lamp": null,
+		"rows": rg_rows,
+		"objects": [],
+		"signs": [{"at": [15, 4], "text": "North end sign"}, {"at": [15, 59], "text": "South end sign"}],
+		"hidden_items": [{"at": [12, 20], "item": "Potion", "note": "x"}, {"at": [16, 30], "item": "Repel", "note": "y"}],
+		"openings": [{"side": "N", "at": 14, "width": 4}, {"side": "S", "at": 14, "width": 4}],
+	}
+	var c_rg := CaricatureMap.compile(rg_area, rg_map)
+	if not bool(c_rg.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: rg_map compile failed: %s" % str(c_rg.get("errors", [])))
+		return false
+	var m_rg := CaricatureCheck.measure(c_rg, rg_area)
+	if (m_rg["failed_rules"] as Array).has("P12"):
+		_cleanup()
+		push_error("caricature_check_test: signs within 5 tiles of N/S openings should pass P12, got %s" % str(m_rg))
+		return false
+	var res_rg := CaricatureCheck.check_route_ground(c_rg, rg_area)
+	if bool(res_rg.get("ok", true)) or not (res_rg["failed_rules"] as Array).has("R1") or not (res_rg["failed_rules"] as Array).has("R2"):
+		_cleanup()
+		push_error("caricature_check_test: expected open sparse route to fail R1 and R2, got %s" % str(res_rg))
 		return false
 
 	_cleanup()

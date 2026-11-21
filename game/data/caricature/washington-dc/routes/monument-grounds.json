@@ -2,187 +2,159 @@
   "schema": 1,
   "id": "route:washington-dc:monument-grounds#1",
   "rows": [
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTT-====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTT..........----..........TTTT",
-    "TTTT..........----..........TTTT",
-    "TTTT.........-----..........TTTT",
-    "TTTT.........-----..........TTTT",
-    "TTTT,,,,,,..------..........TTTT",
-    "TTTT,,,,,,..------..........TTTT",
-    "TTTT,,,,,,,-------.......,..TTTT",
-    "TTTT,,,,,,,----.-.......,,,.TTTT",
-    "TTTT,,,,,,-----........,,,,,TTTT",
-    "TTTT,,,,,,----........,,,,,,TTTT",
-    "TTTT,,,,,-----......,,,,,,,,TTTT",
-    "TTTT,,,,,----....----,,,,,,,TTTT",
-    "TTTT,,,,,----......--,,,,,,,TTTT",
-    "TTTT.,,,----.......--,,,,,,,TTTT",
-    "TTTT...,----.......---,,,,,,TTTT",
-    "TTTTTTT.---.T.......---,,,,,TTTT",
-    "TTTTTT--------------------,,TTTT",
-    "TTTTTT^^....^^ssss^^....^^,,TTTT",
-    "TTTTTT^^vvvv^^ssss^^vvvv^^,.TTTT",
-    "TTTTTT--------------------..TTTT",
-    "TTTT....---...........--....TTTT",
-    "TTTT,,,.---...........--.,..TTTT",
-    "TTTT,,,,---...........--,,,.TTTT",
-    "TTTT,,,,---.....#####.--,,,,TTTT",
-    "TTTT,,,,---....#######--,,,,TTTT",
-    "TTTT,,,,---...#########-,,,,TTTT",
-    "TTTT,,,,---..###########,,,,TTTT",
-    "TTTT,,,,---..###########,,,,TTTT",
-    "TTTT,,,,---..###########,,,,TTTT",
-    "TTTT,,,,---..###########,,,,TTTT",
-    "TTTT,,,,---..#*********#,,,,TTTT",
-    "TTTT,,,,---...*********-,,,,TTTT",
-    "TTTT,,,,---....#######--,,,,TTTT",
-    "TTTT,,,,---....ccccccc--,,,,TTTT",
-    "TTTT,,,,---...........--,,,,TTTT",
-    "TTTT,,,,---...........--,,,,TTTT",
-    "TTTT,,,,---...........--,,,.TTTT",
-    "TTTT,,TTTTTTTT........--,,,TTTTT",
-    "TTTT..T,,,,,,T........--TTTTTTTT",
-    "TTTT..T,,,,,,T..,,,,.---TTTTTTTT",
-    "TTTT..T,,,,,,T,,,,,,.T-.TTTTTTTT",
-    "TTTT..T,,!,,,k-,,,,,.--,,TTTTTTT",
-    "TTTT..T,,,,,,T,,,,,,---,,,..TTTT",
-    "TTTT..T,,,,,,T,,,,,---,,,,,,TTTT",
-    "TTTT..T,,,,,,T,,,,,--,,,,,,,TTTT",
-    "TTTT,,TTTTTTTT,,,,,--,,,,,,,TTTT",
-    "TTTT,,,,,-----,,,,---,,,,,,,TTTT",
-    "TTTT,,,,,,----,,,---,,,,,,,,TTTT",
-    "TTTT,,,,,,----.,,--..,,,,,,,TTTT",
-    "TTTT,,,,,,,----..--..,,,,,,,TTTT",
-    "TTTT,,,,,,,----.---..,,,,,,,TTTT",
-    "TTTT,,,,,,,.------...,,,,,,,TTTT",
-    "TTTT.,,,,,,.------...,,,,,,.TTTT",
-    "TTTT...,,,,.------...,,,,,..TTTT",
-    "TTTT....,,,..-----....,,....TTTT",
-    "TTTT.........-----..........TTTT",
-    "TTTT.........-----..........TTTT",
-    "TTTT..........----..........TTTT",
+    "TTTTTTTTTTTTTT----........TTTTTT",
+    "TTTTTT...,,..T----.*.,....TTTTTT",
+    "TTTTTT.*,,,,.T----.,,,,,..TTTTTT",
+    "TTTTTT..,,,,.-----.,,T,,,.TTTTTT",
+    "TTTTTT.,,T,,.-----,,,,,,,,TTTTTT",
+    "TTTTTT.,,,,,.----T,,,,,,,,TTTTTT",
+    "TTTTTT.,!,,,.-TTTT,,,,,,,,TTTTTT",
+    "TTTTTT.,,,,,.-TTTT,,,,,,,,TTTTTT",
+    "TTTTTT.,,,,,,-TTTT,^^^s^^,TTTTTT",
+    "TTTTTT.,,,,,,-TTTT,^^^s^^,TTTTTT",
+    "TTTTTT.vvvvv,-TTTT,,,....,TTTTTT",
+    "TTTTTT.,,,,,,-TTTT,,,....,TTTTTT",
+    "TTTTTT.,,,,,,-TTTT,,,....,TTTTTT",
+    "TTTTTT.,,,,,,-TTTT,,,....,TTTTTT",
+    "TTTTTT..,,,,.-TTTT.,,---*.TTTTTT",
+    "TTTTTT..,,,*.-TTTT.,,,,,..TTTTTT",
+    "TTTTTT...,,..-TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTT---TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTT---TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTT---TTTT#########TTTTT",
+    "TTTTTTTTTTT-------#########TTTTT",
+    "TTTTTTTTTTTT------#########TTTTT",
+    "TTTTTTTTTTTT------##.....##TTTTT",
+    "TTTTTT..,,,.....TT##..*..##TTTTT",
+    "TTTTTT.*,,,,,,,.TT##.....##TTTTT",
+    "TTTTTT.,,,,,,,,,TT##...*.##TTTTT",
+    "TTTTTT.,,F,,,,,,TT#########TTTTT",
+    "TTTTTT.,,,,,,,,,TT#########TTTTT",
+    "TTTTTT.,,,,,,,,,TT#########TTTTT",
+    "TTTTTT.,,,,,,,,,TT---TTTTTTTTTTT",
+    "TTTTTT,,,,,,,,,,TT---TTTTTTTTTTT",
+    "TTTTTT,^^^^s^^^,TT---TTTTTTTTTTT",
+    "TTTTTT,^^^^s^^^,TT---TTTTTTTTTTT",
+    "TTTTTT,....,,,,,TT---TTTTTTTTTTT",
+    "TTTTTT,....,,,,,TT---TTTTTTTTTTT",
+    "TTTTTT.....,,,,,TT---TTTTTTTTTTT",
+    "TTTTTT.....,,,,.TT---TTTTTTTTTTT",
+    "TTTTTT..---...*.TT---TTTTTTTTTTT",
+    "TTTTTT..........TT---TTTTTTTTTTT",
+    "TTTTTTTTTTTTTT-------TTTTTTTTTTT",
+    "TTTTTTTTTTTTTT-------TTTTTTTTTTT",
+    "TTTTTTTTTTTTTT------TTTTTTTTTTTT",
+    "TTTTTT........----T...,...TTTTTT",
+    "TTTTTT.*,,,,,,----T.*,,,,.TTTTTT",
+    "TTTTTT,,,,,,,,----T.,,,,,.TTTTTT",
+    "TTTTTT,,,T,,,T----T.,,,!,,TTTTTT",
+    "TTTTTT,,,,,,,,----T,vvvvv,TTTTTT",
+    "TTTTTT,,,,,,,,----T.,,,,k,TTTTTT",
+    "TTTTTT.,,,,,*,----T.,,,,*.TTTTTT",
+    "TTTTTT........----T..,,,..TTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====-TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
   ],
   "objects": [
     {
-      "kind": "house_s",
+      "stamp": "house_s_b",
       "at": [
-        17,
-        10
-      ],
-      "fate": "standing"
-    },
-    {
-      "stamp": "decal_beams",
-      "at": [
-        4,
-        4
+        21,
+        17
       ]
     },
     {
-      "stamp": "decal_stump",
-      "at": [
-        4,
-        23
-      ]
-    },
-    {
-      "stamp": "decal_sapling",
-      "at": [
-        25,
-        22
-      ]
-    },
-    {
-      "stamp": "decal_stump",
-      "at": [
-        11,
-        26
-      ]
-    },
-    {
-      "stamp": "decal_tufts",
-      "at": [
-        12,
-        16
-      ]
-    },
-    {
-      "stamp": "decal_bramble",
-      "at": [
-        14,
-        12
-      ]
-    },
-    {
-      "stamp": "decal_bramble",
-      "at": [
-        23,
-        8
-      ]
-    },
-    {
-      "stamp": "decal_sapling",
-      "at": [
-        17,
-        18
-      ]
-    },
-    {
-      "stamp": "decal_wall_corner",
+      "stamp": "house_s_a_door2",
       "at": [
         7,
-        4
-      ]
-    },
-    {
-      "stamp": "decal_rubble_weeds",
-      "at": [
-        22,
-        58
-      ]
-    },
-    {
-      "stamp": "decal_sapling",
-      "at": [
-        5,
-        58
-      ]
-    },
-    {
-      "stamp": "decal_stump",
-      "at": [
-        10,
-        7
-      ]
-    },
-    {
-      "stamp": "decal_tufts",
-      "at": [
-        13,
-        39
-      ]
-    },
-    {
-      "stamp": "decal_tufts",
-      "at": [
-        23,
-        43
-      ]
-    },
-    {
-      "stamp": "decal_bush",
-      "at": [
-        14,
-        22
+        40
       ]
     }
   ],
-  "lamp": null,
+  "fixtures": [
+    {
+      "kind": "standin_bench",
+      "at": [
+        21,
+        34
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        19,
+        27
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        25,
+        27
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        13,
+        14
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        17,
+        49
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "mg_scout_eli",
+      "name": "Eli",
+      "at": [
+        15,
+        28
+      ],
+      "facing": "E",
+      "sprite": "hiker",
+      "role": "talk",
+      "lines": [
+        "Sylvan Theater's stone stage still echoes if you clap from the lawn.",
+        "Tidal Basin's cherry trees start right past the southern elms."
+      ]
+    }
+  ],
+  "street_pokemon": [
+    {
+      "dex": 406,
+      "at": [
+        12,
+        22
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 396,
+      "at": [
+        19,
+        42
+      ],
+      "zone": "parkland"
+    }
+  ],
   "signs": [
     {
       "at": [
@@ -200,12 +172,31 @@
     },
     {
       "at": [
-        17,
+        19,
         30
       ],
       "text": "Sylvan Theater"
     }
   ],
+  "hidden_items": [
+    {
+      "at": [
+        22,
+        11
+      ],
+      "item": "Super Potion",
+      "note": "Beneath a mossy park bench north of the stage."
+    },
+    {
+      "at": [
+        9,
+        53
+      ],
+      "item": "Great Ball",
+      "note": "Tucked beside an elm root near the south gate."
+    }
+  ],
+  "lamp": null,
   "openings": [
     {
       "side": "N",

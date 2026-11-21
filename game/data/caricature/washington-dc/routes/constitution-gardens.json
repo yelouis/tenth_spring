@@ -6,30 +6,30 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTT............................,,,,,,,,,,,,,,................................................TTT",
-    "TTT...............----------------------,,,,,,...............................................TTT",
-    "TTT............,,,^^....^^ssss^^....^^^^----------------------------------....,,,............TTT",
-    "TTT...........,,,,^^vvvv^^ssss^^vvvv^^^^------------------------------------.,,,,,...........TTT",
-    "TTT........,,,,,,-----------------------.......BBB.......................-----,,,,,,,,,......TTT",
-    "TTT......,,,,,,------........T.................BBB.................T.......-----,,,,,,,......TTT",
-    "TTT.....,,,,,------,,.**................:::::::BBB:::::::.................**,------,,,,......TTT",
-    "TTT......,,------,,,,,**,,,,,.......:::::~~~~~~BBB~~~~~~:::::.....,,,,.,,.**,,,------,,......TTT",
-    "TTT......------,,,,,,,,,,,,,,,...:::~~~~~~~~~~~BBB~~~~~~~~~~~:::..,,,,,,,,.,,,,,,------......TTT",
-    "TTT....------,,,,,,,,,,,,,,,,,,:::~~~~~~~~~~~##BBB##~~~~~~~~~~~:::,,,,,,,,,.,,,,,.,------....TTT",
-    "----------........,,,..,,,,,,,::~~~~~~~~~~~###*BBB*###~~~~~~~~~~~::,,,,,,,,..,,,.....-----------",
-    "----------.............,,,,,,,:~~~~~~~~~~~~###*****###~~~~~~~~~~~~:,,,,,,,,,..........----------",
-    "-----------............,,,,,,::~~~~~~~~~~~~###*****###~~~~~~~~~~~~::,,,,,,,..........-----------",
-    "--------------..,,,....,,,,,,,:~~~~~~~~~~~~~~#######~~~~~~~~~~~~~~:,,,,-,,.....,,,--------------",
-    "TTT.......-----,,,,,...,,,,,,.::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:TTTTTkTTTTT.,,,-----.......TTT",
-    "TTT.......,,,-----,,,...,,,,...:::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:::T,,,,,,,,,T,-----,,,.......TTT",
-    "TTT.......,,,,-----,,,...,,,.....:::~~~~~~~~~~~~~~~~~~~~~~~~~:::..T,,,,,,,,,T-----,,,........TTT",
-    "TTT.......,,,,,,,-----,.............:::::~~~~~~~~~~~~~~~:::::.....T,,,,,,,,,T--,,,,,,........TTT",
-    "TTT.......,,,,,,,,----**.....T..........:::::::::::::::::.........T,,,,!,,,,T-,,,,,,,,.......TTT",
-    "TTT.......,,,,,,,,,,,-**--........................................T,,,,,,,,,T,,,,,,,,,.......TTT",
-    "TTT........,,,,,,,,,,.--------------------------------------------T,,,,,,,,,T.,,,,,,,,.......TTT",
-    "TTT..............,,,.....-----------------------------------------TTTTTTTTTTT.....,,,........TTT",
-    "TTT................................................,,,,,,,,,,,,,,,,..........................TTT",
-    "TTT................................................,,,,,,,,,,,,,,,,..........................TTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTT..............------------------!--------------.----------------------.....,,,,,,...TTTTTT",
+    "TTTTTT.*.,,,,,,.....---------------------------------------#----------------.*.,....,,,,..TTTTTT",
+    "TTTTTT..,,,,,,,,,,,,--.TTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTT-.-.,,,....,,,,,.TTTTTT",
+    "TTTTTT.,,F,!,T,,,T,,--.TTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTT-.-..,,....,,,,,.TTTTTT",
+    "TTTTTT.,,,,,,,,,,,,,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---...,....,,,,..TTTTTT",
+    "TTTTTT..,,,,,,,,,,*,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---....,---,,,.*.TTTTTT",
+    "TTTTTT...,,,,,,,,,,.---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---......,,,.....TTTTTT",
+    "TTTT-TTTTTTTTTTTTTTT---TTT~~~~~~~~~~~~~~~~............~~~~~~~~~~~~~~~~TTT---TTTTTTTTTTTTTTT-TTTT",
+    "=====---------------------~~~~~~###~~~~~~~.*.##.###...~~~~~~~###~~~~~~---------------------=====",
+    "=====---------------------BBBBBB###BBBBBBB...##.###...BBBBBBB##-BBBBBB---------------------=====",
+    "=====---------------------BBBBBB###BBBBBBB...######...BBBBBBB-##BBBBBB---------------------=====",
+    "=====---------------------~~~~~~###~~~~~~~...######.*.~~~~~~~###~~~~~~---------------------=====",
+    "TTTTTTTTTTTTTTTTTTTT---TTT~~~~~~~~~~~~~~~~............~~~~~~~~~~~~~~~~TTT---TTTTTTTTTTTTTTTTTTTT",
+    "TTTTTT..............---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---.....,,,......TTTTTT",
+    "TTTTTT.*,,,,....,,,,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---.*,,,,,,,,,...TTTTTT",
+    "TTTTTT,,,,,,....,,,,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---.,,,,,,,,,,,,.TTTTTT",
+    "TTTTTT,,,,,,....,,,,---TTTTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT---,,T,,,T,,,F,,,TTTTTT",
+    "TTTTTT,,,,,,---,,,,,--.TTTTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT-.-.,,,,,,,,,!,,,TTTTTT",
+    "TTTTTT..,,,,,,,,,,*.--.---------------------#-------------#------.--------.-..,,,,,,,,,,*.TTTTTT",
+    "TTTTTT..............-------------------------------#------.-----------------....,,,,,.....TTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -37,147 +37,144 @@
   ],
   "objects": [
     {
-      "stamp": "decal_tufts",
+      "stamp": "tree_cherry",
       "at": [
-        58,
-        4
-      ]
-    },
-    {
-      "stamp": "decal_stump",
-      "at": [
-        91,
-        5
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        59,
-        10
-      ]
-    },
-    {
-      "stamp": "decal_bramble",
-      "at": [
-        10,
-        14
-      ]
-    },
-    {
-      "stamp": "decal_bush",
-      "at": [
-        12,
-        15
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        26,
-        10
-      ]
-    },
-    {
-      "stamp": "decal_bramble",
-      "at": [
-        62,
+        22,
         8
       ]
     },
     {
-      "stamp": "decal_bush",
+      "stamp": "tree_cherry",
       "at": [
-        89,
-        18
+        47,
+        14
       ]
     },
     {
-      "stamp": "decal_tufts",
+      "stamp": "tree_cherry",
       "at": [
-        18,
-        5
+        74,
+        8
       ]
     },
     {
-      "stamp": "decal_bush",
+      "stamp": "tree_cherry",
       "at": [
-        17,
-        16
+        22,
+        23
       ]
     },
     {
-      "stamp": "decal_stones",
+      "stamp": "tree_cherry",
       "at": [
-        84,
+        74,
+        23
+      ]
+    },
+    {
+      "stamp": "house_s_b",
+      "at": [
+        12,
+        19
+      ]
+    },
+    {
+      "stamp": "house_s_a_door2",
+      "at": [
+        80,
+        7
+      ]
+    }
+  ],
+  "fixtures": [
+    {
+      "kind": "em_rowboat",
+      "at": [
+        36,
+        19
+      ],
+      "solid": false
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        28,
         7
       ]
     },
     {
-      "stamp": "decal_bramble",
+      "kind": "standin_bench",
       "at": [
-        59,
-        5
+        64,
+        7
       ]
     },
     {
-      "stamp": "decal_creeper",
+      "kind": "standin_bench",
       "at": [
-        50,
-        26
+        36,
+        25
       ]
     },
     {
-      "stamp": "decal_sapling",
+      "kind": "standin_bench",
       "at": [
-        66,
-        5
-      ]
-    },
-    {
-      "stamp": "decal_beams",
-      "at": [
-        20,
-        18
-      ]
-    },
-    {
-      "stamp": "decal_weeds",
-      "at": [
-        26,
-        22
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        19,
-        27
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        25,
-        9
-      ]
-    },
-    {
-      "stamp": "decal_tufts",
-      "at": [
-        74,
-        24
-      ]
-    },
-    {
-      "stamp": "decal_rubble",
-      "at": [
-        28,
-        26
+        58,
+        25
       ]
     }
   ],
-  "lamp": null,
+  "people": [
+    {
+      "id": "cg_birdwatcher_lin",
+      "name": "Lin",
+      "at": [
+        49,
+        16
+      ],
+      "facing": "S",
+      "sprite": "elder_woman",
+      "role": "talk",
+      "lines": [
+        "No one hurries through Constitution Gardens \u2014 listen to the ducks on the pond.",
+        "Walk east for the Washington Monument, or west to the Reflecting Pool."
+      ]
+    }
+  ],
+  "street_pokemon": [
+    {
+      "dex": 54,
+      "at": [
+        45,
+        16
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 406,
+      "at": [
+        16,
+        15
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 396,
+      "at": [
+        78,
+        16
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 60,
+      "at": [
+        56,
+        24
+      ],
+      "zone": "parkland"
+    }
+  ],
   "signs": [
     {
       "at": [
@@ -196,11 +193,38 @@
     {
       "at": [
         48,
-        8
+        7
       ],
       "text": "Constitution Gardens Pond"
     }
   ],
+  "hidden_items": [
+    {
+      "at": [
+        46,
+        17
+      ],
+      "item": "Fresh Water",
+      "note": "Chilled canteen resting on the willow island bench."
+    },
+    {
+      "at": [
+        17,
+        25
+      ],
+      "item": "Super Potion",
+      "note": "Beneath a flowering hawthorn along the south bank."
+    },
+    {
+      "at": [
+        78,
+        24
+      ],
+      "item": "Great Ball",
+      "note": "Tucked beside a cedar footbridge timber."
+    }
+  ],
+  "lamp": null,
   "openings": [
     {
       "side": "E",

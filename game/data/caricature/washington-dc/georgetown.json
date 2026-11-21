@@ -16,125 +16,125 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTT.......TT,,,,,,,,,,,,,.TT....,,,,,,,,,,,,TT.........,,,,,TT,,,,,,,,,,,,,,TT.........,,,,,TT,,...............TTTTTTTTTT",
-    "TTTTTTTTTT.....!.TT,,,,,,,,,,,,,,TT...,,,,,,,,,,,,,TT.......!,,,,,,TT,,,,,,,,,,,,,,TT....,,,,,,,,,,TT,,,!,,,....TT....TTTTTTTTTT",
-    "TTTTTTTTTT........,,,,,,,,,,,,,,,......,,,,,,,,,,,,,...........,,,,,,,,,,,,,,,,,,,,......,,,,,,,,,,,,,,,,,,,....TT....TTTTTTTTTT",
-    "TTTTTTTTTT....TTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTTT",
-    "TTTTTTTTTT....TTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTTT",
-    "TTTTTTT.......TTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTTT",
-    "TTTTTTT.......TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTTT",
-    "TTTTTTT..,....TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTT========================================",
-    "TTTTTTT..,,...TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
-    "TTTTTTT.,,,...TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
-    "TTTTTTT.,,,...TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT=======--===============================",
-    "TTTTTTT.,,,,..TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-.............T........TTTTTTTTTT",
-    "TTTTTTT.,,,TT.TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-.........*.T.T....,,..TTTTTTTTTT",
-    "TTTTTTT,,,,TT.TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,,.TTTTTTTTTT",
-    "TTTTTTT.,,,,..TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.,,,,..TTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--.....T.......T---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,TT,TTTTTTTTTT",
-    "TTTTTTT.,,,,..TTTT-----T.........TTTTTT...*.....---T--------------.FF...*..FF..T-----------------TTTTTTTTTTTTT...,,TT,TTTTTTTTTT",
-    "TTTTTTT.,,,...TTTTTTT-###############TFFF.......------------------.............----------------------------TTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.,,,...TTT.....**###########***..........-----------------------------------------------------------TTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.,,,...TTT.....**###########**....T......---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.,,,...TTT.....######....#####.T.........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.!,,...TTT.....######....#####...........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.,,,...TTT---------------------------....---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT..,,...^^^^^^^^^^^^^ssss^^^^^^^^^^^^SSS^^---TTTTTTTTTTTTT--.F...........F---TTTTTTTTTTTT--TTTTTTTTTTTTT...,,,!,TTTTTTTTTT",
-    "TTTTTTT.......^^^^^^^^^^^^^ssss^^^^^^^^^^^^SSS^^---TTTTTTTTTTTTT--.----------------TTTTTTTTTTTT------------TTT...,,,,,TTTTTTTTTT",
-    "TTTTTTT.o.....TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT----FF------TTT...,,,,.TTTTTTTTTT",
-    "TTTTTTT.......TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT------------TTT....,,..TTTTTTTTTT",
-    "TTTTTTT.......TTTTTTTTTTTTT----TTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT------------TTT........TTTTTTTTTT",
-    "TTTTTTT..,.TT.TTTTTTTTTTTTT----TTTTTTTTTT-----TT------------------TTTTTTTT--TTTT-----------------TTTTTTTTTT--T........TTTTTTTTTT",
-    "TTTTTTT.,,.TT.TTTTTTTT.....----TTTTTTTTTT-----TT-------------------------------------------------------------T.....TT.TTTTTTTTTT",
-    "TTTTTTT.,,,...TTTTTTTT..*..----TTTTTTTTTT-----TT-------------------------------------------------------------T.....TT.TTTTTTTTTT",
-    "TTTTTTT.,,,...TTTTTTTT.....----TTTTTTTTTT-----TT------------------T------------------------------TTTTTTTTTT--T....,,..TTTTTTTTTT",
-    "TTTTTTT,,,,................--............--.............--................--.................--............--....,,,,.TTTTTTTTTT",
-    "TTTTTTT,,,,................--T...........--.............--................--.................--............--....,,,,,TTTTTTTTTT",
-    "TTTTTTT,,,,...F............--..F.........--.............--................F-.................-F............--...,,,,,,TTTTTTTTTT",
-    "TTTTTTT,,,,...F............--..F.........--.............--................--.................--............--...,,,,,,TTTTTTTTTT",
-    "TTTTTTT,,,,................--............--.............--................--.................--............--...,,,,,,TTTTTTTTTT",
-    "TTTTTTT,,,,...##############################################################################################-#----,,,,TTTTTTTTTT",
-    "TTTTTTT,,,,...======##=========##==========##==========##=##############====##=========##==========##=========----,,,,TTTTTTTTTT",
-    "TTTTTTT,,,----======##=========##==========##==========##=####..*..#####====##=========##==========##=========----,,,.TTTTTTTTTT",
-    "TTTTTTT,,,----======##=========##==========##==========##=####..*..#####====##=========##==========##=========----....TTTTTTTTTT",
-    "TTTTTTT,,,----#==################==######################.##############.==##############################--###----....TTTTTTTTTT",
-    "TTTTTTT,,,----.==....-F....F.....==...FF........FF..--...................==...FF......--..FF......--.FF..--...----....TTTTTTTTTT",
-    "TTTTTTT,,,----.==....--..........==.................--...................==...........--..........--.....--...----....TTTTTTTTTT",
-    "TTTTTTT.,,----.==....--..........==.................--...................==...........--..........--.....--...----....TTTTTTTTTT",
-    "TTTTTTT.,,----.==....--..........==.................--...................==...........--..........--.....--...----.TT.TTTTTTTTTT",
-    "TTTTTTT..,----.==....--..........==.................--...................==...........--..........--.....--...----.TT.TTTTTTTTTT",
-    "TTTTTTT...----.==....--..........==.................--...................==...........--..........--.....--...----,,,,TTTTTTTTTT",
-    "TTTTTTT...-----==-------------------------------------------------------------------------------------------------,,,,TTTTTTTTTT",
-    "TTTTTTT...-----==-------------------------------------------------------------------------------------------------,,,,TTTTTTTTTT",
-    "TTTTTTT...-----==--------F*F-#---==----------F*---------*F----*F-#--*F---==-----*F--------*F---#----*F------------,,,,TTTTTTTTTT",
-    "TTTTTTT.!.-----==------------#---==----^^--^^---------------------#------==---------------------#-----------------,,,,TTTTTTTTTT",
-    "TTTTTTT...----~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~----,,,,TTTTTTTTTT",
-    "TTTTTTT..,----~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,------------------##---------^^--^^-----------------------#*-----------*-----------#--------------------,,,,TTTTTTTTTT",
-    "TTTTTTT.,,--------------------------------------------------------------------------------------------------------,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----TTT...............T==TTTTTT############TT..TTTTTTTTTTTT..TT==TTTTTTT..TTTT................T--TTT----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----TTT.FF.*.......FF.T==TTTTTTTTTT#######................TTTTT==TTT.....TTTTT................T--TTT----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----TTT...-----.......T==TTTTTTTTTT#######.FF......FF.....TTTTT==TTT.....TTTTT........FF....FFT--TTT----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----TTT...-----.......T==TTTTTTTTTT#######................TTTTT==TTT.....TTTTT................T--TTT----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----TTT...............T==TTTTTTTTTT#######....*...T.......TTTTT==-------------.......*........T--TTT----,TT,TTTTTTTTTT",
-    "TTTTTTT.,,----TTT...............T==TTTTTTTTTT#######..........######TTTTT==-------------.........T.....TT--TTT----,TT.TTTTTTTTTT",
-    "TTTTTTT.,,----TTTTTTTTTTTTTTTTTTT==TTTTTTTTTT#------..........######TTTTT==TTTTTTTTTTTTT..............*.T--TTT----,,,.TTTTTTTTTT",
-    "TTTTTTT.,,----TTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------..........#-----TTTTT==TTTTTTTTTTTTT--------........T--TTT----.,,.TTTTTTTTTT",
-    "TTTTTTT.,,----TTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------........T--TTT----.,,.TTTTTTTTTT",
-    "TTTTTTT.,,----.==................===..........------...........-----.....===............--------.........--...----....TTTTTTTTTT",
-    "TTTTTTT..,----.==................===..........------...........-----.....===............--------.........--...----....TTTTTTTTTT",
-    "TTTTTTT..,----.==................===......--------------------------------==............--------.........--...----,,..TTTTTTTTTT",
-    "TTTTTTT..,----.==................===......--------------------------------==............--------..............----,,!.TTTTTTTTTT",
-    "TTTTTTT..,----.==.##################......--------------------------------==........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTT..,----.==.##################...................---...............===........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################......T............---............T..===........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################...................---...............===........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################...................---...............===........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTT,!,----.==.##################........,,,........---...............===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT,,,----.==.##################......,,,,,,,,.....---.....,,,,,,....===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT,,,----.==.##################.....,,,,,,,,,,,,,.---....,,,,,,,,...===........##########################----,TT,TTTTTTTTTT",
-    "TTTTTTT,,,----.==.##################....,,,,,,,,,,,,,,,---..,,,,,,,,,,,..===........##########################----,TT,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################....,,,,,,,,,,,,,,,---.,,,,,,,,,,,,*.===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################.....,,,,,,,,,,,,,.---..,,,,,,,,,,,..===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################......,,,,,,!,.....---..,,,,,,,,,,,..===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################.......,,,,,.......---..,,,,,,,,,,,..===........##########################----,,r,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################........,,,........---..,,,,,,,,,,,..===........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################...................---...,,,!,,,,,...===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################...................---....,,,,,,,,...===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT.,,----.==.##################..............T....---....T,,,,,,....===........##########################----,,,,TTTTTTTTTT",
-    "TTTTTTT..,----.==.##################...................---...............===........##########################----,,,.TTTTTTTTTT",
-    "TTTTTTTTTT----.==................===...................---...............===..................................----,,,.TTTTTTTTTT",
-    "TTTTTTTTTT----.---------------------------------------------------------------------------------------------..----,TT.TTTTTTTTTT",
-    "TTTTTTTTTT----.---------------------------------------------------------------------------------------------..----.TT.TTTTTTTTTT",
-    "TTTTTTTTTT----.---------------------------------------------------------------------------------------------..----....TTTTTTTTTT",
-    "TTTTTTTTTT----.---------------------------------------------------------------------------------------------..----....TTTTTTTTTT",
-    "TTTTTTTTTT----.==......,,,,,,....===..................,,,,,,,,,..........==========...........................----....TTTTTTTTTT",
-    "TTTTTTTTTT----.==......,,,,,,....===..................,,,,,,,,,...*......==========...........................----....TTTTTTTTTT",
-    "TTTTTTTTTT----.==......,,,,,,.*..===...................,,,,,,,...........==========...........................----....TTTTTTTTTT",
-    "TTT::::::::::::==::::::::::::::::::::::::::::::::::::::::::::::::::::::::::.=======...........................----....TTTTTTTTTT",
-    "TTT::::::::::::==::::::::::::::::::::::::::::::BB::::::::::::::::::::::::::.====================================================",
-    "TTT::::::::::::BB::::::::::::::::::::::::::::::BB::::::::::::::::::::::::::.====================================================",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.====================================================",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.====================================================",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======..........,..............,,........TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======...T....,,,,,..T........,,,,.......TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======..,,,,,,,,,,,,,........,,,,,,..T...TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======.,,,,,,,,vv,,,,,......,,,,,,,*.....TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======,,,,,,,,,,,,,,,,,,...,,,,,,,,,.....TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======,,,,,,,,,,,,,,,,,,..,,,,,,,,,,,....TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~.=======,,,,,,,,,,,,,,,,,.,,,,,,,,,,,,,....TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~######~~~~~~~~~~~~~~~~~~~~~~~~.=======.,,,,TT,,,,,,,,..,,,,,,,,,,,,,,,...TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~######~~~~~~~~~~~~~~~~~~~~~~~~.=======.....TT,,,,,,,...TT,,,,,,,,,,,,,...TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======........,,,,,....TT,k,,,,,,,,,,....TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======.........,,,.........!,TT,,,,......TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======....!..................TT,,,.......TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======...........TT......................TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======.....T.....TT......T...............TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======...................................TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======...................................TTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~.=======...................................TTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTT...,*,,,,,,T-----------*-----TTTTTT,,,,,,,,,,-------.---------TTTTFT.,,,,,*,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT----,,,,,,!,,,,----F-------------------,,,,,!,,,,-----------------------,,,,,,,,,,,,---*-TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT----,,,,,,,,,,,---TTTTTT.TTTTT---------,,,*,,,,,,-TTTTTTTTTFTT----------.,,,,,,,,,,,-*--#TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT....,,,,.TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.TTTTT*TTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTT========================================",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT=======--===============================",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-.............TTT---.TTTTT*TTTTTT",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-.........*.T.TTT---TTTTTTTTTTTTT",
+    "TTTTTTT..,,,.TTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTT.,,,,,TTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTT.,,,*,TTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--.....T.......T---TTTTTTTTTTTT--TTTTTTTTTTTTTT..,,,,..TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTTT-----T.........TTTTTT...*.....---T--------------.FF...*..FF..T-----------------TTTTTTTTTTTTTT..,,,,,.TTTTTTTTT",
+    "TTTTTTT.,,,,TTTTTTTTT-###############TFFF.......------------------.............----------------------------TTTT.,,,,*,.TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....**###########***..........-----------------------------------------------------------TTTT.,,,,,,.TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....**###########**....T......---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,TTTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....######....#####.T.........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....######....#####...........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
+    "TTTTTTTT-o-TTTTTT---------------------------....---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
+    "TTTTTTTTF--TTT^^^^^^^^^^^^^ssss^^^^^^^^^^^^SSS^^---TTTTTTTTTTTTT--.F...........F---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
+    "TTTTTTTT---TTT^^^^^^^^^^^^^ssss^^^^^^^^^^^^SSS^^---TTTTTTTTTTTTT--.----------------TTTTTTTTTTTT------------TTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT----FF------TTTTT---TTFTTTTTTTTTT",
+    "TTTTTTTT----TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT------------TTTTT-----TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT------------TTTTTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTTTTTTTTTTTT----TTTTTTTTTT-----TT------------------TTTTTTTT--TTTT-----------------TTTTTTTTTT--TTTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTTTTTTT.....----TTTTTTTTTT-----TT-------------------------------------------------------------TT.......TTTTTTTTTT",
+    "TTTTTTTTT---TTTTTTTTTT..*..----TTTTTTTTTT-----TT-------------------------------------------------------------TT.,,,,..TTTTTTTTTT",
+    "TTTTTTT,,,,,.TTTTTTTTT.....----TTTTTTTTTT-----TT------------------T------------------------------TTTTTTTTTT--TT.,,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.T.............--............--.............--................--.................--............--.T,T,,,,.TTTTTTTTTT",
+    "TTTTTTTT,,,,.T.............--T...........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.TF............--..F.........--.............--................F-.................-F............--.T,,,,,*.TTTTTTTTTT",
+    "TTTTTTT,,,,,*TF............--..F.........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.T.............--............--.............--................--.................--............--.TTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TT##############################################################################################-#TTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TT======##=========##==========##==========##=##############====##=========##==========##=========-------TTTTTTTTTTT",
+    "TTTTTTTTT-----======##=========##==========##==========##=####..*..#####====##=========##==========##=========-------TTTTTTTTTTT",
+    "TTTTTTT-------======##=========##==========##==========##=####..*..#####====##=========##==========##=========-------TTTTTTTTTTT",
+    "TTTTTTT---TTTT#==################==######################.##############.==##############################--###TT---TTTTTTTTTTTTT",
+    "TTTTTTT---TTTT.==....-F....F.....==...FF........FF..--...................==...FF......--..FF......--.FF..--...TT---TTTTTTTTTTTTT",
+    "TTTTTTT---TTTT.==....--..........==.................--...................==...........--..........--.....--...TT---FTTTTTTTTTTTT",
+    "TTTTTTT--FTTTT.==....--..........==.................--...................==...........--..........--.....--...TT---TTTTTTTTTTTTT",
+    "TTTTTTT---TTTT.==....--..........==.................--...................==...........--..........--.....--...TT.....,,.TTTTTTTT",
+    "TTTTTT......TT.==....--..........==.................--...................==...........--..........--.....--...TT..,,,,,,TTTTTTTT",
+    "TTTTTT.,,,..TT.==....--..........==.................--...................==...........--..........--.....--...TT.,,,,,,,TTTTTTTT",
+    "TTTTTT.,,,*.TT-==---------------------------------------------------------------------------------------------TT.,,,,,,,TTTTTTTT",
+    "TTTTTT,,,,,,TT-==---------------------------------------------------------------------------------------------TT.,,,,,,,TTTTTTTT",
+    "TTTTTT,,,,,,TT-==--------F*F-#---==----------F*---------*F----*F-#--*F---==-----*F--------*F---#----*F--------TT.,,,,,,TTTTTTTTT",
+    "TTTTTT,,,,,TTT-==------------#---==----^^--^^---------------------#------==---------------------#-------------TT,,,,,,,,TTTTTTTT",
+    "TTTTTT,,,,,,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT,,,,,,,,TTTTTTTT",
+    "TTTTTT.,,,!,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT.,,,,*,,TTTTTTTT",
+    "TTTTTT.,,,,.T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT..,,,,,,TTTTTTTT",
+    "TTTTTTT---TTTT--------------##---------^^--^^-----------------------#*-----------*-----------#----------------TT---TTTTTTTTTTTTT",
+    "TTTTTTT---TTTT------------------------------------------------------------------------------------------------TT---TTTTTTTTTTTTT",
+    "TTTTTTT-----TTTTT...............T==TTTTTT############TT..TTTTTTTTTTTT..TT==TTTTTTT..TTTT................T--TTTTT-----TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTT.FF.*.......FF.T==TTTTTTTTTT#######................TTTTT==TTT.....TTTTT................T--TTTTTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTT...-----.......T==TTTTTTTTTT#######.FF......FF.....TTTTT==TTT.....TTTTT........FF....FFT--TTTTTFT---TTTTTTTTTTT",
+    "TTTTTTTTT--FTTTTT...-----.......T==TTTTTTTTTT#######................TTTTT==TTT.....TTTTT................T--TTTTTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTT...............T==TTTTTTTTTT#######....*...T.......TTTTT==-------------.......*........T--TTTT........TTTTTTTTT",
+    "TTTTTTTTT---TTTTT...............T==TTTTTTTTTT#######..........######TTTTT==-------------.........T.....TT--TTTT...,,,,,TTTTTTTTT",
+    "TTTTTTT......TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTT#------..........######TTTTT==TTTTTTTTTTTTT..............*.T--TTTT.,,,,,,,TTTTTTTTT",
+    "TTTTTTT...,,.TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------..........#-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,*,TTTTTTTTT",
+    "TTTTTTT.,,,*,TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,,,TTTTTTTTT",
+    "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T.T,,,,,,TTTTTTTTT",
+    "TTTTTTTT,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T..,,,,,,TTTTTTTTT",
+    "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT----------------------------------------------------TTTTTTTTT-----T....,,,.TTTTTTTTT",
+    "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT-----------------------------------------*-----#----TTTTTFTTT-----T........TTTTTTTTT",
+    "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTT==TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT--TTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TT.==################==T.......,,,........--........,,,......==TTTTTTTTT#######################T--TTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTT==################==T.....,,,,,,.......--......,,,,,,.....==*TTTTTTTT#######################T--#TTT---TTTTTTTTTTT",
+    "TTTTTTT-----TTT==################==T....,*,,,,,,......--....,*,,TT,,,....==........T#######################T--TTTT---TTTTTTTTTTT",
+    "TTTTTTT----TTTT==################=----,,,,,,,,,,......-----,,,,,,,,,,,...==........T#######################T--TT-----TTTTTTTTTTT",
+    "TTTTTTT----TTTT==################=----,,,,,,,,,,..kT..-----,,,,,,,,,!,T..==........T#######################T--TT---TTTTTTTTTTTTT",
+    "TTTTTTTF---TTTT==################==T....,,,,,,,,......--....,,,,,,,,,....==........T#######################T--TT---TTFTTTTTTTTTT",
+    "TTTTTTT----TTT*==################==T....^^^^s^^^^.....--.......,,,,,.....==........T#######################T--TT---TTTTTTTTTTTTT",
+    "TTTTTT...,,..TT==################==T....^^^^s^^^^.....--......vvvvvv.....==........T#######################T--T...,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,.TT==################==T..................--.....,,,,........==---------#######################T--*...,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,,TT==################==T....,,,,,,,,,,,...--...T,,,,,,,,,....==---------#######################T--T..,,r,TTTTTTTTTTT",
+    "TTTTTT,,,,,,,TT==################==T..T,,,,,,,,,,,,,----...,,,,,,,,,,,,----..,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT,,,,,,TTT==################==*...,,!,,,,,,,*,,----...,,,,,,,,,,*,----..,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,,TF==################==T...,,,,,,,,,,,,,..--...,,,,,,,,,,T,..==.,,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT..,,,,.TT==################==T...,T,,,,,,,,,,,..--...,,,,,,,,,,,.T.==..,,,,,.T#######################T--T.,,!,,TTTTTTTTTTT",
+    "TTTTTT..,,*,.TT==----#------#-----=T....,,,,,,,,,,T...--....,,,,,,,,.....==..,,,,..T--#----.-----#-----#---T--F.,,,,,TTTTTTTTTTT",
+    "TTTTTT....,..TT==-------------.---=T.....,,,,.........--.....,,,,,.......==TTTTTTTTT-----.-----#-----*-----T--T..,,,*TTTTTTTTTTT",
+    "TTTTTTT----TTTT==TTTTTT--TTTTTTTT==T..................--......,,.........==TTTTTTTTTTTTTTT*T---TTTTTT#TTTTTT--T..,,,,TTTTTTTTTTT",
+    "TTTTTTT----TTTT==TTTTTT--TTTTTTTT==TTTTTTTTTTTTT.TTTTT--TTTTTTTTTTTTTTTTT==TTTTT---------------TTTTTTTTTTTTT--TT---TTTTTTTTTTTTT",
+    "TTTTTTT-------T-----------------------------------------TTTTT*T.........T==T#TTT-----------------------------------TTTTTTTTTTTTT",
+    "TTTTTTT-------T---------........------........-----------------.........---------TTTTT........---------------------TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT==TTTTTTT........T--TTT........TTTTTTTT---------.........---------TTTTT...*....TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT=======TT........T--TTT....,,,,TTTTTTTTTTTTTT--T.........T========TTTTT......#.TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT----===TT........T--TTT...,,,,,TTTTTTTTTTTTTT--T.........T========TTTTT.F......TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT----==TTT*.......T--TTT...,,,,*TT-----------------------.------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT----==---.-----------------------------------------------------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT----==-----------------------------------##--*-------------TTTT===TTT.TTTTTT*TTTTTTT.TTTTTTTTTFTT--.TTTTT*TTTTTTT",
+    "TTTTTTTTTTTTTTTTTT:==:--#--*-------F#--*----#-#-BB--*-~~~~~~~---#--*----#-:TTT=========#========#=========#==========#==========",
+    "TTTTTTTTTTTTTTTTTT:==:::::::~~~~~~::::~~~~::::::BB::::~~~~~~~::::~~~~~~~:::TTT=========#========#=========#==========#==========",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT###======#========#=========#==========#==========",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT=========#========#=========#==========#==========",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT===TTTT,TTTTT--TFTTTTTTT*TTTTT---.TTTTTTT.TTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--.,,,,.TTTT.,,,,---.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT.===T,,,,TTTTT--,,,,,,TTTT,,,,,---.TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT*===T,,,,TTTTT--,,vvT,TTTT,,!,,---,TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--,,,,,,TTTT,,*,,---,TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT###T.,T,,,.FF-------.....,,,,,---.TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~####~~~~~~~~~~~~~~~~~~~~~~~~TTT===------------^^S^^-------------.TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~####~~~~~~~~~~~~~~~~~~~~~~~~TTT===------------^^S^^-------------.TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===T...*.....--........T.TTTTT---.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T.TTTTTT..--.........kTTTTT---.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T.TTTTTT..--...*......TTTTT---*....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT.###T.TTTTTT----------------------...T.TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT*===T,,,,,,,----------------------.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T,,,,,,,,,,.TTTTTT,,,,,,,,,,,......TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===T,T,,,,,,,,.TTTTTT,,,,,------......TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
@@ -520,15 +520,64 @@
     {
       "stamp": "ruined_block_16x14_a",
       "at": [
-        18,
+        17,
         78
       ]
     },
     {
       "stamp": "ruined_block_23x14_a",
       "at": [
-        85,
+        84,
         78
+      ]
+    },
+    {
+      "stamp": "house_s_b",
+      "at": [
+        76,
+        82
+      ]
+    },
+    {
+      "stamp": "house_s_c",
+      "at": [
+        26,
+        98
+      ]
+    },
+    {
+      "stamp": "house_s_b_door2",
+      "at": [
+        39,
+        98
+      ]
+    },
+    {
+      "stamp": "house_m_c",
+      "at": [
+        64,
+        97
+      ]
+    },
+    {
+      "stamp": "house_s_c_door2",
+      "at": [
+        93,
+        109
+      ]
+    },
+    {
+      "stamp": "house_s_b",
+      "at": [
+        103,
+        110
+      ]
+    },
+    {
+      "stamp": "house_s_c",
+      "at": [
+        105,
+        118
       ]
     },
     {
@@ -1015,23 +1064,23 @@
     {
       "kind": "em_sailboat",
       "at": [
-        29,
-        111
+        34,
+        113
       ],
       "solid": false
     },
     {
-      "kind": "em_sailboat",
+      "kind": "em_rowboat",
       "at": [
-        57,
-        110
+        60,
+        112
       ],
       "solid": false
     },
     {
       "kind": "em_bollard",
       "at": [
-        46,
+        47,
         105
       ]
     },
@@ -1045,30 +1094,502 @@
     {
       "kind": "em_bollard",
       "at": [
-        14,
-        104
+        18,
+        103
       ]
     },
     {
       "kind": "em_bollard",
       "at": [
-        17,
-        104
+        21,
+        103
       ]
     },
     {
       "kind": "em_crate_stack",
       "at": [
-        43,
+        45,
         102
       ]
     },
     {
-      "kind": "em_wood_sign",
+      "kind": "em_crate_wood",
       "at": [
         20,
+        93
+      ]
+    },
+    {
+      "kind": "em_crate_green",
+      "at": [
+        21,
+        93
+      ]
+    },
+    {
+      "kind": "em_crate_stack",
+      "at": [
+        86,
+        92
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        56,
         102
       ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        92,
+        116
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        18,
+        101
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        77,
+        101
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        82,
+        114
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        103,
+        103
+      ]
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        105
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        105
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        105
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        106
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_pier_w",
+      "at": [
+        18,
+        106
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_pier_e",
+      "at": [
+        21,
+        106
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        107
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        108
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        108
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        108
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        109
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        109
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        109
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        110
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_pier_w",
+      "at": [
+        18,
+        110
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_pier_e",
+      "at": [
+        21,
+        110
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        111
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        112
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        112
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        112
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        113
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        113
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        113
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        114
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        114
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        114
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        115
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_pier_w",
+      "at": [
+        18,
+        115
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_pier_e",
+      "at": [
+        21,
+        115
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        116
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        117
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        117
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        117
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        118
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        118
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        118
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        119
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        119
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        119
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        120
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        120
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        120
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        121
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_pier_w",
+      "at": [
+        18,
+        121
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_pier_e",
+      "at": [
+        21,
+        121
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        122
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        123
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        123
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        123
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_deck",
+      "at": [
+        19,
+        124
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_v_rail_w",
+      "at": [
+        18,
+        124
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_v_rail_e",
+      "at": [
+        21,
+        124
+      ],
+      "solid": true
     }
   ],
   "people": [
@@ -1175,14 +1696,6 @@
       "zone": "retail"
     },
     {
-      "dex": 278,
-      "at": [
-        99,
-        16
-      ],
-      "zone": "waterfront"
-    },
-    {
       "dex": 519,
       "at": [
         26,
@@ -1223,10 +1736,18 @@
       "zone": "waterfront"
     },
     {
+      "dex": 278,
+      "at": [
+        20,
+        111
+      ],
+      "zone": "waterfront"
+    },
+    {
       "dex": 418,
       "at": [
-        96,
-        62
+        52,
+        102
       ],
       "zone": "waterfront"
     }
@@ -1500,17 +2021,17 @@
     },
     {
       "at": [
-        18,
-        104
+        22,
+        102
       ],
       "text": "Key Bridge"
     },
     {
       "at": [
-        50,
-        104
+        51,
+        102
       ],
-      "text": "Potomac Timber Pier \u2014 weathered timber pilings still hold the skiff moorings."
+      "text": "Potomac Timber Pier \u2014 weathered pilings still hold the flat skiff moorings."
     },
     {
       "at": [
@@ -1518,6 +2039,27 @@
         105
       ],
       "text": "Potomac Riverfront \u2014 trail east along the levee toward Kennedy Center."
+    },
+    {
+      "at": [
+        54,
+        86
+      ],
+      "text": "Old Mill Glade \u2014 stone kiln footings buried under river sedge."
+    },
+    {
+      "at": [
+        91,
+        116
+      ],
+      "text": "South Riverfront Park \u2014 watch for loose rocks along the bluff steps."
+    },
+    {
+      "at": [
+        49,
+        7
+      ],
+      "text": "North Woods Ridge \u2014 narrow track along the treeline above Healy Hall."
     }
   ],
   "hidden_items": [
@@ -1566,7 +2108,7 @@
         108,
         57
       ],
-      "text": "Fresh Water",
+      "item": "Fresh Water",
       "note": "Cooled canteen hung inside the shaded east bridge recess."
     },
     {
@@ -1587,31 +2129,23 @@
     },
     {
       "at": [
-        38,
-        8
+        94,
+        7
       ],
       "item": "Super Potion",
       "note": "Hidden in a hollow oak stump along the north treeline."
     },
     {
       "at": [
-        88,
-        8
-      ],
-      "item": "Great Ball",
-      "note": "Wedged between flagstones beside the north woods path."
-    },
-    {
-      "at": [
         10,
-        42
+        26
       ],
       "item": "Antidote",
       "note": "Under a slate cap along the west woods ravine."
     },
     {
       "at": [
-        40,
+        44,
         82
       ],
       "item": "Hyper Potion",
@@ -1619,19 +2153,27 @@
     },
     {
       "at": [
-        70,
-        94
-      ],
-      "item": "Revive",
-      "note": "Inside a loose brick pocket south of the canal road."
-    },
-    {
-      "at": [
         114,
-        54
+        58
       ],
       "item": "Ultra Ball",
       "note": "Under flat stones along the east bypass grass."
+    },
+    {
+      "at": [
+        95,
+        118
+      ],
+      "item": "Revive",
+      "note": "Inside a loose masonry pocket below the south park ridge."
+    },
+    {
+      "at": [
+        19,
+        116
+      ],
+      "item": "Pearl",
+      "note": "Caught against a concrete drainage grating out on Key Bridge."
     }
   ],
   "lamp": [

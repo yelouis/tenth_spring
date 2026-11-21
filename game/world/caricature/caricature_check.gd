@@ -34,6 +34,13 @@ const ROUTE_OPENINGS_COUNT: int = 2
 const PLAIN_GRASS_WINDOW: int = 12
 const ROUTE_ENDS_STEPS_MULT: float = 1.5
 const MAX_END_SIGN_STEPS: int = 6
+const EDGE_CLEAR_TILES: int = 5
+
+const MIN_THINGS_PER_150_ROUTE: float = 0.9
+const MAX_SIGN_SHARE_ROUTE: float = 1.0 / 3.0
+const MAX_ITEM_SHARE_ROUTE: float = 0.5
+const MAX_OPEN_GROUND_ROUTE: float = 0.13
+const MAX_REPEAT_8X8_ROUTE: int = 5
 
 const DIRS: Array[Vector2i] = [
 	Vector2i(0, -1),
@@ -82,6 +89,56 @@ static func _in_play_bounds(x: int, y: int, w: int, h: int, opening_mask: Packed
 	if _in_interior(x, y, w, h):
 		return true
 	return opening_mask[y * w + x] == 1
+
+static func _is_retired_block_stamp(sname: String) -> bool:
+	return (
+		sname.begins_with("standing_block_16x14_")
+		or sname.begins_with("standing_block_23x14_")
+		or sname == "ruined_block_16x14_b"
+		or sname == "ruined_block_23x14_b"
+	)
+
+static func _is_route_only_large_block(sname: String) -> bool:
+	return sname == "ruined_block_16x14_a" or sname == "ruined_block_23x14_a"
+
+static func _stamp_name_for_placed(po: Dictionary) -> String:
+	var sid := int(po.get("stamp_id", 0))
+	if sid > 0 and TileSynth2.STAMP_TABLE.has(sid):
+		return str((TileSynth2.STAMP_TABLE[sid] as Dictionary).get("id", ""))
+	return str(po.get("stamp_str", ""))
+
+static func _within_edge_clear_of_opening(x: int, y: int, w: int, h: int, openings: Array) -> bool:
+	for op_var in openings:
+		if not (op_var is Dictionary):
+			continue
+		var op: Dictionary = op_var
+		var side := str(op.get("side", ""))
+		var op_at := int(op.get("at", 0))
+		var op_w := int(op.get("width", 0))
+		if op_w <= 0:
+			continue
+		var dx := 9999
+		var dy := 9999
+		if side == "N":
+			dx = maxi(0, maxi(op_at - x, x - (op_at + op_w - 1)))
+			dy = y
+		elif side == "S":
+			dx = maxi(0, maxi(op_at - x, x - (op_at + op_w - 1)))
+			dy = (h - 1) - y
+		elif side == "W":
+			dx = x
+			dy = maxi(0, maxi(op_at - y, y - (op_at + op_w - 1)))
+		elif side == "E":
+			dx = (w - 1) - x
+			dy = maxi(0, maxi(op_at - y, y - (op_at + op_w - 1)))
+		if maxi(dx, dy) <= EDGE_CLEAR_TILES:
+			return true
+	return false
+
+static func _violates_edge_clear(x: int, y: int, w: int, h: int, openings: Array) -> bool:
+	if x >= EDGE_CLEAR_TILES and x < w - EDGE_CLEAR_TILES and y >= EDGE_CLEAR_TILES and y < h - EDGE_CLEAR_TILES:
+		return false
+	return not _within_edge_clear_of_opening(x, y, w, h, openings)
 
 static func _local_outer_of_opening(op: Dictionary, w: int, h: int) -> Array[Vector2i]:
 	if op.has("local_outer") and op["local_outer"] is Array:
@@ -563,6 +620,69 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 			if ends_steps < 0 or float(ends_steps) > ROUTE_ENDS_STEPS_MULT * float(leg_len):
 				failed_rules.append("P10")
 
+	# P11 (Decision 71/72): Retired large blocks forbidden anywhere; ruined 16x14_a / 23x14_a route-ground only
+	var retired_blocks := 0
+	var town_rects_m: Array = compiled.get("town", [])
+	for po_var in placed_objs:
+		var po: Dictionary = po_var
+		var sname := _stamp_name_for_placed(po)
+		if _is_retired_block_stamp(sname):
+			retired_blocks += 1
+		elif _is_route_only_large_block(sname) and not town_rects_m.is_empty():
+			var ox: int = int(po.get("x", 0))
+			var oy: int = int(po.get("y", 0))
+			var ow: int = int(po.get("w", 0))
+			var oh: int = int(po.get("h", 0))
+			var touches_t := false
+			for rv in town_rects_m:
+				if rv is Array and (rv as Array).size() == 4:
+					var ra: Array = rv
+					var rx0: int = int(ra[0])
+					var ry0: int = int(ra[1])
+					var rx1: int = rx0 + int(ra[2])
+					var ry1: int = ry0 + int(ra[3])
+					if ox < rx1 and (ox + ow) > rx0 and oy < ry1 and (oy + oh) > ry0:
+						touches_t = true
+						break
+			if touches_t:
+				retired_blocks += 1
+	if retired_blocks > 0:
+		failed_rules.append("P11")
+
+	# P12 (Decision 72): Nothing to meet or find within 5 tiles of a map edge unless within 5 tiles of an opening
+	var edge_violations := 0
+	if w >= 16 and h >= 16:
+		for pv in (compiled.get("people", []) as Array):
+			var p: Dictionary = pv
+			if _violates_edge_clear(int(p["x"]), int(p["y"]), w, h, openings):
+				edge_violations += 1
+		for kv in (compiled.get("street_pokemon", []) as Array):
+			var k: Dictionary = kv
+			if _violates_edge_clear(int(k["x"]), int(k["y"]), w, h, openings):
+				edge_violations += 1
+		for sv in signs_arr:
+			var s: Dictionary = sv
+			if _violates_edge_clear(int(s["x"]), int(s["y"]), w, h, openings):
+				edge_violations += 1
+		for hv in (compiled.get("hidden_items", []) as Array):
+			var hd: Dictionary = hv
+			if _violates_edge_clear(int(hd["x"]), int(hd["y"]), w, h, openings):
+				edge_violations += 1
+		for y_e in range(h):
+			for x_e in range(w):
+				if cls_buf[y_e * w + x_e] == TileSynth2.TILE_ITEM_BALL:
+					if _violates_edge_clear(x_e, y_e, w, h, openings):
+						edge_violations += 1
+		for dv in doors_arr:
+			var dd: Dictionary = dv
+			var is_open_d := not str(dd.get("interior", "")).is_empty()
+			var is_ord_d := bool(dd.get("is_ordinary", false))
+			if is_open_d or is_ord_d:
+				if _violates_edge_clear(int(dd["x"]), int(dd["y"]), w, h, openings):
+					edge_violations += 1
+	if edge_violations > 0:
+		failed_rules.append("P12")
+
 	return {
 		"ok": failed_rules.is_empty(),
 		"failed_rules": failed_rules,
@@ -584,6 +704,8 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"openings_total": openings.size(),
 		"ends_steps": ends_steps,
 		"has_plain_grass_12x12": has_plain_12,
+		"retired_blocks": retired_blocks,
+		"edge_violations": edge_violations,
 	}
 
 static func _outward_step(side: String) -> Vector2i:
@@ -1583,6 +1705,9 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 	if open_ground_pct > MAX_OPEN_GROUND_TOWN:
 		failed_rules.append("T7")
 
+	var town_sign_share: float = 0.0 if things_in_town == 0 else (float(town_signs) / float(things_in_town))
+	var town_item_share: float = 0.0 if things_in_town == 0 else (float(items_in_town) / float(things_in_town))
+
 	return {
 		"ok": failed_rules.is_empty(),
 		"failed_rules": failed_rules,
@@ -1595,6 +1720,8 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		"empty_screens": empty_share,
 		"things_in_town": things_in_town,
 		"things_per_150": things_per_150,
+		"sign_share": town_sign_share,
+		"item_share": town_item_share,
 		"town_tall_grass": town_tall_grass,
 		"town_wear_pct": town_wear_pct,
 		"route_wear_pct": route_wear_pct,
@@ -1613,4 +1740,301 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 		"town_items": items_in_town,
 		"route_items": items_in_route + hidden_in_route,
 		"route_items_per_5_screens": route_items_per_5_screens,
+	}
+
+
+static func check_route_ground(compiled: Dictionary, area: Dictionary, town_rect_override: Array = []) -> Dictionary:
+	var w: int = int(compiled.get("w", 0))
+	var h: int = int(compiled.get("h", 0))
+	var origin: Vector2i = compiled.get("origin", Vector2i.ZERO)
+	var cols: int = int(compiled.get("cols", 1))
+	var rows: int = int(compiled.get("rows", 1))
+	var total: int = w * h
+	var aid := str(area.get("id", ""))
+	var akind := str(area.get("kind", str(compiled.get("kind", ""))))
+	var is_camp := (akind == "camp" or aid.begins_with("camp:"))
+	if is_camp:
+		return {"ok": true, "skipped": true, "failed_rules": []}
+
+	var rects: Array = town_rect_override if not town_rect_override.is_empty() else (compiled.get("town", []) as Array)
+	var town_mask := PackedByteArray()
+	town_mask.resize(total)
+	town_mask.fill(0)
+	for rv in rects:
+		if rv is Array and (rv as Array).size() == 4:
+			var r: Array = rv
+			var rx0 := clampi(int(r[0]), 0, w)
+			var ry0 := clampi(int(r[1]), 0, h)
+			var rx1 := clampi(rx0 + int(r[2]), 0, w)
+			var ry1 := clampi(ry0 + int(r[3]), 0, h)
+			for yy in range(ry0, ry1):
+				for xx in range(rx0, rx1):
+					town_mask[yy * w + xx] = 1
+
+	var region := PackedByteArray()
+	region.resize(total)
+	region.fill(0)
+	var b := CaricatureMap.BORDER
+	for y in range(b, h - b):
+		for x in range(b, w - b):
+			if town_mask[y * w + x] == 0:
+				region[y * w + x] = 1
+
+	var rend_cls := PackedByteArray()
+	var rend_var := PackedByteArray()
+	var rend_mask := PackedByteArray()
+	rend_cls.resize(total)
+	rend_var.resize(total)
+	rend_mask.resize(total)
+	for r_cell in range(rows):
+		var cy: int = origin.y + rows - 1 - r_cell
+		for c_cell in range(cols):
+			var cx: int = origin.x + c_cell
+			var cres := CaricatureMap.cell_result(compiled, Vector2i(cx, cy), area)
+			var buf: PackedByteArray = cres.get("tiles", PackedByteArray())
+			for ty in range(32):
+				var gy := r_cell * 32 + ty
+				var row_off := gy * w + c_cell * 32
+				for tx in range(32):
+					var ci := (ty * 32 + tx) * 3
+					rend_cls[row_off + tx] = buf[ci]
+					rend_var[row_off + tx] = buf[ci + 1]
+					rend_mask[row_off + tx] = buf[ci + 2]
+
+	var solid_mask: PackedByteArray = compiled.get("solid_mask", PackedByteArray())
+	var walk_flags := PackedByteArray()
+	walk_flags.resize(total)
+	walk_flags.fill(0)
+	for i in range(total):
+		var blocked := (solid_mask.size() == total and solid_mask[i] == 1)
+		if not blocked and TileSynth2.is_walkable(rend_cls[i], rend_var[i], rend_mask[i]):
+			walk_flags[i] = 1
+
+	var tile_stamp := PackedInt32Array()
+	tile_stamp.resize(total)
+	tile_stamp.fill(0)
+	for pv in (compiled.get("placed_objects", []) as Array):
+		var po: Dictionary = pv
+		var sid := int(po.get("stamp_id", 0))
+		if sid <= 0:
+			continue
+		var ox := int(po.get("x", 0))
+		var oy := int(po.get("y", 0))
+		var ow := int(po.get("w", 0))
+		var oh := int(po.get("h", 0))
+		for sy in range(maxi(0, oy), mini(h, oy + oh)):
+			for sx in range(maxi(0, ox), mini(w, ox + ow)):
+				tile_stamp[sy * w + sx] = sid * 1024 + (sy - oy) * 32 + (sx - ox)
+
+	var tile_fix := PackedInt32Array()
+	tile_fix.resize(total)
+	tile_fix.fill(0)
+	var fix_id_map: Dictionary = {}
+	for fv in (compiled.get("fixtures", []) as Array):
+		var f: Dictionary = fv
+		var fk := str(f.get("kind", ""))
+		if not fix_id_map.has(fk):
+			fix_id_map[fk] = fix_id_map.size() + 1
+		var fid := int(fix_id_map[fk])
+		var fx0 := int(f.get("x", 0))
+		var fy0 := int(f.get("y", 0))
+		var fw := int(f.get("w", 1))
+		var fh := int(f.get("h", 1))
+		for fy in range(maxi(0, fy0), mini(h, fy0 + fh)):
+			for fx in range(maxi(0, fx0), mini(w, fx0 + fw)):
+				tile_fix[fy * w + fx] = fid * 1024 + (fy - fy0) * 32 + (fx - fx0)
+
+	var walk_in_region := 0
+	var open_ground_tiles := 0
+	var tall_grass_tiles := 0
+	var item_balls := 0
+	var paving_total := 0
+	var paving_worn := 0
+	var worn_mask := PackedByteArray()
+	worn_mask.resize(total)
+	worn_mask.fill(0)
+
+	for y in range(h):
+		for x in range(w):
+			var gi := y * w + x
+			if region[gi] == 0:
+				continue
+			var cls: int = rend_cls[gi]
+			var rv: int = rend_var[gi]
+			if cls == TileSynth2.TILE_ITEM_BALL:
+				item_balls += 1
+			if cls == TileSynth2.TILE_PATH or cls == TileSynth2.TILE_PLAZA or cls == TileSynth2.TILE_ROAD:
+				paving_total += 1
+				if rv == 1:
+					paving_worn += 1
+					worn_mask[gi] = 1
+			if walk_flags[gi] == 0:
+				continue
+			walk_in_region += 1
+			if cls == TileSynth2.TILE_TALL_GRASS:
+				tall_grass_tiles += 1
+			var all_49 := true
+			for dy in range(-3, 4):
+				var ny := y + dy
+				if ny < 0 or ny >= h:
+					all_49 = false
+					break
+				for dx in range(-3, 4):
+					var nx := x + dx
+					if nx < 0 or nx >= w or walk_flags[ny * w + nx] == 0:
+						all_49 = false
+						break
+				if not all_49:
+					break
+			if all_49:
+				open_ground_tiles += 1
+
+	var people_cnt := 0
+	for pv in (compiled.get("people", []) as Array):
+		var p: Dictionary = pv
+		var px := int(p["x"])
+		var py := int(p["y"])
+		if px >= 0 and px < w and py >= 0 and py < h and region[py * w + px] == 1:
+			people_cnt += 1
+
+	var pkm_cnt := 0
+	for kv in (compiled.get("street_pokemon", []) as Array):
+		var k: Dictionary = kv
+		var kx := int(k["x"])
+		var ky := int(k["y"])
+		if kx >= 0 and kx < w and ky >= 0 and ky < h and region[ky * w + kx] == 1:
+			pkm_cnt += 1
+
+	var signs_cnt := 0
+	for sv in (compiled.get("signs", []) as Array):
+		var s: Dictionary = sv
+		var sx := int(s["x"])
+		var sy := int(s["y"])
+		if sx >= 0 and sx < w and sy >= 0 and sy < h and region[sy * w + sx] == 1:
+			signs_cnt += 1
+
+	var hidden_cnt := 0
+	for hv in (compiled.get("hidden_items", []) as Array):
+		var hd: Dictionary = hv
+		var hx := int(hd["x"])
+		var hy := int(hd["y"])
+		if hx >= 0 and hx < w and hy >= 0 and hy < h and region[hy * w + hx] == 1:
+			hidden_cnt += 1
+
+	var open_doors_cnt := 0
+	var search_doors_cnt := 0
+	var open_door_seen: Dictionary = {}
+	for dv in (compiled.get("doors", []) as Array):
+		var dd: Dictionary = dv
+		var dx := int(dd["x"])
+		var dy := int(dd["y"])
+		var iid := str(dd.get("interior", ""))
+		if not iid.is_empty():
+			var dpos := Vector2i(dx, dy)
+			var is_second := open_door_seen.has(Vector2i(dx - 1, dy)) and str(open_door_seen[Vector2i(dx - 1, dy)]) == iid
+			open_door_seen[dpos] = iid
+			if not is_second and dx >= 0 and dx < w and dy >= 0 and dy < h and region[dy * w + dx] == 1:
+				open_doors_cnt += 1
+		elif bool(dd.get("is_ordinary", false)):
+			var sy := dy + 1
+			if dx >= 0 and dx < w and sy >= 0 and sy < h and region[sy * w + dx] == 1 and walk_flags[sy * w + dx] == 1:
+				search_doors_cnt += 1
+
+	var items_cnt: int = item_balls + hidden_cnt
+	var things: int = people_cnt + pkm_cnt + signs_cnt + items_cnt + open_doors_cnt + search_doors_cnt
+	var things_per_150: float = 0.0 if walk_in_region == 0 else (float(things) / (float(walk_in_region) / 150.0))
+	var sign_share: float = 0.0 if things == 0 else (float(signs_cnt) / float(things))
+	var item_share: float = 0.0 if things == 0 else (float(items_cnt) / float(things))
+	var open_ground_pct: float = 0.0 if walk_in_region == 0 else (float(open_ground_tiles) / float(walk_in_region))
+	var tall_grass_share: float = 0.0 if walk_in_region == 0 else (float(tall_grass_tiles) / float(walk_in_region))
+	var wear_pct: float = 0.0 if paving_total == 0 else (float(paving_worn) / float(paving_total))
+
+	var wear_touch := 0
+	for y in range(h):
+		for x in range(w):
+			var gi := y * w + x
+			if worn_mask[gi] == 0:
+				continue
+			for nd in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1), Vector2i(-1, 1)]:
+				var nx: int = x + nd.x
+				var ny: int = y + nd.y
+				if nx >= 0 and nx < w and ny >= 0 and ny < h and worn_mask[ny * w + nx] == 1:
+					wear_touch += 1
+
+	var patch_seen: Dictionary = {}
+	var repeat_8x8 := 0
+	for y0 in range(0, maxi(0, h - 7)):
+		for x0 in range(0, maxi(0, w - 7)):
+			var all_reg := true
+			var first_cls := int(rend_cls[y0 * w + x0])
+			var uniform := true
+			var parts := PackedStringArray()
+			parts.resize(64)
+			var p_i := 0
+			for dy in range(8):
+				var row_off := (y0 + dy) * w + x0
+				for dx in range(8):
+					var gi := row_off + dx
+					if region[gi] == 0:
+						all_reg = false
+						break
+					var c_here := int(rend_cls[gi])
+					var m_here := int(rend_mask[gi])
+					var st_here := int(tile_stamp[gi])
+					var fx_here := int(tile_fix[gi])
+					if c_here != first_cls or st_here != 0 or fx_here != 0:
+						uniform = false
+					parts[p_i] = "%d:%d:%d:%d" % [c_here, m_here, st_here, fx_here]
+					p_i += 1
+				if not all_reg:
+					break
+			if not all_reg or uniform:
+				continue
+			var key := ",".join(parts)
+			var coords: Array = patch_seen.get(key, [])
+			var found_far := false
+			for prior_v in coords:
+				var prior: Vector2i = prior_v
+				if absi(x0 - prior.x) >= 8 or absi(y0 - prior.y) >= 8:
+					found_far = true
+					break
+			if found_far:
+				repeat_8x8 += 1
+			coords.append(Vector2i(x0, y0))
+			patch_seen[key] = coords
+
+	var failed_rules: Array[String] = []
+	if walk_in_region > 0:
+		if things == 0 or things_per_150 < MIN_THINGS_PER_150_ROUTE or sign_share > (MAX_SIGN_SHARE_ROUTE + 0.000001) or item_share > (MAX_ITEM_SHARE_ROUTE + 0.000001):
+			failed_rules.append("R1")
+		if open_ground_pct > MAX_OPEN_GROUND_ROUTE:
+			failed_rules.append("R2")
+		if repeat_8x8 > MAX_REPEAT_8X8_ROUTE:
+			failed_rules.append("R3")
+		if wear_pct > 0.05 or wear_touch > 0:
+			failed_rules.append("T3")
+
+	return {
+		"ok": failed_rules.is_empty(),
+		"skipped": false,
+		"failed_rules": failed_rules,
+		"walk": walk_in_region,
+		"open_ground_tiles": open_ground_tiles,
+		"open_ground_pct": open_ground_pct,
+		"things": things,
+		"things_per_150": things_per_150,
+		"sign_share": sign_share,
+		"item_share": item_share,
+		"wear_pct": wear_pct,
+		"wear_touch": wear_touch,
+		"repeat_8x8": repeat_8x8,
+		"open_doors": open_doors_cnt,
+		"search_doors": search_doors_cnt,
+		"people": people_cnt,
+		"street_pokemon": pkm_cnt,
+		"items": items_cnt,
+		"item_balls": item_balls,
+		"hidden_items": hidden_cnt,
+		"signs": signs_cnt,
+		"tall_grass_share": tall_grass_share,
 	}

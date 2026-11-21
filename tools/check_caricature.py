@@ -83,7 +83,7 @@ def main():
 
     produced_caricature_line = False
     for line in proc.stdout.splitlines():
-        if line.startswith(("CARICATURE ", "CARICATURE_TOWN ", "CARICATURE_ROUTE ", "CARICATURE_CITY ")):
+        if line.startswith(("CARICATURE ", "CARICATURE_TOWN ", "CARICATURE_ROUTE_GROUND ", "CARICATURE_ROUTE ", "CARICATURE_CITY ")):
             print(line)
             produced_caricature_line = True
         elif line.startswith("PREVIEW:"):

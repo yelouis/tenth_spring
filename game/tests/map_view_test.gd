@@ -22,7 +22,7 @@ func run_test() -> bool:
 	var background_layer := map_view.get_node_or_null("BackgroundLayer") as ColorRect
 	var world_known := map_view.get_node_or_null("WorldKnown") as TileMapLayer
 	var world_cleared := map_view.get_node_or_null("WorldCleared") as TileMapLayer
-	var fog_layer := map_view.get_node_or_null("FogLayer") as TileMapLayer
+	var fog_layer := map_view.get_node_or_null("FogLayer") as ColorRect
 	var overview_layer := map_view.get_node_or_null("OverviewLayer") as Node2D
 
 	if background_layer == null:
@@ -38,7 +38,7 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 	if fog_layer == null:
-		push_error("FogLayer TileMapLayer missing from scene tree")
+		push_error("FogLayer ColorRect missing from scene tree")
 		map_view.queue_free()
 		return false
 	if overview_layer == null:
@@ -297,7 +297,7 @@ func run_test() -> bool:
 			return false
 
 	# 6. Which layer a cell goes to (§6, §8):
-	# reveal_state 0 -> FogLayer solid
+	# reveal_state 0 -> opaque shader fog outside firm ground
 	# 1 (known) -> WorldKnown
 	# >= 2 (cleared) -> WorldCleared
 	DB.query_rows("DELETE FROM map_cell;")
@@ -307,12 +307,21 @@ func run_test() -> bool:
 
 	map_view.get_lru_cache().clear()
 	map_view._clear_rendered_layers()
+	map_view.focus_on_cell(2, 2)
 
 	map_view._render_cell(1, 1)
-	var expected_solid: int = map_view._fog_rows.get("solid", 58)
-	var fog_solid_tile: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(1, 1, 10, 10))
-	if fog_solid_tile.y != expected_solid: # fog_solid row
-		push_error("Unknown cell (1, 1) should have solid fog on FogLayer (row %d), got %s" % [expected_solid, str(fog_solid_tile)])
+	var st_11 := Vector2(map_view._screen_tile(1, 1, 10, 10)) + Vector2(0.5, 0.5)
+	var fog_11: Dictionary = map_view.evaluate_fog_at_tile(st_11, 0.0)
+	if not bool(fog_11.get("outside", false)) or float(fog_11.get("alpha", 0.0)) < 0.99:
+		push_error("Unknown cell (1, 1) should evaluate as opaque shader fog, got %s" % str(fog_11))
+		map_view.queue_free()
+		return false
+	var c11: Color = fog_11.get("color", Color.BLACK)
+	var r11 := int(round(c11.r * 255.0))
+	var g11 := int(round(c11.g * 255.0))
+	var b11 := int(round(c11.b * 255.0))
+	if r11 < 92 or r11 > 168 or g11 < 96 or g11 > 172 or b11 < 110 or b11 > 184:
+		push_error("Unknown cell (1, 1) fog color (%d,%d,%d) outside grey fog range [92..168, 96..172, 110..184]" % [r11, g11, b11])
 		map_view.queue_free()
 		return false
 	if world_known.get_cell_atlas_coords(map_view._screen_tile(1, 1, 10, 10)) != Vector2i(-1, -1):
@@ -342,41 +351,28 @@ func run_test() -> bool:
 		map_view.queue_free()
 		return false
 
-	# 7. Inward Feathering (§6, §8):
+	# 7. Decision 72 9-tile smooth shader edge fog (replaces legacy 3 dithered rows):
 	# Cell (2, 2) is revealed (known). Its north neighbour (2, 3) is unknown (hidden).
-	var expected_d75: int = map_view._fog_rows.get("d75", 59)
-	var expected_d50: int = map_view._fog_rows.get("d50", 60)
-	var expected_d25: int = map_view._fog_rows.get("d25", 61)
-	var d0_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 0))
-	var d1_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 1))
-	var d2_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 2))
-	var d3_fog: Vector2i = fog_layer.get_cell_atlas_coords(map_view._screen_tile(2, 2, 16, 3))
-
-	if d0_fog.y != expected_d75: # d75
-		push_error("Inward feathering row 0 expected d75 (row %d), got %s" % [expected_d75, str(d0_fog)])
+	var f_edge0: Dictionary = map_view.evaluate_fog_at_tile(Vector2(map_view._screen_tile(2, 2, 16, 0)) + Vector2(0.5, 0.5), 0.0)
+	var f_edge4: Dictionary = map_view.evaluate_fog_at_tile(Vector2(map_view._screen_tile(2, 2, 16, 4)) + Vector2(0.5, 0.5), 0.0)
+	var f_edge10: Dictionary = map_view.evaluate_fog_at_tile(Vector2(map_view._screen_tile(2, 2, 16, 10)) + Vector2(0.5, 0.5), 0.0)
+	if float(f_edge0["a_edge"]) <= float(f_edge4["a_edge"]) or float(f_edge4["a_edge"]) <= 0.01:
+		push_error("9-tile edge fog should decay smoothly inward from edge: d0=%s d4=%s" % [str(f_edge0["a_edge"]), str(f_edge4["a_edge"])])
 		map_view.queue_free()
 		return false
-	if d1_fog.y != expected_d50: # d50
-		push_error("Inward feathering row 1 expected d50 (row %d), got %s" % [expected_d50, str(d1_fog)])
-		map_view.queue_free()
-		return false
-	if d2_fog.y != expected_d25: # d25
-		push_error("Inward feathering row 2 expected d25 (row %d), got %s" % [expected_d25, str(d2_fog)])
-		map_view.queue_free()
-		return false
-	if d3_fog != Vector2i(-1, -1):
-		push_error("Inward feathering row 3 should have no fog tile, got %s" % str(d3_fog))
+	if float(f_edge10["a_edge"]) > 0.0001 or float(f_edge10["alpha"]) > 0.0001:
+		push_error("World map tile > 9 tiles from fog edge should have 0 fog opacity, got %s" % str(f_edge10))
 		map_view.queue_free()
 		return false
 
-	# 8. Overview Mode at zoom 1/16 (§6, §8)
+	# 8. Overview Mode at zoom 1/16 (§6, §8) — FogLayer stays visible over OverviewLayer
 	map_view._set_zoom_step(0.0625) # zoom 1/16
 	if overview_layer.visible != true:
 		push_error("OverviewLayer should be visible at zoom 1/16")
 		map_view.queue_free()
 		return false
-	if world_known.visible != false or world_cleared.visible != false or fog_layer.visible != false:
-		push_error("Tile layers should be hidden at zoom 1/16")
+	if world_known.visible != false or world_cleared.visible != false or fog_layer.visible != true:
+		push_error("Tile layers should be hidden and FogLayer visible at zoom 1/16")
 		map_view.queue_free()
 		return false
 
@@ -591,14 +587,14 @@ func run_test() -> bool:
 	#     and Sprite2D stamp rendering + cleanup.
 	var stamp_base: Node2D = map_view.get_node_or_null("StampBaseLayer")
 	var stamp_overhang: Node2D = map_view.get_node_or_null("StampOverhangLayer")
-	var s_fog_layer: TileMapLayer = map_view.get_node_or_null("FogLayer")
+	var s_fog_layer: ColorRect = map_view.get_node_or_null("FogLayer")
 	var s_overview_layer: Node2D = map_view.get_node_or_null("OverviewLayer")
 	if stamp_base == null or stamp_overhang == null or stamp_base.z_index != 1 or stamp_overhang.z_index != 10 or not stamp_base.y_sort_enabled or not stamp_overhang.y_sort_enabled:
 		push_error("(33/30) Stamp layers missing, wrong z_index, or y_sort_enabled false: base=%s overhang=%s" % [str(stamp_base), str(stamp_overhang)])
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
-	if s_fog_layer == null or s_fog_layer.z_index != 20 or s_overview_layer == null or s_overview_layer.z_index != 30:
-		push_error("(33) FogLayer/OverviewLayer z_index mismatch: fog=%s overview=%s" % [str(s_fog_layer.z_index if s_fog_layer else -1), str(s_overview_layer.z_index if s_overview_layer else -1)])
+	if s_fog_layer == null or s_fog_layer.z_index != 35 or s_overview_layer == null or s_overview_layer.z_index != 30:
+		push_error("(33/63) FogLayer/OverviewLayer z_index mismatch: fog=%s overview=%s" % [str(s_fog_layer.z_index if s_fog_layer else -1), str(s_overview_layer.z_index if s_overview_layer else -1)])
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 	var grass_0_coords: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
@@ -1001,8 +997,72 @@ func run_test() -> bool:
 
 	Neighbourhoods.set_config_path_for_tests("")
 
+	# 17. Decision 72 (Item 63): Caricature Option C fog — town clear, route mist 10..34%, grey bank 2 tiles past edge, 0 edge fog on open seam
+	DB.query_rows("DELETE FROM neighbourhood_state;")
+	DB.upsert_neighbourhood_state("hood:washington-dc:georgetown", "city:washington-dc", 2, "hood", 2000)
+	if not map_view.load_place("city:washington-dc", false):
+		push_error("(63) Failed to load city:washington-dc for fog verification")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view.focus_on_area("hood:washington-dc:georgetown", true)
+	map_view._sync_fog_field()
+	var gt_comp: Dictionary = map_view._caricature_compiled_by_area["hood:washington-dc:georgetown"]
+	var gt_orig: Vector2i = gt_comp["origin"]
+	var gt_rows: int = int(gt_comp["rows"])
+	var gt_gx0: int = gt_orig.x * 32
+	var gt_gy0: int = (-(gt_orig.y + gt_rows - 1) - 1) * 32
+
+	# 17a: 2 tiles past Georgetown east fog edge -> grey within [92..168, 96..172, 110..184]
+	var f_past: Dictionary = map_view.evaluate_fog_at_tile(Vector2(float(gt_gx0 + 130) + 0.5, float(gt_gy0 + 95) + 0.5), 1.5)
+	var cp: Color = f_past["color"]
+	var pr := int(round(cp.r * 255.0))
+	var pg := int(round(cp.g * 255.0))
+	var pb := int(round(cp.b * 255.0))
+	if not bool(f_past["outside"]) or pr < 92 or pr > 168 or pg < 96 or pg > 172 or pb < 110 or pb > 184:
+		push_error("(63) 2 tiles past fog edge expected grey in [92..168,96..172,110..184], got (%d,%d,%d) %s" % [pr, pg, pb, str(f_past)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
+	# 17b: Every Georgetown town-part tile > 9 tiles from a fog edge has opacity == 0
+	var gt_town: Array = gt_comp["town"][0]
+	var tx0: int = int(gt_town[0])
+	var ty0: int = int(gt_town[1])
+	var tx1: int = tx0 + int(gt_town[2])
+	var ty1: int = ty0 + int(gt_town[3])
+	for ty_s in range(ty0, ty1, 3):
+		for tx_s in range(tx0, tx1, 3):
+			if tx_s < 10 or tx_s > 117 or ty_s < 10 or ty_s > 117:
+				continue
+			var f_t: Dictionary = map_view.evaluate_fog_at_tile(Vector2(float(gt_gx0 + tx_s) + 0.5, float(gt_gy0 + ty_s) + 0.5), 2.0)
+			if float(f_t["alpha"]) > 0.0001:
+				push_error("(63) Town tile (%d,%d) > 9 from edge should have 0 fog opacity, got %s" % [tx_s, ty_s, str(f_t)])
+				_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+				return false
+
+	# 17c: Route ground >= 5 tiles from town part and >= 9 tiles from fog edge has opacity in 10..34%
+	for rx_s in [40, 60, 92, 108]:
+		for ry_s in [88, 102, 113]:
+			var f_r: Dictionary = map_view.evaluate_fog_at_tile(Vector2(float(gt_gx0 + rx_s) + 0.5, float(gt_gy0 + ry_s) + 0.5), 3.0)
+			var ra: float = float(f_r["alpha"])
+			if ra < 0.10 or ra > 0.3401 or float(f_r["a_edge"]) > 0.0001:
+				push_error("(63) Route ground (%d,%d) expected opacity in [0.10, 0.34] with 0 edge fog, got %s" % [rx_s, ry_s, str(f_r)])
+				_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+				return false
+
+	# 17d: Open seam (Georgetown S@78 <-> open Potomac Riverfront N@14) has 0 edge fog within 9 tiles of seam
+	DB.upsert_neighbourhood_state("hood:washington-dc:lincoln-memorial", "city:washington-dc", 2, "hood", 2001)
+	DB.upsert_neighbourhood_state("route:washington-dc:potomac-riverfront", "city:washington-dc", 2, "route", 2001)
+	map_view._fog_dirty = true
+	map_view._sync_fog_field()
+	for dy_s in range(-8, 9):
+		var f_seam: Dictionary = map_view.evaluate_fog_at_tile(Vector2(float(gt_gx0 + 79) + 0.5, float(gt_gy0 + 128 + dy_s) + 0.5), 1.0)
+		if float(f_seam["a_edge"]) > 0.0001:
+			push_error("(63) Open seam dy=%d expected 0 edge fog, got %s" % [dy_s, str(f_seam)])
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
-	print("PASS: map_view_test (Renderer v2, layers, shaders, inward feathering, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")
+	print("PASS: map_view_test (Renderer v2, layers, shaders, Decision 72 drifting fog & route mist, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")
 	return true
 
 

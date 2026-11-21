@@ -2,214 +2,139 @@
   "schema": 1,
   "id": "route:washington-dc:rock-creek-trail#2",
   "rows": [
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTT-====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTT....TTTT----TTTTTTTTTTTTTT",
+    "TTTTTT....TTTT----TTTT~~~~~~TTTT",
+    "TTTTTT....TTTT----TTTT~~~~~~TTTT",
+    "TTTTTT....--------TTTT~~~~~~TTTT",
+    "TTTTTT------------TTTT~~~~~~TTTT",
+    "TTTTTTTTTT----...,..TT~~~~~~TTTT",
+    "TTTTTTTTTT---T.*,,,.TT~~~~~~TTTT",
+    "TTTTTT..,..--T.,,,,,~~~~~~~~TTTT",
+    "TTTTTT.*,,.--T,,,,,,~~~~~~~~TTTT",
+    "TTTTTT..,,.--T,,,,,,~~~~~~~~TTTT",
+    "TTTTTT.,,T.--T,,,,,,~~~~~~~~TTTT",
+    "TTTTTT.,,,.--T,vvvv,~~~~~~~~TTTT",
+    "TTTTTT.,,,,--T.,,,,,~~~~~~~~TTTT",
+    "TTTTTT.,,,,--T.,,,,.~~~~~~~~TTTT",
+    "TTTTTT.vvv,--T..,,*.TT~~~~~~TTTT",
+    "TTTTTT.,,,,--T..,,..TT~~~~~~TTTT",
+    "TTTTTT.,,,,--TTTTTTTTT~~~~~~TTTT",
+    "TTTTTT.,!,.--TTTTTTTTT~~~~~~FTTT",
+    "TTTTTT.,,,.--TTTTTTTTT~~~~~~TTTT",
+    "TTTTTT..,*.--TTTTT~~~~~~~~~~TTTT",
+    "TTTTTT..,,.--TTTTT~~~~~~~~~~TTTT",
+    "TTTTTTTTTT-------T~~~~~~~~~~TTTT",
+    "TTTTTTTTTT-------T~~~~~~~~~~TTTT",
+    "TTTTTTTTTTTT-----T~~~~~~~~~~TTTT",
+    "TTTTTTTTTTTT-----T~~~~~~~~~~TTTT",
+    "TTTTTTTTTTTTTT---T~~~~~~~~~~TTTT",
+    "TTTTTT..,,,,..---T~~~~~~~~~~TTTT",
+    "TTTTTT.*,,,,..---T~~~~~~~~~~FTTT",
+    "TTTTTT..,,,,..---TTTTT~~~~~~TTTT",
+    "TTTTTT..,,,,F.---TTTTT~~~~~~TTTT",
+    "TTTTTT.,k,,,,.---TTTTT~~~~~~TTTT",
+    "TTTTTT.,,,,,,.---TTTTT~~~~~~TTTT",
+    "TTTTTT.,,,,,,,---TTTTT~~~~~~TTTT",
+    "TTTTTT,,,,,,,,---....T~~~~~~TTTT",
+    "TTTTTT,,,,,,,,---.*..T~~~~~~TTTT",
+    "TTTTTT,,,,,,,,---..,.~~~~~~~TTTT",
+    "TTTTTT.^^^s^^,--F.,,,~~~~~~~TTTT",
+    "TTTTTT.^^-s^^.---.,,,~~~~~~~TTTT",
+    "TTTTTT.,,,,,,.---,,,,~~~~~~~TTTT",
+    "TTTTTT.,,,,,,.---.!,,~~~~~~~TTTT",
+    "TTTTTT.,,,,,,,--F.,,,~~~~~~~TTTT",
+    "TTTTTT....,,,,---.,,,~~~~~~~TTTT",
+    "TTTTTT....,,,,---.,,,~~~~~~~TTTT",
+    "TTTTTT....,,,.---.,,,~~~~~~~TTTT",
+    "TTTTTT....,,..---.,,,T~~~~~~TTTT",
+    "TTTTTT.---,.*.---.,*,T~~~~~~TTTT",
+    "TTTTTT........---.,,,T~~~~~~TTTT",
+    "TTTTTTTTTTTTTT----TTTT~~~~~~TTTT",
+    "TTTTTTTTTTTTTT----TTTT~~~~~~TTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTT..........----....:~~~:.TTTT",
-    "TTTT..........----....:~~~:.TTTT",
-    "TTTT..,.......----....:~~~:.TTTT",
-    "TTTT.,,,,.....----....:~~~:.TTTT",
-    "TTTT.,,,,,,..-----,,,.:~~~:.TTTT",
-    "TTTT.,,,,,,,.-----,,,,:~~~:.TTTT",
-    "TTTT.,,,,,,,.--,,,,,,,:~~~:.TTTT",
-    "TTTT.,,,,,,,.--,,,,,,,:~~~:.TTTT",
-    "TTTT.,,,,,,,,--,,,,,,.:~~~:.TTTT",
-    "TTTT,,,,,,,,---,,,,,,.:~~~:.TTTT",
-    "TTTT,,,,,,,,--..,,,,,,:~~~:.TTTT",
-    "TTTT,,,,,,,,--..,,,,,,:~~~:.TTTT",
-    "TTTT.,,,,,..--...,,,,,:~~~:.TTTT",
-    "TTTT..,,,...--........:~~~:.TTTT",
-    "TTTT.......---........:~~~:.TTTT",
-    "TTTT.......--.BBBBBBBBBBBBB.TTTT",
-    "TTTT.......--.BBBBBBBBBBB--.TTTT",
-    "TTTT.......--.BBBBBBBBBBB--.TTTT",
-    "TTTT..,,,,,--........:~~~--.TTTT",
-    "TTTT.,,,,,,--.......:~~~:--.TTTT",
-    "TTTT.,,,,,,--.......:~~~:--.TTTT",
-    "TTTT,,,,,,,--.......:~~~:--.TTTT",
-    "TTTT,,,,,,---.......:~~~:--.TTTT",
-    "TTTT,,,,,,---...,,..:~~~:--.TTTT",
-    "TTTT.-----------------~~:--.TTTT",
-    "TTTT.^.....^^^ssss^^^^~~:--.TTTT",
-    "TTTT.^vvvvv^^^ssss^^^^~~:--.TTTT",
-    "TTTT.-----------------~~:--.TTTT",
-    "TTTT......--,,,,,,,,:~~~:--.TTTT",
-    "TTTT....,.--,,,,,,,,:~~~:--.TTTT",
-    "TTTT...,,,--.,,,,,,,:~~~:--.TTTT",
-    "TTTT.TTTTTTTT,,,,,,,:~~~:--.TTTT",
-    "TTTT.T,,,,,,T,,,,,,,:~~~:--.TTTT",
-    "TTTT,T,,,,,,T.,,,,,,:~~~:--.TTTT",
-    "TTTT,T,,,,,,T.,,,,,,:~~~:--.TTTT",
-    "TTTT,T,,!,,,k-.,,,,,.:~~~--.TTTT",
-    "TTTT,T,,,,,,T........:~~~--.TTTT",
-    "TTTT,T,,,,,,T........:~~~--.TTTT",
-    "TTTT,TTTTTTTT........:~~~--.TTTT",
-    "TTTT..,,,--...........:~~--.TTTT",
-    "TTTT...,,---..........:~~--.TTTT",
-    "TTTT.....---..BBBBBBBBBBB--.TTTT",
-    "TTTT......--..BBBBBBBBBBBBB.TTTT",
-    "TTTT.....,---.BBBBBBBBBBBBB.TTTT",
-    "TTTT....,,,--.........:~~~:.TTTT",
-    "TTTT..,,,,,--.........:~~~:.TTTT",
-    "TTTT,,,,,,,---....,...:~~~:.TTTT",
-    "TTTT,,,,,,,---.,,,,,,,:~~~:.TTTT",
-    "TTTT,,,,,,,,--,,,,,,,,:~~~:.TTTT",
-    "TTTT,,,,,,,,--,,,,,,,,:~~~:.TTTT",
-    "TTTT,,,,,,,,---,,,,,,,:~~~:.TTTT",
-    "TTTT,,,,,,,,.--.,,,,,.:~~~:.TTTT",
-    "TTTT.,,,,,,,.-----,,,.:~~~:.TTTT",
-    "TTTT...,,,,,.-----,,,.:~~~:.TTTT",
-    "TTTT...,,,,,..----,,,:~~~:..TTTT",
-    "TTTT....,,,...----...:~~~:..TTTT",
-    "TTTT.....,....----...:~~~:..TTTT",
-    "TTTT..........----...:~~~:..TTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
   ],
   "objects": [
     {
-      "stamp": "decal_boulder",
-      "at": [
-        8,
-        46
-      ]
-    },
-    {
-      "stamp": "decal_boulder",
-      "at": [
-        17,
-        24
-      ]
-    },
-    {
-      "stamp": "decal_bramble",
-      "at": [
-        14,
-        25
-      ]
-    },
-    {
-      "stamp": "decal_wall_corner",
-      "at": [
-        19,
-        42
-      ]
-    },
-    {
-      "stamp": "decal_beams",
-      "at": [
-        13,
-        48
-      ]
-    },
-    {
-      "stamp": "decal_weeds",
-      "at": [
-        15,
-        13
-      ]
-    },
-    {
-      "stamp": "decal_rubble_weeds",
-      "at": [
-        27,
-        42
-      ]
-    },
-    {
-      "stamp": "decal_rubble",
-      "at": [
-        18,
-        6
-      ]
-    },
-    {
-      "stamp": "decal_bush",
-      "at": [
-        12,
-        59
-      ]
-    },
-    {
-      "stamp": "decal_wall_corner",
-      "at": [
-        13,
-        57
-      ]
-    },
-    {
-      "stamp": "decal_beams",
-      "at": [
-        4,
-        56
-      ]
-    },
-    {
-      "stamp": "decal_creeper",
-      "at": [
-        27,
-        43
-      ]
-    },
-    {
-      "stamp": "decal_rubble_weeds",
-      "at": [
-        27,
-        49
-      ]
-    },
-    {
-      "stamp": "decal_rubble_weeds",
-      "at": [
-        5,
-        43
-      ]
-    },
-    {
-      "stamp": "decal_bush",
+      "stamp": "house_s_b",
       "at": [
         6,
-        17
+        7
       ]
     },
     {
-      "stamp": "decal_stump",
+      "stamp": "house_s_a_door2",
       "at": [
-        13,
-        18
-      ]
-    },
-    {
-      "stamp": "decal_sapling",
-      "at": [
-        5,
-        58
-      ]
-    },
-    {
-      "stamp": "decal_rubble",
-      "at": [
-        5,
-        17
-      ]
-    },
-    {
-      "stamp": "decal_creeper",
-      "at": [
-        27,
-        40
-      ]
-    },
-    {
-      "stamp": "decal_creeper",
-      "at": [
-        21,
-        11
+        6,
+        48
       ]
     }
   ],
-  "lamp": null,
+  "fixtures": [
+    {
+      "kind": "standin_bench",
+      "at": [
+        13,
+        30
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "rct2_hiker_finn",
+      "name": "Finn",
+      "at": [
+        14,
+        30
+      ],
+      "facing": "S",
+      "sprite": "hiker",
+      "role": "talk",
+      "lines": [
+        "Climb the mossy ridge ahead and you'll hear the Woodley Park aviary above the trees.",
+        "One-way ledges along the west slope make a quick drop back to Georgetown."
+      ]
+    }
+  ],
+  "street_pokemon": [
+    {
+      "dex": 399,
+      "at": [
+        11,
+        18
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 16,
+      "at": [
+        16,
+        42
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 401,
+      "at": [
+        15,
+        55
+      ],
+      "zone": "wilds"
+    }
+  ],
   "signs": [
     {
       "at": [
@@ -217,8 +142,34 @@
         3
       ],
       "text": "Rock Creek Trail"
+    },
+    {
+      "at": [
+        16,
+        33
+      ],
+      "text": "Rock Creek Gorge \u2014 steep wooded bluffs rising toward Woodley Park."
     }
   ],
+  "hidden_items": [
+    {
+      "at": [
+        16,
+        15
+      ],
+      "item": "Great Ball",
+      "note": "Tucked under a fern overhang above the creek."
+    },
+    {
+      "at": [
+        9,
+        44
+      ],
+      "item": "Hyper Potion",
+      "note": "Behind a split granite boulder on the west ridge."
+    }
+  ],
+  "lamp": null,
   "openings": [
     {
       "side": "S",

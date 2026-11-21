@@ -1,0 +1,115 @@
+{
+  "schema": 1,
+  "id": "dc:us-signal-office",
+  "area_id": "hood:washington-dc:union-station",
+  "title": "Yard Signal Office",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Yard Signal Office",
+      "theme": "clinic",
+      "kit": "clinic_clean",
+      "width": 12,
+      "height": 11,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [],
+      "fixtures": [
+        {
+          "fixture": "em_wall_notice_1x1",
+          "at": [
+            4,
+            0
+          ]
+        },
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            6,
+            0
+          ]
+        },
+        {
+          "fixture": "em_pc_desk_2x2",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "fixture": "em_medicine_cabinet_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_wood_table_2x2",
+          "at": [
+            5,
+            5
+          ]
+        },
+        {
+          "fixture": "em_chair_green_1x1",
+          "at": [
+            3,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            10,
+            8
+          ]
+        },
+        {
+          "fixture": "em_trash_can_1x1",
+          "at": [
+            1,
+            9
+          ]
+        }
+      ],
+      "npcs": [
+        {
+          "id": "npc_us_hector",
+          "name": "Hector",
+          "at": [
+            8,
+            5
+          ],
+          "facing": "W",
+          "sprite": "hiker",
+          "role": "talk"
+        }
+      ],
+      "items": [],
+      "signs": [
+        {
+          "at": [
+            5,
+            2
+          ],
+          "text": "Three lever diagrams pinned to the corkboard: North, Center, South siding."
+        }
+      ]
+    }
+  ]
+}

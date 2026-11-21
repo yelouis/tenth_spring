@@ -169,6 +169,7 @@ func _parse_town_rect_arg(spec: String) -> Array:
 
 func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dictionary, measures_by_id: Dictionary, town_rect_override: Array = []) -> bool:
 	var area_id := str(area.get("id", ""))
+	var is_camp := (str(area.get("kind", "")) == "camp" or area_id.begins_with("camp:"))
 	var is_route := (str(area.get("kind", "")) == "route" or area_id.begins_with("route:"))
 	var map_path := CaricatureMap.resolve_map_path(str(area.get("map", "")))
 	if not FileAccess.file_exists(map_path):
@@ -241,13 +242,15 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 		var t_failed: Array = t_res.get("failed_rules", [])
 		var t_status := "PASS" if t_ok else ("FAIL " + ",".join(PackedStringArray(t_failed)))
 		print(
-			"CARICATURE_TOWN %s tiles=%d walk=%d open=%.3f empty_screens=%.2f things_per_150=%.2f wear_town=%.3f wear_route=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d items=%d route_items_5=%.2f signs=%d tall_grass=%d %s" % [
+			"CARICATURE_TOWN %s tiles=%d walk=%d open=%.3f empty_screens=%.2f things_per_150=%.2f sign_share=%.2f item_share=%.2f wear_town=%.3f wear_route=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d survivors=%d pkm=%d items=%d route_items_5=%.2f signs=%d tall_grass=%d %s" % [
 				area_id,
 				int(t_res["town_tiles"]),
 				int(t_res["walk_in_town"]),
 				float(t_res["open_ground_pct"]),
 				float(t_res["empty_screens"]),
 				float(t_res["things_per_150"]),
+				float(t_res["sign_share"]),
+				float(t_res["item_share"]),
 				float(t_res["town_wear_pct"]),
 				float(t_res["route_wear_pct"]),
 				int(t_res["wear_touch"]),
@@ -266,6 +269,36 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 		)
 		if not t_ok:
 			passed = false
+
+	if not is_camp:
+		var rg_res := CaricatureCheck.check_route_ground(compiled, area, town_rect_override)
+		if not bool(rg_res.get("skipped", false)):
+			var rg_ok := bool(rg_res.get("ok", false))
+			var rg_failed: Array = rg_res.get("failed_rules", [])
+			var rg_status := "PASS" if rg_ok else ("FAIL " + ",".join(PackedStringArray(rg_failed)))
+			print(
+				"CARICATURE_ROUTE_GROUND %s walk=%d open=%.3f things_per_150=%.2f sign_share=%.2f item_share=%.2f wear=%.3f wear_touch=%d repeat_8x8=%d doors=%d/%d people=%d pkm=%d items=%d signs=%d tall_grass=%.2f %s" % [
+					area_id,
+					int(rg_res["walk"]),
+					float(rg_res["open_ground_pct"]),
+					float(rg_res["things_per_150"]),
+					float(rg_res["sign_share"]),
+					float(rg_res["item_share"]),
+					float(rg_res["wear_pct"]),
+					int(rg_res["wear_touch"]),
+					int(rg_res["repeat_8x8"]),
+					int(rg_res["open_doors"]),
+					int(rg_res["search_doors"]),
+					int(rg_res["people"]),
+					int(rg_res["street_pokemon"]),
+					int(rg_res["items"]),
+					int(rg_res["signs"]),
+					float(rg_res["tall_grass_share"]),
+					rg_status,
+				]
+			)
+			if not rg_ok:
+				passed = false
 
 	return passed
 

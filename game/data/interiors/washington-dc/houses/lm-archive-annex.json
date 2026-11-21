@@ -1,0 +1,105 @@
+{
+  "schema": 1,
+  "id": "dc:lm-archive-annex",
+  "area_id": "hood:washington-dc:lincoln-memorial",
+  "title": "Colonnade Records Room",
+  "atmosphere": "normal",
+  "floors": [
+    {
+      "floor_id": "1F",
+      "label": "1F \u2014 Colonnade Records Room",
+      "theme": "wood",
+      "kit": "gallery_wood",
+      "width": 12,
+      "height": 11,
+      "grid": [
+        "############",
+        "============",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWRRRRRRWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWWWWWWWW",
+        "WWWWWDDWWWWW"
+      ],
+      "warps": [],
+      "stairs": [],
+      "switches": [],
+      "stamps": [
+        {
+          "stamp": "int_archive_bookshelf",
+          "at": [
+            1,
+            1
+          ]
+        },
+        {
+          "stamp": "int_reading_table_lamp",
+          "at": [
+            5,
+            5
+          ]
+        }
+      ],
+      "fixtures": [
+        {
+          "fixture": "em_wall_window_2x1",
+          "at": [
+            5,
+            0
+          ]
+        },
+        {
+          "fixture": "em_bookshelf_2x2",
+          "at": [
+            9,
+            1
+          ]
+        },
+        {
+          "fixture": "em_sofa_2x2",
+          "at": [
+            2,
+            5
+          ]
+        },
+        {
+          "fixture": "em_potted_plant_1x2",
+          "at": [
+            10,
+            8
+          ]
+        },
+        {
+          "fixture": "em_trash_can_1x1",
+          "at": [
+            1,
+            9
+          ]
+        }
+      ],
+      "npcs": [],
+      "items": [
+        {
+          "at": [
+            9,
+            7
+          ],
+          "item": "Max Ether"
+        }
+      ],
+      "signs": [
+        {
+          "at": [
+            5,
+            2
+          ],
+          "text": "Inscriptions copied into bound notebooks on the cedar shelf."
+        }
+      ]
+    }
+  ]
+}

@@ -2,260 +2,159 @@
   "schema": 1,
   "id": "route:washington-dc:rock-creek-trail#1",
   "rows": [
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT....,,,,,,,..TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.............TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTT..TTTTT",
-    "TTT.........,,,,,,,..,,,,,,TTTTTTTTTTTTTT.......,,,,,,,,,,,,,,,,,,,,,,.....,,,,,,,TTTTTTTTTTTTT,,,....,,,,..,,,,,.......................TTTTTT----TT.......TTTTT",
-    "TTT.......,,,,,,,,,,,,,,,,,,,..................,,,,,,,,,,,,,,,^^^^^^^^^^^.,,,,,,,,,,,,,,,,,,,,,,,,...,,,,,,,,,,,,,,...........TTTTTTTTTT......----.........TTTTT",
-    "TTT.....,,,,,,,,,,,,,,,,,,------------------------------,,,,,,^,,,,,,,,,^.,,,,,,,,,,,,,,,,,,,,,,,,..,,,,,,,,,,,,,,,,..........T,,,,,,,,T......----.........TTTTT",
-    "TTT....,,,,,,,,,,,,,,,,,,,^^......^^^^sss^^^........^^^^,,,,,,^,,,,!,,,,^.,,,,,,,,,,,,,,,,,,,,,,,...,,,,,,,,,,,,,,,,..........T,,,,,,,,T......----.........TTTTT",
-    "TTT....,,,,,,,,,,,,,,,,,,,^^vvvvvv^^^^sss^^^vvvvvvvv^^^^,,,,,,^,,,,,,,,,^...,,,,,,,,,,,,,,,,,,,,.....,,,,,,,,,,,,,,,..----..--k,,,,,!,,T......----.........TTTTT",
-    "TTT.....,,,,,,,,,,,,,,,,,,------------------------------,,,,,,^,,,,,,,,,^.....,,,,,,------------------------------------------T,,,,,,,,T----------..........TTTT",
-    "TTT......,,,,,,,,,,,,,,,,,,,,........................,,,,,,---^^^^^r^^^^^-----------------------------------------------------T,,,,,,,,T----------...,,,....TTTT",
-    "TTT.........,,,,,,,,,,,,,,,..........------------------------------------------------,,,,,,.......BBBB.......,,...............TTTTTTTTTT......---...,,,,,...TTTT",
-    "TTT...........,,,,,,..,---------------------B---------------,..................%:::::::%%%........BBBB.........................,,,,,,,,,,,.........,,,%%%%..TTTT",
-    "TTT.......----------------------------......BBBB....vvvvvvvvvvv........:%%%%%%:~~~~~~~~~~%%%%%::::BBBB.........................,,,,,,,,,,,,,,......%%%%~~~%.TTTT",
-    "-------------------------...................BBBB..................:::::~~~~~~~~~~~~~~~~~~~~~~~~~~~BBBB%%......................,,,,,,,,,,,,,,,,,:%%%~~~~~~~~%TTTT",
-    "-----------.................................BBBB..............%%:::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BBBB~~%%%%%%................,,,,,,,,,,,,,::::~~~~~~~~~~~%..TTT",
-    "-----------.................................BBBB...........%%%%~~~~~~~~~~~~~~~~:::::::%%%%~~~~~~~~BBBB~~~~~~~:::::::..........,,,,,,,%%%:::~~~~~~~~~~~~%%%,,,TTT",
-    "-----------.................................BBBB.......::%%~~~~~~~~~~~~~%%%%%%%..........%%%%:::::BBBB~~~~~~~~~~~~~~%%%%%%%::::::%%%%~~~~~~~~~~~~~~~%%%,,,,,,TTT",
-    "TTTT........................................BBBB....::::~~~~~~~~~~~:::::.........................:BBBB%~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:%%%,,,,,,,,,TTT",
-    "TTTT..................,,....................BBBB%%::~~~~~~~~~~~%%%:...............................BBBB.%%%%::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:::::,,,,,,,,,,,,,TTT",
-    "TTTT...:::::.........,,,,,..................BBBB~~~~~~~~~~~~%%%...................................BBBB...,,,,::::::%~~~~~~~~~~~~~~~~~%%%%%::,,,,,,,,,,,,,,,,,TTT",
-    "TTTT..:~~~~:::%%%%..,,,,,,,,,,,........:::%%BBBB~~~~~~~~:::%......................................BBBB.,,,,,,,,,,,,,%%%%%%::::::::%%%,,,,,,,,,,,,,,,,,,,,,,,,TTT",
-    "TTTTT:~~~~~~~~~~~%%%%::::::::%%%%%%::::~~~~~BBBB~~~~~:::...............,,,........................BBBB,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,......,,,,,,,,,,,,,,TTT",
-    "TTTTT.:~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BBBB~%%::...........,,,,,,,---------------------------BBBB,,,,,,,,,,,,,,,,,,,,,,,,,,,,,..,,........,,,,,,,,,,,,,,TTT",
-    "TTTTT..::::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~B-----------------------------------------------------BBBB,,,,,,,,,,,,,,,,,,,,,,,,,,,,.............,,,,,,,,,,,,,,TTT",
-    "TTTT.......::%%%%~~~~~~~~~~~~~~~~~~~~~~~::::B----------------------------,,,,,,,,,,,,,,,..............,,,,,,,,,,,,,,,,,,,,,,,,,,,...............,,,,,,..,,,,.TTT",
-    "TTTT........,,,,,%%%%:::::::%%%%%%%%::::.................,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,.............,,,,,,,,,,,,,,,,,,,,,,,,,.................,,,,.........TTT",
-    "TTTT.........,,,,,,,,,,,,,,,,,,,,,TTTTTTTTTTTTTT.........,,,,,,,,,,,,,,,TTTTTTT,,,,,,,,,................,,,,,,,.............TTTTTTTTTTTTT...................TTTT",
-    "TTTTTTTTTTTTTTTTT.,,,,,,....,TTTTTTTTTTTTTTTTTTTTTTT.......,,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT............TTTTTTTTTTTTTTTTTTTTTTT.............TTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTFTTTTTTTTTTTTTTTTTTTTTTTFFTT^TTTTTTTT^TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTFTTTTTTTTTTTFTTFTTTTTTTTFTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTT..................TT.........,,,......TTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTT...........,,,,,,....,,,......TTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTT.*,,....,,,,,,,,..TT.*,,,,,,,,,,,,....TTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTT.*,,,,,,,,....,,,,,,,,,,,,,...TTTT-----.......TTTTTT",
+    "TTTTTTTT.,,,....,,,,,,,,,.TT,,,,,,,,,,k,,,,,..TT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTT.,,,,,,,,,....,,,,,,,,,,,,,,,,TTTT----T.*.....TTTTTT",
+    "TTTTTTTT,,,,....,,!T,,,,,,TT.,,T,,,,,,,,,,F.*.TT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTT.vvvvvvvvv....vvvvvvvvvvvvvvv.TTTT----T.,,,,..TTTTTT",
+    "TTTTTTTT.,,,---,,,,,,,,,,,TT........,,,,,.....TT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT..,,!,,,,,....,,,,,,,,o,,,,...TTTT----T.,,T,,.TTTTTT",
+    "TTTTTTTT..,,,,,,,,,,,,,,*.----------------------~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT....,,....---,,,,,,,,,,,,...*.TTTT----T,,,!,,.TTTTTT",
+    "TTTTTTTT...........,,,....----------------------~~~~~~~~TTTTTTTTTTTTTTTTTFTTTTTFTTTTTTTTTTTTTTTT~~~~~~~~TTTT.............,,...............TTTT----T,,,,,,.TTTTTT",
+    "TTTT-TTTTTTTTTTTTTTTTTTT----------------------BBBBBBBBBBBBTTTTTTTTTTTTTTTTTTTTTTTTTTTT^TTTTTTTTT~~~~~~~~T-----------------------------------------T,,,,,,.TTTTTT",
+    "=====---------------------TTTTTTTTTTTTTTTTTTTTBBBBBBBBBBB------------.---.-----.-.--------------~~~~~~~~T-----------------------------------------T,,,,,,.TTTTTT",
+    "=====---------------------TTTTTTTTTTTTTTTTTTTTBBBBBBBBBBB------------------------------#------BBBBBBBBBBB---------------------.-------------------T,,,,,,.TTTTTT",
+    "=====---#-----------------TTTTTTFTTTTTTFTTTTTTTT~~~~~~~~T-------------------------------------BBBBBBBBBBBBTTTTTT-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT----T,^^s^^.TTTTTT",
+    "=====-----.---------------TTTTTTTTTTTTTTFTTTTTTT~~~~~~~~TTTT..............,,,.............TT---BBBBBBBBBBBTTTTTT...,,,,,,,,,,,,,,,,,,,,,,,TTTTTTTTT,^^s^^.TTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTBBBTTTT^TTTTTTTTTTTT~~~~~~~~TTTT.*..,,,,,..,....,,,,.,,,,,....TT---T~~~~~~~~TTTTTTTT,*,,,,,,,,,,,,,,,,,,!,,,*,TTTTTTTTT,,,,,,.TTTTTT",
+    "TTTTTTTTTTTTTTTTTT~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~~~TTTT...,,,,,,,,,....,,,,,,,,,,,,..TT---T~~~~~~~~TTTTTTTT...,,,,,,,,,,,,,,,,*,,,,,,TTTTTTTTT....,,,TTTTTT",
+    "TTTTTTTTTTTTTTTTTT~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~~~TTTT.^^^^^^^^^^^....^^^^^^^^^^^^^.TT---T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT....,,.TTTTTT",
+    "TTTTTTTTTTTTTTTTTT~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~~~TTTT.^^^^^^^^^^^....^^^^^^^^^^^^^.TT---T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT....,,.TTTTTT",
+    "TTTTTTTTTTTTTTTTTT~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~~~TTTT...,,,!,,,,,,---,,,,,,,,r,,,*.TT---T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT....,..TTTTTT",
+    "TTTTTTTTTTTTTTTTTT~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~TTTTTT.....,,,....,,,,,,,....,,,....TT---T~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT---,.*.TTTTTT",
+    "TTTTTTTTTTTTTTTTTT~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT.......TTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTT------------------.---------------------------------------------------TT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTTTT-TTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTT-------------------------.--------------------------------------------TTTTTTTTTTTTTTTT^TTTFTTTTTTTTTTTTTTFTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
   ],
   "objects": [
     {
-      "kind": "house_s",
+      "stamp": "house_s_b",
       "at": [
-        118,
-        4
-      ],
-      "fate": "ruined"
-    },
-    {
-      "stamp": "decal_boulder",
-      "at": [
-        34,
-        9
+        12,
+        6
       ]
     },
     {
-      "stamp": "decal_boulder",
+      "stamp": "house_s_a_door2",
       "at": [
-        60,
-        23
-      ]
-    },
-    {
-      "stamp": "decal_boulder",
-      "at": [
-        84,
-        22
-      ]
-    },
-    {
-      "stamp": "decal_boulder",
-      "at": [
-        128,
-        8
-      ]
-    },
-    {
-      "stamp": "decal_doorstep",
-      "at": [
-        96,
-        27
-      ]
-    },
-    {
-      "stamp": "decal_rubble_weeds",
-      "at": [
-        53,
-        26
-      ]
-    },
-    {
-      "stamp": "decal_creeper",
-      "at": [
-        102,
-        20
-      ]
-    },
-    {
-      "stamp": "decal_cracks",
-      "at": [
-        28,
-        19
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        80,
-        10
-      ]
-    },
-    {
-      "stamp": "decal_beams",
-      "at": [
-        32,
-        16
-      ]
-    },
-    {
-      "stamp": "decal_weeds",
-      "at": [
-        5,
-        25
-      ]
-    },
-    {
-      "stamp": "decal_rubble",
-      "at": [
-        89,
-        25
-      ]
-    },
-    {
-      "stamp": "decal_doorstep",
-      "at": [
-        40,
-        20
-      ]
-    },
-    {
-      "stamp": "decal_bush",
-      "at": [
-        46,
-        10
-      ]
-    },
-    {
-      "stamp": "decal_doorstep",
-      "at": [
-        16,
+        72,
         18
       ]
     },
     {
-      "stamp": "decal_weeds",
+      "stamp": "house_s_b",
       "at": [
-        108,
-        14
-      ]
-    },
-    {
-      "stamp": "decal_bush",
-      "at": [
-        146,
-        12
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        113,
-        15
-      ]
-    },
-    {
-      "stamp": "decal_tufts",
-      "at": [
-        78,
-        22
-      ]
-    },
-    {
-      "stamp": "decal_rubble",
-      "at": [
-        6,
-        4
-      ]
-    },
-    {
-      "stamp": "decal_cracks",
-      "at": [
-        26,
-        16
-      ]
-    },
-    {
-      "stamp": "decal_stones",
-      "at": [
-        26,
-        19
-      ]
-    },
-    {
-      "stamp": "decal_weeds",
-      "at": [
-        29,
-        19
-      ]
-    },
-    {
-      "stamp": "decal_bush",
-      "at": [
-        114,
-        14
-      ]
-    },
-    {
-      "stamp": "decal_stump",
-      "at": [
-        137,
-        26
-      ]
-    },
-    {
-      "stamp": "decal_rubble_weeds",
-      "at": [
-        63,
-        20
-      ]
-    },
-    {
-      "stamp": "decal_wall_corner",
-      "at": [
-        155,
-        12
-      ]
-    },
-    {
-      "stamp": "decal_rubble",
-      "at": [
-        133,
+        118,
         7
       ]
     },
     {
-      "stamp": "decal_tufts",
+      "stamp": "house_s_a",
       "at": [
-        140,
-        26
-      ]
-    },
-    {
-      "stamp": "decal_beams",
-      "at": [
-        4,
-        26
+        147,
+        19
       ]
     }
   ],
-  "lamp": null,
+  "fixtures": [
+    {
+      "kind": "standin_bench",
+      "at": [
+        59,
+        13
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        107,
+        12
+      ]
+    }
+  ],
+  "people": [
+    {
+      "id": "rct1_hiker_wade",
+      "name": "Wade",
+      "at": [
+        58,
+        15
+      ],
+      "facing": "W",
+      "sprite": "hiker",
+      "role": "talk",
+      "lines": [
+        "Rock Creek runs cold even in August \u2014 jump the ledges to save steps heading west.",
+        "Stay on the timber footbridges when the gorge fog rolls in."
+      ]
+    },
+    {
+      "id": "rct1_ranger_kim",
+      "name": "Kim",
+      "at": [
+        138,
+        14
+      ],
+      "facing": "W",
+      "sprite": "ranger",
+      "role": "talk",
+      "lines": [
+        "Turn north right here to climb the gorge trail up into Woodley Park.",
+        "Wild Bidoof and Oddish nest thick in the creek-bed grass."
+      ]
+    }
+  ],
+  "street_pokemon": [
+    {
+      "dex": 399,
+      "at": [
+        26,
+        12
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 396,
+      "at": [
+        68,
+        15
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 406,
+      "at": [
+        86,
+        15
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 54,
+      "at": [
+        100,
+        16
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 43,
+      "at": [
+        126,
+        14
+      ],
+      "zone": "wilds"
+    }
+  ],
   "signs": [
     {
       "at": [
@@ -266,12 +165,69 @@
     },
     {
       "at": [
-        96,
-        10
+        95,
+        14
       ],
       "text": "Rock Creek"
+    },
+    {
+      "at": [
+        44,
+        13
+      ],
+      "text": "West Creek Bridge \u2014 watch wet mossy planks after rain."
+    },
+    {
+      "at": [
+        142,
+        16
+      ],
+      "text": "Gorge Bend \u2014 follow the creek trail north toward Woodley Park."
     }
   ],
+  "hidden_items": [
+    {
+      "at": [
+        36,
+        26
+      ],
+      "item": "Super Potion",
+      "note": "Beneath a mossy log along the lower creek bank."
+    },
+    {
+      "at": [
+        76,
+        15
+      ],
+      "item": "Great Ball",
+      "note": "Tucked into a split boulder beside the trail."
+    },
+    {
+      "at": [
+        93,
+        25
+      ],
+      "item": "Hyper Potion",
+      "note": "Under river stones near the south gorge cliff."
+    },
+    {
+      "at": [
+        124,
+        11
+      ],
+      "item": "Revive",
+      "note": "Behind an old timber milepost on the north ledge."
+    },
+    {
+      "at": [
+        149,
+        25
+      ],
+      "item": "Ultra Ball",
+      "note": "Hidden beneath pine needles at the east canyon rim."
+    }
+  ],
+  "lamp": null,
   "openings": [
     {
       "side": "W",

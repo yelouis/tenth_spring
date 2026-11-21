@@ -123,8 +123,15 @@ var _world_known: TileMapLayer = null
 var _world_cleared: TileMapLayer = null
 var _tree_top_known: TileMapLayer = null
 var _tree_top_cleared: TileMapLayer = null
-var _fog_layer: TileMapLayer = null
+var _fog_layer: ColorRect = null
 var _overview_layer: Node2D = null
+const FOG_GRID_SIZE: int = 64
+var _fog_grid_img: Image = null
+var _fog_grid_tex: ImageTexture = null
+var _fog_grid_origin: Vector2i = Vector2i(-32, -32)
+var _fog_town_rects: Array[Vector4] = []
+var _fog_dirty: bool = true
+var _fog_state_sig: String = ""
 var _stamp_base_layer: Node2D = null
 var _stamp_overhang_layer: Node2D = null
 var _cell_stamp_sprites: Dictionary = {} # Vector2i -> Array[Sprite2D]
@@ -238,10 +245,13 @@ func _ready() -> void:
 	_background_layer = get_node_or_null("BackgroundLayer") as ColorRect
 	_world_known = get_node_or_null("WorldKnown") as TileMapLayer
 	_world_cleared = get_node_or_null("WorldCleared") as TileMapLayer
-	_fog_layer = get_node_or_null("FogLayer") as TileMapLayer
+	_fog_layer = get_node_or_null("FogLayer") as ColorRect
 	_overview_layer = get_node_or_null("OverviewLayer") as Node2D
 	if _fog_layer != null:
-		_fog_layer.z_index = 20
+		_fog_layer.z_index = 35
+		_fog_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_fog_layer.visible = true
+		_init_fog_overlay()
 	if _overview_layer != null:
 		_overview_layer.z_index = 30
 
@@ -441,8 +451,8 @@ func _clear_rendered_layers() -> void:
 		_tree_top_known.clear()
 	if _tree_top_cleared != null:
 		_tree_top_cleared.clear()
-	if _fog_layer != null:
-		_fog_layer.clear()
+	_fog_dirty = true
+	_fog_state_sig = ""
 	for cell_k in _cell_stamp_sprites.keys():
 		_clear_cell_stamps(cell_k)
 	_cell_stamp_sprites.clear()
@@ -549,8 +559,6 @@ func _init_tile_sets() -> void:
 		_tree_top_known.tile_set = tileset
 	if _tree_top_cleared != null:
 		_tree_top_cleared.tile_set = tileset
-	if _fog_layer != null:
-		_fog_layer.tile_set = tileset
 
 func get_atlas_coords(cls: int, variant: int, mask: int) -> Vector2i:
 	if cls == TileSynth2.TILE_STAMP or (cls == TileSynth2.TILE_DOOR and mask > 0):
@@ -1223,6 +1231,7 @@ func _process(delta: float) -> void:
 	_update_frustum_culling()
 	_drain_worker_results()
 	_blit_pending_cells()
+	_update_fog_overlay_rect()
 	_lookup_mutex.lock()
 	var lookup_res: Variant = _pending_lookup_result
 	_pending_lookup_result = null
@@ -1424,7 +1433,8 @@ func _set_zoom_step(zoom_val: float) -> void:
 	if _tree_top_cleared != null:
 		_tree_top_cleared.visible = not show_overview
 	if _fog_layer != null:
-		_fog_layer.visible = not show_overview
+		_fog_layer.visible = true
+	_fog_dirty = true
 	if _stamp_base_layer != null:
 		_stamp_base_layer.visible = not show_overview
 	if _stamp_overhang_layer != null:
@@ -1471,6 +1481,7 @@ func _update_frustum_culling() -> void:
 				revealed_cells_in_view[r_cell] = int(r["reveal_state"])
 
 	var is_overview := _is_overview_zoom()
+	_sync_fog_field(caricature_states_by_area)
 
 	for cy in range(min_cy, max_cy + 1):
 		for cx in range(min_cx, max_cx + 1):
@@ -1642,7 +1653,7 @@ func _blit_cell_to_overview_chunk(cx: int, cy: int, cell_img: Image) -> void:
 		c_data = _overview_chunks[chunk_key]
 	else:
 		var chunk_img := Image.create(256, 256, false, Image.FORMAT_RGBA8)
-		chunk_img.fill(Color("#0d1119"))
+		chunk_img.fill(Color8(128, 132, 145, 255))
 		var chunk_tex := ImageTexture.create_from_image(chunk_img)
 		var sprite := Sprite2D.new()
 		sprite.centered = false
@@ -1729,38 +1740,6 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 						if other_top_layer != null:
 							other_top_layer.erase_cell(top_st)
 
-			# Inward feathering on FogLayer (§6)
-			var n_hidden := _is_cell_hidden(cx, cy + 1)
-			var e_hidden := _is_cell_hidden(cx + 1, cy)
-			var s_hidden := _is_cell_hidden(cx, cy - 1)
-			var w_hidden := _is_cell_hidden(cx - 1, cy)
-
-			var fog_d75: int = _fog_rows.get("d75", 55)
-			var fog_d50: int = _fog_rows.get("d50", 56)
-			var fog_d25: int = _fog_rows.get("d25", 57)
-
-			for ty in 32:
-				for tx in 32:
-					var st := _screen_tile(cx, cy, tx, ty)
-					var min_dist := 999
-					if n_hidden:
-						min_dist = mini(min_dist, ty)
-					if s_hidden:
-						min_dist = mini(min_dist, 31 - ty)
-					if w_hidden:
-						min_dist = mini(min_dist, tx)
-					if e_hidden:
-						min_dist = mini(min_dist, 31 - tx)
-
-					if min_dist == 0:
-						_fog_layer.set_cell(st, 0, Vector2i(0, fog_d75))
-					elif min_dist == 1:
-						_fog_layer.set_cell(st, 0, Vector2i(0, fog_d50))
-					elif min_dist == 2:
-						_fog_layer.set_cell(st, 0, Vector2i(0, fog_d25))
-					else:
-						_fog_layer.erase_cell(st)
-
 			_render_cell_stamps(cx, cy, item)
 
 	# Overview chunk in OverviewLayer (§11.5 step 2)
@@ -1786,7 +1765,7 @@ func _render_unknown_cell(cx: int, cy: int) -> void:
 func _get_unknown_overview_image() -> Image:
 	if _unknown_overview_img == null:
 		_unknown_overview_img = Image.create(32, 32, false, Image.FORMAT_RGBA8)
-		_unknown_overview_img.fill(Color("#0d1119"))
+		_unknown_overview_img.fill(Color8(128, 132, 145, 255))
 	return _unknown_overview_img
 
 func _get_unknown_overview_texture() -> ImageTexture:
@@ -1804,7 +1783,7 @@ func _build_overview_image(tile_buf: PackedByteArray, reveal_state: int) -> Imag
 			var v: int = tile_buf[idx + 1]
 			var base_col: Color
 			if reveal_state == 0:
-				base_col = Color("#0d1119")
+				base_col = Color8(128, 132, 145, 255)
 			elif cls == 12: # ROOF
 				base_col = ROOF_BASE_COLORS[v % 8]
 			else:
@@ -1883,6 +1862,8 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 	if reveal_state == 0:
 		_render_unknown_cell(cx, cy)
 		_rendered_cells[cell] = true
+		_fog_dirty = true
+		_sync_fog_field()
 		return false
 
 	var item: Dictionary = {}
@@ -1951,6 +1932,8 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 	_blit_cell(cx, cy, item)
 	_flush_overview_chunks()
 	_rendered_cells[cell] = true
+	_fog_dirty = true
+	_sync_fog_field()
 	var is_unmapped: bool = (reveal_state > 0 and not item.get("has_data", false))
 	return is_unmapped
 
@@ -1973,13 +1956,11 @@ func get_steady_frame_p95_ms() -> float:
 
 func _render_solid_fog(cx: int, cy: int) -> void:
 	_clear_cell_stamps(Vector2i(cx, cy))
-	var solid_fog_row: int = _fog_rows.get("solid", 54)
+	_fog_dirty = true
 	for ty in 32:
 		for tx in 32:
 			var st := _screen_tile(cx, cy, tx, ty)
 			var top_st := st + Vector2i(0, -1)
-			if _fog_layer != null:
-				_fog_layer.set_cell(st, 0, Vector2i(0, solid_fog_row))
 			if _world_known != null:
 				_world_known.erase_cell(st)
 			if _world_cleared != null:
@@ -1994,6 +1975,7 @@ func _unrender_cell(cx: int, cy: int) -> void:
 	_rendered_reveal_state.erase(cell)
 	_unmapped_revealed_cells.erase(cell)
 	_clear_cell_stamps(cell)
+	_fog_dirty = true
 	for ty in 32:
 		for tx in 32:
 			var coord := _screen_tile(cx, cy, tx, ty)
@@ -2006,8 +1988,253 @@ func _unrender_cell(cx: int, cy: int) -> void:
 				_tree_top_known.erase_cell(top_coord)
 			if _tree_top_cleared != null:
 				_tree_top_cleared.erase_cell(top_coord)
-			if _fog_layer != null:
-				_fog_layer.erase_cell(coord)
+
+func _init_fog_overlay() -> void:
+	_fog_grid_img = Image.create(FOG_GRID_SIZE, FOG_GRID_SIZE, false, Image.FORMAT_RGBA8)
+	_fog_grid_img.fill(Color(0.0, 0.0, 0.0, 1.0))
+	_fog_grid_tex = ImageTexture.create_from_image(_fog_grid_img)
+	_fog_dirty = true
+	_fog_state_sig = ""
+	if _fog_layer != null and _fog_layer.material is ShaderMaterial:
+		var sm := _fog_layer.material as ShaderMaterial
+		sm.set_shader_parameter("cell_reveal_tex", _fog_grid_tex)
+		sm.set_shader_parameter("cell_grid_origin", Vector2(_fog_grid_origin))
+		sm.set_shader_parameter("cell_grid_size", Vector2(FOG_GRID_SIZE, FOG_GRID_SIZE))
+		sm.set_shader_parameter("town_rect_count", 0)
+		sm.set_shader_parameter("time_override", -1.0)
+	_update_fog_overlay_rect()
+
+func _update_fog_overlay_rect() -> void:
+	if _fog_layer == null:
+		return
+	var vp_px := get_viewport_rect().size
+	if vp_px.x <= 1.0 or vp_px.y <= 1.0:
+		vp_px = Vector2(1280.0, 720.0)
+	var z := _camera.zoom.x if (_camera != null and _camera.zoom.x > 0.0001) else 1.0
+	var half_w := (vp_px.x / z) * 0.5 + float(TILE_SIZE_PX) * 6.0
+	var half_h := (vp_px.y / z) * 0.5 + float(TILE_SIZE_PX) * 6.0
+	var cpos := _camera.position if _camera != null else Vector2.ZERO
+	var top_left := cpos - Vector2(half_w, half_h)
+	var sz := Vector2(half_w * 2.0, half_h * 2.0)
+	_fog_layer.position = top_left
+	_fog_layer.size = sz
+	if _fog_layer.material is ShaderMaterial:
+		var sm := _fog_layer.material as ShaderMaterial
+		sm.set_shader_parameter("rect_origin_tiles", top_left / float(TILE_SIZE_PX))
+		sm.set_shader_parameter("rect_size_tiles", sz / float(TILE_SIZE_PX))
+		sm.set_shader_parameter("zoom_scale", z)
+
+func _sync_fog_field(caricature_states_by_area: Dictionary = {}) -> void:
+	if _fog_grid_img == null or _fog_grid_tex == null:
+		_init_fog_overlay()
+	var cam_st := (_camera.position / float(TILE_SIZE_PX)) if _camera != null else Vector2.ZERO
+	var cam_sc := Vector2i(floori(cam_st.x / 32.0), floori(cam_st.y / 32.0))
+	var half_g := int(FOG_GRID_SIZE / 2)
+	if _fog_dirty or absi(cam_sc.x - (_fog_grid_origin.x + half_g)) > 16 or absi(cam_sc.y - (_fog_grid_origin.y + half_g)) > 16:
+		_fog_grid_origin = Vector2i(cam_sc.x - half_g, cam_sc.y - half_g)
+		_fog_dirty = true
+
+	var db = _get_db()
+	var db_open: bool = (db != null and db.is_open())
+	var states_map: Dictionary = caricature_states_by_area
+	if _is_caricature_place and states_map.is_empty() and db_open:
+		states_map = {"__loaded__": -1}
+		for ns_var in db.get_neighbourhood_states(_active_place_id):
+			if ns_var is Dictionary:
+				var ns_d: Dictionary = ns_var
+				states_map[str(ns_d.get("area_id", ""))] = int(ns_d.get("state", 0))
+
+	var sig_parts := PackedStringArray()
+	sig_parts.append("%d,%d,%d" % [_fog_grid_origin.x, _fog_grid_origin.y, 1 if _is_caricature_place else 0])
+	var non_cari_cells: Array[Vector2i] = []
+	if _is_caricature_place:
+		var skeys := states_map.keys()
+		skeys.sort()
+		for k in skeys:
+			if str(k) != "__loaded__":
+				sig_parts.append("%s=%d" % [str(k), int(states_map[k])])
+		sig_parts.append("areas=%d" % _caricature_compiled_by_area.size())
+	else:
+		if db_open:
+			var cx0: int = _fog_grid_origin.x
+			var cx1: int = cx0 + FOG_GRID_SIZE - 1
+			var cy_max: int = -_fog_grid_origin.y - 1
+			var cy_min: int = -(_fog_grid_origin.y + FOG_GRID_SIZE - 1) - 1
+			var rows_q: Array = db.query_rows(
+				"SELECT cell_x, cell_y FROM map_cell WHERE cell_x >= ? AND cell_x <= ? AND cell_y >= ? AND cell_y <= ? AND reveal_state > 0 ORDER BY cell_x, cell_y;",
+				[cx0, cx1, cy_min, cy_max]
+			)
+			for r in rows_q:
+				var c_v := Vector2i(int(r["cell_x"]), int(r["cell_y"]))
+				non_cari_cells.append(c_v)
+				sig_parts.append("%d:%d" % [c_v.x, c_v.y])
+
+	var sig := "|".join(sig_parts)
+	if not _fog_dirty and sig == _fog_state_sig:
+		return
+
+	_fog_grid_img.fill(Color(0.0, 0.0, 0.0, 1.0))
+	_fog_town_rects.clear()
+	if _is_caricature_place:
+		for cell_v in _caricature_cells.keys():
+			var cell: Vector2i = cell_v
+			var scx: int = cell.x
+			var scy: int = -cell.y - 1
+			var u: int = scx - _fog_grid_origin.x
+			var v: int = scy - _fog_grid_origin.y
+			if u >= 0 and u < FOG_GRID_SIZE and v >= 0 and v < FOG_GRID_SIZE:
+				if _caricature_reveal_state(cell, states_map) > 0:
+					var cell_entry: Dictionary = _caricature_cells[cell]
+					var cell_area: Dictionary = cell_entry.get("area", {}) if cell_entry.get("area") is Dictionary else {}
+					var cell_kind := str(cell_area.get("kind", ""))
+					var cell_aid := str(cell_area.get("id", ""))
+					var allow_mist := 0.0 if (cell_kind == "camp" or cell_aid.begins_with("camp:")) else 1.0
+					_fog_grid_img.set_pixel(u, v, Color(1.0, allow_mist, 0.0, 1.0))
+		for aid_v in _caricature_compiled_by_area.keys():
+			var comp: Dictionary = _caricature_compiled_by_area[aid_v]
+			var t_rects: Array = comp.get("town", [])
+			if t_rects.is_empty():
+				continue
+			var orig: Vector2i = comp.get("origin", Vector2i.ZERO)
+			var rows_c: int = int(comp.get("rows", 1))
+			if _caricature_reveal_state(orig, states_map) <= 0:
+				continue
+			var gx0: int = orig.x * 32
+			var gy0: int = (-(orig.y + rows_c - 1) - 1) * 32
+			for rv in t_rects:
+				if rv is Array and (rv as Array).size() >= 4 and _fog_town_rects.size() < 32:
+					var ra: Array = rv
+					_fog_town_rects.append(Vector4(
+						float(gx0 + int(ra[0])),
+						float(gy0 + int(ra[1])),
+						float(gx0 + int(ra[0]) + int(ra[2])),
+						float(gy0 + int(ra[1]) + int(ra[3]))
+					))
+	else:
+		for c_v in non_cari_cells:
+			var scx: int = c_v.x
+			var scy: int = -c_v.y - 1
+			var u: int = scx - _fog_grid_origin.x
+			var v: int = scy - _fog_grid_origin.y
+			if u >= 0 and u < FOG_GRID_SIZE and v >= 0 and v < FOG_GRID_SIZE:
+				_fog_grid_img.set_pixel(u, v, Color(1.0, 0.0, 0.0, 1.0))
+
+	_fog_grid_tex.update(_fog_grid_img)
+	if _fog_layer != null and _fog_layer.material is ShaderMaterial:
+		var sm := _fog_layer.material as ShaderMaterial
+		sm.set_shader_parameter("cell_reveal_tex", _fog_grid_tex)
+		sm.set_shader_parameter("cell_grid_origin", Vector2(_fog_grid_origin))
+		sm.set_shader_parameter("cell_grid_size", Vector2(FOG_GRID_SIZE, FOG_GRID_SIZE))
+		sm.set_shader_parameter("town_rect_count", _fog_town_rects.size())
+		var padded: Array[Vector4] = []
+		padded.resize(32)
+		for i in range(32):
+			padded[i] = _fog_town_rects[i] if i < _fog_town_rects.size() else Vector4.ZERO
+		sm.set_shader_parameter("town_rects", padded)
+	_fog_dirty = false
+	_fog_state_sig = sig
+	_update_fog_overlay_rect()
+
+static func _fog_hash21(p: Vector2) -> float:
+	var x := fposmod(p.x * 0.1031, 1.0)
+	var y := fposmod(p.y * 0.1031, 1.0)
+	var z := fposmod(p.x * 0.1031, 1.0)
+	var d := x * (y + 33.33) + y * (z + 33.33) + z * (x + 33.33)
+	return fposmod((x + d + y + d) * (z + d), 1.0)
+
+static func _fog_vnoise(p: Vector2, seed_val: float) -> float:
+	var ix: float = floorf(p.x)
+	var iy: float = floorf(p.y)
+	var fx: float = p.x - ix
+	var fy: float = p.y - iy
+	var ux: float = fx * fx * (3.0 - 2.0 * fx)
+	var uy: float = fy * fy * (3.0 - 2.0 * fy)
+	var off := Vector2(seed_val, seed_val * 1.37)
+	var a := _fog_hash21(Vector2(ix, iy) + off)
+	var b := _fog_hash21(Vector2(ix + 1.0, iy) + off)
+	var c := _fog_hash21(Vector2(ix, iy + 1.0) + off)
+	var d := _fog_hash21(Vector2(ix + 1.0, iy + 1.0) + off)
+	return lerpf(lerpf(a, b, ux), lerpf(c, d, ux), uy)
+
+static func _fog_fbm3(p: Vector2, cell_sz: Vector2, seed_val: float) -> float:
+	var q := Vector2(p.x / cell_sz.x, p.y / cell_sz.y)
+	var v := (
+		1.0 * _fog_vnoise(q, seed_val)
+		+ 0.5 * _fog_vnoise(q * 2.0, seed_val + 3.1)
+		+ 0.25 * _fog_vnoise(q * 4.0, seed_val + 6.7)
+	) / 1.75
+	return clampf((v - 0.25) / 0.5, 0.0, 1.0)
+
+func _sample_fog_cell(scx: int, scy: int) -> Color:
+	if _fog_grid_img == null:
+		return Color(0.0, 0.0, 0.0, 1.0)
+	var u := scx - _fog_grid_origin.x
+	var v := scy - _fog_grid_origin.y
+	if u < 0 or v < 0 or u >= FOG_GRID_SIZE or v >= FOG_GRID_SIZE:
+		return Color(0.0, 0.0, 0.0, 1.0)
+	return _fog_grid_img.get_pixel(u, v)
+
+func evaluate_fog_at_tile(st: Vector2, time_sec: float = 0.0) -> Dictionary:
+	_sync_fog_field()
+	var drift := Vector2(-time_sec / 3.0, 0.0)
+	var n := _fog_fbm3(st + drift, Vector2(6.0, 2.2), 11.0)
+	var n2 := _fog_fbm3(st + drift, Vector2(10.0, 4.0), 18.0)
+	var scx := floori(st.x / 32.0)
+	var scy := floori(st.y / 32.0)
+	var loc := Vector2(st.x - float(scx * 32), st.y - float(scy * 32))
+	var here := _sample_fog_cell(scx, scy)
+	var bank := Color(92.0 / 255.0, 96.0 / 255.0, 110.0 / 255.0, 1.0).lerp(
+		Color(168.0 / 255.0, 172.0 / 255.0, 184.0 / 255.0, 1.0), n2
+	)
+	if here.r < 0.5:
+		return {
+			"outside": true,
+			"d_edge": -1.0,
+			"d_town": 100.0,
+			"a_edge": 1.0,
+			"a_mist": 0.0,
+			"alpha": 1.0,
+			"color": bank,
+		}
+	var d_edge := 100.0
+	for dy in range(-1, 2):
+		for dx in range(-1, 2):
+			if dx == 0 and dy == 0:
+				continue
+			if _sample_fog_cell(scx + dx, scy + dy).r < 0.5:
+				var ex := loc.x if dx < 0 else ((32.0 - loc.x) if dx > 0 else 0.0)
+				var ey := loc.y if dy < 0 else ((32.0 - loc.y) if dy > 0 else 0.0)
+				d_edge = minf(d_edge, Vector2(ex, ey).length())
+	var t_edge := clampf(d_edge / 9.0, 0.0, 1.0)
+	var sm_edge := t_edge * t_edge * (3.0 - 2.0 * t_edge)
+	var a_edge := pow(1.0 - sm_edge, 1.4) * lerpf(0.55, 1.0, n)
+	var t_rim := clampf(d_edge / 1.5, 0.0, 1.0)
+	var sm_rim := t_rim * t_rim * (3.0 - 2.0 * t_rim)
+	a_edge = maxf(a_edge, 1.0 - sm_rim)
+	var d_town := 100.0
+	var a_mist := 0.0
+	if here.g > 0.5:
+		for r in _fog_town_rects:
+			var dx_t := maxf(maxf(r.x - st.x, st.x - r.z), 0.0)
+			var dy_t := maxf(maxf(r.y - st.y, st.y - r.w), 0.0)
+			d_town = minf(d_town, Vector2(dx_t, dy_t).length())
+		var t_town := clampf(d_town / 5.0, 0.0, 1.0)
+		var sm_town := t_town * t_town * (3.0 - 2.0 * t_town)
+		a_mist = 0.34 * lerpf(0.30, 1.0, n) * sm_town
+	var alpha := 1.0 - (1.0 - a_edge) * (1.0 - a_mist)
+	var t_col := clampf(d_edge / 2.5, 0.0, 1.0)
+	var sm_col := t_col * t_col * (3.0 - 2.0 * t_col)
+	var fog_col := bank.lerp(Color(206.0 / 255.0, 210.0 / 255.0, 220.0 / 255.0, 1.0), sm_col)
+	fog_col.a = alpha
+	return {
+		"outside": false,
+		"d_edge": d_edge,
+		"d_town": d_town,
+		"a_edge": a_edge,
+		"a_mist": a_mist,
+		"alpha": alpha,
+		"color": fog_col,
+	}
 
 func _clear_cell_stamps(cell: Vector2i) -> void:
 	if not _cell_stamp_sprites.has(cell):

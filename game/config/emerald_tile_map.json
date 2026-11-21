@@ -3753,6 +3753,124 @@
           842
         ]
       ]
+    },
+    "em_bridge_v_deck": {
+      "tileset": "sec05",
+      "w": 2,
+      "h": 1,
+      "base_rows": 0,
+      "layer": "top",
+      "cells": [
+        [
+          724,
+          724
+        ]
+      ]
+    },
+    "em_bridge_v_rail_w": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 1,
+      "base_rows": 1,
+      "layer": "top",
+      "cells": [
+        [
+          792
+        ]
+      ]
+    },
+    "em_bridge_v_rail_e": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 1,
+      "base_rows": 1,
+      "layer": "top",
+      "cells": [
+        [
+          793
+        ]
+      ]
+    },
+    "em_bridge_v_pier_w": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 2,
+      "base_rows": 2,
+      "layer": "top",
+      "cells": [
+        [
+          816
+        ],
+        [
+          832
+        ]
+      ]
+    },
+    "em_bridge_v_pier_e": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 2,
+      "base_rows": 2,
+      "layer": "top",
+      "cells": [
+        [
+          819
+        ],
+        [
+          835
+        ]
+      ]
+    },
+    "em_bridge_h_rail_n": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 1,
+      "base_rows": 1,
+      "layer": "top",
+      "cells": [
+        [
+          754
+        ]
+      ]
+    },
+    "em_bridge_h_deck": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 2,
+      "base_rows": 0,
+      "layer": "top",
+      "cells": [
+        [
+          724
+        ],
+        [
+          770
+        ]
+      ]
+    },
+    "em_bridge_h_girder": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 1,
+      "base_rows": 1,
+      "layer": "top",
+      "cells": [
+        [
+          786
+        ]
+      ]
+    },
+    "em_bridge_h_pier": {
+      "tileset": "sec05",
+      "w": 1,
+      "h": 1,
+      "base_rows": 1,
+      "layer": "top",
+      "cells": [
+        [
+          789
+        ]
+      ]
     }
   },
   "people_sprites": {

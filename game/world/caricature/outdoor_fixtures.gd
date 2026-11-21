@@ -206,6 +206,56 @@ static func _get_procedural_texture(kind: String, tw: int, th: int) -> Texture2D
 			_box(img, 4, 24, 40, 18, outline, Color8(214, 208, 192, 255))
 			_box(img, 14, 4, 18, 22, outline, Color8(236, 240, 248, 255))
 			_fill_rect(img, 18, 6, 8, 16, Color8(124, 184, 216, 255))
+		"em_bridge_v_deck":
+			_fill_rect(img, 0, 0, gw, gh, Color8(198, 206, 216, 255))
+			for y in range(0, gh, 4):
+				_fill_rect(img, 0, y, gw, 1, Color8(176, 186, 198, 255))
+			_fill_rect(img, gw / 2 - 1, 2, 2, 12, Color8(226, 232, 240, 255))
+		"em_bridge_v_rail_w":
+			_fill_rect(img, 8, 0, 8, 16, Color8(102, 134, 174, 255))
+			_fill_rect(img, 8, 0, 1, 16, outline)
+			_fill_rect(img, 10, 0, 3, 16, Color8(168, 200, 232, 255))
+			_fill_rect(img, 14, 0, 2, 16, Color8(82, 92, 110, 255))
+		"em_bridge_v_rail_e":
+			_fill_rect(img, 0, 0, 8, 16, Color8(102, 134, 174, 255))
+			_fill_rect(img, 7, 0, 1, 16, outline)
+			_fill_rect(img, 3, 0, 3, 16, Color8(168, 200, 232, 255))
+			_fill_rect(img, 0, 0, 2, 16, Color8(82, 92, 110, 255))
+		"em_bridge_v_pier_w":
+			_fill_rect(img, 8, 0, 8, 32, Color8(102, 134, 174, 255))
+			_fill_rect(img, 10, 0, 3, 32, Color8(168, 200, 232, 255))
+			_fill_rect(img, 14, 0, 2, 32, Color8(82, 92, 110, 255))
+			_box(img, 0, 4, 9, 14, outline, Color8(116, 154, 196, 255))
+			_fill_rect(img, 1, 12, 7, 3, Color8(192, 212, 234, 255))
+			_box(img, 1, 18, 6, 10, outline, Color8(122, 82, 72, 255))
+		"em_bridge_v_pier_e":
+			_fill_rect(img, 0, 0, 8, 32, Color8(102, 134, 174, 255))
+			_fill_rect(img, 3, 0, 3, 32, Color8(168, 200, 232, 255))
+			_fill_rect(img, 0, 0, 2, 32, Color8(82, 92, 110, 255))
+			_box(img, 7, 4, 9, 14, outline, Color8(116, 154, 196, 255))
+			_fill_rect(img, 8, 12, 7, 3, Color8(192, 212, 234, 255))
+			_box(img, 9, 18, 6, 10, outline, Color8(122, 82, 72, 255))
+		"em_bridge_h_rail_n":
+			_fill_rect(img, 0, 4, 16, 12, Color8(116, 154, 196, 255))
+			_fill_rect(img, 0, 4, 16, 2, Color8(86, 122, 166, 255))
+			_fill_rect(img, 0, 7, 16, 4, Color8(232, 238, 246, 255))
+			_fill_rect(img, 0, 12, 16, 4, Color8(126, 134, 148, 255))
+			_fill_rect(img, 3, 5, 2, 10, Color8(168, 200, 232, 255))
+			_fill_rect(img, 11, 5, 2, 10, Color8(168, 200, 232, 255))
+		"em_bridge_h_deck":
+			_fill_rect(img, 0, 0, 16, 32, Color8(198, 206, 216, 255))
+			for y in range(0, 28, 4):
+				_fill_rect(img, 0, y, 16, 1, Color8(176, 186, 198, 255))
+			_fill_rect(img, 0, 28, 16, 4, Color8(102, 134, 174, 255))
+		"em_bridge_h_girder":
+			_fill_rect(img, 0, 0, 16, 12, Color8(86, 116, 158, 255))
+			_fill_rect(img, 0, 5, 16, 3, Color8(174, 196, 224, 255))
+			_fill_rect(img, 0, 11, 16, 1, outline)
+		"em_bridge_h_pier":
+			_box(img, 0, 0, 16, 7, outline, Color8(116, 154, 196, 255))
+			_fill_rect(img, 1, 3, 14, 2, Color8(192, 212, 234, 255))
+			_box(img, 2, 7, 12, 9, outline, Color8(122, 82, 72, 255))
+			_fill_rect(img, 6, 9, 4, 5, Color8(84, 56, 52, 255))
 		"standin_bench":
 			# 2x1 tiles (32x16 -> 64x32 px) straight-on wood & wrought-iron park bench
 			_box(img, 2, 2, 28, 6, outline, Color8(168, 114, 68, 255))

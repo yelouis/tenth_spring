@@ -704,7 +704,7 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 			var idx: int = y * w + x
 			var t_cls: int = cls_buf[idx]
 			var in_town: bool = has_town_rules and town_mask[idx] == 1
-			if has_town_rules:
+			if has_town_rules or area_kind == "route":
 				if t_cls == TileSynth2.TILE_PATH or t_cls == TileSynth2.TILE_PLAZA or t_cls == TileSynth2.TILE_ROAD:
 					var gx: int = _global_col(origin, x)
 					var_buf[idx] = 0
@@ -1388,7 +1388,7 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 
 	var ruin_level := str(area.get("ruin_level", "near"))
 	var road_v1_thresh := _road_v1_thresh_for(ruin_level)
-	var preserve_road := bool(compiled.get("has_town_rules", false))
+	var preserve_road := bool(compiled.get("has_town_rules", false)) or str(compiled.get("kind", "")) == "route"
 
 	var output := TileSynth2.finalize_cell_output(
 		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road

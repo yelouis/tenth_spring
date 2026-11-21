@@ -217,13 +217,16 @@ func run_test() -> bool:
 	if not (emap.get("buildings", {}) as Dictionary).is_empty() or not (emap.get("compositions", {}) as Dictionary).is_empty():
 		return _fail("E3 Rule B violated: buildings and compositions must be empty {}")
 
-	# E4: original_v1.json has 104 tile rows and fog_rows ending at row 107 (512x3456)
+	# E4: original_v1.json has 104 tile rows; fog is shader-driven (distortion_fog.gdshader, Decision 72)
 	var orig_doc_v: Variant = JSON.parse_string(FileAccess.get_file_as_string(ORIGINAL_JSON))
 	if not (orig_doc_v is Dictionary):
 		return _fail("E4 failed to parse original_v1.json")
 	var orig_doc: Dictionary = orig_doc_v
-	if (orig_doc.get("rows", []) as Array).size() != 104 or int((orig_doc.get("fog_rows", {}) as Dictionary).get("d25", 0)) != 107:
-		return _fail("E4 expected original_v1.json 104 rows & fog d25==107")
+	if (orig_doc.get("rows", []) as Array).size() != 104:
+		return _fail("E4 expected original_v1.json 104 rows")
+	var fog_shader_txt := FileAccess.get_file_as_string("res://world/shaders/distortion_fog.gdshader")
+	if fog_shader_txt.find("BANK_DARK") == -1 or fog_shader_txt.find("MIST_COL") == -1 or fog_shader_txt.find("town_rects") == -1:
+		return _fail("E4 expected shader-driven Decision 72 distortion_fog.gdshader")
 
 	# -------------------------------------------------------------
 	# F. Cache fallback + ROM-gated import verification
