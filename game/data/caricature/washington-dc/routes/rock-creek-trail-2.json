@@ -2,135 +2,176 @@
   "schema": 1,
   "id": "route:washington-dc:rock-creek-trail#2",
   "rows": [
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT-====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTT....TTTT----TTTTTTTTTTTTTT",
-    "TTTTTT....TTTT----TTTT~~~~~~TTTT",
-    "TTTTTT....TTTT----TTTT~~~~~~TTTT",
-    "TTTTTT....--------TTTT~~~~~~TTTT",
-    "TTTTTT------------TTTT~~~~~~TTTT",
-    "TTTTTTTTTT----...,..TT~~~~~~TTTT",
-    "TTTTTTTTTT---T.*,,,.TT~~~~~~TTTT",
-    "TTTTTT..,..--T.,,,,,~~~~~~~~TTTT",
-    "TTTTTT.*,,.--T,,,,,,~~~~~~~~TTTT",
-    "TTTTTT..,,.--T,,,,,,~~~~~~~~TTTT",
-    "TTTTTT.,,T.--T,,,,,,~~~~~~~~TTTT",
-    "TTTTTT.,,,.--T,vvvv,~~~~~~~~TTTT",
-    "TTTTTT.,,,,--T.,,,,,~~~~~~~~TTTT",
-    "TTTTTT.,,,,--T.,,,,.~~~~~~~~TTTT",
-    "TTTTTT.vvv,--T..,,*.TT~~~~~~TTTT",
-    "TTTTTT.,,,,--T..,,..TT~~~~~~TTTT",
-    "TTTTTT.,,,,--TTTTTTTTT~~~~~~TTTT",
-    "TTTTTT.,!,.--TTTTTTTTT~~~~~~FTTT",
-    "TTTTTT.,,,.--TTTTTTTTT~~~~~~TTTT",
-    "TTTTTT..,*.--TTTTT~~~~~~~~~~TTTT",
-    "TTTTTT..,,.--TTTTT~~~~~~~~~~TTTT",
-    "TTTTTTTTTT-------T~~~~~~~~~~TTTT",
-    "TTTTTTTTTT-------T~~~~~~~~~~TTTT",
-    "TTTTTTTTTTTT-----T~~~~~~~~~~TTTT",
-    "TTTTTTTTTTTT-----T~~~~~~~~~~TTTT",
-    "TTTTTTTTTTTTTT---T~~~~~~~~~~TTTT",
-    "TTTTTT..,,,,..---T~~~~~~~~~~TTTT",
-    "TTTTTT.*,,,,..---T~~~~~~~~~~FTTT",
-    "TTTTTT..,,,,..---TTTTT~~~~~~TTTT",
-    "TTTTTT..,,,,F.---TTTTT~~~~~~TTTT",
-    "TTTTTT.,k,,,,.---TTTTT~~~~~~TTTT",
-    "TTTTTT.,,,,,,.---TTTTT~~~~~~TTTT",
-    "TTTTTT.,,,,,,,---TTTTT~~~~~~TTTT",
-    "TTTTTT,,,,,,,,---....T~~~~~~TTTT",
-    "TTTTTT,,,,,,,,---.*..T~~~~~~TTTT",
-    "TTTTTT,,,,,,,,---..,.~~~~~~~TTTT",
-    "TTTTTT.^^^s^^,--F.,,,~~~~~~~TTTT",
-    "TTTTTT.^^-s^^.---.,,,~~~~~~~TTTT",
-    "TTTTTT.,,,,,,.---,,,,~~~~~~~TTTT",
-    "TTTTTT.,,,,,,.---.!,,~~~~~~~TTTT",
-    "TTTTTT.,,,,,,,--F.,,,~~~~~~~TTTT",
-    "TTTTTT....,,,,---.,,,~~~~~~~TTTT",
-    "TTTTTT....,,,,---.,,,~~~~~~~TTTT",
-    "TTTTTT....,,,.---.,,,~~~~~~~TTTT",
-    "TTTTTT....,,..---.,,,T~~~~~~TTTT",
-    "TTTTTT.---,.*.---.,*,T~~~~~~TTTT",
-    "TTTTTT........---.,,,T~~~~~~TTTT",
-    "TTTTTTTTTTTTTT----TTTT~~~~~~TTTT",
-    "TTTTTTTTTTTTTT----TTTT~~~~~~TTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
+    "TTTT..........----....:~~~:.TTTT",
+    "TTTT..........----....:~~~:.TTTT",
+    "TTTT..,.......----....:~~~:.TTTT",
+    "TTTT.,,T,.....----....:~~~:.TTTT",
+    "TTTT.,,,,,,.T-----,,,.:~~~:.TTTT",
+    "TTTT.,,,,,,,.-----,,,,:~~~:.TTTT",
+    "TTTT.,,,,,,,.--,,,,,,,:~~~:.TTTT",
+    "TTTT.,,,,,,,.--,,,,,,,:~~~:.TTTT",
+    "TTTT.,,F,,,,,--,,T,,,.:~~~:.TTTT",
+    "TTTT,,,,,,,,---,,,,,,.:~~~:.TTTT",
+    "TTTT,,,,,,,,--..,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,--..,,,,,,:~~~:.TTTT",
+    "TTTT.,,,,,..--...,,,,,:~~~:.TTTT",
+    "TTTT..,T,...--...^....:~~~:.TTTT",
+    "TTTT......!---........:~~~:.TTTT",
+    "TTTT.......--.BBBBBBBBBBBBB.TTTT",
+    "TTTT.......--.BBBBBBBBBBB--.TTTT",
+    "TTTT.......--.BBBBBBBBBBB--.TTTT",
+    "TTTT..,T,,,--....T...:~~~--.TTTT",
+    "TTTT.,,,,,,--.......:~~~:--.TTTT",
+    "TTTT.,,,,,,--.......:~~~:--.TTTT",
+    "TTTT,,,,,,,--.......:~~~:--.TTTT",
+    "TTTT,,,,,,---.......:~~~:--.TTTT",
+    "TTTT,,,,,,---...,,..:~~~:--.TTTT",
+    "TTTT.-----------------~~:--.TTTT",
+    "TTTT.^.....^^^ssss^^^^~~:--.TTTT",
+    "TTTT.^vvvvv^^^ssss^^^^~~:--.TTTT",
+    "TTTT.-----------------~~:--.TTTT",
+    "TTTT......--,,,,,,,,:~~~:--.TTTT",
+    "TTTT....,.--,,,,,,,,:~~~:--.TTTT",
+    "TTTT...,,,--.,,,T,,,:~~~:--.TTTT",
+    "TTTT.TTTTTTTT,,,,,,,:~~~:--.TTTT",
+    "TTTT.T,,,,,,T,,,,,,,:~~~:--.TTTT",
+    "TTTT,T,,,,,,T.,,,,,,:~~~:--.TTTT",
+    "TTTT,T,,,,,,T.,,,,,,:~~~:--.TTTT",
+    "TTTT,T,,.,,,k-.,F,,,.:~~~--.TTTT",
+    "TTTT,T,,,,,,T........:~~~--.TTTT",
+    "TTTT,T,,,,,,T........!~~~--.TTTT",
+    "TTTT,TTTTTTTT........:~~~--.TTTT",
+    "TTTT..,,,--...........:~~--.TTTT",
+    "TTTT...,,---....T.....:~~--.TTTT",
+    "TTTT.....---..BBBBBBBBBBB--.TTTT",
+    "TTTT...T..--..BBBBBBBBBBBBB.TTTT",
+    "TTTT.....,---.BBBBBBBBBBBBB.TTTT",
+    "TTTT....,,,--.........:~~~:.TTTT",
+    "TTTT..,,,,,--....T....:~~~:.TTTT",
+    "TTTT,,,,,,,---....,...:~~~:.TTTT",
+    "TTTT,,,^,,,---.,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,--,,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,--,,,,,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,---,,T,,,,:~~~:.TTTT",
+    "TTTT,,,,,,,,.--.,,,,,.:~~~:.TTTT",
+    "TTTT.,,T,,,,.-----,,,.:~~~:.TTTT",
+    "TTTT...,,,,,.-----,,,.:~~~:.TTTT",
+    "TTTT...,,,,T..----,,,:~~~:..TTTT",
+    "TTTT....,,,...----...:~~~:..TTTT",
+    "TTTT.....,....----...:~~~:..TTTT",
+    "TTTT..........----...:~~~:..TTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
   ],
-  "objects": [
-    {
-      "stamp": "house_s_b",
-      "at": [
-        6,
-        7
-      ]
-    },
-    {
-      "stamp": "house_s_a_door2",
-      "at": [
-        6,
-        48
-      ]
-    }
-  ],
+  "objects": [],
   "fixtures": [
     {
       "kind": "standin_bench",
       "at": [
-        13,
-        30
+        10,
+        34
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        6
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        12
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        12,
+        17
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        22
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        48
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        12,
+        53
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        16,
+        57
       ]
     }
   ],
   "people": [
     {
-      "id": "rct2_hiker_finn",
-      "name": "Finn",
+      "id": "rt_rc2_ranger",
+      "name": "Bram",
       "at": [
-        14,
-        30
+        12,
+        27
       ],
-      "facing": "S",
-      "sprite": "hiker",
+      "facing": "E",
+      "sprite": "ranger",
       "role": "talk",
       "lines": [
-        "Climb the mossy ridge ahead and you'll hear the Woodley Park aviary above the trees.",
-        "One-way ledges along the west slope make a quick drop back to Georgetown."
+        "The zoo fences start right at the top of this wooded rise."
       ]
     }
   ],
   "street_pokemon": [
     {
-      "dex": 399,
+      "dex": 263,
       "at": [
         11,
-        18
+        14
       ],
       "zone": "wilds"
     },
     {
-      "dex": 16,
+      "dex": 273,
       "at": [
         16,
-        42
+        26
       ],
       "zone": "wilds"
     },
     {
-      "dex": 401,
+      "dex": 285,
       "at": [
-        15,
-        55
+        21,
+        38
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 396,
+      "at": [
+        11,
+        50
       ],
       "zone": "wilds"
     }
@@ -145,28 +186,36 @@
     },
     {
       "at": [
-        16,
-        33
+        13,
+        46
       ],
-      "text": "Rock Creek Gorge \u2014 steep wooded bluffs rising toward Woodley Park."
+      "text": "Upper Rock Creek \u2014 mossy boulders along the east bank."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        16,
-        15
+        23,
+        18
       ],
-      "item": "Great Ball",
-      "note": "Tucked under a fern overhang above the creek."
+      "item": "Ultra Ball",
+      "note": "Tucked beside the rock creek trail#2 trail."
     },
     {
       "at": [
-        9,
-        44
+        8,
+        33
       ],
-      "item": "Hyper Potion",
-      "note": "Behind a split granite boulder on the west ridge."
+      "item": "Potion",
+      "note": "Tucked beside the rock creek trail#2 trail."
+    },
+    {
+      "at": [
+        22,
+        49
+      ],
+      "item": "Super Potion",
+      "note": "Tucked beside the rock creek trail#2 trail."
     }
   ],
   "lamp": null,

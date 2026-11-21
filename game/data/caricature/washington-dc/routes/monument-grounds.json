@@ -2,138 +2,186 @@
   "schema": 1,
   "id": "route:washington-dc:monument-grounds#1",
   "rows": [
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT-====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----........TTTTTT",
-    "TTTTTT...,,..T----.*.,....TTTTTT",
-    "TTTTTT.*,,,,.T----.,,,,,..TTTTTT",
-    "TTTTTT..,,,,.-----.,,T,,,.TTTTTT",
-    "TTTTTT.,,T,,.-----,,,,,,,,TTTTTT",
-    "TTTTTT.,,,,,.----T,,,,,,,,TTTTTT",
-    "TTTTTT.,!,,,.-TTTT,,,,,,,,TTTTTT",
-    "TTTTTT.,,,,,.-TTTT,,,,,,,,TTTTTT",
-    "TTTTTT.,,,,,,-TTTT,^^^s^^,TTTTTT",
-    "TTTTTT.,,,,,,-TTTT,^^^s^^,TTTTTT",
-    "TTTTTT.vvvvv,-TTTT,,,....,TTTTTT",
-    "TTTTTT.,,,,,,-TTTT,,,....,TTTTTT",
-    "TTTTTT.,,,,,,-TTTT,,,....,TTTTTT",
-    "TTTTTT.,,,,,,-TTTT,,,....,TTTTTT",
-    "TTTTTT..,,,,.-TTTT.,,---*.TTTTTT",
-    "TTTTTT..,,,*.-TTTT.,,,,,..TTTTTT",
-    "TTTTTT...,,..-TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTT---TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTT---TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTT---TTTT#########TTTTT",
-    "TTTTTTTTTTT-------#########TTTTT",
-    "TTTTTTTTTTTT------#########TTTTT",
-    "TTTTTTTTTTTT------##.....##TTTTT",
-    "TTTTTT..,,,.....TT##..*..##TTTTT",
-    "TTTTTT.*,,,,,,,.TT##.....##TTTTT",
-    "TTTTTT.,,,,,,,,,TT##...*.##TTTTT",
-    "TTTTTT.,,F,,,,,,TT#########TTTTT",
-    "TTTTTT.,,,,,,,,,TT#########TTTTT",
-    "TTTTTT.,,,,,,,,,TT#########TTTTT",
-    "TTTTTT.,,,,,,,,,TT---TTTTTTTTTTT",
-    "TTTTTT,,,,,,,,,,TT---TTTTTTTTTTT",
-    "TTTTTT,^^^^s^^^,TT---TTTTTTTTTTT",
-    "TTTTTT,^^^^s^^^,TT---TTTTTTTTTTT",
-    "TTTTTT,....,,,,,TT---TTTTTTTTTTT",
-    "TTTTTT,....,,,,,TT---TTTTTTTTTTT",
-    "TTTTTT.....,,,,,TT---TTTTTTTTTTT",
-    "TTTTTT.....,,,,.TT---TTTTTTTTTTT",
-    "TTTTTT..---...*.TT---TTTTTTTTTTT",
-    "TTTTTT..........TT---TTTTTTTTTTT",
-    "TTTTTTTTTTTTTT-------TTTTTTTTTTT",
-    "TTTTTTTTTTTTTT-------TTTTTTTTTTT",
-    "TTTTTTTTTTTTTT------TTTTTTTTTTTT",
-    "TTTTTT........----T...,...TTTTTT",
-    "TTTTTT.*,,,,,,----T.*,,,,.TTTTTT",
-    "TTTTTT,,,,,,,,----T.,,,,,.TTTTTT",
-    "TTTTTT,,,T,,,T----T.,,,!,,TTTTTT",
-    "TTTTTT,,,,,,,,----T,vvvvv,TTTTTT",
-    "TTTTTT,,,,,,,,----T.,,,,k,TTTTTT",
-    "TTTTTT.,,,,,*,----T.,,,,*.TTTTTT",
-    "TTTTTT........----T..,,,..TTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT...T.....-----....T.....TTTT",
+    "TTTT,,,,,,..------..........TTTT",
+    "TTTT,,,,,,..------..........TTTT",
+    "TTTT,,,,,,,-------.......,..TTTT",
+    "TTTT,,,,,,,----.-.......,,,.TTTT",
+    "TTTT,,,F,,-----........,T,,,TTTT",
+    "TTTT,,,,,,----........,,,,,,TTTT",
+    "TTTT,,,,,-----.......,,,,,,,TTTT",
+    "TTTT,,,,,----....----,,,,,,,TTTT",
+    "TTTT,,,,,----......--,,,,,,,TTTT",
+    "TTTT.,,,----.......--,,,T,,,TTTT",
+    "TTTT...,--!-.......---,,,,,,TTTT",
+    "TTTTTTT.---.T.......---,,,,,TTTT",
+    "TTTTTT--------------------,,TTTT",
+    "TTTTTT^^....^^ssss^^....^^,,TTTT",
+    "TTTTTT^^vvvv^^ssss^^vvvv^^,.TTTT",
+    "TTTTTT--------------------..TTTT",
+    "TTTT....---...........--....TTTT",
+    "TTTT,,,.---...........--.,..TTTT",
+    "TTTT,,,,---...........--,,,.TTTT",
+    "TTTT,,,^---.....#####.--,,,,TTTT",
+    "TTTT,,,,---....#######--,,,,TTTT",
+    "TTTT,,,,---...#########-,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..###########,,,,TTTT",
+    "TTTT,,,,---..#*********#,,,,TTTT",
+    "TTTT,,,,---...*********-,,,,TTTT",
+    "TTTT,,,,---....#######--,,,,TTTT",
+    "TTTT,,,T---....ccccccc--,,,,TTTT",
+    "TTTT,,,,---...........--,,,,TTTT",
+    "TTTT,,,,---...........--,,,,TTTT",
+    "TTTT,,,,---...........--,,,.TTTT",
+    "TTTT,,TTTTTTTT...^....--,,,TTTTT",
+    "TTTT..T,,,,,,T........!-TTTTTTTT",
+    "TTTT..T,,,,,,T..,,,,.---TTTTTTTT",
+    "TTTT..T,,,,,,T,,,,,,.T-.TTTTTTTT",
+    "TTTT..T,,.,,,k-,,,,,.--,,TTTTTTT",
+    "TTTT..T,,,,,,T,,,T,,---,,,..TTTT",
+    "TTTT..T,,,,,,T,,,,,---,,,,,,TTTT",
+    "TTTT..T,,,,,,T,,,,,--,,,,,,,TTTT",
+    "TTTT,,TTTTTTTT,,,,,--,T,,,,,TTTT",
+    "TTTT,,,,,-----,,,,---,,,,,,,TTTT",
+    "TTTT,,,,,,----,,,---,,,,,,,,TTTT",
+    "TTTT,,,,,,----.,,--..,,,,,,,TTTT",
+    "TTTT,,,T,,,----..--..,,,,,,,TTTT",
+    "TTTT,,,,,,,----.---..,^,,,,,TTTT",
+    "TTTT,,,,,,,.------...,,,,,,,TTTT",
+    "TTTT.,,,,,,.------...,,,,,,.TTTT",
+    "TTTT...,,,,.------...,,,,,..TTTT",
+    "TTTT...T,,,.^-----....T,....TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT.........-----..........TTTT",
+    "TTTT..........----..........TTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====-TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
   ],
   "objects": [
     {
-      "stamp": "house_s_b",
+      "stamp": "standing_house_s_door1",
       "at": [
-        21,
-        17
-      ]
-    },
-    {
-      "stamp": "house_s_a_door2",
-      "at": [
-        7,
-        40
+        17,
+        10
       ]
     }
   ],
   "fixtures": [
     {
-      "kind": "standin_bench",
+      "kind": "em_streetlamp",
       "at": [
-        21,
-        34
+        12,
+        26
       ]
     },
     {
-      "kind": "standin_bench",
+      "kind": "em_streetlamp",
       "at": [
         19,
-        27
+        26
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "standin_bench",
       "at": [
-        25,
-        27
+        10,
+        32
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "standin_bench",
+      "at": [
+        20,
+        32
+      ]
+    },
+    {
+      "kind": "em_planter_box",
       "at": [
         13,
-        14
+        36
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "em_planter_box",
       "at": [
         17,
-        49
+        36
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        6
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        12,
+        7
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        12
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        23,
+        25
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        50
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        52
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        17,
+        55
       ]
     }
   ],
   "people": [
     {
-      "id": "mg_scout_eli",
-      "name": "Eli",
+      "id": "rt_mg_scout",
+      "name": "Claire",
       "at": [
-        15,
-        28
+        14,
+        29
       ],
-      "facing": "E",
-      "sprite": "hiker",
+      "facing": "S",
+      "sprite": "lass",
       "role": "talk",
       "lines": [
-        "Sylvan Theater's stone stage still echoes if you clap from the lawn.",
-        "Tidal Basin's cherry trees start right past the southern elms."
+        "The Sylvan Theater steps still catch the breeze off the Tidal Basin."
       ]
     }
   ],
@@ -141,16 +189,24 @@
     {
       "dex": 406,
       "at": [
-        12,
-        22
+        11,
+        16
       ],
       "zone": "parkland"
     },
     {
       "dex": 396,
       "at": [
-        19,
-        42
+        16,
+        32
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 43,
+      "at": [
+        21,
+        48
       ],
       "zone": "parkland"
     }
@@ -172,28 +228,43 @@
     },
     {
       "at": [
-        19,
+        17,
         30
       ],
       "text": "Sylvan Theater"
+    },
+    {
+      "at": [
+        14,
+        46
+      ],
+      "text": "South Monument Lawn \u2014 cherry groves begin just ahead."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        22,
-        11
+        23,
+        18
       ],
       "item": "Super Potion",
-      "note": "Beneath a mossy park bench north of the stage."
+      "note": "Tucked beside the monument grounds#1 trail."
     },
     {
       "at": [
         9,
-        53
+        34
       ],
-      "item": "Great Ball",
-      "note": "Tucked beside an elm root near the south gate."
+      "item": "Antidote",
+      "note": "Tucked beside the monument grounds#1 trail."
+    },
+    {
+      "at": [
+        23,
+        50
+      ],
+      "item": "Repel",
+      "note": "Tucked beside the monument grounds#1 trail."
     }
   ],
   "lamp": null,

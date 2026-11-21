@@ -2,176 +2,155 @@
   "schema": 1,
   "id": "route:washington-dc:potomac-riverfront#1",
   "rows": [
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====-TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TTTT----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TTTT----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TTTT----...,,,,.TTTTTT",
-    "TTT~~~~~~~TTTT----.*,,,,,,TTTTTT",
-    "TTT~~~~~~~TT------..,,,,,,TTTTTT",
-    "TTT~~~~~~~TT------..,,,,,,TTTTTT",
-    "TTT~~~~~~~TT------......,,TTTTTT",
-    "TTT~~~~~~~TT------......,,TTTTTT",
-    "TTT~~~~~~~TT------.,....,,TTTTTT",
-    "TTT~~~~~~~TT------.,....,,TTTTTT",
-    "TTT~~~~~~~TT------.,---,,,TTTTTT",
-    "TTT~~~~~~~TT------.,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------..,,,,*,TTTTTT",
-    "TTT~~~~~~~~~------...,,!,.TTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------........TTTTTT",
-    "TTT~~~~~~~~~------.*,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------.,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~---F--.,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------.,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------,^^^s^^,TTTTTT",
-    "TTT~~~~~~~TT------,^^^s^^,TTTTTT",
-    "TTT~~~~~~~TT---F--,,,,,,,,TTTTTT",
-    "TTT~~~~~~~TT------,,,,,,,,TTTTTT",
-    "TTT~~~~~~~TT------,,,,,k,,TTTTTT",
-    "TTT~~~~~~~TT------.,,,,,*,TTTTTT",
-    "TTT~~~~~~~BBBB----....,,..TTTTTT",
-    "TTT~~~~~~~BBBB----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~^T.-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------..,,,,..TTTTTT",
-    "TTT~~~~~~~TT------.*,,,,,.TTTTTT",
-    "TTT~~~~~~~TT------.,....,.TTTTTT",
-    "TTT~~~~~~~TT---F--.,....,.TTTTTT",
-    "TTT~~~~~~~~~------.,....,.TTTTTT",
-    "TTT~~~~~~~~~.-----.,....,.TTTTTT",
-    "TTT~~~~~~~~~------.,,---,,TTTTTT",
-    "TTT~~~~~~~~~---F--,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------.,,,,!,,TTTTTT",
-    "TTT~~~~~~~~~------.,,,,,*.TTTTTT",
-    "TTT~~~~~~~~~.-----..,,,,..TTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT----###########TTTTT",
-    "TTT~~~~~~~TT.--############TTTTT",
-    "TTT~~~~~~~FT---############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~^T.--############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~TT.--############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~TT.--############TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~^T---############TTTTT",
-    "TTT~~~~~~~TT---########-###TTTTT",
-    "TTT~~~~~~~TT---############TTTTT",
-    "TTT~~~~~~~TT------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT.-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~^T.-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------....,,,.TTTTTT",
-    "TTT~~~~~~~~~------.*.,,,,,TTTTTT",
-    "TTT~~~~~~~~~------......,,TTTTTT",
-    "TTT~~~~~~~~~.--F--......,,TTTTTT",
-    "TTT~~~~~~~~~------......,,TTTTTT",
-    "TTT~~~~~~~~~------.,....,,TTTTTT",
-    "TTT~~~~~~~~~------.,---,,,TTTTTT",
-    "TTT~~~~~~~~~.--F--,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~~------.,,,,!,,TTTTTT",
-    "TTT~~~~~~~~~------..,,,,*,TTTTTT",
-    "TTT~~~~~~~~~------....,,,,TTTTTT",
-    "TTT~~~~~~~^T------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT.-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT.-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT.-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TT------....*...TTTTTT",
-    "TTT~~~~~~~TT------.*,,,,,,TTTTTT",
-    "TTT~~~~~~~BBBB----.,,,,,,,TTTTTT",
-    "TTT~~~~~~~#BBB----.,,,,,,,TTTTTT",
-    "TTT~~~~~~~TT------.,,,,,,,TTTTTT",
-    "TTT~~~~~~~TT*-----.^^^s^^,TTTTTT",
-    "TTT~~~~~~~^T------,.....^,TTTTTT",
-    "TTT~~~~~~~TT------,.....,,TTTTTT",
-    "TTT~~~~~~~FT---F--,.....,,TTTTTT",
-    "TTT~~~~~~~^^.-----,.....,,TTTTTT",
-    "TTT~~~~~~~~~------.,---,*,TTTTTT",
-    "TTT~~~~~~~~~------....,,,.TTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~*-----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~------..,,,,..TTTTTT",
-    "TTT~~~~~~~~~.-----.*,,,,..TTTTTT",
-    "TTT~~~~~~~~~------.,,,,,,.TTTTTT",
-    "TTT~~~~~~~~~.--F--.,,,,,,.TTTTTT",
-    "TTT~~~~~~~TT------.,,,,,,.TTTTTT",
-    "TTT~~~~~~~^T------.,,,,,,.TTTTTT",
-    "TTT~~~~~~~TT------.,....,,TTTTTT",
-    "TTT~~~~~~~TT------,,....,,TTTTTT",
-    "TTT~~~~~~~TT------,,....,,TTTTTT",
-    "TTT~~~~~~~TT------,,....,,TTTTTT",
-    "TTT~~~~~~~TTTT----.,---,*.TTTTTT",
-    "TTT~~~~~~~TTTT----..,,,,..TTTTTT",
-    "TTT~~~~~~~TTTT----TTTTTTTTTTTTTT",
-    "TTT~~~~~~~TTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====-TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
+    "~~~~~~~~~~~TTT----TTTTTTTTTTTTTT",
+    "~~~~~~~~~~~TTT----TTTTTTTTTTTTTT",
+    "~~~~~~~~~~~TTT----TTTTTTTTTTTTTT",
+    "~~~~~~~~~~:...----..........TTTT",
+    "~~~~~~~~~~:,,,----,,..,,,,..TTTT",
+    "~~~~~~~~~~:,,,----,,..,,,,..TTTT",
+    "~~~~~~~~~~:,..----..,,T,..,,TTTT",
+    "~~~~~~~~~~:,..----T.,,,,..,,TTTT",
+    "~~~~~~~~~~~:,,----,,,,..,,,.TTTT",
+    "~~~~~~~~~~~:..----,,,,,,....TTTT",
+    "~~~~~~~~~~~:..--.,,,,,,,,,..TTTT",
+    "~~~~~~~~~~~:..-==,,F,,,,T,..TTTT",
+    "~~~~~~~~~~~:..-===,,,,,,,,..TTTT",
+    "~~~~~~~~~~~:..--===,,,,,,,..TTTT",
+    "~~~~~~~~~~~:..--===,,,,,,...TTTT",
+    "~~~~~~~~~~~:..--,===,,,,....TTTT",
+    "~~~~~~~~~~~:..--.===,,,^....TTTT",
+    "~~~~~~~~~~~:..--.,===,,,,...TTTT",
+    "~~~~~~~~~~~!..--.,,===,,,...TTTT",
+    "~~~~~~~~~~~:.---.,,,===,....TTTT",
+    "~~~~~~~~~~~:.--...,,===,T...TTTT",
+    "~~~~~~~~~~~:.--...,,T===....TTTT",
+    "~~~~~~~~~~:..--..,,,,===....TTTT",
+    "~~~~~~~~~~:..--.,,,,,,===...TTTT",
+    "~~~~~~~~~~:..--,,,,,,,,==...TTTT",
+    "~~~~~~~~~~:..--,,,,,,,,==...TTTT",
+    "~~~~~~~~~~:..--,,,T,,,,==...TTTT",
+    "~~~~~~~~~~:..--.,,,,,,,==...TTTT",
+    "~~~~~~~~~~:..--..,,,,,,==...TTTT",
+    "~~~~~~~~~~:..--...,,,,,==...TTTT",
+    "~~~~~~~~~~:..--........==...TTTT",
+    "~~~~~~~~~:...--........==...TTTT",
+    "~~~~~~~~~:...--........==...TTTT",
+    "~~~~~~~~~:...--........==...TTTT",
+    "~~~~~~~BBBBBBB-...-----==...TTTT",
+    "~~~~~~~BBBBBBB-........==...TTTT",
+    "~~~~~~~BBBBBBB-........==...TTTT",
+    "~~~~~~~~~:...--..F.,,.T==...TTTT",
+    "~~~~~~~~~:...--..,,,,,.==...TTTT",
+    "~~~~~~~~~:T..--.,,,,,,.==...TTTT",
+    "~~~~~~~~~:T..--,,,,,,,.==...TTTT",
+    "~~~~~~~~~:T----------------.TTTT",
+    "~~~~~~~~~:T^..^ssss^^....^^.TTTT",
+    "~~~~~~~~~:T^vv^ssss^^vvvv^^.TTTT",
+    "~~~~~~~~~:T----------------.TTTT",
+    "~~~~~~~~~:T..--,,,,,,,,==...TTTT",
+    "~~~~~~~~~:...--,,,,,,,,==...TTTT",
+    "~~~~~~~~~:...--,,,,,T,!==...TTTT",
+    "~~~~~~~~~~:..--.....,..==...TTTT",
+    "~~~~~~~~~~:..--........==...TTTT",
+    "~~~~~~~~~~:..##############.TTTT",
+    "~~~~~~~~~~:..###.........##.TTTT",
+    "~~~~~~~~~~:..###.........##.TTTT",
+    "~~~~~~~~~~:..###.........##.TTTT",
+    "~~~~~~BBBBBBB###.........##.TTTT",
+    "~~~~~~BBBBBBB###.........##.TTTT",
+    "~~~~~~BBBBBBB###.........##.TTTT",
+    "~~~~~~BBBBBBB###.........##.TTTT",
+    "~~~~~~BBBBBBB###.........##.TTTT",
+    "~~~~~~BBBBBBB###.........##.TTTT",
+    "~~~~~~BBBBBBB##############.TTTT",
+    "~~~~~~BBBBBBB##############.TTTT",
+    "~~~~~~BBBBBBB#****####****#.TTTT",
+    "~~~~~~~~~~~:.#****####****#.TTTT",
+    "~~~~~~~~~~~:.#****####****#.TTTT",
+    "~~~~~~~~~~~:.##############.TTTT",
+    "~~~~~~~~~~~#.##############.TTTT",
+    "~~~~~~~~~~~:..--.......==...TTTT",
+    "~~~~~~~~~~~:..--..T....==...TTTT",
+    "~~~~~~~~~~~:..--,,...,,==...TTTT",
+    "~~~~~~~~~~~:..--,,,,,,,==,..TTTT",
+    "~~~~~~~~~~~:..--,,,,,,,==,..TTTT",
+    "~~~~~~~~~~~:.T--,,,TTTTTTTTTTTTT",
+    "~~~~~~~~~~~#..--,,,T,,,,,,,TTTTT",
+    "~~~~~~~~~~~:..--,,,T,,,,,,,TTTTT",
+    "~~~~~~~~~~!...--,,,T,,,,,,,TTTTT",
+    "~~~~~~~~~~:...--,,-k,,,^,.,TTTTT",
+    "~~~~~~~~~~:...--,,,T,,,,,,,TTTTT",
+    "~~~~~~~~~~#...--,,,T,,,,,,,TTTTT",
+    "~~~~~~~~~~:...--.,,T,,,,,,,TTTTT",
+    "~~~~~~~~~~:...--.,,TTTTTTTTTTTTT",
+    "~~~~~~~~~~:..T--..,,,,,==...TTTT",
+    "~~~~~~~~~~:...--..,,,,,==...TTTT",
+    "~~~~~~~~~:....--...,,,,==...TTTT",
+    "~~~~~~~~~#....--,,F,,,,==...TTTT",
+    "~~~~~~~~~:T...--,,,,,,,==...TTTT",
+    "~~~~~~~~~:T...--,,,,,,,==...TTTT",
+    "~~~~~~~~~:T...--,,,,,,,==...TTTT",
+    "~~~~~~~~~:T...--,,,,F,,==...TTTT",
+    "~~~~~~~~~:T...--,,,,,,.==...TTTT",
+    "~~~~~~~~~:T...--,,,,,,.==...TTTT",
+    "~~~~~~~~~:T...--.,,,,,.==...TTTT",
+    "~~~~~~~~~:T...--.......==...TTTT",
+    "~~~~~~~~~:T...--.......==...TTTT",
+    "~~~~~~~~~:T...--.......==...TTTT",
+    "~~~~~~~~~:T...--.......==...TTTT",
+    "~~~~~~~~~:T...--..----.==...TTTT",
+    "~~~~~~~~~:T...--.......==...TTTT",
+    "~~~~~~~~~:T...--.....,,==...TTTT",
+    "~~~~~~~~~:....--....,,,==...TTTT",
+    "~~~~~~~~~:...T--,,,,,,,==...TTTT",
+    "~~~~~~~~~~:...--,,,,,,,==...TTTT",
+    "~~~~~~~~~~:...--,,,^^^^^^^^^TTTT",
+    "~~~~~~~~~~:...--,,,^::!::::^TTTT",
+    "~~~~~~~~~~:..^--,,,^:::::::^TTTT",
+    "~~~~~~~~~~:...--,,,^:::::::^TTTT",
+    "~~~~~~~~~~:...--,,-r:::::.:^TTTT",
+    "~~~~~~~~~~#...--,,,^:::::::^TTTT",
+    "~~~~~~~~~~:...--.,,^:::::::^TTTT",
+    "~~~~~~~~~~#...--..,^^^^^^^^^TTTT",
+    "~~~~~~~~~~~:..--..===,,,....TTTT",
+    "~~~~~~~~~~~#..--.===,,,.....TTTT",
+    "~~~~~~~~~~~:..--.===,,,,....TTTT",
+    "~~~~~~~~~~~:..--===,T,,,T...TTTT",
+    "~~~~~~~~~~~#..--===,,,,,,...TTTT",
+    "~~~~~~~~~~~:..-===,,,,,,,,..TTTT",
+    "~~~~~~~~~~~:..-==,,,,,,,,,..TTTT",
+    "~~~~~~~~~~~:..--.,,,,,,,,,,.TTTT",
+    "~~~~~~~~~~~:..----,T,,,,T,,.TTTT",
+    "~~~~~~~~~~~:..----,,,,,,,...TTTT",
+    "~~~~~~~~~~:...----,,,,,.....TTTT",
+    "~~~~~~~~~~#...----.,,,......TTTT",
+    "~~~~~~~~~~:...----..,.......TTTT",
+    "~~~~~~~~~~:...----..........TTTT",
+    "~~~~~~~~~~:...----..........TTTT",
+    "~~~~~~~~~~~TTT----TTTTTTTTTTTTTT",
+    "~~~~~~~~~~~TTT----TTTTTTTTTTTTTT",
+    "~~~~~~~~~~~TTT----TTTTTTTTTTTTTT"
   ],
   "objects": [
     {
-      "stamp": "standing_block_11x13_a",
+      "stamp": "standing_block_9x9_a",
       "at": [
         16,
-        54
+        51
       ]
     },
     {
-      "stamp": "house_s_b",
+      "stamp": "house_m_a",
       "at": [
-        20,
-        12
+        18,
+        30
       ]
     },
     {
       "stamp": "house_s_a_door2",
       "at": [
-        20,
-        42
-      ]
-    },
-    {
-      "stamp": "house_s_b__teal",
-      "at": [
-        20,
-        76
-      ]
-    },
-    {
-      "stamp": "house_m_b",
-      "at": [
-        19,
-        98
-      ]
-    },
-    {
-      "stamp": "house_s_a",
-      "at": [
-        20,
-        114
+        18,
+        92
       ]
     }
   ],
@@ -179,137 +158,270 @@
     {
       "kind": "em_sailboat",
       "at": [
-        5,
-        22
+        6,
+        20
       ],
       "solid": false
     },
     {
       "kind": "em_rowboat",
       "at": [
-        5,
-        88
+        6,
+        98
       ],
       "solid": false
     },
     {
-      "kind": "em_statue",
+      "kind": "em_streetlamp",
+      "at": [
+        14,
+        18
+      ]
+    },
+    {
+      "kind": "standin_bench",
       "at": [
         15,
-        67
-      ]
-    },
-    {
-      "kind": "em_statue",
-      "at": [
-        25,
-        67
+        22
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
-        13,
-        61
+        15,
+        46
       ]
     },
     {
-      "kind": "standin_bench",
+      "kind": "em_streetlamp",
       "at": [
-        19,
+        14,
         68
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "standin_bench",
       "at": [
-        13,
-        14
+        15,
+        72
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        13,
-        36
+        14,
+        86
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        15,
+        90
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        13,
-        56
+        14,
+        108
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "standin_bench",
       "at": [
-        13,
-        70
+        15,
+        112
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "em_bollard",
       "at": [
-        13,
-        95
+        14,
+        6
       ]
     },
     {
-      "kind": "em_streetlamp",
+      "kind": "standin_bench",
+      "at": [
+        14,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        18,
+        16
+      ]
+    },
+    {
+      "kind": "standin_bench",
       "at": [
         13,
-        114
+        26
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        23,
+        26
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        13,
+        31
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        14,
+        63
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        22,
+        63
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        23,
+        68
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        14,
+        76
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        23,
+        84
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        14,
+        94
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        14,
+        116
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        14,
+        121
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        14,
+        15
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        24,
+        47
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        24,
+        88
       ]
     }
   ],
   "people": [
     {
-      "id": "pr_sailor_nate",
-      "name": "Nate",
+      "id": "rt_pr_boater",
+      "name": "Sora",
       "at": [
-        14,
-        68
+        15,
+        45
       ],
       "facing": "W",
       "sprite": "sailor",
       "role": "talk",
       "lines": [
-        "Kennedy Center's white river terrace is the best spot to watch fog roll over the Potomac.",
-        "Walk north to Georgetown's canal, or south right into Lincoln Memorial."
+        "The Potomac stays glassy below Georgetown even when mist hangs on the banks."
+      ]
+    },
+    {
+      "id": "rt_pr_musician",
+      "name": "Iris",
+      "at": [
+        17,
+        63
+      ],
+      "facing": "S",
+      "sprite": "woman_2",
+      "role": "talk",
+      "lines": [
+        "The Kennedy Center terrace still looks out across the whole river bend."
       ]
     }
   ],
   "street_pokemon": [
     {
+      "dex": 278,
+      "at": [
+        11,
+        19
+      ],
+      "zone": "waterfront"
+    },
+    {
       "dex": 54,
       "at": [
-        14,
-        20
+        16,
+        41
       ],
       "zone": "waterfront"
     },
     {
       "dex": 418,
       "at": [
-        15,
-        48
+        21,
+        64
       ],
       "zone": "waterfront"
     },
     {
-      "dex": 278,
+      "dex": 60,
       "at": [
-        14,
-        82
+        11,
+        86
       ],
       "zone": "waterfront"
     },
     {
-      "dex": 422,
+      "dex": 118,
       "at": [
-        15,
-        110
+        16,
+        108
       ],
       "zone": "waterfront"
     }
@@ -332,7 +444,7 @@
     {
       "at": [
         18,
-        68
+        61
       ],
       "text": "Kennedy Center"
     },
@@ -342,40 +454,55 @@
         35
       ],
       "text": "Potomac River"
+    },
+    {
+      "at": [
+        16,
+        98
+      ],
+      "text": "Watergate Steps \u2014 stone embankment descending toward Lincoln Memorial."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        11,
-        36
+        23,
+        22
       ],
-      "item": "Dive Ball",
-      "note": "Resting beside an iron cleat on the north river dock."
+      "item": "Potion",
+      "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
       "at": [
-        16,
-        67
+        9,
+        44
       ],
       "item": "Super Potion",
-      "note": "Behind a marble column base at Kennedy Center."
+      "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
       "at": [
-        11,
-        95
+        23,
+        67
       ],
-      "item": "Hyper Potion",
-      "note": "Tucked under a coiled mooring line on the south dock."
+      "item": "Antidote",
+      "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
       "at": [
-        22,
-        119
+        9,
+        89
+      ],
+      "item": "Repel",
+      "note": "Tucked beside the potomac riverfront#1 trail."
+    },
+    {
+      "at": [
+        23,
+        112
       ],
       "item": "Great Ball",
-      "note": "Beneath a willow root near the Lincoln Memorial gate."
+      "note": "Tucked beside the potomac riverfront#1 trail."
     }
   ],
   "lamp": null,

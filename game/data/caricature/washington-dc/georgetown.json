@@ -1,14 +1,6 @@
 {
   "schema": 1,
   "id": "hood:washington-dc:georgetown",
-  "town": [
-    [
-      14,
-      10,
-      96,
-      63
-    ]
-  ],
   "rows": [
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -16,40 +8,40 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTT...,*,,,,,,T-----------*-----TTTTTT,,,,,,,,,,-------.---------TTTTFT.,,,,,*,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTT----,,,,,,!,,,,----F-------------------,,,,,!,,,,-----------------------,,,,,,,,,,,,---*-TTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTT----,,,,,,,,,,,---TTTTTT.TTTTT---------,,,*,,,,,,-TTTTTTTTTFTT----------.,,,,,,,,,,,-*--#TTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT....,,,,.TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTT,,,,*,,,,,,T-----------*-----TTTTTT,,,,,,,,,,-------.---------TTTTFT.,,,,,*,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT----,,,,,,.,,,,----F-------------------,,,,,,,,,,-----------------------,,,,,,,,,,,,---*-TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT!---,,,,,,,,,,,---TTTTTT.TTTTT---------,,,*,,,,,,-TTTTTTTTTFTT----------,,,,,,,,,,,,-*--#TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT...F,,,,,TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT,,,,,,...TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.TTTTT*TTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTT========================================",
-    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
-    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
-    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT=======--===============================",
-    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-.............TTT---.TTTTT*TTTTTT",
-    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-.........*.T.TTT---TTTTTTTTTTTTT",
-    "TTTTTTT..,,,.TTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
-    "TTTTTTT.,,,,,TTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
-    "TTTTTTT.,,,*,TTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--.....T.......T---TTTTTTTTTTTT--TTTTTTTTTTTTTT..,,,,..TTTTTTTTT",
-    "TTTTTTT.,,,,,TTTTT-----T.........TTTTTT...*.....---T--------------.FF...*..FF..T-----------------TTTTTTTTTTTTTT..,,,,,.TTTTTTTTT",
-    "TTTTTTT.,,,,TTTTTTTTT-###############TFFF.......------------------.............----------------------------TTTT.,,,,*,.TTTTTTTTT",
-    "TTTTTTT.,,,,,TTTT.....**###########***..........-----------------------------------------------------------TTTT.,,,,,,.TTTTTTTTT",
-    "TTTTTTT.,,,,,TTTT.....**###########**....T......---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,TTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT,TTTTT*TTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTT========================================",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT=======--===============================",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-,,,...,,,,.,.TTT---,TTTTT*TTTTTT",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-,........*.T.TTT---TTTTTTTTTTTTT",
+    "TTTTTTT..,,,,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTT.,,,,,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTT,,,,*,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--.....T......,T---TTTTTTTTTTTT--TTTTTTTTTTTTTT..,,,,,,TTTTTTTTT",
+    "TTTTTTT,,,,,,TTTT------T.........TTTTTT...*..,..---T--------------.FF...*..FF..T-----------------TTTTTTTTTTTTTT..,,,,,.TTTTTTTTT",
+    "TTTTTTT.,,,,TTTTTTTTT-###############TFF---.....------------------....---......-!--------------------------TTTT.,,,,*,.TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....**#T#########***..........-----------------------------------------------------------TTTT.,,,,,,.TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....**###########**....T......---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,T,,,TTTTTTTTTT",
     "TTTTTTT.,,,,,TTTT.....######....#####.T.........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
-    "TTTTTTT.,,,,,TTTT.....######....#####...........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....######....#####...........!--TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
     "TTTTTTTT-o-TTTTTT---------------------------....---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
     "TTTTTTTTF--TTT^^^^^^^^^^^^^ssss^^^^^^^^^^^^SSS^^---TTTTTTTTTTTTT--.F...........F---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
     "TTTTTTTT---TTT^^^^^^^^^^^^^ssss^^^^^^^^^^^^SSS^^---TTTTTTTTTTTTT--.----------------TTTTTTTTTTTT------------TTTTT---TTTTTTTTTTTTT",
-    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT----FF------TTTTT---TTFTTTTTTTTTT",
+    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT----FF---!--TTTTT---TTFTTTTTTTTTT",
     "TTTTTTTT----TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--..............---TTTTTTTTTTTT------------TTTTT-----TTTTTTTTTTT",
     "TTTTTTTTT---TTTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT------------TTTTTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TTTTTTTTTTTTTTT----TTTTTTTTTT-----TT------------------TTTTTTTT--TTTT-----------------TTTTTTTTTT--TTTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TTTTTTTTTT.....----TTTTTTTTTT-----TT-------------------------------------------------------------TT.......TTTTTTTTTT",
     "TTTTTTTTT---TTTTTTTTTT..*..----TTTTTTTTTT-----TT-------------------------------------------------------------TT.,,,,..TTTTTTTTTT",
     "TTTTTTT,,,,,.TTTTTTTTT.....----TTTTTTTTTT-----TT------------------T------------------------------TTTTTTTTTT--TT.,,,,,.TTTTTTTTTT",
-    "TTTTTTT,,,,,.T.............--............--.............--................--.................--............--.T,T,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.T.............--............--.............--................---................--............--.T,T,,,,.TTTTTTTTTT",
     "TTTTTTTT,,,,.T.............--T...........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
     "TTTTTTT,,,,,.TF............--..F.........--.............--................F-.................-F............--.T,,,,,*.TTTTTTTTTT",
     "TTTTTTT,,,,,*TF............--..F.........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
@@ -65,20 +57,20 @@
     "TTTTTTT---TTTT.==....--..........==.................--...................==...........--..........--.....--...TT.....,,.TTTTTTTT",
     "TTTTTT......TT.==....--..........==.................--...................==...........--..........--.....--...TT..,,,,,,TTTTTTTT",
     "TTTTTT.,,,..TT.==....--..........==.................--...................==...........--..........--.....--...TT.,,,,,,,TTTTTTTT",
-    "TTTTTT.,,,*.TT-==---------------------------------------------------------------------------------------------TT.,,,,,,,TTTTTTTT",
+    "TTTTTT.,,,*.TT-==---------------------------------------------------------------------------------------------TT.,,T,,,,TTTTTTTT",
     "TTTTTT,,,,,,TT-==---------------------------------------------------------------------------------------------TT.,,,,,,,TTTTTTTT",
-    "TTTTTT,,,,,,TT-==--------F*F-#---==----------F*---------*F----*F-#--*F---==-----*F--------*F---#----*F--------TT.,,,,,,TTTTTTTTT",
-    "TTTTTT,,,,,TTT-==------------#---==----^^--^^---------------------#------==---------------------#-------------TT,,,,,,,,TTTTTTTT",
+    "TTTTTT,,,,,,TT-==--------F*F-#---==----------F*---------*F----*F-#--*F---==-----*F-#------*F---#----*F--------TT.,,,,,,TTTTTTTTT",
+    "TTTTTT,,,,,TTT-==------------#---==----^^--^^---------------------#------==---------.-----------#-------------TT,,,,,,,,TTTTTTTT",
     "TTTTTT,,,,,,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT,,,,,,,,TTTTTTTT",
-    "TTTTTT.,,,!,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT.,,,,*,,TTTTTTTT",
+    "TTTTTT.,,,.,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT.,,,,*,,TTTTTTTT",
     "TTTTTT.,,,,.T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT..,,,,,,TTTTTTTT",
-    "TTTTTTT---TTTT--------------##---------^^--^^-----------------------#*-----------*-----------#----------------TT---TTTTTTTTTTTTT",
+    "TTTTTTT---TTTT--------------##-----F---^^--^^-----------------------#*-----------*-----------#----------------TT---TTTTTTTTTTTTT",
     "TTTTTTT---TTTT------------------------------------------------------------------------------------------------TT---TTTTTTTTTTTTT",
     "TTTTTTT-----TTTTT...............T==TTTTTT############TT..TTTTTTTTTTTT..TT==TTTTTTT..TTTT................T--TTTTT-----TTTTTTTTTTT",
     "TTTTTTTTT---TTTTT.FF.*.......FF.T==TTTTTTTTTT#######................TTTTT==TTT.....TTTTT................T--TTTTTTT---TTTTTTTTTTT",
-    "TTTTTTTTT---TTTTT...-----.......T==TTTTTTTTTT#######.FF......FF.....TTTTT==TTT.....TTTTT........FF....FFT--TTTTTFT---TTTTTTTTTTT",
-    "TTTTTTTTT--FTTTTT...-----.......T==TTTTTTTTTT#######................TTTTT==TTT.....TTTTT................T--TTTTTTT---TTTTTTTTTTT",
-    "TTTTTTTTT---TTTTT...............T==TTTTTTTTTT#######....*...T.......TTTTT==-------------.......*........T--TTTT........TTTTTTTTT",
+    "TTTTTTTTT---TTTTT...-----.......T==TTTTTTTTTTF######.FF......FF.....TTTTT==TTT.....TTTTT........FF....FFT--TTTTTFT---TTTTTTTTTTT",
+    "TTTTTTTTT--FTTTTT...-----.......T==TTTTTTTTTTF######................TTTTT==TTT.....TTTTT................T--TTTTTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTTTT...............T==TTTTTTTTTTF######....*...T.......TTTTT==-------------.......*........T--TTTT........TTTTTTTTT",
     "TTTTTTTTT---TTTTT...............T==TTTTTTTTTT#######..........######TTTTT==-------------.........T.....TT--TTTT...,,,,,TTTTTTTTT",
     "TTTTTTT......TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTT#------..........######TTTTT==TTTTTTTTTTTTT..............*.T--TTTT.,,,,,,,TTTTTTTTT",
     "TTTTTTT...,,.TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------..........#-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,*,TTTTTTTTT",
@@ -86,22 +78,22 @@
     "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T.T,,,,,,TTTTTTTTT",
     "TTTTTTTT,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T..,,,,,,TTTTTTTTT",
     "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT----------------------------------------------------TTTTTTTTT-----T....,,,.TTTTTTTTT",
-    "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT-----------------------------------------*-----#----TTTTTFTTT-----T........TTTTTTTTT",
+    "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT-----------------------------------------*!----#----TTTTTFTTT-----T........TTTTTTTTT",
     "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTT==TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT--TTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TT.==################==T.......,,,........--........,,,......==TTTTTTTTT#######################T--TTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TTT==################==T.....,,,,,,.......--......,,,,,,.....==*TTTTTTTT#######################T--#TTT---TTTTTTTTTTT",
     "TTTTTTT-----TTT==################==T....,*,,,,,,......--....,*,,TT,,,....==........T#######################T--TTTT---TTTTTTTTTTT",
-    "TTTTTTT----TTTT==################=----,,,,,,,,,,......-----,,,,,,,,,,,...==........T#######################T--TT-----TTTTTTTTTTT",
-    "TTTTTTT----TTTT==################=----,,,,,,,,,,..kT..-----,,,,,,,,,!,T..==........T#######################T--TT---TTTTTTTTTTTTT",
+    "TTTTTTT----TTTT==################=----,,,,,,,,,,......-----,^,,,,,,,,,...==........T#######################T--TT-----TTTTTTTTTTT",
+    "TTTTTTT----TTTT==################=----,,,,,,,,,,..kT..-----,,,!,,,,,.,T..==........T#######################T--TT---TTTTTTTTTTTTT",
     "TTTTTTTF---TTTT==################==T....,,,,,,,,......--....,,,,,,,,,....==........T#######################T--TT---TTFTTTTTTTTTT",
     "TTTTTTT----TTT*==################==T....^^^^s^^^^.....--.......,,,,,.....==........T#######################T--TT---TTTTTTTTTTTTT",
     "TTTTTT...,,..TT==################==T....^^^^s^^^^.....--......vvvvvv.....==........T#######################T--T...,,,TTTTTTTTTTT",
-    "TTTTTT.,,,,,.TT==################==T..................--.....,,,,........==---------#######################T--*...,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,.TT==################==T................F.--.....,,,,......T.==---------#######################T--*...,,,TTTTTTTTTTT",
     "TTTTTT.,,,,,,TT==################==T....,,,,,,,,,,,...--...T,,,,,,,,,....==---------#######################T--T..,,r,TTTTTTTTTTT",
     "TTTTTT,,,,,,,TT==################==T..T,,,,,,,,,,,,,----...,,,,,,,,,,,,----..,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
-    "TTTTTT,,,,,,TTT==################==*...,,!,,,,,,,*,,----...,,,,,,,,,,*,----..,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT,,,,,,TTT==################==*...,,.,,T,,,,*,,----...,,,,,,T,,,*,----.^,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
     "TTTTTT.,,,,,,TF==################==T...,,,,,,,,,,,,,..--...,,,,,,,,,,T,..==.,,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
-    "TTTTTT..,,,,.TT==################==T...,T,,,,,,,,,,,..--...,,,,,,,,,,,.T.==..,,,,,.T#######################T--T.,,!,,TTTTTTTTTTT",
+    "TTTTTT..,,,,.TT==################==T...,T,,,,,,,,,,,..--...,,,,,,,,,,,.T.==..,,,,,.T#######################T--T.,,.,,TTTTTTTTTTT",
     "TTTTTT..,,*,.TT==----#------#-----=T....,,,,,,,,,,T...--....,,,,,,,,.....==..,,,,..T--#----.-----#-----#---T--F.,,,,,TTTTTTTTTTT",
     "TTTTTT....,..TT==-------------.---=T.....,,,,.........--.....,,,,,.......==TTTTTTTTT-----.-----#-----*-----T--T..,,,*TTTTTTTTTTT",
     "TTTTTTT----TTTT==TTTTTT--TTTTTTTT==T..................--......,,.........==TTTTTTTTTTTTTTT*T---TTTTTT#TTTTTT--T..,,,,TTTTTTTTTTT",
@@ -109,7 +101,7 @@
     "TTTTTTT-------T-----------------------------------------TTTTT*T.........T==T#TTT-----------------------------------TTTTTTTTTTTTT",
     "TTTTTTT-------T---------........------........-----------------.........---------TTTTT........---------------------TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT==TTTTTTT........T--TTT........TTTTTTTT---------.........---------TTTTT...*....TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT=======TT........T--TTT....,,,,TTTTTTTTTTTTTT--T.........T========TTTTT......#.TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT=======-T........T--TTT....,,,,TTTTTTTTTTTTTT--T.........T========TTTTT......#.TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT----===TT........T--TTT...,,,,,TTTTTTTTTTTTTT--T.........T========TTTTT.F......TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT----==TTT*.......T--TTT...,,,,*TT-----------------------.------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT----==---.-----------------------------------------------------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
@@ -121,7 +113,7 @@
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT===TTTT,TTTTT--TFTTTTTTT*TTTTT---.TTTTTTT.TTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--.,,,,.TTTT.,,,,---.....TTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT.===T,,,,TTTTT--,,,,,,TTTT,,,,,---.TTTTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT*===T,,,,TTTTT--,,vvT,TTTT,,!,,---,TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT*===T,,,,TTTTT--,,vvT,TTTT,,.,,---,TTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--,,,,,,TTTT,,*,,---,TTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT###T.,T,,,.FF-------.....,,,,,---.TTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~####~~~~~~~~~~~~~~~~~~~~~~~~TTT===------------^^S^^-------------.TTTTTTTTTTTTTTTT",
@@ -163,13 +155,11 @@
       ]
     },
     {
-      "stamp": "standing_house_s_door2",
+      "stamp": "house_s_c",
       "at": [
         17,
         25
-      ],
-      "interior": "dc:gt-student-flat",
-      "name": "Hilltop Dorm Flat"
+      ]
     },
     {
       "stamp": "standing_block_11x13_b",
@@ -204,19 +194,17 @@
       "at": [
         52,
         25
-      ],
-      "interior": "dc:gt-antiques",
-      "name": "Georgetown Curio Shop"
+      ]
     },
     {
-      "stamp": "house_s_b",
+      "stamp": "house_s_c",
       "at": [
         67,
         27
       ]
     },
     {
-      "stamp": "house_s_b_door2",
+      "stamp": "house_s_c",
       "at": [
         72,
         27
@@ -303,7 +291,9 @@
       "at": [
         52,
         40
-      ]
+      ],
+      "interior": "dc:gt-student-flat",
+      "name": "Hilltop Dorm Flat"
     },
     {
       "stamp": "standing_house_m",
@@ -342,7 +332,9 @@
       "at": [
         81,
         40
-      ]
+      ],
+      "interior": "dc:gt-antiques",
+      "name": "Georgetown Curio Shop"
     },
     {
       "stamp": "standing_house_m__purple",
@@ -532,7 +524,7 @@
       ]
     },
     {
-      "stamp": "house_s_b",
+      "stamp": "house_s_c",
       "at": [
         76,
         82
@@ -546,7 +538,7 @@
       ]
     },
     {
-      "stamp": "house_s_b_door2",
+      "stamp": "house_s_c",
       "at": [
         39,
         98
@@ -567,7 +559,7 @@
       ]
     },
     {
-      "stamp": "house_s_b",
+      "stamp": "house_s_c",
       "at": [
         103,
         110
@@ -1590,6 +1582,20 @@
         124
       ],
       "solid": true
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        55,
+        81
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        54,
+        91
+      ]
     }
   ],
   "people": [
@@ -1597,8 +1603,8 @@
       "id": "gt_watchman_cole",
       "name": "Cole",
       "at": [
-        29,
-        36
+        30,
+        37
       ],
       "facing": "S",
       "sprite": "ranger",
@@ -1658,77 +1664,77 @@
     {
       "dex": 52,
       "at": [
-        21,
+        20,
         46
-      ],
-      "zone": "retail"
-    },
-    {
-      "dex": 396,
-      "at": [
-        35,
-        28
       ],
       "zone": "retail"
     },
     {
       "dex": 431,
       "at": [
-        85,
-        46
-      ],
-      "zone": "retail"
-    },
-    {
-      "dex": 25,
-      "at": [
-        61,
-        48
+        34,
+        54
       ],
       "zone": "retail"
     },
     {
       "dex": 81,
       "at": [
+        47,
+        55
+      ],
+      "zone": "retail"
+    },
+    {
+      "dex": 568,
+      "at": [
+        56,
+        48
+      ],
+      "zone": "retail"
+    },
+    {
+      "dex": 16,
+      "at": [
+        62,
+        54
+      ],
+      "zone": "retail"
+    },
+    {
+      "dex": 25,
+      "at": [
+        75,
+        53
+      ],
+      "zone": "retail"
+    },
+    {
+      "dex": 35,
+      "at": [
         95,
-        31
+        45
       ],
       "zone": "retail"
-    },
-    {
-      "dex": 519,
-      "at": [
-        26,
-        62
-      ],
-      "zone": "retail"
-    },
-    {
-      "dex": 355,
-      "at": [
-        50,
-        68
-      ],
-      "zone": "ruins"
-    },
-    {
-      "dex": 200,
-      "at": [
-        46,
-        70
-      ],
-      "zone": "ruins"
-    },
-    {
-      "dex": 562,
-      "at": [
-        38,
-        57
-      ],
-      "zone": "ruins"
     },
     {
       "dex": 54,
+      "at": [
+        34,
+        62
+      ],
+      "zone": "waterfront"
+    },
+    {
+      "dex": 418,
+      "at": [
+        50,
+        63
+      ],
+      "zone": "waterfront"
+    },
+    {
+      "dex": 422,
       "at": [
         70,
         62
@@ -1736,162 +1742,43 @@
       "zone": "waterfront"
     },
     {
-      "dex": 278,
+      "dex": 436,
       "at": [
-        20,
-        111
+        45,
+        69
       ],
-      "zone": "waterfront"
+      "zone": "ruins"
     },
     {
-      "dex": 418,
+      "dex": 622,
       "at": [
-        52,
-        102
+        86,
+        58
       ],
-      "zone": "waterfront"
+      "zone": "ruins"
     }
   ],
   "signs": [
     {
       "at": [
-        26,
-        25
+        21,
+        44
       ],
-      "text": "Healy Hall \u2014 bell tower clock stopped at half past six."
+      "text": "West M Street \u2014 brick rowhouses shuttered, brass knockers green with tarnish."
     },
     {
       "at": [
-        23,
-        29
+        37,
+        44
       ],
-      "text": "West Quad Hall \u2014 old slate roof still keeps out the rain."
-    },
-    {
-      "at": [
-        17,
-        29
-      ],
-      "text": "Student Walk \u2014 bicycles leaned against this rail before the evacuation."
-    },
-    {
-      "at": [
-        27,
-        35
-      ],
-      "text": "M Street Steps \u2014 seventy-five stone steps linking the ridge to M Street. Watch wet moss."
-    },
-    {
-      "at": [
-        35,
-        28
-      ],
-      "text": "Healy Overlook \u2014 brass campus map weathered down to the bronze ribs."
+      "text": "Brick Corner Bakery \u2014 cast-iron oven cool behind the stone arch."
     },
     {
       "at": [
         48,
-        17
-      ],
-      "text": "East College Terrace \u2014 chalk arrow pointing toward Q Street ridge."
-    },
-    {
-      "at": [
-        65,
-        16
-      ],
-      "text": "North Heights Walk \u2014 quiet stone wall overlooking the upper gardens."
-    },
-    {
-      "at": [
-        65,
-        20
-      ],
-      "text": "P Street Turnoff \u2014 brick stoops swept clean after the last windstorm."
-    },
-    {
-      "at": [
-        91,
-        17
-      ],
-      "text": "Q Street Ridge Gate \u2014 trail east across Rock Creek toward Dupont Circle."
-    },
-    {
-      "at": [
-        103,
-        17
-      ],
-      "text": "East Q Boundary \u2014 wagon ruts still hold rainwater after thunder."
-    },
-    {
-      "at": [
-        64,
-        24
-      ],
-      "text": "35th & P Lane \u2014 laundry lines still strung between the upper brick bays."
-    },
-    {
-      "at": [
-        77,
-        25
-      ],
-      "text": "Upper Terrace Wall \u2014 mortar patched with lime from the old kiln."
-    },
-    {
-      "at": [
-        95,
-        25
-      ],
-      "text": "East Ridge Landing \u2014 stacked slate shingles sheltered under the eaves."
-    },
-    {
-      "at": [
-        49,
-        34
-      ],
-      "text": "34th Terrace Landing \u2014 iron railings wiped clean of vine tendril shoots."
-    },
-    {
-      "at": [
-        65,
-        34
-      ],
-      "text": "Terrace Courtyard \u2014 brass sundial green on its limestone plinth."
-    },
-    {
-      "at": [
-        90,
-        39
-      ],
-      "text": "Upper Alley \u2014 cracked brick steps descending behind the north rowhouses."
-    },
-    {
-      "at": [
-        44,
         44
       ],
-      "text": "Hardware Shop Step \u2014 spare nails and hinges tallied on the doorframe slate."
-    },
-    {
-      "at": [
-        19,
-        44
-      ],
-      "text": "West M Street \u2014 rowhouses shuttered, brass knockers green with tarnish."
-    },
-    {
-      "at": [
-        33,
-        44
-      ],
-      "text": "Georgetown Shopfront Row \u2014 antiques and used books still sorted inside."
-    },
-    {
-      "at": [
-        42,
-        48
-      ],
-      "text": "Midtown Crosswalk \u2014 chalk note pointing scouts north up the Healy steps."
+      "text": "M Street Shops \u2014 hardware, books, and antiques kept dry behind bolted doors."
     },
     {
       "at": [
@@ -1902,59 +1789,45 @@
     },
     {
       "at": [
-        71,
-        48
-      ],
-      "text": "Tea & Provision Lane \u2014 follow the iron lamps down to the canal."
-    },
-    {
-      "at": [
-        82,
+        74,
         45
       ],
-      "text": "East M Shops \u2014 cobblers and hardware left dry shutters along the curb."
+      "text": "Quiet Corner Tea Room \u2014 painted tin awning overlooking M Street."
     },
     {
       "at": [
-        104,
+        86,
         45
       ],
-      "text": "East M Street \u2014 road east toward Dupont; canal stairs three doors south."
+      "text": "East M Street \u2014 cobblers and curio shops facing the Dupont road."
     },
     {
       "at": [
-        22,
-        56
+        100,
+        45
       ],
-      "text": "Canal North Bank \u2014 iron railing overlooks the west sluice basin."
+      "text": "East M Street Gate \u2014 stone terrace descending toward the canal."
     },
     {
       "at": [
-        32,
-        57
+        21,
+        52
       ],
-      "text": "West Bridge Turnoff \u2014 cedar walkway planks tested each spring."
-    },
-    {
-      "at": [
-        46,
-        57
-      ],
-      "text": "Lockside Shed \u2014 spare tow-rope coiled beside the masonry step."
-    },
-    {
-      "at": [
-        72,
-        57
-      ],
-      "text": "East Footbridge Steps \u2014 wooden pilings dark along the waterline."
+      "text": "Canal Cobbler Row \u2014 stone steps down from West M Street."
     },
     {
       "at": [
         97,
-        57
+        52
       ],
-      "text": "Canal Overlook \u2014 brick rowhouse steps descending straight to the wharf."
+      "text": "East Canal Row \u2014 brick storefronts perched above the stone towpath."
+    },
+    {
+      "at": [
+        35,
+        63
+      ],
+      "text": "Canal Lock Gate \u2014 cedar miter beams lashed shut at low water."
     },
     {
       "at": [
@@ -1965,127 +1838,177 @@
     },
     {
       "at": [
-        17,
-        63
-      ],
-      "text": "West Towpath Entry \u2014 willow roots heaved up the brick verge."
-    },
-    {
-      "at": [
-        24,
-        63
-      ],
-      "text": "West Canal Milepost \u2014 painted distance marks faded under lichen."
-    },
-    {
-      "at": [
-        37,
-        63
-      ],
-      "text": "Canal Lock Gate \u2014 cedar miter beams lashed shut at low water."
-    },
-    {
-      "at": [
-        51,
-        70
-      ],
-      "text": "Old Canal Lockhouse \u2014 keep a light on if you step inside the lower room."
-    },
-    {
-      "at": [
         76,
         68
       ],
-      "text": "Dispatch Wharf \u2014 cross south for Potomac waterfront and old brick yards."
-    },
-    {
-      "at": [
-        87,
-        63
-      ],
-      "text": "Boathouse Quay \u2014 flat-bottomed skiff chained below the stone steps."
+      "text": "Dispatch Wharf \u2014 cross south for Potomac waterfront and Key Bridge."
     },
     {
       "at": [
         96,
-        63
+        65
       ],
-      "text": "East Wharf \u2014 moorings kept clear for high-water skiffs."
+      "text": "Boathouse Quay \u2014 flat-bottomed skiff moored below the stone steps."
     },
     {
       "at": [
-        105,
-        68
+        26,
+        25
       ],
-      "text": "Boatyard Lane \u2014 dry oars stacked inside the shed."
+      "text": "Healy Hall \u2014 bell tower clock stopped at half past six."
+    },
+    {
+      "at": [
+        48,
+        17
+      ],
+      "text": "East College Terrace \u2014 chalk arrow pointing east toward Q Street ridge."
+    },
+    {
+      "at": [
+        91,
+        17
+      ],
+      "text": "Q Street Ridge Gate \u2014 trail east across Rock Creek toward Dupont Circle."
+    },
+    {
+      "at": [
+        64,
+        24
+      ],
+      "text": "35th & P Lane \u2014 upper Georgetown rowhouses under spreading oaks."
+    },
+    {
+      "at": [
+        111,
+        22
+      ],
+      "text": "East Heights Wall \u2014 mossy brick wall bordering the ridge woods."
     },
     {
       "at": [
         22,
-        102
+        99
       ],
       "text": "Key Bridge"
     },
     {
       "at": [
-        51,
-        102
+        61,
+        91
       ],
-      "text": "Potomac Timber Pier \u2014 weathered pilings still hold the flat skiff moorings."
+      "text": "Potomac Towpath South \u2014 dry reeds and brick warehouse ruins."
     },
     {
       "at": [
-        112,
-        105
+        80,
+        117
       ],
-      "text": "Potomac Riverfront \u2014 trail east along the levee toward Kennedy Center."
+      "text": "Potomac Riverfront Gate \u2014 waterside trail south toward Lincoln Memorial."
     },
     {
       "at": [
-        54,
-        86
+        106,
+        107
       ],
-      "text": "Old Mill Glade \u2014 stone kiln footings buried under river sedge."
+      "text": "Rock Creek Trail Gate \u2014 wooded ravine east toward Woodley Park."
     },
     {
       "at": [
-        91,
-        116
+        105,
+        76
       ],
-      "text": "South Riverfront Park \u2014 watch for loose rocks along the bluff steps."
-    },
-    {
-      "at": [
-        49,
-        7
-      ],
-      "text": "North Woods Ridge \u2014 narrow track along the treeline above Healy Hall."
+      "text": "Old Flour Mill Ruins \u2014 collapsed roof beams behind the canal."
     }
   ],
   "hidden_items": [
     {
       "at": [
+        19,
+        45
+      ],
+      "item": "Repel",
+      "note": "Under a cast-iron boot scraper on West M Street."
+    },
+    {
+      "at": [
+        36,
+        48
+      ],
+      "item": "Potion",
+      "note": "Behind a brick planter along M Street."
+    },
+    {
+      "at": [
+        55,
+        48
+      ],
+      "item": "Escape Rope",
+      "note": "Coiled beside a wooden crate near Georgetown Square."
+    },
+    {
+      "at": [
+        78,
+        48
+      ],
+      "item": "Antidote",
+      "note": "Tucked into a shuttered storefront sill."
+    },
+    {
+      "at": [
+        97,
+        51
+      ],
+      "item": "Great Ball",
+      "note": "Set behind a bollard on the east canal bank."
+    },
+    {
+      "at": [
+        34,
+        66
+      ],
+      "item": "Fresh Water",
+      "note": "Left on a cedar bench beside the west lock."
+    },
+    {
+      "at": [
+        60,
+        67
+      ],
+      "item": "Super Potion",
+      "note": "Tucked under the Towpath Dispatch steps."
+    },
+    {
+      "at": [
+        86,
+        68
+      ],
+      "item": "Ether",
+      "note": "Behind a rope coil along the boathouse quay."
+    },
+    {
+      "at": [
         22,
         24
       ],
-      "item": "Repel",
-      "note": "Tucked behind the campus granite cornerstone."
+      "item": "Super Potion",
+      "note": "Beneath the stone bench in front of Healy Hall."
     },
     {
       "at": [
         38,
         25
       ],
-      "item": "Potion",
-      "note": "Wedged beneath a dry brass downspout on Healy Terrace."
+      "item": "Great Ball",
+      "note": "Tucked into ivy on the campus terrace wall."
     },
     {
       "at": [
-        75,
-        13
+        80,
+        8
       ],
-      "item": "Escape Rope",
-      "note": "Coiled behind the north brick wall coping stones."
+      "item": "Potion",
+      "note": "Behind a brick garden post on Upper P Street."
     },
     {
       "at": [
@@ -2093,39 +2016,7 @@
         18
       ],
       "item": "Antidote",
-      "note": "Set under a loose slate riser beside Q Street."
-    },
-    {
-      "at": [
-        82,
-        58
-      ],
-      "item": "Great Ball",
-      "note": "Wedged inside an iron mooring ring on the north canal wall."
-    },
-    {
-      "at": [
-        108,
-        57
-      ],
-      "item": "Fresh Water",
-      "note": "Cooled canteen hung inside the shaded east bridge recess."
-    },
-    {
-      "at": [
-        19,
-        67
-      ],
-      "item": "Fresh Water",
-      "note": "Cool bottle braced behind the west canal sluice post."
-    },
-    {
-      "at": [
-        97,
-        66
-      ],
-      "item": "Ether",
-      "note": "Set inside an empty paint pail beside the boathouse."
+      "note": "Under dry leaves near the Q Street ridge gate."
     },
     {
       "at": [
@@ -2133,7 +2024,7 @@
         7
       ],
       "item": "Super Potion",
-      "note": "Hidden in a hollow oak stump along the north treeline."
+      "note": "Hidden beside the north bluff oak."
     },
     {
       "at": [
@@ -2141,7 +2032,15 @@
         26
       ],
       "item": "Antidote",
-      "note": "Under a slate cap along the west woods ravine."
+      "note": "Tucked along the west campus lane."
+    },
+    {
+      "at": [
+        18,
+        66
+      ],
+      "item": "Fresh Water",
+      "note": "Hidden beside the west canal masonry wall."
     },
     {
       "at": [
@@ -2149,7 +2048,7 @@
         82
       ],
       "item": "Hyper Potion",
-      "note": "Behind rusted barrel hoops on the old mill lane."
+      "note": "Inside a rusted iron locker behind the canal ruins."
     },
     {
       "at": [
@@ -2157,7 +2056,7 @@
         58
       ],
       "item": "Ultra Ball",
-      "note": "Under flat stones along the east bypass grass."
+      "note": "Behind a mossy wall east of the canal."
     },
     {
       "at": [
@@ -2165,7 +2064,7 @@
         118
       ],
       "item": "Revive",
-      "note": "Inside a loose masonry pocket below the south park ridge."
+      "note": "Under a cedar root near the riverfront opening."
     },
     {
       "at": [
@@ -2173,7 +2072,39 @@
         116
       ],
       "item": "Pearl",
-      "note": "Caught against a concrete drainage grating out on Key Bridge."
+      "note": "Washed up beside the Potomac embankment."
+    },
+    {
+      "at": [
+        54,
+        102
+      ],
+      "item": "Repel",
+      "note": "Under dry reeds facing the Key Bridge piers."
+    },
+    {
+      "at": [
+        108,
+        92
+      ],
+      "item": "Ether",
+      "note": "Behind a collapsed millstone along the east creek."
+    },
+    {
+      "at": [
+        30,
+        30
+      ],
+      "item": "Full Heal",
+      "note": "Tucked under a boxwood hedge below campus."
+    },
+    {
+      "at": [
+        83,
+        35
+      ],
+      "item": "Paralyze Heal",
+      "note": "Behind a brick gatepost above East M Street."
     }
   ],
   "lamp": [
@@ -2196,5 +2127,19 @@
       "at": 78,
       "width": 4
     }
+  ],
+  "town": [
+    [
+      15,
+      37,
+      89,
+      19
+    ],
+    [
+      30,
+      56,
+      70,
+      16
+    ]
   ]
 }

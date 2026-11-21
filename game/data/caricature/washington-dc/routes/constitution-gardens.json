@@ -6,171 +6,247 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTT..............------------------!--------------.----------------------.....,,,,,,...TTTTTT",
-    "TTTTTT.*.,,,,,,.....---------------------------------------#----------------.*.,....,,,,..TTTTTT",
-    "TTTTTT..,,,,,,,,,,,,--.TTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTT-.-.,,,....,,,,,.TTTTTT",
-    "TTTTTT.,,F,!,T,,,T,,--.TTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTT-.-..,,....,,,,,.TTTTTT",
-    "TTTTTT.,,,,,,,,,,,,,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---...,....,,,,..TTTTTT",
-    "TTTTTT..,,,,,,,,,,*,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---....,---,,,.*.TTTTTT",
-    "TTTTTT...,,,,,,,,,,.---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---......,,,.....TTTTTT",
-    "TTTT-TTTTTTTTTTTTTTT---TTT~~~~~~~~~~~~~~~~............~~~~~~~~~~~~~~~~TTT---TTTTTTTTTTTTTTT-TTTT",
-    "=====---------------------~~~~~~###~~~~~~~.*.##.###...~~~~~~~###~~~~~~---------------------=====",
-    "=====---------------------BBBBBB###BBBBBBB...##.###...BBBBBBB##-BBBBBB---------------------=====",
-    "=====---------------------BBBBBB###BBBBBBB...######...BBBBBBB-##BBBBBB---------------------=====",
-    "=====---------------------~~~~~~###~~~~~~~...######.*.~~~~~~~###~~~~~~---------------------=====",
-    "TTTTTTTTTTTTTTTTTTTT---TTT~~~~~~~~~~~~~~~~............~~~~~~~~~~~~~~~~TTT---TTTTTTTTTTTTTTTTTTTT",
-    "TTTTTT..............---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---.....,,,......TTTTTT",
-    "TTTTTT.*,,,,....,,,,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---.*,,,,,,,,,...TTTTTT",
-    "TTTTTT,,,,,,....,,,,---TTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT---.,,,,,,,,,,,,.TTTTTT",
-    "TTTTTT,,,,,,....,,,,---TTTTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT---,,T,,,T,,,F,,,TTTTTT",
-    "TTTTTT,,,,,,---,,,,,--.TTTTTTTTTTT~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTTTTTTTTT-.-.,,,,,,,,,!,,,TTTTTT",
-    "TTTTTT..,,,,,,,,,,*.--.---------------------#-------------#------.--------.-..,,,,,,,,,,*.TTTTTT",
-    "TTTTTT..............-------------------------------#------.-----------------....,,,,,.....TTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTT............................,,,,,,,,,,,,,,................................................TTT",
+    "TTT...............----------------------,,,,,,...............................................TTT",
+    "TTT............,,,^^....^^ssss^^....^^^^----------------------------------....,,,............TTT",
+    "TTT...T....F..,,,,^^vvvv^^ssss^^vvvv^^^^------------------------------------T,,,,T....^......TTT",
+    "TTT........,,,,,,-----------------------.......BBB.......................-----,,,,,,,,,......TTT",
+    "TTT......,,,,,,------........T.................BBB.................T.......-----,,,,,,,......TTT",
+    "TTT.....,,,,,-----!,,.**................:::::::BBB:::::::...............!.**,------,,,,......TTT",
+    "TTT......,,------,T,,,**,,,,,.......:::::~~~~~~BBB~~~~~~:::::.....,,,,.,,.**,,,------,,......TTT",
+    "TTT.....T------,,,,,,,,,,,,,,,...:::~~~~~~~~~~~BBB~~~~~~~~~~~:::..,,,,,T,,.,T,,,,------......TTT",
+    "TTT....------,,,,,,,,,,,,,,,,,,:::~~~~~~~~~~~##BBB##~~~~~~~~~~~:::,,,,,,,,,.,,,,,.,------....TTT",
+    "----------........,,,..,,,,,,,::~~~~~~~~~~~###*BBB*###~~~~~~~~~~~::,,,,,,,,..,,,.....-----------",
+    "----------............T,,,,,,,:~~~~~~~~~~~~###*****###~~~~~~~~~~~~:,,,,,,,,,..........----------",
+    "-----------..T....T....,,,,T,::~~~~~~~~~~~~###*****###~~~~~~~~~~~~::,,,,,,,......T...-----------",
+    "--------------..,,,....,,,,,,,:~~~~~~~~~~~~~~#######~~~~~~~~~~~~~~:,,,,-,,.....,,,--------------",
+    "TTT.......-----,,,,,...,,,,,,.::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:TTTTTkTTTTT.,,,-----.......TTT",
+    "TTT.......,,,-----,,,...,,,,...:::~~~~~~~~~~~~~~~~~~~~~~~~~~~~~:::T,,,,,,,,,T,-----,,,.......TTT",
+    "TTT.......,,,,-----,,,...,,,.....:::~~~~~~~~~~~~~~~~~~~~~~~~~:::..T,,,,,,,,,T-----,,,........TTT",
+    "TTT.......,T,,,,T-----,.............:::::~~~~~~~~~~~~~~~:::::.....T,,,,,,,,,T--,T,,,,....T...TTT",
+    "TTT...T...,,,,,,,,----**.....T..........:::::!:::::::::::.........T,,,,.,,,,T-,,,,,,,T.......TTT",
+    "TTT.......,,,,,,,,,,,-**--........................................T,,,,,,,,,T,,,,,,,,,.......TTT",
+    "TTT........,,,,,,,,,,.--------------------------------------------T,,,,,,,,,T.,,,,,,,,.......TTT",
+    "TTT..............,,,.....-----------------------------------------TTTTTTTTTTT.....,,,........TTT",
+    "TTT................................................,,,,,,,,,,,,,,,,..........................TTT",
+    "TTT................................................,,,,,,,,,,,,,,,,..........................TTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
   ],
-  "objects": [
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        22,
-        8
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        47,
-        14
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        74,
-        8
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        22,
-        23
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        74,
-        23
-      ]
-    },
-    {
-      "stamp": "house_s_b",
-      "at": [
-        12,
-        19
-      ]
-    },
-    {
-      "stamp": "house_s_a_door2",
-      "at": [
-        80,
-        7
-      ]
-    }
-  ],
+  "objects": [],
   "fixtures": [
     {
-      "kind": "em_rowboat",
+      "kind": "em_streetlamp",
       "at": [
-        36,
+        14,
+        11
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        30,
+        11
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        66,
+        11
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        82,
+        11
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        22,
         19
-      ],
-      "solid": false
-    },
-    {
-      "kind": "standin_bench",
-      "at": [
-        28,
-        7
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
-        64,
-        7
-      ]
-    },
-    {
-      "kind": "standin_bench",
-      "at": [
-        36,
-        25
+        38,
+        22
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
         58,
-        25
+        22
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        74,
+        19
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        46,
+        7
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        66,
+        8
+      ]
+    },
+    {
+      "kind": "em_rowboat",
+      "at": [
+        39,
+        14
+      ],
+      "solid": false
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        52,
+        7
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        57,
+        7
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        62,
+        7
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        71,
+        7
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        23,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        86,
+        12
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        6,
+        17
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        86,
+        17
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        21,
+        23
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        33,
+        24
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        25,
+        23
       ]
     }
   ],
   "people": [
     {
-      "id": "cg_birdwatcher_lin",
-      "name": "Lin",
+      "id": "rt_cg_walker",
+      "name": "Nora",
       "at": [
-        49,
-        16
+        50,
+        15
       ],
       "facing": "S",
       "sprite": "elder_woman",
       "role": "talk",
       "lines": [
-        "No one hurries through Constitution Gardens \u2014 listen to the ducks on the pond.",
-        "Walk east for the Washington Monument, or west to the Reflecting Pool."
+        "Just ducks, reeds, and quiet water here. No battles on this walk."
       ]
     }
   ],
   "street_pokemon": [
     {
-      "dex": 54,
-      "at": [
-        45,
-        16
-      ],
-      "zone": "parkland"
-    },
-    {
       "dex": 406,
       "at": [
         16,
-        15
+        11
       ],
       "zone": "parkland"
     },
     {
       "dex": 396,
       "at": [
-        78,
-        16
+        30,
+        14
       ],
       "zone": "parkland"
     },
     {
-      "dex": 60,
+      "dex": 43,
       "at": [
-        56,
-        24
+        47,
+        22
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 16,
+      "at": [
+        64,
+        11
+      ],
+      "zone": "parkland"
+    },
+    {
+      "dex": 102,
+      "at": [
+        80,
+        16
       ],
       "zone": "parkland"
     }
@@ -193,35 +269,50 @@
     {
       "at": [
         48,
-        7
+        8
       ],
       "text": "Constitution Gardens Pond"
+    },
+    {
+      "at": [
+        26,
+        15
+      ],
+      "text": "Willow Shore \u2014 calm footpath curving around Constitution Gardens Pond."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        46,
-        17
+        20,
+        22
       ],
-      "item": "Fresh Water",
-      "note": "Chilled canteen resting on the willow island bench."
+      "item": "Repel",
+      "note": "Tucked beside the constitution gardens#1 trail."
     },
     {
       "at": [
-        17,
-        25
-      ],
-      "item": "Super Potion",
-      "note": "Beneath a flowering hawthorn along the south bank."
-    },
-    {
-      "at": [
-        78,
-        24
+        41,
+        9
       ],
       "item": "Great Ball",
-      "note": "Tucked beside a cedar footbridge timber."
+      "note": "Tucked beside the constitution gardens#1 trail."
+    },
+    {
+      "at": [
+        61,
+        23
+      ],
+      "item": "Ether",
+      "note": "Tucked beside the constitution gardens#1 trail."
+    },
+    {
+      "at": [
+        81,
+        9
+      ],
+      "item": "Fresh Water",
+      "note": "Tucked beside the constitution gardens#1 trail."
     }
   ],
   "lamp": null,

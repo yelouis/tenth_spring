@@ -5,163 +5,302 @@
     "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====-TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTT...,...-####-.......TTTTTT",
-    "TTTTTT.*,,,..T====T.*.....TTTTTT",
-    "TTTTTT..,,,,.T====T..,,...TTTTTT",
-    "TTTTTT.,,T,,.T====T.,,,,..TTTTTT",
-    "TTTTTT.,!,,,,T====T,,,,,,.TTTTTT",
-    "TTTTTT.,,,,,,T====T,....,,TTTTTT",
-    "TTTTTT.,,,,,,T====T,....,,TTTTTT",
-    "TTTTTT.,,,,,.T====T,....,,TTTTTT",
-    "TTTTTT.vvvvv.T====T,....,.TTTTTT",
-    "TTTTTT.,,,,,.T====T.---,,.TTTTTT",
-    "TTTTTT.,,,,,.T====T.,,,,..TTTTTT",
-    "TTTTTT.,,k,,.T====T.,,,,..TTTTTT",
-    "TTTTTT.,,,,*.T====T.,,,,*.TTTTTT",
-    "TTTTTT..,,,,.T====T..,,...TTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTT###########TTTTTTTTTT",
-    "TTTTTTTTTTT###########TTTTTTTTTT",
-    "TTTTTTTTTTT###########TTTTTTTTTT",
-    "TTTTTTTTTTT#....T...##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT#........#-TTTTTTTTTT",
-    "TTTTTTTTTTT#........##TTTTTTTTTT",
-    "TTTTTTTTTTT###########TTTTTTTTTT",
-    "TTTTTTTTTTT###########TTTTTTTTTT",
-    "TTTTTTTTTTT###########TTTTTTTTTT",
-    "TTTTTTTTTTT-TT====TTTTTTTTTTTTTT",
-    "TTTTTT..,....T====-.......TTTTTT",
-    "TTTTTT.*,,,..T====T.*,,,..TTTTTT",
-    "TTTTTT.,,,,..T####T..,,,,.TTTTTT",
-    "TTTTTT,,,F,,.T====T.,,T,,.TTTTTT",
-    "TTTTTT,,,,,,.T====T.,,,,,,TTTTTT",
-    "TTTTTT,,,,,,.T====T.,,,!,,TTTTTT",
-    "TTTTTT,,,,,..T====T.,,,,,,TTTTTT",
-    "TTTTTT,,,,,,.T====T.,,,,,.TTTTTT",
-    "TTTTTT,^^s^^.T====T.,,,,,.TTTTTT",
-    "TTTTTT,^^s^^.T====T.vvvvv.TTTTTT",
-    "TTTTTT,,,,,,.T====T.,,,,,,TTTTTT",
-    "TTTTTT,....,.T====T.,,,,,,TTTTTT",
-    "TTTTTT,....,.T====T.,,,,,,TTTTTT",
-    "TTTTTT.......T====T.,,T,,.TTTTTT",
-    "TTTTTT.......T====T..,,,,.TTTTTT",
-    "TTTTTT..---*.T====T..,,,*.TTTTTT",
-    "TTTTTT.......T====T...,...TTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT-====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
+    "TTTT..........====..........TTTT",
+    "TTTT..........====..........TTTT",
+    "TTTT..........#--=..........TTTT",
+    "TTTT..........#--=..........TTTT",
+    "TTTT...,.....##---..........TTTT",
+    "TTTT..,,,,...##---..........TTTT",
+    "TTTT.,,,,,,..##.--..........TTTT",
+    "TTTT.,,,,,,,.##.--..........TTTT",
+    "TTTT,,,,,,,,###.---.........TTTT",
+    "TTTT,,,,,,,.###,---.........TTTT",
+    "TTTT,,,,,,..##,,,--.........TTTT",
+    "TTTT,,,,,,..##,,,--,.----...TTTT",
+    "TTTT.,,,,,,###,,,---........TTTT",
+    "TTTT.,,,,,,###,,,---,.......TTTT",
+    "TTTT.,,,,,!##,,,,,--,.......TTTT",
+    "TTTT.,,,,,,##,,,,,--,,......TTTT",
+    "TTTT..,,,,###,,,,,---,......TTTT",
+    "TTTT......###,,,,,---.......TTTT",
+    "TTTT..####################..TTTT",
+    "TTTT..^^....^^ssss^^....^^..TTTT",
+    "TTTT..^^vvvv^^ssss^^vvvv^^,.TTTT",
+    "TTTT..--------------------,.TTTT",
+    "TTTT..,,.##.........--.,,,,,TTTT",
+    "TTTT.,,,.##..######.--.,,,,,TTTT",
+    "TTTT.,,,############---,,,,,TTTT",
+    "TTTT,,,,############---,,,,,TTTT",
+    "TTTT,,,,#############--,,,,,TTTT",
+    "TTTT,,,,##***#~~~~#**--,,,,,TTTT",
+    "TTTT,,,,,#***#~~~~#***#,,,,,TTTT",
+    "TTTT,,,,##***#~~~~#***##,,,,TTTT",
+    "TTTT,,,,##***#~~~~#**--,,,,,TTTT",
+    "TTTT,,,,##***#~~~~#**--,,,,,TTTT",
+    "TTTT,,,,############---,,,,,TTTT",
+    "TTTT,,,,############---,,,,,TTTT",
+    "TTTT,,,,,###########--.,,,,,TTTT",
+    "TTTT,,,,,##..######.--.,,,,.TTTT",
+    "TTTT.,,,,###.......---......TTTT",
+    "TTTT.,,,.###.......-T-......TTTT",
+    "TTTT......##....,,.--.!.....TTTT",
+    "TTTT..^^^^^^^^,,,,.--..,....TTTT",
+    "TTTT.,^::::::^,,,,---.,,,,..TTTT",
+    "TTTT,,^::::::^,,,,---.,,,,..TTTT",
+    "TTTT,,^::::::^,,,,--,.,,,,,.TTTT",
+    "TTTT,,^::.:::r-,,,--,,,,,,,.TTTT",
+    "TTTT,,^::::::^,,,---,,,,,,,.TTTT",
+    "TTTT,,^::::::^,,,---,.,,,,,,TTTT",
+    "TTTT,,^::::::^,,,--,.,,,,,,,TTTT",
+    "TTTT,,^^^^^^^^,..--.,,,,,,,,TTTT",
+    "TTTT,,,,,,,,###.---.,,,,,,,,TTTT",
+    "TTTT,,,,,,,,###.---..,,,,,,,TTTT",
+    "TTTT,,,,,,,..##.--...,,,,,,,TTTT",
+    "TTTT,,,,,....##.--...,,,,,,,TTTT",
+    "TTTT,,,,,....##---...,,,,...TTTT",
+    "TTTT.,,,.....##---..........TTTT",
+    "TTTT..........#--#..........TTTT",
+    "TTTT..........#--#..........TTTT",
+    "TTTT..........####..........TTTT",
+    "TTTT..........####..........TTTT",
+    "TTTTTTTTTTTTTT####TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT####TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT####TTTTTTTTTTTTTT"
   ],
   "objects": [
     {
-      "stamp": "house_s_b",
+      "stamp": "standing_house_s_door1",
       "at": [
-        20,
-        12
-      ]
-    },
-    {
-      "stamp": "house_s_a_door2",
-      "at": [
-        7,
-        50
+        21,
+        10
       ]
     }
   ],
   "fixtures": [
     {
-      "kind": "em_fountain",
-      "at": [
-        15,
-        28
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        12,
-        23
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        20,
-        23
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        12,
-        36
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        20,
-        36
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        13,
-        11
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        18,
-        49
-      ]
-    },
-    {
       "kind": "standin_bench",
       "at": [
         11,
-        29
+        42
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
         19,
-        29
+        42
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        7,
+        6
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        12,
+        6
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        22,
+        6
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        7
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        7,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        17,
+        12
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        7,
+        16
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        12,
+        16
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        17,
+        17
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        22,
+        17
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        7,
+        27
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        21,
+        27
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        7,
+        32
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        21,
+        32
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        7,
+        37
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        24,
+        37
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        38
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        24,
+        42
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        46
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        22,
+        47
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        17,
+        51
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        22,
+        52
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        7,
+        54
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        12,
+        54
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        17,
+        56
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        22,
+        57
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        16,
+        38
       ]
     }
   ],
   "people": [
     {
-      "id": "usp_lamp_owen",
-      "name": "Warden Cole",
+      "id": "rt_us_guard",
+      "name": "Owen",
       "at": [
         15,
-        34
+        29
       ],
       "facing": "S",
-      "sprite": "lamplighter",
-      "role": "lamplighter",
+      "sprite": "ranger",
+      "role": "talk",
       "lines": [
-        "Upper Senate Park keeps a straight sightline between Union Station and the Capitol.",
-        "Abra and Chingling like the stone fountain terrace when the mist settles."
+        "Upper Senate Park links the Capitol terrace straight to Union Station."
       ]
     }
   ],
@@ -169,23 +308,23 @@
     {
       "dex": 63,
       "at": [
-        14,
-        24
+        11,
+        16
       ],
       "zone": "institutional"
     },
     {
       "dex": 433,
       "at": [
-        19,
-        32
+        18,
+        30
       ],
       "zone": "institutional"
     },
     {
-      "dex": 35,
+      "dex": 96,
       "at": [
-        16,
+        21,
         48
       ],
       "zone": "institutional"
@@ -208,28 +347,36 @@
     },
     {
       "at": [
-        13,
-        31
+        15,
+        35
       ],
-      "text": "Upper Senate Fountain \u2014 granite pool fed by old hillside springs."
+      "text": "Senate Park Fountain \u2014 dry marble basin beneath the elms."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        22,
+        23,
         18
       ],
-      "item": "Ether",
-      "note": "Behind a granite gatepost on the northeast lawn."
+      "item": "Fresh Water",
+      "note": "Tucked beside the upper senate park#1 trail."
     },
     {
       "at": [
         9,
-        43
+        34
       ],
-      "item": "Great Ball",
-      "note": "Under a stone stair riser on the west ridge."
+      "item": "Super Repel",
+      "note": "Tucked beside the upper senate park#1 trail."
+    },
+    {
+      "at": [
+        23,
+        50
+      ],
+      "item": "Paralyze Heal",
+      "note": "Tucked beside the upper senate park#1 trail."
     }
   ],
   "lamp": null,

@@ -2,171 +2,218 @@
   "schema": 1,
   "id": "route:washington-dc:west-potomac-park#2",
   "rows": [
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT-====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT----........TTTTTT",
-    "TTTTTTTTTTTTTT----.*,,,...TTTTTT",
-    "TTTTTTTTTTTTTT----.,,,,,..TTTTTT",
-    "TTT~~~~~~TTTTT---F.,,T,!,.TTTTTT",
-    "TTT~~~~~~TTTTT----.,,,,,,,TTTTTT",
-    "TTT~~~~~~TTTTT----.,,,,,,,TTTTTT",
-    "TTT~~~~~~TTTTT----.,,,,,,,TTTTTT",
-    "TTT~~~~~~TTTTT---T.,,,,,,.TTTTTT",
-    "TTT~~~~~~TTTT.---T.,....,.TTTTTT",
-    "TTT~~~~~~TTTT.---T.,....,.TTTTTT",
-    "TTT~~~~~~TTTTT---T.,....,,TTTTTT",
-    "TTT~~~~~~~~TTT---T,,....,,TTTTTT",
-    "TTT~~~~~~~~TTT---T,,---,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T.,,,,,,.TTTTTT",
-    "TTT~~~~~~~~TTT---T.,,T,,,.TTTTTT",
-    "TTT~~~~~~~~TTT---T..,,,,..TTTTTT",
-    "TTT~~~~~~~~TTT---T..,,,.*.TTTTTT",
-    "TTT~~~~~~~~TTT---T...,....TTTTTT",
-    "TTT~~~~~~~~TTT---TTTTTTTTTTTTTTT",
-    "TTT~~~~~~~~TTT---TTTTTTTTTTTTTTT",
-    "TTT~~~~~~TTTTT---TTTTTTTTTTTTTTT",
-    "TTT~~~~~~TTTTT---TTTTTTTTTTTTTTT",
-    "TTT~~~~~~TTTTT---T........TTTTTT",
-    "TTT~~~~~~TTTTT---T.*..,,,.TTTTTT",
-    "TTT~~~~~~TBBBBB--T..,,,,,,TTTTTT",
-    "TTT~~~~~~TBBBBB--T.,,,T,,,TTTTTT",
-    "TTT~~~~~~TTTTT---T.,,,,,,,TTTTTT",
-    "TTT~~~~~~TTTTT---T.,,,,,,,TTTTTT",
-    "TTT~~~~~~TTTT.---T..,,,,,,TTTTTT",
-    "TTT~~~~~~FTTT.---T.,,T,!,,TTTTTT",
-    "TTT~~~~~~~~TTT---T.,,,,,,,TTTTTT",
-    "TTT~~~~~~~~^TT---T,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T,^^^s^^,TTTTTT",
-    "TTT~~~~~~~~TTT.--T,^^^s^^,TTTTTT",
-    "TTT~~~~~~~~TTT---T,,,,,,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T.,,,,,,,TTTTTT",
-    "TTT~~~~~~~~TTT---T.,....,,TTTTTT",
-    "TTT~~~~~~~~TTT---T.,....,,TTTTTT",
-    "TTT~~~~~~TTTTT---T.,....,,TTTTTT",
-    "TTT~~~~~~FTTTT.--T.,....,,TTTTTT",
-    "TTT~~~~~~TTTTT----.,,---,,TTTTTT",
-    "TTT~~~~~~TTTTT----..,,,,,,TTTTTT",
-    "TTT~~~~~~TTTT.----....,,*.TTTTTT",
-    "TTT~~~~~~TTTT.----........TTTTTT",
-    "TTTTTTTTTTTTTT----TTTTT-TTTTTTTT",
-    "TTTTTTTTTTTTTT----TTTTT-TTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTT"
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT...T.....-----....T.....TTTT",
+    "TTTT..,,,...T-----....,,,,..TTTT",
+    "TTTT.,,,,,...-----..,,,,,,,.TTTT",
+    "TTTT,,,,,,,,---.---.,,,,,,,.TTTT",
+    "TTTT,,,,,,,,---.---.,,,,,,,,TTTT",
+    "TTTT,,,F,,,,--...--..,^,,,,,TTTT",
+    "TTTT.,,,,,,,--...---.,,,,,,,TTTT",
+    "TTTT.,,,,,,---....--.,,,,,,,TTTT",
+    "TTTT.,,,,,,--.....---,,,,,,,TTTT",
+    "TTTT.,,,,,,--......--,,,,,,.TTTT",
+    "TTTT.,,,,,---......---,,,,,.TTTT",
+    "TTTT.,----!---------------..TTTT",
+    "TTTT..^^....^^ssss^^....^^..TTTT",
+    "TTTT..^^vvvv^^ssss^^vvvv^^..TTTT",
+    "TTTT..--------------------..TTTT",
+    "TTTT,,,,.--......---........TTTT",
+    "TTTT,,,,,---.....---........TTTT",
+    "TTTT,,,F,,--T...---...^.,,,,TTTT",
+    "TTTT,,,,,,---...---....,,,,,TTTT",
+    "TTTT.,,,,,,--..---.....,,,,,TTTT",
+    "TTTT.,,,,,,---.--.....,,,,,,TTTT",
+    "TTTT,,,,,,,T-----.....,,,,,,TTTT",
+    "TTTT,,,**,,.----.....,T**,,,TTTT",
+    "TTTT,,,**....--:::...,,**,,,TTTT",
+    "TTTT.,,**...-:::~:::...**,,,TTTT",
+    "TTTT.,,**..-::~~~~~::..**,,,TTTT",
+    "TTTT..,**..-:~~~~~~~:..**,,,TTTT",
+    "TTTT...**.--::~~~~~::..**,,,TTTT",
+    "TTTT...**.---:::~:::...**,,.TTTT",
+    "TTTT...**---...:::-....**...TTTT",
+    "TTTT...T.--.....---.........TTTT",
+    "TTTT....---.T....---........TTTT",
+    "TTTT....--.......---........TTTT",
+    "TTTT....---.......---.......TTTT",
+    "TTTT.....--...,,..FFFFFFFFF.TTTT",
+    "TTTT...F.---.,,,,.F,,,!,,,F.TTTT",
+    "TTTT.....---F,,,,,F,,,,,,,F.TTTT",
+    "TTTT.....,--,,,,,,F,,,,,,,F.TTTT",
+    "TTTT....,,--,,,,,-o,,,F.,,F.TTTT",
+    "TTTT,,,,,,---,,,,,F,,,,,,,F.TTTT",
+    "TTTT,,,,,,,--.,,,,F,,,,,,,F.TTTT",
+    "TTTT,,,,,,,---,,,,F,,,,,,,F.TTTT",
+    "TTTT,,,,,,,-T-,,,.FFFFFFFFF,TTTT",
+    "TTTT,,,,,,,,--....---,,,,,,,TTTT",
+    "TTTT.,,,,,,,---..---,,,,,,,,TTTT",
+    "TTTT.,,,,,,,.--..--..,,,,,,,TTTT",
+    "TTTT.,,T,,,,T--..--..,,,T,,,TTTT",
+    "TTTT.,,,,,,,.------..,,,,,,.TTTT",
+    "TTTT..,,,,,,.-----...,,,,,,,TTTT",
+    "TTTT...,,,,,..----...,,,,,,,TTTT",
+    "TTTT....,,,...----....,,,,,.TTTT",
+    "TTTT...T....^.----....T,,,,.TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTT..........----..........TTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTT"
   ],
-  "objects": [
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        13,
-        15
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        13,
-        36
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        13,
-        52
-      ]
-    },
-    {
-      "stamp": "house_s_b",
-      "at": [
-        20,
-        15
-      ]
-    },
-    {
-      "stamp": "house_s_a_door2",
-      "at": [
-        20,
-        46
-      ]
-    }
-  ],
+  "objects": [],
   "fixtures": [
     {
-      "kind": "em_rowboat",
-      "at": [
-        5,
-        31
-      ],
-      "solid": false
-    },
-    {
       "kind": "standin_bench",
       "at": [
-        13,
-        25
+        10,
+        16
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        20,
+        16
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
-        13,
-        47
+        10,
+        32
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        20,
+        32
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        10,
+        48
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        20,
+        48
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        17,
+        6
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        17,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        12,
+        12
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        17,
+        23
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        7,
+        28
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        24,
+        33
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        17,
+        53
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        16,
+        57
       ]
     }
   ],
   "people": [
     {
-      "id": "wpp2_angler_lou",
-      "name": "Lou",
+      "id": "rt_wp2_botanist",
+      "name": "Mei",
       "at": [
-        13,
-        33
+        15,
+        34
       ],
       "facing": "W",
-      "sprite": "sailor",
+      "sprite": "woman_1",
       "role": "talk",
       "lines": [
-        "River stays glassy right under the cherry trees every afternoon.",
-        "Lincoln Memorial's steps are just past the northern bend."
+        "Nothing stirs the grass here but river wind and Wingull."
       ]
     }
   ],
   "street_pokemon": [
     {
+      "dex": 278,
+      "at": [
+        11,
+        14
+      ],
+      "zone": "waterfront"
+    },
+    {
       "dex": 54,
       "at": [
         16,
-        20
+        26
       ],
       "zone": "waterfront"
     },
     {
-      "dex": 183,
+      "dex": 418,
       "at": [
-        16,
-        40
+        21,
+        38
       ],
       "zone": "waterfront"
     },
     {
-      "dex": 270,
+      "dex": 60,
       "at": [
-        15,
-        53
+        11,
+        50
       ],
       "zone": "waterfront"
     }
@@ -181,28 +228,28 @@
     },
     {
       "at": [
-        18,
-        33
+        14,
+        48
       ],
-      "text": "Potomac Cherry Overlook \u2014 calm timber dock facing the western channel."
+      "text": "River Meadow Walk \u2014 north toward the Lincoln Memorial terrace."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        12,
-        33
+        23,
+        23
       ],
-      "item": "Dive Ball",
-      "note": "Resting beside a coil of hemp rope on the timber dock."
+      "item": "Ether",
+      "note": "Tucked beside the west potomac park#2 trail."
     },
     {
       "at": [
-        23,
-        55
+        9,
+        47
       ],
-      "item": "Great Ball",
-      "note": "Tucked beneath a blooming cherry root."
+      "item": "Fresh Water",
+      "note": "Tucked beside the west potomac park#2 trail."
     }
   ],
   "lamp": null,

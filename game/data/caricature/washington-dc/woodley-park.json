@@ -3,156 +3,156 @@
   "id": "hood:washington-dc:woodley-park",
   "rows": [
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTT........................................TTTTTTTT.........*.............................*TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTT..*.............,,,,......,,,...........TTTTTTTT..*.........,,,,,....,,,,,..............TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTT------------......,,,,,,,,,,,,,,,,,,,,,,,,,,...,,,..------.-..,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,...--------TTTTTTTTTT",
-    "TTTTTTTTTT------------.....,,,,,,,,,,,!,,,,,,,,,,,,,,,,,,,,,,.--------.,,,,,,,,,,,,,,,,,,,!,,,,,,,,,,,,,,,,,,.-.------TTTTTTTTTT",
-    "TTTTTTTTTT-TTTTTTTTTTT......,,,,,,,,,,,,,,,,,,,,,,,,,,...,,*..TTTTTTTT..,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,*..TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTT-TTTTTTTTTTT................,,,,..*...,,,...........TTTTTTTT*....*..*..*.,,,......,,,,*....*....*...TTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTT-TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT..........TTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTT",
-    "TTTTT.........TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.########.TTTTTTTTTTTTTTTTTTT..*.......TTTTT",
-    "TTTTT..*......TTTTTTTT#########TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT.########.TTTTTTTTTTTTTTTTTTT..*.......TTTTT",
-    "TTTTT...,,....TTTTTTTT#########TTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTT........TTTTTT.########.TTTTTTTTTTTTTTTTTTT..........TTTTT",
-    "TTTTT...F,....TTTTTTTT#########TTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTT........TTTTTT.########.TTTTTTTTTTTTTTTTTTT...F,,....TTTTT",
-    "TTTTT..,,,,...TTTTTTTT#########TTTTTTTTTTTTTTTTTTTTTT........TTTTTTTTT........TTTTTT.########.TTTTTTTTTTTTTTTTTTT..,,,,,...TTTTT",
-    "TTTTT..,,,,...TTTTTTTT#########TTTTTTTT.....TT....TTT........TTTTTTTTT........TTTTTT.########.TTT.....T....TTTTTT..,,,,,,..TTTTT",
-    "TTTTT.,,,,,,..TTTTTTTT#########TTTTTTTT.....TT....TTT........TTTTTTTTT........TTTTT############TT.....T....TTTTTT.,,,,,,,,.TTTTT",
-    "TTTTT.,,T,,,..TTTTTTTT#########TTTTTTTT.....TT....TTT........TTTTTTTTT........TTTTT############TT.....T....TTTTTT.,,T,,,,,.TTTTT",
-    "TTTTT.,,,!,,..TTTTTTTT#########TTTTTTTT.....TT....TTT........TTTTTTTTT........TTTTT#*########*#TT.....T....TTTTTT..,,,,,,..TTTTT",
-    "TTTTT..,,,,,..TTTTTT##############TTTTTT---TTT---TTTTTT---TTTTTTTTTTTTTT---TTTTTTTT.##########.TTT--------TTTTTTT..,,,,,,..TTTTT",
-    "TTTTT..,,,,,..TTTTTT#F##########F#TT^^^^^--^^^^s^^^^^^^^--TTTTTTTTTT^^^^^--s^^^^^^T.##########.TTTT--TTTTTTTTTTTT..,,,,,,..TTTTT",
-    "TTTTT..,,,,,..TTTTTT##############TT^^^^^--^^^^s^^^^^^^^--TTTTTTTTTT^^^^^--s^^^^^^T#####-######TTTT--TTTTTTTTTTTT..,T,,,,..TTTTT",
-    "TTTTT.,,,,,,..TTTT--##############-------------------------------------------------############---------------TTT.,,,,!,,,.TTTTT",
-    "TTTTT.,,,,,,..TTTT-----------------------#----.--------------------------#-------------------------#----------TTT.,,,,,,,,,TTTTT",
-    "TTTTT.,^^s^^..TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT.,,,,,,,,,TTTTT",
-    "TTTTT.,^^s^^..TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT.TTTTTTTTTTTTTTT--TTT.,,,,,,,,,TTTTT",
-    "TTTTT.,,,,,,..TTTT--TTTTTTT^TTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT.,,vvvv,,,TTTTT",
-    "TTTTT.,,,,,,..TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT*###*TFTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT.,,,,,,,,.TTTTT",
-    "TTTTT.,,,,,,..TTTT--T........TTTTTTTTT-TTTTTTTTTTT--........T#####T........T--TTTTTTTTTTTTTT-TT........TTTTT--TTT..,,,,,,..TTTTT",
-    "TTTTT..,,,,,..TTTT--T........TTTTTTTTT-TTTTTTTTTTT--........T#####T........T--TTTTTTTTTTTTTT-TT........TTTTT--TTT..,,,,,,..TTTTT",
-    "TTTTT..,,k,...TTTT--T........TTTTTTTTT-TTTTTTTTTTT--........T#####T........T--TTTTTTTTTTTTTT-TT........TTTTT--TTT..,T,,,,..TTTTT",
-    "TTTTT..,,,,,.*TTTT--T........TT....TTT-TT.....TTTT--........T#####T........T.-T....TT.....TT-TT........TTTTT--TTT.,,,,,,,,.TTTTT",
-    "TTTTT.,,,,,,..TTTT--T........TT....TTT-TT.....TTTT--........T#####T........T--T....TT.....TT-TT........TTTTT--TTT.,,,,,,,,.TTTTT",
-    "TTTTT.,,,,,,..TTTT--T........TT....TTT-TT.....TTTT--........T#####T........T--T....TT.....TT-TT........TTTTT--TTT.,,,,,,,,.TTTTT",
-    "TTTTT.,,F,,,.*TTTT--T........TT....TTT-TT.....TTTT--........T#####T........T--T....TT.....TT-TT........TTTTT--TTT..,F,,,,..TTTTT",
-    "TTTTT..,,,,...TTTT-----------------------------------#--------------.----------------#---#-#--.-----.---------TTT..,,,,,,..TTTTT",
-    "TTTTT..,,,,...TTTT----TTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT..,,,,....TTTTT",
-    "TTTTT...,,....TTTT--TTTTTTTTTTTTTTTTTT*TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT...,,.....TTTTT",
-    "TTTTT...,,.*..TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT-##-#TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT.......*..TTTTT",
-    "TTTTT.........TTTT-#TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT..........TTTTT",
-    "TTTTTTTT---TTTTTTT--T.........TTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTT^T-TTTTTTTTTTTTTTT--TTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTT--T.........TTTTTTTT-TTTTTTTTTTT-#TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTT--T.........TTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT-.TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT#-TTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTT--T.........TTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTFTTTT........TTTTTTTTTTTTTT--TTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTT--T.........TTTTTTTT-TTTTTTTTTTT-.TTTTTT-##########-TTTTTT#-TTTTTTTT........TTTTTTTTTTTTTT--TTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTTTTTT--T.........TTTTTTTT-TTTTTTTTTTT--TTTTTT#########-##TTTTTT--TTTTTTTT........TTTTTTTTTTTTTT--TTTTTT---TTTTTTTTT",
-    "TTTTT........*TTTT--T.........TTTTTTTT-T....T....T--TTTTTT###*...#####TTTTTT--T.....TT........TTT....T....TT--TTT.....,,,..TTTTT",
-    "TTTTT..*..,...TTTT--T.........TTTTTTTT-T....T....T--TTT---###....#####-TTTTT-#T.....TT........TTT....T....TT-#TTT..*..,,,..TTTTT",
-    "TTTTT....,,...TTTT--T.........TTTTTTTT-T....T....T--TTTTTT############TTTTTT--T.....TT........TTT....T....TT--TTT.....,,,..TTTTT",
-    "TTTTT...F,,..*TTTT--TTTT---TTTTTTTTTTT-T....T....T--TTTTTT############TTTTTT--T.....TT........TTT....T....TT--TTT...F.,,,..TTTTT",
-    "TTTTT.....,...TTTT----------------------#-------------------------------------------#------------.-------.----TTT.....,,,..TTTTT",
-    "TTTTT....,,...TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT....,,,,,.TTTTT",
-    "TTTTT....,,,..TTTT-.TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT-.TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT#TTTTTTTTTTTTTTT--TTT....,,,,,.TTTTT",
-    "TTTTT...T,,,..TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TFTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT...,,,,,,.TTTTT",
-    "TTTTT..,,,,,,.TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTT.-*###*-.TTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT..,,,,,,,,TTTTT",
-    "TTTTT..,,,,,,.TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT-#TTTTTTT..#####..TTTTTTTT.-TFTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT..,,,,,,,,TTTTT",
-    "TTTTT..,,,,,,.TTTT--TTTTTTTT........TT-TTTTTTTTTTT--TTTTTTT.#######.TTTTTTTT--T........TTTTT-TTTTTTTTTTTTTTT--TTT......,,,,TTTTT",
-    "TTTTT..,T,,,,.TTTT.-TTTTTTTT........TT.TTTTTTTTTTT.-TTTTTTT.#######.TTTTTTTT-#T........TTTTT-TTTTTTTTTTTTTTT.-TTT......,,,,TTTTT",
-    "TTTTT..,,,,,,.TTTT--TTTTTTTT........TT-TTTTTTTTTTT--TTTTTTT.#######.TTTTTTTT--T........TTTTT-TTTTTTTTTTTTTTT--TTT......,,,.TTTTT",
-    "TTTTT..,,,,,,.TTTT--T.....TT........TT-T....TTTTTT--....TTT.#######.TTTTTTTT--T........TFTTT-TT.....TT....TT--TTT......,,,.TTTTT",
-    "TTTTT..,,,,,,.TTTT--T.....TT........TT-T....TTTTTT--....TTT.#######.TTTTTTTT--T........TTTTT#TT.....TT....TT--TTT..---,,,,,TTTTT",
-    "TTTTT..,F,,,,.TTTT--T.....TT........TT-T....TTTTTT--....TTTTT#####TTTTTTTTTT--T........TTTTT-TT.....TT....TT--TTT..,,,,,,,,TTTTT",
-    "TTTTT..,,,,,,.TTTT--T.....TT........TT-T....TTTTTT--....TTTTT#####TTTTTTTTTT-.T........TTTTT-TT.....TT....TT-.TTT.,,,,,,,,,TTTTT",
-    "TTTTT.,,,,,,,.TTTT---#---#---#----.--#-#----.-----------.-.------------#-------#----.#-------------#-----#----TTT.,,,,,,,,,TTTTT",
-    "TTTTT.,,,,,,,.TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT.,,,r,,,,,TTTTT",
-    "TTTTT.,,T,,,,.TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT..,,,,,,,,TTTTT",
-    "TTTTT..,,,,,,.TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT*###*TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT..,,,,,,,.TTTTT",
-    "TTTTT..,,,,,,.TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT...,,,,,,.TTTTT",
-    "TTTTT...,,,,..TTTT--TTTTTTTTTTTTTTTTTT-TTTTTTTTTTT--TTTTTTTTT#####TTTTTTTTTT--TTTTTTTTTTTTTT-TTTTTTTTTTTTTTT--TTT...T,,,,,.TTTTT",
-    "TTTTT...T,,,..====-----------#-#--------.--------------#---------------#------====------------.--#----.-------TTT...,,,,,,.TTTTT",
-    "TTTTT...,,,,..====----#---------------#-------#-----#--------------------.----====---.#-----------------------TTT...,,,,,,.TTTTT",
-    "TTTTT..,,,,,..====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT-TTTTTTTTTTTT#####TTTTTTTTTTTT====TTTTT-TTTTTTTTTTTTT-TTTTTTTTTTT...,,,,,,.TTTTT",
-    "TTTTT..,,,,,F*####TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTT-TTTTTTTTTTTTT-TTTTTTTTTTT...T,,,,,.TTTTT",
-    "TTTTT..,F,,,..====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTT-.....TTTTTTTT-....TTTTTTT....,,,,,.TTTTT",
-    "TTTTT...,,,,..====TTTTTTTTTTTTTTTTTTTTTTTTTT....-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTT-.....TTTTTTTT-....TTTTTTT.....,,*..TTTTT",
-    "TTTTT....,,...====TTTT....TTTTTTTTTTTTTTTTTT....-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTT-.....TTTTTTTT-....TTTTTTT..........TTTTT",
-    "TTTTT......*..====TTTT....TTTTTTTTTTTTTTTTTT....-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTT-.....TTTTTTTT-....TTTTTTTTTT---TTTTTTTTT",
-    "TTTTT.........====TTTT....TTTTTTTTTTTTTTTTTT....-TTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTT-----TTTTTTTTT----TTTTTTTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTT....TTTTTTTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTT~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TT---TTTTTTTTT",
-    "TTTTTTTT--.TTT====-------TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TT---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTFTTTTTTTTTTTTTTTTTTTT~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TT--#TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTBBBTTTTTTTTTTT~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TT---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TT--#TTTTTTTTT",
-    "TTTTTTTT--.TTT====TTTTTTTTTTTFTTTTTTFT^TTT~~~~~~~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TT---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTTTTTTTTTTTTTTTTTTTT~~~~~~~~~~~~BBB~~~--~~~~~~~~~~TTTTTT====TTTTTTTTTTTFTTTTTTFTTT--TTTTTTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTTBB#TTTTTTTTTTTTTTT~~~~~~~~~~~~BBB~~~--~~~~~~~~~~TTTTTT====TTTTTTTTTTTTTTTTTTTTTT--TTTTTTTTTT---TTTTTTTTT",
-    "TTTTTTTT---TTT====~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~~~~~BBB~~~--~~~~~~~~~~TTTTTT====TTTTTTTTTTTTTTTTTTTTTT--..........---TTTTTTTTT",
-    "TTTTTTTT.--TTT====~~~~~~BBB~~~~~~~~~~~~~~~~~~~~~~~~~~~BBB~~~--~~~~~~~~~~TTTTTT####TT...........,,,....TT--..*.......--.TTTTTTTTT",
-    "TTTTTTTT---TTT====~~~~~~BBB~~~~~~~~~~~~~~~~~~~TTTTTTTTBBBTTT--TT............TT====TT..*.,,....,,,,....TT--....,,,...---TTTTTTTTT",
-    "TTTTTTTT---TTT####~~~~~~BBB~~~~~~~~~~~--~~~~~~TTTTTTTT-TTTTT--TT..*....,....TT==#=TT....,,,..,,,,,T...TT--.T..,T,,.F---TTTTTTTTT",
-    "TTTTTTTT---TTT====~~~~~~BBB~~~~~~~~~~~--~~................TT--TT.....,,,T,..TT====TT...F,,,T.,,,,,,...TT--...,,,,,,.---TTTTTTTTT",
-    "TTTTTTTT---TTT====~~~~~~BBB~~~~~~~~~~~--~~..*...,.........TT--TT...T,,,,,,..TT====TT...,,,,,,,,,,,,...TT--...,,,,,,.---TTTTTTTTT",
-    "TTTTTTTT-.-TTT====TTTTTTBBBTTTTFTTTTTT--TT.....,,,....T...TT--TT...,,,,,,,,.TT====TT...,,,,,,,,,,,,...TT--..,,,,,,,.---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTT-TTTTT^TTTTTTT--TT...F,,,,,.......TT--TT...,,,,,,,,.TT====TT..,,,,,,,,,T,,,,..TT--..,,,,T,,.---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTT-T-TTTTTTTTTTT--TT...,,,,,o,,,,,..TT--TT...,,,,F,,,.TT====TT..,T,,,T,,,,,,,,..TT--...,,,,,,.---TTTTTTTTT",
-    "TTTTTTTT---TTT====TTTTTT-TTTTTTTTTTTTT--TT...,,,,,,,,,,,,,TT--TT...F,,,,,,,.TT====TT.,,,,,,,,,,,,,,,,.TT--..F,,,,,,.-#-TTTTTTTTT",
-    "TTTTTTTT---TTT==---#--------------#-------..,,,,,,,,,,F,,,------...,,,,,,,,.--------.,,,,,,,,,,,,,,,,.----...,,,,,,.---TTTTTTTTT",
-    "TTTTTTTT---TTT==---#-################-----..,,,,,,,,,,,,,,------...,,,,,,,,.--------.,,,,,,,,,,,,,,,,.----..,,,,,,,T---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT-################T--TT..,,,,,,,,,,,,,,TT--TT..,,,,,,,,,.TT====TT.,,,,,,,,,,,,,,,,.TT--..,,,,,,,.-.-TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT..,,,,,,,,,,,,,,TT--TT..,vvvvvv,,.TT====TT..^^^^^^^s^^^^^^..TT--..,,,,,,,,---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT..^^^^^^s^^^^^,,TT--TT.,,,,,,,,,,,TT=#==TT.......^^s^^......TT--......,,,,---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT......^^s^^^^^,,TT--TT.,....,,,,,,TT====TT.......,,,,,......TT--......,,,F---TTTTTTTTT",
-    "TTTTTTTTTTTTTT=#==TT.################T--TT......,,,,,,,,,,TT--TT......,,,,,.TT###-TT.......,,,,,......TT--......,,,.--#TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT......,,,,,,,,,,TT--TT......,,,,,.TT====TT.......,,,,,......TT--......,,,.---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT......,,,,,,,,,,TT--TT......,,,,..TT==#=TT..,---,,,,,,---,..TT--..---,,,,.---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT..---,,,,F,,,,,,TT--TT...---,,,,..TT=#==TT..,,,,,,,,,,,,,,..TT--...,,,,,.T---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT...,,,,,,,!,,,,,TT-.TT.....,,,,,..TT====TT...,,,,,,,,,,,,...TT!-...,,,,,..---TTTTTTTTT",
-    "TTTTTTTTTTTTTT####TT.################T--TT...T,,,,,,,,,,,.TT--TT...T.,,,,,..TT====TT...T,,....,,,,....TT--...,,,,,..---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT....,,,,,....*..TT--TT.....,,,,*..TT====TT...............*..TT--....,,,*..--#TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TT.################T--TT................TT--TT.....,,,,,..TT====TT..................TT--....,,,,..---TTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTT################T--TTTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTT--TTTTTTTTTT-.#TTTTTTTTT",
-    "TTTTTTTTTTTTTT#=----------------.-----------------------------.-------#-------.--------------.-----------------#--TT---TTTTTTTTT",
-    "TTTTTTTTTTTTTT==------#---#-------#------.#.---.----#-#--------.-----.----------------#--------------#------------TTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT~~~~~TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT::~~~~~:TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT..TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT......::~~~~~::TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^TTT..TTTT^TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT........%~~~~~~:.TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^TTTT..TTT^TTT.TTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT!-TTTTTTTT.........%%~~~~~::...^TTTT!.TTT^TTT..TTTTTTTTTTTTTTTTT.T^TTTT^!.TT^TTTT..TTTTTTT..TTTT^TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT---TTTTT..........%%~~~~~~:....TTTT^..TT^TTTT..TTT^TTTTTTTTTTTT..^TTTT^T..T^TTTT^..TT^TTTT..TTT^TTTTTTTTTTTTTT",
+    "TTTTTTTTT.........---..............%%~~~~~~:.....TTT^T..T^TTTTTT.--^TTTT..TTT^TTT..TTTT^T.............!...........TTTTTTTTTTTTTT",
+    "TTTTTTTTT..........--.............::~~~~~~%:..............TTTTTTTT......,.,,,,,......................................TTTTTTTTTTT",
+    "TTTTTTTTT..........---..........:::~~~~~~%%.....,,,,,,....TTTTTTTT...,,,,,,,,,,,...........#####################....!TTTTTTTTTTT",
+    "TTTTTTTTT...........--.........::~~~~~~~%%,,,,,,,^TTTT,,TTTTTTTTTTTTT^TT,,^TTTT^T..T^***T..#####################..^TTTTTTTTTTTTT",
+    "TTTTTTTTT...........--........::~~~~~~~%%,,,,,,,,TTTT^,,TT^TTTTTTTTT....,,TTTT^TT..^T***^..#####################..TTTTTTTTTTTTTT",
+    "TTTTTTTTT...........---.....:::~~~~~~~:%,,,,<,,,,TTT^T,,T^TTTT^,,TT^....,,TTT^TTT..TTTT^T..#####################..TTTTTTTTTTTTTT",
+    "TTTTTTTT.............--....%%~~~~~~~~:%,!,,,<,,,,TT^TT,,^TTTT^T,,T^,....,,TT^TTTT..TTT^TT..#####################..TT^TTTTTTTTTTT",
+    "TTTTTTTT.............---..%%~~~~~~~~::,,,,,,<,,,,T^TTT,,TTTT^TT,,^T,....,,T^TTTT^..TT^TTT..#####################..T^TTTTTTTTTTTT",
+    "TTTTTTT..............---%%~~~~~~~~::...,,,,,<,,,,^TTTT!,TTT^TTT,,TT,,---,,^TTTT^T..T^TTTT..#####################..^TTTTTTTTTTTTT",
+    "TTTTTT..x---------xx..---~~~~~~~~::.....,,,,<,,,,TTTT^,,TT^TTTT,,TT,,,,,,,TTTT^TT..^TTTT^..#####################..TTTTTTTTTTTTTT",
+    "TTTTTT..-----------x.%---~~~~~~%::.......,,,<,!,,,,,,,,,....,,,,,,,,,,,,,,,,,,,,,..........#####################.....TTTTTTTTTTT",
+    "TTTTTT..-----------x::~--~~~~~%%.........,,,<,,,,,,,,,,......,,,,,,,,,,,,,,,,,,,,..........#####################.TT...TTTTTTTTTT",
+    "TTTTTT..------------:~~~~~~~~%%...........,,,,,,,T^TTT..TTTT^TT.!^TTTT^T,,T^TTTT^..........#####################TTTTT.TTTTTTTTTT",
+    "TTTTTT..------------~~~~~~~%%.....F.......,,,,,,,^TTTT......TTT..TTTT^TT,,^TTTT^T..........###.##########.######TTTTT.TTTTTTTTTT",
+    "TTTTTT..xxxxxxxxxxx-BBBB--BBBB---......F....,,,,,TTTT^......TTT..TTT^TTT,,TTTT^TT..-----...#**.**********.*****#TTTTT..TTTTTTTTT",
+    "TTTTTT..xxxxxxx-----BBBBBBBBBBB----.........F..,,TTT^T........^..TT^TTTT..TTT^TTT..........#*******************#TTTTTT.TTTTTTTTT",
+    "TTTTTT..xxxxxxx-----BBBBBBBBBBB-------...........TT^TT........T..T^TTTT^..TT^TTTT..........#*******************#TTTTTT.TTTTTTTTT",
+    "TTTTTTT......:%~~~~BBBBBBBBBBBBB..-------...............----....................^..TT^TTT..#####################TTTTTT.TTTTTTTTT",
+    "TTTTTTT.....%%~~~~~~~::..............------.....!...........!...............................F...................TTTTTT.^TTTTTTTT",
+    "TTTTTTT....%%~~~~~~~::.................------.--------------------------------.......................T..........TTTTTT..TTTTTTTT",
+    "TTTTTTT....%~~~~~~~::.................--------^^^^......^^^^ssss^^^^......^^^^-------------------T...............TTTT...TTTTTTTT",
+    "TTTTTTTTTT~~~~~~~~::..................--------^^^^vvvvvv^^^^ssss^^^^vvvvvv^^^^-------------------................TTT^..TTTTTTTTT",
+    "TTTTTTTTT~~~~~~~~%....................-----------------------------------------------------------................TT^T..TTTTTTTTT",
+    "TTTTTTTTT~~~~~~~%%..vvvvvvvvvv................................----........................----...................T^TT..^TTTTTTTT",
+    "TTTTTTTT~~~~~~~%%................FFFFFFFFFFFFFFFFFFFFFFFFFFF..----..FFFFFFFFFFFFFFFFFFFFFF----FFFFFFFFFFFFFFFFF..^TTT..TTTTTTTTT",
+    "TTTTTTT~~~~~~~%%.................F...,,,,..................F..----..F..*.....,,,..........----................F..TTTT..TTTTTTTTT",
+    "TTTTTT~~~~~~~%%..................F...,,,,,,,...............F..----..F.......,,,,,.......,,,...................F..TTT^..TTTTTTTTT",
+    "TTTTTT~~~~~~%%....T....F.........F...,,,,,,,,..............F..----..F......,,,,,,,.....,,,,,.....,............F..TT^T..TTTTTTTTT",
+    "TTTTT~~~~~~~:....................F..,F,,,,,,,,.T....F......F..----..F....,,,,T,,,,F...,,,,,,,,,,,,,,..,,......F.........TTTTTTTT",
+    "TTTT~~~~~~~:.....................F.,,,,,,,,,,,,....,.......F..----..F...,,,,,,,,,,,...,,,,,,,,,,,,,,,.,,......F.........TTTTTTTT",
+    "TTTT~~~~~~::.....................F,,,,,,,,,,:::,,,,,,......F..----..F..,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,---FFFFFFFFFT..TTTTTTTTT",
+    "TTT~~~~~~::...,,,,,,.............F,,,,,,,:::::::::,,,,.....F..----..F..,,,,,,,,,,,,,,,,,,,,,,,~~~~~,,,,,F,,,,,,,,TTF^..TTTTTTTTT",
+    "TTT~~~~~~:...,,,,,,T,,,,F,,......F,,,,,,:::::::::::,,,,,..###.----.###.,,,,,,,,,,,,,,,,,,,,,~~~~~~~~~,,,F,,,,,,,,TTFT..TTTTTTTTT",
+    "TTT~~~~~::...,,,,,,,,,,,,,,,,....F,,,,,,:::::::::::,,,,,,,###.----.###.,T,,,,F,,,,,,,,,T,,,,~~~~~~~~~,,,F,,,,,,,,T^FT..^TTTTTTTT",
+    "TT~~~~~~:....,,,,,,,,,,,,,,,,,,..F..,,,,:::::::::::,,,,,,,###.----.###.,,,,,,,,,,,,,,,,,,,,,~~~~~~~~~---o,,,,,,,.^TFT..TTTTTTTTT",
+    "TT~~~~~%.....,,,,,,,,,,,,,,,,,,,.F....,,.:::::::::,,,,,,,,###.----.###,,,,,,,,,,,,,,,,,,,,,,,,~~~~~,,,,,F,,,,,,,,TTFT..TTTTTTTTT",
+    "T~~~~~%%......,,,,,,,,,,,,,,,,,,,F..........:::,,,,,,,,,,,,F..----..F.,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,F,,,,,,,,TTF^..TTTTTTTTT",
+    "~~~~~~%.......,,,T,,,,F,,,,,,,,,,F............,,,,,,,,,,,,,F..----..F.,,,,,,,,,,,,,,,,..,,,,,,,,,,,,,,,,F,,,,,,,,,,F.....TTTTTTT",
+    "~~~~~%%TT.....,,,,,,,,,,,,,,,,,,,F...T....F..,,,,,,,T,,,,..F..----..F.,,F,,,,,,,,,T,,,.F,,,,,,,,.....,,,FFFFFFFFFFFF**....TTTTTT",
+    "~~~~~%TTT.....,,,,,,,,,,,,,,,,,,.F...........,,,,,,,,,,....F..----..F..,,,,,,...,,,,....,,,,F,,.......,,,.,,,.F..^T***.TTTTTTTTT",
+    "~~~~%%TTT.....,,,,,,,,,,,,,,,,...F............,,,,,........F..----..F...,,...............,,,,,................F..TTTT..TTTTTTTTT",
+    "~~~%%TTTT..^TTTT,,,,,,,,,........F..........----...........F..----..F....#...............,,,,.................F..TTT^..TT^TTTTTT",
+    "T~T%TTTTT..TTTT^,,,,,,,,T....F...F---------------------------.----..F---------------------------------------FFF..TT^T..T^TTTTTTT",
+    "TTTTTTTTT..TTT^T.,,,,,,,..........^^....^^^^ssss^^^^^^^^^^^^^.----...^^^^^^^^^^^^^^^ssss^^^^......^^^^^^^^^^.....T^TT..^TTTTTTTT",
+    "TTTTTTTTTT.TT^TT....,,,...........^^vvvv^^^^ssss^^^^^^^^^^^^^--------^^^^^^^^^^^^^^^ssss^^^^vvvvvv^^^^^^^^^^.....^TTT..TTTTTTTTT",
+    "TTTTTTTTTT.T^TTT..................------------------------------------------.-------------------------------.....TTTT..TTTTTTTTT",
+    "TTTTTTTTT.........................-----------------------------------------------------------------......................TTTTTTT",
+    "TTTTTTTTT.........................----........................----......................----.............................TTTTTTT",
+    "TTTTTTTTT..TTT^T..FFFFFFFFFFFFFFFF----FFFFFFFFFFFFFFFFFFFF....----...FFFFFFFFFFFFFFFFFFF----FFFFFFFFFFFFFFFFFFF..T^TT..^TTTTTTTT",
+    "TTTTTTTTT..TT^TT..F...............----.....,,,,..........F....----...F.....,,,,.........----.........,,,,.....F..^TTT..TTTTTTTTT",
+    "TTTTTTTTT..T^TTT..F...,,,,,..,,,,,........,,,,,,.........F....----...F....,,,,,,....................,,,,,,....F..TTTT..TTTTTTTTT",
+    "TTTTTTTTT..^TTTT..F,,,,,,,,,,,,,,,,.......,,,,,,,,,,.....F....----...F....,,,,,,,,,,,..........,,,,,,,,,,,....F..TTT^..TTTTTTTTT",
+    "TTTTTTTTT..TTTT^..F,,,,,,F,,,,,,,,,T....F,,,,,,,,,T,,,...F....----...F...F,,,,,,,,,T,,..F.....,,,,T,,,,,,,,...F..TT^T.TTTTTTTTTT",
+    "TTTTTTTTT..TTTTT.,F,,,,,,,,,,,,,,,,.....,,,,,,,,,,,,,,...F...T----...F....,,,,,,,,,,,,,......,,,,,,,,,,,,,,,..F..TTTT.TTTTTTTTTT",
+    "TTTTTTTT^..TTTTTTTTTTT,,,,,,,,,,,,,....,,,,,,,,,,,,,,,,..F....----...F...,,,,,,,,,,,,,,,.....,,,,,,,,,,,......F..TTTTTTTTTTTTTTT",
+    "TTTTTT.....TT,,,,,,,,T,,,,,,,,,,,,....,,,,,,,,,,,,,,,,,..F....----...F..,,,,,,,,,,,,,,,,...%.,,,,,,,,,,,......F.TTTTTTTTTTTTTTTT",
+    "TTTTTT.....TT,,,,,,,,T,,,,,,,,,,:::::::,,,,,,,,,,,,,,,,..F....----...F..,,,,,,,,,,T,,,%%%%%%%%%%%,,,,,,,......F.TTTTTTTTTTTTTTTT",
+    "TTTTT^TTT..TTTT^,,,,,T,,,,,,,:::::::::::::,,,,,,T,,,,F,.####..----..####,,,,,,T,,,,,%%%%%%%%%%%%%%%,,,,,......F.TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.TT.....,,,,k----,,:::::~~~~~:::::,,,,,,,,,,,,.####.F----..####,,,,,,,,,,,%%%%%~~~~~~~%%%%%,,,,,---..F.TTTTTTTTTTTTTTTT",
+    "TTTTTTTT^.TT....,,,,,T,,,,,::::~~~~~~~~~::::,,,,,,,,,,,.####..----..####..,,,,,,,,,%%%%~~~~~~~~~%%%%,,,,,,,...F.TTTTTTTTTTTTTTTT",
+    "TTTTTTT^T.TT....,,.,,T.,,,,::::~~~~~~~~~::::,,,....,,...####..----..####...,,,,,..%%%%~~~~~~~~~~~%%%%,,,,,,...F.TTTTTTTTTTTTTTTT",
+    "TTTTTT^TT.TT....,,,,,T.,,,,::::~~~~~~~~~::::,,..,,.......F....----...F......,,,,,..%%%%~~~~~~~~~%%%%..,,,,....F.TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.TTT----TTTTT,,,T..:::::~~~~~:::::T..,,F,,......F...T----...F...T...,F,,,.%%%%%~~~~~~~%%%%%T,........F.TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.TTTTTT..F.,,,,,,,,,:::::::::::::,,,,,,,,,,.....F....----...F....,,,,,,,,,.%%%%%%%%%%%%%%%,,,,,,,,,,,F..TTTTTTTTTTTTTTT",
+    "TTTTTTT...TTTTTT..F.,,,,,,,,,,,,:::::::,,,,,,,,,,,,,,....F....----...F....,,,,,,,,,T,,%%%%%%%%%%%,,,,,,,,,,,,,F..TTTTTTTTTTTTTTT",
+    "TTTTTTT...TTTTTT..F.,,,,,,,,,,,,,,,,..,,,,,,,,,,,,,,,,...F....----...F...,,,,,,,,,,,,,,,,,.%,,,,,,,,,,,,,,,,,,F..TTTTTTTTTTTTTTT",
+    "TTTTTTTTT..TTTTT..F.,,,,,,,,,,T,,,,F,,,,,,,,,,,,,,,,,,.##F####----###F###,,,,,,,,,,,,,,,,,...T,,,,,,,,,,,,,,,,F..TTTTT.TTTTTTTTT",
+    "TTTTTTTTT..TTTT^..F.,,,,,,,,,,,,,,,,.,,,F,,,,,,,,,T,,,.##F####----###F###F,,,,,,,,,,,,,,,,....,,,,T,,,,,,,,,,.F..TTTT..T^TTTTTTT",
+    "TTTTTTTTT..TTT^T..F.,,,,,,,,,,,,,,,...,,,,,,,,,,,,,,,,.##F####---####F###.,,,,,,,,,,,,,,,......,,,,,,,,,,,,...F..T^TT..^TTTTTTTT",
+    "TTTTTTTTT..TT^TTTTF.TTT^TT.............................##F###########F###.............................T^TTTT..FTT^TTT..TTTTTTTTT",
+    "TTTTTTTTT..T^TTTT^F.TT^TTT.............................##F###########F###.............................^TTTT^..FT^TTTT..TTTTTTTTT",
+    "TTTTTTTTT..^TTTT^TFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF.##########.FFFFFFFFFF-FFFFFFFFFFFFFFFFFFFFFFFFFFFFF-F^TTTT^..TT^TTTTTT",
+    "TTTTTTTTT..TTTT^TT..^TTTT^F............................##.##########.##..............................FTTT^TT..^TTTT^T..T^TTTTTTT",
+    "TTTTTTTTT..............................................################...................................................TTTTTT",
+    "TTTTTTTTT.................F............................#######---######..............................F....................TTTTTT",
+    "TTTTTTTTT..T^TTTFFFFFFFFFFF.....F....F....F.....F.....FF######---######........F....F.....F....F.....FFFFFFFFFFF^TTTT..TTTTTTTTT",
+    "TTTTTTTTT..^TTTT^T..T^TTTTF............................#######---######..............................FTTTT^TTTT^TTTT^..TTTTTTTTT",
+    "TTTTTTTTT..TTTT^TT..^TTTT^T......---...---..---...---..##T####---#####T..........---..---...---..---.TTTT^TTTT^TTTT^T..T^TTTTTTT",
+    "TTTTTTTTT#.TTT^TTT..TTTT^TF.................................#======#.................................FTT^T........^TT..^TTTTTTTT",
+    "TTTTTTTT^..TT^TTTT..TTT^TT..................................#======#.....---..........................T^TT........TTT..TTTTTTTTT",
+    "TTTTTTTTT..T^cccT^..TT^TTTF.................................#======#.................................cccTT........TTT..TTTTTTTTT",
+    "TTTTTTTTT..^Tccc....T^TTTTT.................................#======#..............#..................cccTT........TT^..TTTTTTTTT",
+    "TTTTTTTT....................................................#======#....................................................TTTTTTTT",
+    "TTTTTTTT.......-..........T.................................#======#...............................................TT...TTTTTTTT",
+    "TTTTTTTTT.^^^^^r^^^^^TT^TTF.................................#======#..................................T^TT........TTTT.TTTTTTTTT",
+    "TTTTTTTTT.^:::::::::^T^TTTF.................................#======#...................................TTT..---..TTTTTTTTTTTTTTT",
+    "TTTTTTTTT.^:::::::::^^TTTTF.................................#======#...................................TTT......TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.^:::::::::^.....T..........---...---...---........#======#....---............#..........---T..........TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.^:....::::^.......................................#======#..........................................TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTT^:....::::^########################################======#########################################..TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTT^:....::::^--=====================================================================================..TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTT^:....::::^--=====================================================================================...TTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTT^^---^^^^^^--====....=.....=....==....=.....==================.....=....=....=.....=....==========...TTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTT....---------####....#.....#....##....#.....#######======#####.....#....#....#.....#....#######===..TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.....---------.....................................#======#.....................................===..TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTT..T..---------...T.................................#======#..............................FFFFFF.===..TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTT..^..---------..TF.---..---...---..---...---.......#======#.....---.......---...---..---*c##*cF.=.....^TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT..T..---------..^F.................................#======#...............................##c*F.=.....TTTTTTTTTTTTTTTTT",
+    "TTTTTTTTT..T..---------..TF.................................#======#...............................####F.=......TTTTTTTTTTTTTTTT",
+    "TTTTTTTT^..T..---------..TT.................................#====###...............................##c*F.=......TTTTTTTTTTTTTTTT",
+    "TTTTTTT.......---------.....................................########...............................##*cF.===--...TTTTTTTTTTTTTTT",
+    "TTTTTTT.......---------...T.---...---..---...---..---.......########..........---...---.---....---*##c*F.===.....TTTTTTTTTTTTTTT",
+    "TTTTTTTTT..T.....------...F.................................########...........................FFFFFFFFF.===....TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT..T.....------..----..-----..----..................########................-----.----...........===..TTTTTTTTTTTTTTTTTT",
+    "TTTTTTTT^........-------------------------------------------#######-----------====--------------------------..TTT^TTTTTTTTTTTTTT",
+    "TTTTTTT^T........-------------------------------------------------------------====--------------------------..TT^TTTTTTTTTTTTTTT",
+    "TTTTTTTTT....----------.....................................#======#.........#====#...........................T^TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.....---------.....................................#======#.........#====#...........................^TTTT^TTTTTTTTTTTT",
+    "TTTTTTTTT.....---------..TT..^TTTT^T..T^TTTT^..TT^TTTT..TT............TT..^..#====#..TTTT^..TT^TTTT..TTT^TTT..TTTT^TTTTTTTTTTTTT",
+    "TTTTTTTTT.....---------......................................................#====#.................................TTTTTTTTTTTT",
+    "TTTTTTTTTT....---------....................TT................................#====#.................................TTTTTTTTTTTT",
+    "TTTTTTTTTTT^..---------..T^..TT^TTTT..TTTTTTTTTTTTT^TT..^TTTT^T..T^TTTT^..T.TT====...T^TTT..TTTT^TT..^TTTT^T..T^TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTT..---------..^T..T^TTTT^TTTTTTTTTTTTTTTTTT..TTTT^TT..^TTTT^TTTTTTT====TTTTTTTT..TTT^TTT..TTTT^TT..^TTTT^TTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---------..TT..^TTTTTTTTTTTTTTTTTTTTTTTT..TTT^TTT..TTTT^TTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTT..TTTT^TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---------TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^TTTT..TTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---------TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT^.TTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT---------TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTT----TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT====TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"
   ],
   "objects": [
     {
       "stamp": "dc_zoo_gate",
       "at": [
         60,
-        62
+        77
       ],
       "name": "National Zoo Gate"
     },
     {
       "stamp": "dc_aviary",
       "at": [
-        85,
-        16
+        96,
+        12
       ],
       "name": "Great Aviary"
     },
     {
       "stamp": "ruined_block_9x9_a",
       "at": [
-        22,
-        17
+        9,
+        8
       ],
       "interior": "dc:woodley-vet",
       "name": "Old Animal Hospital"
@@ -161,177 +161,14 @@
       "stamp": "waypost_board",
       "at": [
         65,
-        52
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        59,
-        60
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        67,
-        60
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        83,
-        25
-      ]
-    },
-    {
-      "stamp": "tree_cherry",
-      "at": [
-        94,
-        25
-      ]
-    },
-    {
-      "stamp": "standing_house_m__blue",
-      "at": [
-        39,
-        21
-      ],
-      "interior": "dc:wp-vet-annex",
-      "name": "Creekside Clinic Annex"
-    },
-    {
-      "stamp": "standing_house_s_door1",
-      "at": [
-        46,
-        21
-      ]
-    },
-    {
-      "stamp": "standing_block_8x7_a",
-      "at": [
-        53,
-        18
-      ],
-      "interior": "dc:wp-keeper-lodge",
-      "name": "Head Zookeeper's Lodge"
-    },
-    {
-      "stamp": "standing_block_8x7_b",
-      "at": [
-        70,
-        18
-      ],
-      "interior": "dc:wp-aviary-office",
-      "name": "Aviary Banding Office"
-    },
-    {
-      "stamp": "standing_house_m__green",
-      "at": [
-        97,
-        21
-      ],
-      "interior": "dc:wp-ranger-bunk",
-      "name": "North Trail Bunkhouse"
-    },
-    {
-      "stamp": "house_s_b",
-      "at": [
-        103,
-        21
-      ]
-    },
-    {
-      "stamp": "standing_block_8x7_a",
-      "at": [
-        21,
-        34
-      ],
-      "interior": "dc:wp-feed-barn",
-      "name": "Old Paddock Feed Room"
-    },
-    {
-      "stamp": "standing_house_s_door2__teal",
-      "at": [
-        31,
-        37
-      ]
-    },
-    {
-      "stamp": "standing_house_m",
-      "at": [
-        41,
-        37
-      ],
-      "interior": "dc:wp-naturalist-flat",
-      "name": "Woodley Naturalist Study"
-    },
-    {
-      "stamp": "ruined_block",
-      "at": [
-        52,
-        34
-      ]
-    },
-    {
-      "stamp": "standing_block_8x7_b",
-      "at": [
-        67,
-        34
-      ],
-      "interior": "dc:wp-woodshop",
-      "name": "Park Carpenter's Cottage"
-    },
-    {
-      "stamp": "standing_house_s_door1__purple",
-      "at": [
-        79,
-        37
-      ]
-    },
-    {
-      "stamp": "standing_house_m__blue",
-      "at": [
-        85,
-        37
-      ]
-    },
-    {
-      "stamp": "ruined_block_8x7_b",
-      "at": [
-        95,
-        34
-      ]
-    },
-    {
-      "stamp": "standing_block_9x9_b",
-      "at": [
-        21,
-        46
-      ]
-    },
-    {
-      "stamp": "standing_house_s_door2__green",
-      "at": [
-        40,
-        52
-      ],
-      "interior": "dc:wp-bridge-house",
-      "name": "Rock Creek Trail Cabin"
-    },
-    {
-      "stamp": "house_s_b",
-      "at": [
-        45,
-        52
+        107
       ]
     },
     {
       "stamp": "standing_house_m__teal",
       "at": [
-        79,
-        52
+        49,
+        81
       ],
       "interior": "dc:wp-ticket-booth",
       "name": "Zoo Gate Attendant House"
@@ -339,903 +176,1930 @@
     {
       "stamp": "standing_block_8x7_a",
       "at": [
-        86,
-        49
-      ]
+        71,
+        80
+      ],
+      "interior": "dc:wp-keeper-lodge",
+      "name": "Head Zookeeper's Lodge"
     },
     {
-      "stamp": "house_s_a_door2",
+      "stamp": "standing_block_8x7_b",
       "at": [
-        97,
-        52
-      ]
+        27,
+        90
+      ],
+      "interior": "dc:wp-feed-barn",
+      "name": "Old Paddock Feed Room"
     },
     {
-      "stamp": "standing_house_s_door1",
+      "stamp": "standing_house_m__blue",
       "at": [
-        102,
-        52
-      ]
+        36,
+        91
+      ],
+      "interior": "dc:wp-vet-annex",
+      "name": "Creekside Clinic Annex"
+    },
+    {
+      "stamp": "standing_house_s_door2__green",
+      "at": [
+        42,
+        91
+      ],
+      "interior": "dc:wp-bridge-house",
+      "name": "Rock Creek Trail Cabin"
     },
     {
       "stamp": "standing_house_m",
       "at": [
-        21,
-        65
+        48,
+        91
+      ],
+      "interior": "dc:wp-naturalist-flat",
+      "name": "Woodley Naturalist Study"
+    },
+    {
+      "stamp": "standing_house_m__green",
+      "at": [
+        71,
+        91
+      ],
+      "interior": "dc:wp-ranger-bunk",
+      "name": "North Trail Bunkhouse"
+    },
+    {
+      "stamp": "standing_block_8x7_b",
+      "at": [
+        79,
+        90
+      ],
+      "interior": "dc:wp-woodshop",
+      "name": "Park Carpenter's Cottage"
+    },
+    {
+      "stamp": "standing_block_8x7_a",
+      "at": [
+        90,
+        90
+      ],
+      "interior": "dc:wp-aviary-office",
+      "name": "Aviary Banding Office"
+    },
+    {
+      "stamp": "standing_house_m",
+      "at": [
+        33,
+        105
       ],
       "interior": "dc:wp-rowhouse-s",
       "name": "Calvert Street Rowhouse"
     },
     {
-      "stamp": "ruined_block",
+      "stamp": "house_m_c",
       "at": [
-        28,
-        62
+        27,
+        81
       ]
     },
     {
-      "stamp": "house_s_b_door2",
+      "stamp": "standing_house_s_door1__green",
       "at": [
-        40,
-        65
+        33,
+        81
       ]
     },
     {
-      "stamp": "standing_house_s_door2",
+      "stamp": "standing_house_s_door2__purple",
       "at": [
-        52,
-        65
+        38,
+        81
       ]
     },
     {
-      "stamp": "ruined_block_8x7_b",
+      "stamp": "standing_house_m__blue",
       "at": [
-        79,
-        62
+        43,
+        81
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2__teal",
+      "at": [
+        80,
+        81
+      ]
+    },
+    {
+      "stamp": "standing_house_m",
+      "at": [
+        85,
+        81
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2__green",
+      "at": [
+        91,
+        81
       ]
     },
     {
       "stamp": "standing_house_m__purple",
       "at": [
-        95,
-        65
-      ]
-    },
-    {
-      "stamp": "house_s_a",
-      "at": [
-        102,
-        65
-      ]
-    },
-    {
-      "stamp": "ruined_block_16x14_a",
-      "at": [
-        21,
-        103
-      ]
-    },
-    {
-      "stamp": "house_s_b",
-      "at": [
-        22,
+        96,
         81
       ]
     },
     {
-      "stamp": "house_s_a_door2",
+      "stamp": "house_s_c",
       "at": [
-        44,
-        80
+        54,
+        91
       ]
     },
     {
-      "stamp": "house_m_b",
+      "stamp": "standing_house_s_door1__teal",
+      "at": [
+        98,
+        91
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2__blue",
+      "at": [
+        27,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_m__green",
+      "at": [
+        32,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2__purple",
+      "at": [
+        38,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door1",
+      "at": [
+        44,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_m__teal",
+      "at": [
+        49,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_m",
+      "at": [
+        72,
+        100
+      ]
+    },
+    {
+      "stamp": "house_s_c",
+      "at": [
+        78,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door1__purple",
+      "at": [
+        83,
+        100
+      ]
+    },
+    {
+      "stamp": "standing_house_m__blue",
       "at": [
         88,
-        79
+        100
       ]
     },
     {
-      "stamp": "house_s_b__teal",
+      "stamp": "standing_house_s_door1__teal",
       "at": [
-        102,
-        79
+        94,
+        100
       ]
     },
     {
-      "stamp": "house_s_a",
+      "stamp": "standing_house_m",
+      "at": [
+        27,
+        105
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door1__green",
+      "at": [
+        39,
+        105
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2__purple",
       "at": [
         44,
-        107
+        105
       ]
     },
     {
-      "stamp": "house_s_b_door2",
+      "stamp": "standing_house_m__blue",
       "at": [
-        66,
-        107
+        49,
+        105
       ]
     },
     {
-      "stamp": "house_m_a",
+      "stamp": "house_s_c",
       "at": [
-        86,
-        106
+        72,
+        105
       ]
     },
     {
-      "stamp": "house_s_b",
+      "stamp": "standing_house_m",
       "at": [
-        96,
-        106
+        77,
+        105
       ]
     },
     {
-      "stamp": "house_s_a",
+      "stamp": "standing_house_s_door2__green",
       "at": [
-        108,
-        106
+        83,
+        105
       ]
     },
     {
-      "stamp": "house_s_b",
+      "stamp": "standing_house_s_door1__purple",
       "at": [
-        115,
+        88,
+        105
+      ]
+    },
+    {
+      "stamp": "standing_house_m__blue",
+      "at": [
+        94,
+        105
+      ]
+    },
+    {
+      "stamp": "standing_house_m__green",
+      "at": [
+        83,
+        18
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door1",
+      "at": [
+        56,
+        21
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door1",
+      "at": [
+        104,
+        34
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2",
+      "at": [
+        12,
+        66
+      ]
+    },
+    {
+      "stamp": "standing_house_m__teal",
+      "at": [
+        104,
         62
+      ]
+    },
+    {
+      "stamp": "standing_block_8x7_a",
+      "at": [
+        106,
+        86
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door1",
+      "at": [
+        12,
+        96
+      ]
+    },
+    {
+      "stamp": "standing_house_m",
+      "at": [
+        12,
+        110
+      ]
+    },
+    {
+      "stamp": "standing_house_s_door2",
+      "at": [
+        68,
+        12
+      ]
+    },
+    {
+      "stamp": "standing_house_m__blue",
+      "at": [
+        106,
+        104
+      ]
+    },
+    {
+      "stamp": "tree_cherry",
+      "at": [
+        57,
+        79
+      ]
+    },
+    {
+      "stamp": "tree_cherry",
+      "at": [
+        68,
+        79
+      ]
+    },
+    {
+      "stamp": "tree_cherry",
+      "at": [
+        94,
+        21
+      ]
+    },
+    {
+      "stamp": "tree_cherry",
+      "at": [
+        105,
+        21
       ]
     }
   ],
   "fixtures": [
     {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        20,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        20,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        20,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        21,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        21,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        21,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        22,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        22,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        22,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_pier",
+      "at": [
+        22,
+        26
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        23,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        23,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        23,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        24,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        24,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        24,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        25,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        25,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        25,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        26,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        26,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        26,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_pier",
+      "at": [
+        26,
+        26
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        27,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        27,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        27,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        28,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        28,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        28,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        29,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        29,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        29,
+        25
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_pier",
+      "at": [
+        29,
+        26
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_rail_n",
+      "at": [
+        30,
+        22
+      ],
+      "solid": true
+    },
+    {
+      "kind": "em_bridge_h_deck",
+      "at": [
+        30,
+        23
+      ],
+      "solid": false
+    },
+    {
+      "kind": "em_bridge_h_girder",
+      "at": [
+        30,
+        25
+      ],
+      "solid": true
+    },
+    {
       "kind": "em_streetlamp",
       "at": [
-        59,
-        67
+        56,
+        83
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        67,
-        67
+        70,
+        83
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        56,
+        95
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        70,
+        95
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        56,
+        107
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        70,
+        107
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        36,
+        97
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        88,
+        97
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
         60,
-        51
+        48
       ]
     },
     {
       "kind": "em_streetlamp",
       "at": [
-        67,
-        51
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        26,
-        27
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        88,
-        25
-      ]
-    },
-    {
-      "kind": "em_streetlamp",
-      "at": [
-        38,
-        41
+        66,
+        48
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
-        54,
-        54
+        52,
+        87
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
-        71,
-        54
+        46,
+        97
       ]
     },
     {
       "kind": "standin_bench",
+      "at": [
+        78,
+        97
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        58,
+        103
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        68,
+        103
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        60,
+        52
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        66,
+        52
+      ]
+    },
+    {
+      "kind": "standin_bench",
+      "at": [
+        96,
+        22
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
       "at": [
         44,
-        29
+        32
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        82,
+        32
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        44,
+        56
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        82,
+        56
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        62,
+        74
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        66,
+        74
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        61,
+        85
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        66,
+        85
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        61,
+        90
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
-        78,
-        29
+        66,
+        90
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "standin_bench",
+      "at": [
+        61,
+        95
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        66,
+        95
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        101,
+        99
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        63,
+        100
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        63,
+        104
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        21,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        92,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        105,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        110,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        92,
+        16
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        107,
+        16
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        40,
+        17
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        101,
+        23
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
       "at": [
         34,
+        26
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        106,
+        26
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        39,
         27
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "em_bollard",
       "at": [
-        35,
-        27
+        63,
+        33
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "em_wood_fence_post",
       "at": [
-        50,
-        39
+        28,
+        35
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "em_wood_fence_post",
       "at": [
-        51,
-        39
+        42,
+        36
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "em_wood_fence_post",
       "at": [
-        77,
-        39
+        72,
+        36
       ]
     },
     {
-      "kind": "em_iron_fence_h",
+      "kind": "em_wood_fence_post",
       "at": [
-        78,
-        39
+        87,
+        36
       ]
     },
     {
-      "kind": "em_crate_stack",
+      "kind": "em_bollard",
       "at": [
-        20,
+        63,
+        38
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        14,
         40
       ]
     },
     {
-      "kind": "em_bridge_v_deck",
+      "kind": "em_wood_fence_post",
       "at": [
-        79,
-        83
-      ],
-      "solid": false
+        29,
+        40
+      ]
     },
     {
-      "kind": "em_bridge_v_rail_w",
+      "kind": "em_wood_fence_post",
+      "at": [
+        37,
+        41
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        42,
+        41
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        47,
+        41
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        52,
+        41
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        82,
+        41
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        108,
+        42
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        63,
+        43
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        12,
+        45
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        27,
+        45
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        47,
+        46
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        77,
+        46
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        97,
+        47
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        19,
+        50
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        61,
+        56
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        30,
+        60
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        45,
+        60
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
       "at": [
         78,
-        83
-      ],
-      "solid": true
+        60
+      ]
     },
     {
-      "kind": "em_bridge_v_rail_e",
+      "kind": "em_wood_fence_post",
       "at": [
-        81,
-        83
-      ],
-      "solid": true
+        93,
+        60
+      ]
     },
     {
-      "kind": "em_bridge_v_deck",
+      "kind": "em_wood_fence_post",
       "at": [
-        79,
-        84
-      ],
-      "solid": false
+        25,
+        65
+      ]
     },
     {
-      "kind": "em_bridge_v_rail_w",
+      "kind": "em_wood_fence_post",
       "at": [
-        78,
-        84
-      ],
-      "solid": true
+        43,
+        65
+      ]
     },
     {
-      "kind": "em_bridge_v_rail_e",
+      "kind": "em_wood_fence_post",
       "at": [
-        81,
-        84
-      ],
-      "solid": true
+        73,
+        65
+      ]
     },
     {
-      "kind": "em_bridge_v_deck",
+      "kind": "em_wood_fence_post",
       "at": [
-        79,
-        85
-      ],
-      "solid": false
+        100,
+        65
+      ]
     },
     {
-      "kind": "em_bridge_v_pier_w",
+      "kind": "em_wood_fence_post",
       "at": [
-        78,
-        85
-      ],
-      "solid": true
+        105,
+        69
+      ]
     },
     {
-      "kind": "em_bridge_v_pier_e",
+      "kind": "em_wood_fence_post",
       "at": [
-        81,
-        85
-      ],
-      "solid": true
+        53,
+        70
+      ]
     },
     {
-      "kind": "em_bridge_v_deck",
+      "kind": "em_wood_fence_post",
       "at": [
-        79,
-        86
-      ],
-      "solid": false
+        88,
+        74
+      ]
     },
     {
-      "kind": "em_bridge_v_deck",
+      "kind": "em_wood_fence_post",
       "at": [
-        79,
-        87
-      ],
-      "solid": false
+        45,
+        75
+      ]
     },
     {
-      "kind": "em_bridge_v_rail_w",
+      "kind": "em_wood_fence_post",
       "at": [
         78,
-        87
-      ],
-      "solid": true
+        75
+      ]
     },
     {
-      "kind": "em_bridge_v_rail_e",
+      "kind": "em_bollard",
+      "at": [
+        105,
+        98
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        15,
+        104
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        20,
+        104
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        20,
+        109
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        30,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        35,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        40,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        45,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        50,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        55,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        60,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        65,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        70,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        75,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        80,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        85,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        90,
+        112
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        20,
+        114
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        15,
+        117
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        25,
+        11
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        65,
+        56
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        65,
+        61
+      ]
+    },
+    {
+      "kind": "em_bollard",
+      "at": [
+        65,
+        66
+      ]
+    },
+    {
+      "kind": "em_wood_fence_post",
+      "at": [
+        104,
+        73
+      ]
+    },
+    {
+      "kind": "em_bollard",
       "at": [
         81,
-        87
-      ],
-      "solid": true
+        116
+      ]
     },
     {
-      "kind": "em_bridge_v_deck",
+      "kind": "em_bollard",
       "at": [
-        79,
-        88
-      ],
-      "solid": false
+        19,
+        118
+      ]
     },
     {
-      "kind": "em_bridge_v_pier_w",
+      "kind": "em_bollard",
       "at": [
-        78,
-        88
-      ],
-      "solid": true
+        82,
+        68
+      ]
     },
     {
-      "kind": "em_bridge_v_pier_e",
+      "kind": "em_bollard",
       "at": [
-        81,
-        88
-      ],
-      "solid": true
-    },
-    {
-      "kind": "em_bridge_v_deck",
-      "at": [
-        79,
-        89
-      ],
-      "solid": false
-    },
-    {
-      "kind": "em_bridge_v_deck",
-      "at": [
-        79,
-        90
-      ],
-      "solid": false
-    },
-    {
-      "kind": "em_bridge_v_rail_w",
-      "at": [
-        78,
-        90
-      ],
-      "solid": true
-    },
-    {
-      "kind": "em_bridge_v_rail_e",
-      "at": [
-        81,
-        90
-      ],
-      "solid": true
+        65,
+        70
+      ]
     }
   ],
   "people": [
     {
-      "id": "wp_ada_lindqvist",
-      "name": "Ada Lindqvist",
+      "id": "wp_keeper_graham",
+      "name": "Graham",
       "at": [
         63,
-        60
+        83
       ],
       "facing": "S",
-      "sprite": "ranger",
-      "role": "talk",
+      "sprite": "hiker",
+      "role": "elder",
       "lines": [
-        "Somebody opened every paddock gate on the first night. The Pok\u00e9mon here chose to stay.",
-        "Bring me three Pok\u00e9mon caught in the old paddocks and I'll share my rarest ball."
+        "All four paddock gates have stood wide open since the city quieted \u2014 the animals wandered off and wild Pokemon moved in.",
+        "Show me three Pokemon caught inside the old paddocks and I'll share the last keeper's ball."
       ]
     },
     {
-      "id": "wp_ornith_jules",
-      "name": "Jules",
+      "id": "wp_lamplighter_maya",
+      "name": "Maya",
       "at": [
-        89,
-        25
+        61,
+        108
+      ],
+      "facing": "E",
+      "sprite": "lamplighter",
+      "role": "lamplighter",
+      "lines": [
+        "Connecticut Avenue runs south across Taft Bridge to Dupont; Rock Creek Trail heads west toward Georgetown."
+      ]
+    },
+    {
+      "id": "wp_botanist_paul",
+      "name": "Paul",
+      "at": [
+        45,
+        97
       ],
       "facing": "S",
       "sprite": "scientist",
-      "role": "scholar",
-      "lines": [
-        "The Great Aviary's iron ribs still catch morning mist from Rock Creek.",
-        "Starly and Swablu roost right up under the dome arches."
-      ]
-    },
-    {
-      "id": "wp_vet_mira",
-      "name": "Mira",
-      "at": [
-        26,
-        27
-      ],
-      "facing": "S",
-      "sprite": "healer",
-      "role": "healer",
-      "lines": [
-        "Stay alert inside the Old Animal Hospital \u2014 ghosts settled in the dark wards.",
-        "Our clean annex east of the lane is always open if you need rest."
-      ]
-    },
-    {
-      "id": "wp_hiker_bo",
-      "name": "Bo",
-      "at": [
-        63,
-        74
-      ],
-      "facing": "N",
-      "sprite": "hiker",
       "role": "talk",
       "lines": [
-        "Rock Creek Trail down the southwest gate winds through woods all the way to Georgetown.",
-        "Connecticut Avenue south crosses the creek straight back to Dupont Circle."
+        "Keep your lantern steady if you cross the Rock Creek bridge to the Old Animal Hospital."
+      ]
+    },
+    {
+      "id": "wp_scout_ivy",
+      "name": "Ivy",
+      "at": [
+        81,
+        97
+      ],
+      "facing": "W",
+      "sprite": "youngster",
+      "role": "talk",
+      "lines": [
+        "Up past the open paddocks, the Great Aviary dome still catches the morning sun."
       ]
     }
   ],
   "street_pokemon": [
     {
-      "dex": 399,
+      "dex": 396,
       "at": [
-        55,
-        53
+        56,
+        83
       ],
       "zone": "wilds"
     },
     {
-      "dex": 396,
+      "dex": 399,
       "at": [
-        70,
-        53
+        69,
+        83
       ],
       "zone": "wilds"
     },
     {
       "dex": 406,
       "at": [
-        42,
-        41
+        36,
+        86
       ],
       "zone": "wilds"
     },
     {
       "dex": 401,
       "at": [
-        82,
-        41
+        90,
+        86
       ],
       "zone": "wilds"
     },
     {
       "dex": 16,
       "at": [
-        86,
-        26
+        29,
+        97
       ],
       "zone": "wilds"
     },
     {
-      "dex": 52,
+      "dex": 19,
       "at": [
-        62,
-        36
+        48,
+        97
       ],
       "zone": "wilds"
     },
     {
-      "dex": 1,
+      "dex": 21,
       "at": [
-        36,
-        56
-      ],
-      "zone": "wilds"
-    },
-    {
-      "dex": 43,
-      "at": [
-        88,
-        56
-      ],
-      "zone": "wilds"
-    },
-    {
-      "dex": 200,
-      "at": [
-        23,
-        27
-      ],
-      "zone": "hospital"
-    },
-    {
-      "dex": 355,
-      "at": [
-        31,
-        27
-      ],
-      "zone": "hospital"
-    },
-    {
-      "dex": 54,
-      "at": [
-        55,
+        77,
         96
       ],
       "zone": "wilds"
     },
     {
-      "dex": 60,
+      "dex": 27,
       "at": [
-        26,
-        100
+        96,
+        97
       ],
       "zone": "wilds"
+    },
+    {
+      "dex": 10,
+      "at": [
+        58,
+        102
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 198,
+      "at": [
+        68,
+        102
+      ],
+      "zone": "wilds"
+    },
+    {
+      "dex": 63,
+      "at": [
+        42,
+        110
+      ],
+      "zone": "hospital"
+    },
+    {
+      "dex": 433,
+      "at": [
+        84,
+        110
+      ],
+      "zone": "hospital"
     }
   ],
   "signs": [
     {
       "at": [
-        61,
-        67
+        63,
+        82
       ],
-      "text": "National Zoo Gate \u2014 stone arch opening onto Olmsted Walk."
+      "text": "National Zoo Gate \u2014 stone arch opening north into the four empty paddocks."
     },
     {
       "at": [
-        87,
-        25
+        63,
+        106
       ],
-      "text": "Great Aviary \u2014 arched iron flight cage overlooking the creek valley."
+      "text": "Woodley Park Square \u2014 Waypost lantern on Connecticut Avenue."
     },
     {
       "at": [
-        28,
-        27
+        51,
+        86
       ],
-      "text": "Old Animal Hospital \u2014 haunted quarantine wards; carry a bright lamp."
-    },
-    {
-      "at": [
-        64,
-        54
-      ],
-      "text": "Zoo Commons Waypost \u2014 lantern clearing halfway up Olmsted Walk."
-    },
-    {
-      "at": [
-        43,
-        28
-      ],
-      "text": "Creekside Clinic Annex \u2014 clean medical cots and fresh water inside."
-    },
-    {
-      "at": [
-        56,
-        28
-      ],
-      "text": "Head Zookeeper's Lodge \u2014 paddock rosters pinned above the map desk."
+      "text": "Zoo Attendant House \u2014 admission tickets yellowed inside the glass booth."
     },
     {
       "at": [
         74,
-        28
+        88
       ],
-      "text": "Aviary Banding Office \u2014 feather logs and migration charts."
+      "text": "Head Zookeeper's Lodge \u2014 paddock keys hanging unused beside the door."
     },
     {
       "at": [
-        100,
-        28
+        31,
+        98
       ],
-      "text": "North Trail Bunkhouse \u2014 storm lanterns lined dry along the wall."
+      "text": "Old Paddock Feed Room \u2014 oat bins swept clean and stacked dry."
     },
     {
       "at": [
-        26,
-        41
+        38,
+        96
       ],
-      "text": "Old Paddock Feed Room \u2014 oak grain bins sealed against damp."
+      "text": "Creekside Clinic Annex \u2014 field notes on Rock Creek wildlife."
     },
     {
       "at": [
         45,
-        41
+        96
       ],
-      "text": "Woodley Naturalist Study \u2014 fern pressings from Rock Creek gorge."
+      "text": "Rock Creek Trail Cabin \u2014 muddy boots lined neatly on the porch."
     },
     {
       "at": [
-        69,
-        41
+        74,
+        96
       ],
-      "text": "Park Carpenter's Cottage \u2014 cedar planks ready for footbridge repair."
+      "text": "North Trail Bunkhouse \u2014 ranger lanterns hung by the entrance."
     },
     {
       "at": [
-        96,
-        41
+        83,
+        98
       ],
-      "text": "East Paddock Trail \u2014 wild grass creeping through the iron rails."
-    },
-    {
-      "at": [
-        30,
-        56
-      ],
-      "text": "West Paddock Walk \u2014 quiet oaks shading the old enclosures."
-    },
-    {
-      "at": [
-        44,
-        56
-      ],
-      "text": "Rock Creek Trail Cabin \u2014 firewood stacked beneath the eaves."
-    },
-    {
-      "at": [
-        80,
-        56
-      ],
-      "text": "Zoo Gate Attendant House \u2014 old admission counter still intact."
-    },
-    {
-      "at": [
-        101,
-        56
-      ],
-      "text": "East Keeper Lane \u2014 mossy stone walls along the ridge."
-    },
-    {
-      "at": [
-        26,
-        69
-      ],
-      "text": "Calvert Street Rowhouse \u2014 warm pine porch above the creek woods."
-    },
-    {
-      "at": [
-        50,
-        69
-      ],
-      "text": "Lower Zoo Walk \u2014 Rock Creek Trail leaves from the southwest corner."
+      "text": "Park Carpenter's Cottage \u2014 fresh cedar planks for repairing paddock fences."
     },
     {
       "at": [
         94,
-        69
+        98
       ],
-      "text": "Connecticut Gate \u2014 avenue south over the creek toward Dupont Circle."
+      "text": "Aviary Banding Office \u2014 bird logs stamped with the Great Aviary crest."
     },
     {
       "at": [
-        56,
-        96
+        36,
+        110
+      ],
+      "text": "Calvert Street Row \u2014 Victorian brick porches overlooking the south road."
+    },
+    {
+      "at": [
+        80,
+        110
+      ],
+      "text": "Connecticut Avenue South \u2014 descending toward Taft Bridge and Dupont Circle."
+    },
+    {
+      "at": [
+        63,
+        94
+      ],
+      "text": "Zoo Promenade \u2014 broad brick walk linking Woodley Park village to the Zoo Gate."
+    },
+    {
+      "at": [
+        31,
+        25
       ],
       "text": "Rock Creek"
     },
     {
       "at": [
-        16,
-        120
+        22,
+        12
       ],
-      "text": "Rock Creek Trail \u2014 wooded gorge path south toward Georgetown."
+      "text": "Great Aviary \u2014 iron mesh dome rising above the northeast ridge."
     },
     {
       "at": [
-        78,
-        120
+        30,
+        8
       ],
-      "text": "Connecticut Avenue \u2014 south road over Taft Bridge to Dupont Circle."
+      "text": "Old Animal Hospital \u2014 dark shuttered clinic west across Rock Creek Bridge."
     },
     {
       "at": [
-        26,
-        100
+        48,
+        10
       ],
-      "text": "West Creek Footbridge \u2014 cedar timbers span the rocky channel."
+      "text": "Rock Creek Bridge \u2014 steel deck crossing the winding diagonal creek."
     },
     {
       "at": [
-        81,
-        82
+        66,
+        10
       ],
-      "text": "North Creek Bridge \u2014 concrete spans crossing above the rushing water."
+      "text": "Northwest Paddock Gate \u2014 iron latch unhooked, fence rails open to the grass."
     },
     {
       "at": [
-        117,
-        50
+        82,
+        10
       ],
-      "text": "East Gorge Trail \u2014 mossy cliffs overlooking the zoo valley."
+      "text": "Northeast Paddock Gate \u2014 open pasture surrounding the watering pond."
+    },
+    {
+      "at": [
+        95,
+        11
+      ],
+      "text": "Southwest Paddock Gate \u2014 wide grass enclosure beneath overhanging oaks."
+    },
+    {
+      "at": [
+        108,
+        12
+      ],
+      "text": "Southeast Paddock Gate \u2014 twin watering hole glittering beside the open gate."
+    },
+    {
+      "at": [
+        8,
+        26
+      ],
+      "text": "Central Zoo Spine \u2014 gravel hill climbing from the Zoo Gate toward the Aviary."
+    },
+    {
+      "at": [
+        12,
+        18
+      ],
+      "text": "Rock Creek Trail Gate \u2014 wooded footpath south toward Georgetown."
+    },
+    {
+      "at": [
+        18,
+        24
+      ],
+      "text": "Connecticut Avenue Gate \u2014 road south over Taft Bridge to Dupont Circle."
+    },
+    {
+      "at": [
+        30,
+        26
+      ],
+      "text": "North Creek Ravine \u2014 mossy boulders tumbling down to the stream."
+    },
+    {
+      "at": [
+        40,
+        24
+      ],
+      "text": "East Aviary Steps \u2014 stone stair climbing toward the hilltop dome."
+    },
+    {
+      "at": [
+        34,
+        18
+      ],
+      "text": "West Paddock Overlook \u2014 wooden viewing deck facing the quiet watering hole."
     }
   ],
   "hidden_items": [
     {
       "at": [
-        21,
-        27
-      ],
-      "item": "Full Heal",
-      "note": "Under a stone bench outside the Old Animal Hospital."
-    },
-    {
-      "at": [
-        93,
-        26
-      ],
-      "item": "Ultra Ball",
-      "note": "Tucked behind an iron strut beside the Great Aviary."
-    },
-    {
-      "at": [
-        48,
-        29
+        54,
+        80
       ],
       "item": "Potion",
-      "note": "Beneath a cedar post along the upper zoo walk."
-    },
-    {
-      "at": [
-        36,
-        41
-      ],
-      "item": "Antidote",
-      "note": "Hidden in a dry feed trough near the west paddock."
-    },
-    {
-      "at": [
-        90,
-        41
-      ],
-      "item": "Great Ball",
-      "note": "Under a stack of cedar rails beside the carpenter's shed."
-    },
-    {
-      "at": [
-        55,
-        56
-      ],
-      "item": "Fresh Water",
-      "note": "Cool flask left on the Zoo Commons bench."
-    },
-    {
-      "at": [
-        106,
-        56
-      ],
-      "item": "Super Potion",
-      "note": "Behind an overgrown iron fence on East Keeper Lane."
-    },
-    {
-      "at": [
-        74,
-        76
-      ],
-      "item": "Repel",
-      "note": "Under a mossy boulder overlooking Rock Creek."
-    },
-    {
-      "at": [
-        9,
-        72
-      ],
-      "item": "Super Potion",
-      "note": "Under a mossy fern ledge on the west gorge trail."
-    },
-    {
-      "at": [
-        118,
-        74
-      ],
-      "item": "Great Ball",
-      "note": "Behind a granite outcrop above the creek."
-    },
-    {
-      "at": [
-        28,
-        102
-      ],
-      "item": "Hyper Potion",
-      "note": "Wedged against the west footbridge abutment."
+      "note": "Behind the west stone pillar of the National Zoo Gate."
     },
     {
       "at": [
         70,
-        102
+        78
       ],
-      "item": "Revive",
-      "note": "Inside a hollow oak stump along the south creek bank."
+      "item": "Great Ball",
+      "note": "Tucked beside a cherry root east of the Zoo Gate."
     },
     {
       "at": [
-        92,
-        102
+        32,
+        86
       ],
-      "item": "Ultra Ball",
-      "note": "Tucked beneath river cobbles east of the bridge."
+      "item": "Repel",
+      "note": "Under a cedar bench along upper Woodley Lane."
     },
     {
       "at": [
-        46,
-        118
+        94,
+        86
+      ],
+      "item": "Antidote",
+      "note": "Hidden behind a wooden planter near the east rowhouses."
+    },
+    {
+      "at": [
+        39,
+        104
+      ],
+      "item": "Fresh Water",
+      "note": "Cool flask left on the naturalist's front step."
+    },
+    {
+      "at": [
+        86,
+        104
       ],
       "item": "Ether",
-      "note": "Under a fallen pine log along the south woods path."
+      "note": "Behind a streetlamp along east Connecticut Avenue."
     },
     {
       "at": [
-        112,
-        118
+        54,
+        110
       ],
-      "item": "Rare Candy",
-      "note": "Hidden inside a brass trail marker at the SE bend."
+      "item": "Super Potion",
+      "note": "Tucked beside the Calvert Street brick steps."
+    },
+    {
+      "at": [
+        72,
+        110
+      ],
+      "item": "Full Heal",
+      "note": "Hidden behind the Waypost stone curb."
+    },
+    {
+      "at": [
+        36,
+        6
+      ],
+      "item": "Revive",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        74,
+        10
+      ],
+      "item": "Full Heal",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        8,
+        14
+      ],
+      "item": "Ultra Ball",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        6,
+        20
+      ],
+      "item": "Potion",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        24,
+        18
+      ],
+      "item": "Super Potion",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        18,
+        16
+      ],
+      "item": "Antidote",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        54,
+        24
+      ],
+      "item": "Repel",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        68,
+        16
+      ],
+      "item": "Great Ball",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        68,
+        26
+      ],
+      "item": "Ether",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        76,
+        26
+      ],
+      "item": "Fresh Water",
+      "note": "Tucked along the outer woodley park grounds."
+    },
+    {
+      "at": [
+        72,
+        22
+      ],
+      "item": "Super Repel",
+      "note": "Tucked along the outer woodley park grounds."
     }
   ],
   "lamp": [
     63,
-    53
+    108
   ],
   "openings": [
     {
@@ -1251,10 +2115,10 @@
   ],
   "town": [
     [
-      16,
-      12,
-      96,
-      66
+      26,
+      77,
+      76,
+      35
     ]
   ]
 }
