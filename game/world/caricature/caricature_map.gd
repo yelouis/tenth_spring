@@ -748,6 +748,10 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 					if TileSynth2.u_rand(gx, gy, world_seed, TileSynth2.SALT_PLAZA_WEEDS) < plaza_thresh:
 						var_buf[idx] = 1
 
+	# Snapshot map ground terrain (with wear) before stamps paint TILE_STAMP/TILE_DOOR (Decision 76 S2)
+	var ground_cls_buf := cls_buf.duplicate()
+	var ground_var_buf := var_buf.duplicate()
+
 	# -------------------------------------------------------------
 	# Step 4: Objects in file order (§3.3, §3.4, §3.5)
 	# -------------------------------------------------------------
@@ -1189,6 +1193,8 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 		"class": cls_buf,
 		"variant": var_buf,
 		"mask": mask_buf,
+		"ground_class": ground_cls_buf,
+		"ground_variant": ground_var_buf,
 		"solid_mask": solid_mask,
 		"town": town_rects_out,
 		"town_mask": town_mask,
@@ -1394,6 +1400,37 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road
 	)
 
+	# S2 (Decision 76): Synthesize underlying map ground tiles so landmark/prop cells render over
+	# the map file's own ground (e.g. plaza under the Capitol) rather than plain grass.
+	var under_output := PackedByteArray()
+	var g_cls_src: PackedByteArray = compiled.get("ground_class", PackedByteArray())
+	var g_var_src: PackedByteArray = compiled.get("ground_variant", PackedByteArray())
+	if g_cls_src.size() == w * h and g_var_src.size() == w * h:
+		var u_grid_cls := PackedByteArray()
+		u_grid_cls.resize(total_work)
+		u_grid_cls.fill(TileSynth2.TILE_VOID)
+		var u_grid_var := PackedByteArray()
+		u_grid_var.resize(total_work)
+		u_grid_var.fill(0)
+		var u_grid_mask := PackedByteArray()
+		u_grid_mask.resize(total_work)
+		u_grid_mask.fill(0)
+		for r in range(TileSynth2.WORK_SIZE):
+			var my: int = base_y + (r - 4)
+			if my < 0 or my >= h:
+				continue
+			for c in range(TileSynth2.WORK_SIZE):
+				var mx: int = base_x + (c - 4)
+				if mx < 0 or mx >= w:
+					continue
+				var src_idx: int = my * w + mx
+				var dst_idx: int = r * TileSynth2.WORK_SIZE + c
+				u_grid_cls[dst_idx] = g_cls_src[src_idx]
+				u_grid_var[dst_idx] = g_var_src[src_idx]
+		under_output = TileSynth2.finalize_cell_output(
+			cell.x, cell.y, u_grid_cls, u_grid_var, u_grid_mask, world_seed, road_v1_thresh, preserve_road
+		)
+
 	# Gather every compiled stamp whose box touches this cell (§3.8 step 4, tile_synth2.gd:1664)
 	var cell_stamps: Array[Dictionary] = []
 	var all_stamps: Array = compiled.get("stamps", [])
@@ -1474,6 +1511,7 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 
 	return {
 		"tiles": output,
+		"under_tiles": under_output,
 		"signs": PackedStringArray(signs_arr),
 		"stamps": cell_stamps,
 		"fixtures": cell_fixtures,

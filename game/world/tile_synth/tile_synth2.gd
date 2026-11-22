@@ -79,19 +79,19 @@ const SALT_LEDGE := 22
 
 # Stamp metadata table 1..137 (0 reserved; kinds: landmark, prop, house, shell, block, decal; §14.2.1, §14.3.2, F68 b-c, Item 38, Item 43, Item 52, Item 57, Item 61)
 const STAMP_TABLE: Dictionary = {
-	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": ["........++++++++........", ".......++++++++++.......", "......+++++..+++++......", ".....++++......++++.....", ".....+++........+++.....", "....++++.........+++....", "....+++..........+++....", "...++++..........++++...", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++............++++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", "..+++..............++++.", ".++++..............++++.", ".++++....++++++....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
+	1: {"id": "arch", "kind": "landmark", "path": "landmarks/arch.png", "w": 24, "h": 24, "base_rows": 4, "door": [11, 23], "tiles": [".........++++++.........", ".......++++++++++.......", "......++++....++++......", ".....++++......++++.....", ".....+++........+++.....", "....+++..........+++....", "....+++..........+++....", "....+++..........+++....", "...+++............+++...", "...+++............+++...", "...+++............+++...", "..++++............++++..", "..++++.............+++..", "..+++..............+++..", "..+++..............+++..", "..+++..............+++..", "..+++..............++++.", ".++++..............++++.", ".++++.....++++.....++++.", ".++++....++++++....++++.", "+###+....+####+....+###+", "#####....+####+....#####", "#####....+####+....#####", "+++++....+####+....+++++"]},
 	2: {"id": "boston_light", "kind": "landmark", "path": "landmarks/boston_light.png", "w": 2, "h": 5, "base_rows": 1, "door": [1, 4], "tiles": ["++", "++", "++", "++", "##"]},
 	3: {"id": "coit", "kind": "landmark", "path": "landmarks/coit.png", "w": 2, "h": 10, "base_rows": 2, "door": [1, 9], "tiles": ["..", "..", "..", "++", "++", "++", "++", "++", "##", "##"]},
 	4: {"id": "gg_tower", "kind": "landmark", "path": "landmarks/gg_tower.png", "w": 4, "h": 24, "base_rows": 2, "door": null, "tiles": ["....", "....", "....", "....", "....", "....", "....", "....", "....", "....", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "++++", "####", "#+##"]},
-	5: {"id": "grand_central", "kind": "landmark", "path": "landmarks/grand_central.png", "w": 15, "h": 7, "base_rows": 4, "door": [7, 6], "tiles": ["...+++++++++...", ".+++++++++++++.", "+++++++++++++++", "###############", "###############", "###############", "###############"]},
+	5: {"id": "grand_central", "kind": "landmark", "path": "landmarks/grand_central.png", "w": 15, "h": 7, "base_rows": 4, "door": [7, 6], "tiles": ["...+++++++++...", "..+++++++++++..", "+++++++++++++++", "###############", "###############", "###############", "###############"]},
 	6: {"id": "hatteras_light", "kind": "landmark", "path": "landmarks/hatteras_light.png", "w": 2, "h": 9, "base_rows": 2, "door": [1, 8], "tiles": ["..", "..", "++", "++", "++", "++", "++", "##", "##"]},
-	7: {"id": "independence", "kind": "landmark", "path": "landmarks/independence.png", "w": 7, "h": 9, "base_rows": 4, "door": [3, 8], "tiles": ["...+...", "...+...", "..+++..", "+.+++.+", "+++++++", "#######", "#######", "#######", "#######"]},
-	8: {"id": "liberty", "kind": "landmark", "path": "landmarks/liberty.png", "w": 5, "h": 15, "base_rows": 3, "door": [2, 14], "tiles": [".....", ".....", ".....", ".+...", ".+...", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", "+###+", "#####", "#####"]},
-	9: {"id": "library_of_congress", "kind": "landmark", "path": "landmarks/library_of_congress.png", "w": 22, "h": 14, "base_rows": 7, "door": [10, 13], "tiles": ["..........++..........", "..+++++++++++++++++...", ".++++++++++++++++++++.", ".++++++++++++++++++++.", ".++++++++++++++++++++.", ".++++++++++++++++++++.", "+++++++++++++++++++++.", "+####################+", "######################", "######################", "######################", "######################", "######################", "###++++#######+++++###"]},
-	10: {"id": "lincoln", "kind": "landmark", "path": "landmarks/lincoln.png", "w": 9, "h": 7, "base_rows": 4, "door": [4, 6], "tiles": [".........", ".+++++++.", "+++++++++", "+#######+", "+#######+", "#########", "#########"]},
-	11: {"id": "needle", "kind": "landmark", "path": "landmarks/needle.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23], "tiles": ["......", "......", "......", "......", "..++..", "..++..", "..++..", "++++++", "++++++", ".++++.", ".++++.", "..++..", "..++..", "..++..", "..++..", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", "++++++", "######", "######", "+####+"]},
+	7: {"id": "independence", "kind": "landmark", "path": "landmarks/independence.png", "w": 7, "h": 9, "base_rows": 4, "door": [3, 8], "tiles": ["...+...", "...+...", "..++...", "+.+++.+", "+++++++", "#######", "#######", "#######", "#######"]},
+	8: {"id": "liberty", "kind": "landmark", "path": "landmarks/liberty.png", "w": 5, "h": 15, "base_rows": 3, "door": [2, 14], "tiles": [".....", ".....", ".....", ".....", ".+...", ".++..", ".++..", ".+++.", ".+++.", ".+++.", ".+++.", ".+++.", "+###+", "#####", "#####"]},
+	9: {"id": "library_of_congress", "kind": "landmark", "path": "landmarks/library_of_congress.png", "w": 22, "h": 14, "base_rows": 7, "door": [10, 13], "tiles": [".........++++.........", "........++++++........", "........++++++........", "........++++++........", ".++++++++++++++++++++.", ".++++++++++++++++++++.", "++++++++++++++++++++++", "######################", "######################", "######################", "######################", "######################", "######################", "######################"]},
+	10: {"id": "lincoln", "kind": "landmark", "path": "landmarks/lincoln.png", "w": 9, "h": 7, "base_rows": 4, "door": [4, 6], "tiles": [".........", ".........", ".+++++++.", "+#######+", "+#######+", "+#######+", "#########"]},
+	11: {"id": "needle", "kind": "landmark", "path": "landmarks/needle.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23], "tiles": ["......", "......", "......", "......", "......", "..++..", "..++..", "++++++", "++++++", ".++++.", "..++..", "..++..", "..++..", "..++..", "..++..", "..++..", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", "######", "######", "+####+"]},
 	12: {"id": "neon_signs", "kind": "landmark", "path": "landmarks/neon_signs.png", "w": 6, "h": 3, "base_rows": 1, "door": [3, 2], "tiles": [".+++++", ".+++++", "##+###"]},
-	13: {"id": "obelisk", "kind": "landmark", "path": "landmarks/obelisk.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23], "tiles": ["......", "......", "......", "......", "......", "..++..", "..++..", ".+++..", ".+++..", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", ".++++.", "######", "######", "######"]},
+	13: {"id": "obelisk", "kind": "landmark", "path": "landmarks/obelisk.png", "w": 6, "h": 24, "base_rows": 3, "door": [2, 23], "tiles": ["......", "......", "......", "......", "......", "......", "......", "......", "..++..", "..++..", "..++..", "..++..", "..++..", ".+++..", ".+++..", ".+++..", ".+++..", ".++++.", ".++++.", ".++++.", ".++++.", ".###+.", ".####.", "#####+"]},
 	14: {"id": "parthenon", "kind": "landmark", "path": "landmarks/parthenon.png", "w": 7, "h": 5, "base_rows": 3, "door": [3, 4], "tiles": [".+++++.", "+++++++", "######+", "######+", "#######"]},
 	15: {"id": "house_s_a", "kind": "house", "path": "ruins/house_s_a.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
 	16: {"id": "house_s_a__teal", "kind": "house", "path": "ruins/house_s_a__teal.png", "w": 4, "h": 4, "base_rows": 4, "door": [1, 3]},
@@ -137,7 +137,7 @@ const STAMP_TABLE: Dictionary = {
 	56: {"id": "decal_sapling", "kind": "decal", "path": "ruins/decal_sapling.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
 	57: {"id": "decal_boulder", "kind": "decal", "path": "ruins/decal_boulder.png", "w": 1, "h": 1, "base_rows": 1, "door": null},
 	58: {"id": "decal_doorstep", "kind": "decal", "path": "ruins/decal_doorstep.png", "w": 1, "h": 1, "base_rows": 0, "door": null},
-	59: {"id": "alcatraz", "kind": "landmark", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5], "tiles": [".......+.........++++...", "...++++++++++++++++++...", "...++++++++++++++++++...", "...+#################...", "...+#################++.", ".+####################+."]},
+	59: {"id": "alcatraz", "kind": "landmark", "path": "landmarks/alcatraz.png", "w": 24, "h": 6, "base_rows": 3, "door": [12, 5], "tiles": [".......+.........+.++...", "....+++++++++++++++++...", "...++++++++++++++++++...", "...+#################...", "...+#################+..", ".+####################+."]},
 	60: {"id": "ruined_block_8x7_b", "kind": "block", "path": "ruins/ruined_block_8x7_b.png", "w": 8, "h": 7, "base_rows": 7, "door": [3, 6], "door_cols": [3, 4]},
 	61: {"id": "ruined_block_6x11_a", "kind": "block", "path": "ruins/ruined_block_6x11_a.png", "w": 6, "h": 11, "base_rows": 11, "door": [2, 10], "door_cols": [2, 3]},
 	62: {"id": "ruined_block_6x11_b", "kind": "block", "path": "ruins/ruined_block_6x11_b.png", "w": 6, "h": 11, "base_rows": 11, "door": [2, 10], "door_cols": [2, 3]},
@@ -179,15 +179,15 @@ const STAMP_TABLE: Dictionary = {
 	98: {"id": "waypost_lamp", "kind": "prop", "path": "props/waypost_lamp.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "+"]},
 	99: {"id": "waypost_board", "kind": "prop", "path": "props/waypost_board.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
 	100: {"id": "tree_cherry", "kind": "prop", "path": "props/tree_cherry.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "#"]},
-	101: {"id": "dc_capitol", "kind": "landmark", "path": "landmarks/dc_capitol.png", "w": 21, "h": 13, "base_rows": 6, "door": [10, 12], "tiles": [".........++..........", ".........++..........", "........++++.........", "........++++.........", ".++++..++++++...++++.", ".+++++++++++++++++++.", "+++++++++++++++++++++", "+###################+", "+###################+", "+###################+", "+###################+", "++++++#######++++++++", "......+######........"]},
-	102: {"id": "dc_castle", "kind": "landmark", "path": "landmarks/dc_castle.png", "w": 11, "h": 9, "base_rows": 4, "door": [5, 8], "tiles": ["+++++++++++", "+++++++++++", "+++++++++++", "+++++++++++", "+++++++++++", "###########", "###########", "###########", "###########"]},
-	103: {"id": "dc_air_and_space", "kind": "landmark", "path": "landmarks/dc_air_and_space.png", "w": 15, "h": 6, "base_rows": 4, "door": [7, 5], "tiles": [".+++++++++++++.", "+++++++++++++++", "###############", "###############", "###############", "###############"]},
-	104: {"id": "dc_jefferson", "kind": "landmark", "path": "landmarks/dc_jefferson.png", "w": 9, "h": 8, "base_rows": 4, "door": [4, 7], "tiles": ["...+++...", "..+++++..", ".+++++++.", "+++++++++", "########+", "#########", "#########", "#########"]},
-	105: {"id": "dc_union_station", "kind": "landmark", "path": "landmarks/dc_union_station.png", "w": 17, "h": 8, "base_rows": 5, "door": [8, 7], "tiles": [".+++++++++++++++.", "+++++++++++++++++", "+++++++++++++++++", "#################", "#################", "#################", "#################", "#################"]},
-	106: {"id": "dc_healy_hall", "kind": "landmark", "path": "landmarks/dc_healy_hall.png", "w": 9, "h": 14, "base_rows": 5, "door": [4, 13], "tiles": [".........", "....+....", "....+...+", "...+++.++", "+.+++++++", "+++++++++", "+++++++++", "+++++++++", "+++++++++", "#########", "#########", "#########", "#########", "#########"]},
-	107: {"id": "dc_zoo_gate", "kind": "landmark", "path": "landmarks/dc_zoo_gate.png", "w": 7, "h": 5, "base_rows": 2, "door": null, "tiles": [".+.+.+.", "+++++++", "+++.+++", "###.+##", "##+.+##"]},
-	108: {"id": "dc_aviary", "kind": "landmark", "path": "landmarks/dc_aviary.png", "w": 8, "h": 8, "base_rows": 3, "door": null, "tiles": ["...++...", ".++++++.", ".++++++.", ".++++++.", "++++++++", "+######+", "+######+", ".+####+."]},
-	109: {"id": "dc_dupont_fountain", "kind": "landmark", "path": "landmarks/dc_dupont_fountain.png", "w": 3, "h": 4, "base_rows": 2, "door": null, "tiles": ["+++", "+++", "###", "###"]},
+	101: {"id": "dc_capitol", "kind": "landmark", "path": "landmarks/dc_capitol.png", "w": 21, "h": 13, "base_rows": 3, "door": [10, 12], "tiles": [".....................", ".....................", "..........+..........", "..........++.........", ".........+++.........", ".........++++........", "........+++++........", "........+++++........", ".+......+++++......+.", "+++++++++++++++++++++", "#####################", "#####################", "#####################"]},
+	102: {"id": "dc_castle", "kind": "landmark", "path": "landmarks/dc_castle.png", "w": 11, "h": 9, "base_rows": 4, "door": [5, 8], "tiles": ["....+..+...", "...+++++...", ".+.+++++.+.", ".+++++++++.", "+++++++++++", "+#########+", "+#########+", "+#########+", "+#########+"]},
+	103: {"id": "dc_air_and_space", "kind": "landmark", "path": "landmarks/dc_air_and_space.png", "w": 15, "h": 6, "base_rows": 4, "door": [7, 5], "tiles": ["+++++++++++++++", "+++++++++++++++", "###############", "###############", "###############", "###############"]},
+	104: {"id": "dc_jefferson", "kind": "landmark", "path": "landmarks/dc_jefferson.png", "w": 9, "h": 8, "base_rows": 4, "door": [4, 7], "tiles": ["...+++...", "..+++++..", "..+++++..", "+++++++++", "+#######+", "+#######+", "+#######+", "#########"]},
+	105: {"id": "dc_union_station", "kind": "landmark", "path": "landmarks/dc_union_station.png", "w": 17, "h": 8, "base_rows": 5, "door": [8, 7], "tiles": ["....+++++++++....", "....+++++++++....", ".+++++++++++++++.", "#################", "#################", "#################", "#################", "#################"]},
+	106: {"id": "dc_healy_hall", "kind": "landmark", "path": "landmarks/dc_healy_hall.png", "w": 9, "h": 14, "base_rows": 5, "door": [4, 13], "tiles": ["....+....", "....+....", "....+....", "...+++...", "...+++...", "...+++...", "...+++...", "+..+++..+", "+++++++++", "#########", "#########", "#########", "#########", "#########"]},
+	107: {"id": "dc_zoo_gate", "kind": "landmark", "path": "landmarks/dc_zoo_gate.png", "w": 7, "h": 5, "base_rows": 2, "door": null, "tiles": [".+++++.", ".+++++.", ".++.++.", ".##.##.", ".##.##."]},
+	108: {"id": "dc_aviary", "kind": "landmark", "path": "landmarks/dc_aviary.png", "w": 8, "h": 8, "base_rows": 3, "door": null, "tiles": ["...++...", "..++++..", ".++++++.", ".++++++.", ".++++++.", ".######.", ".######.", ".+####+."]},
+	109: {"id": "dc_dupont_fountain", "kind": "landmark", "path": "landmarks/dc_dupont_fountain.png", "w": 3, "h": 4, "base_rows": 2, "door": null, "tiles": [".+.", "+++", "+#+", "###"]},
 	110: {"id": "int_item_ball", "kind": "prop", "path": "interiors/int_item_ball.png", "w": 1, "h": 1, "base_rows": 1, "door": null, "tiles": ["#"]},
 	111: {"id": "int_switch_lever", "kind": "prop", "path": "interiors/int_switch_lever.png", "w": 1, "h": 1, "base_rows": 1, "door": null, "tiles": ["+"]},
 	112: {"id": "int_metal_gate", "kind": "prop", "path": "interiors/int_metal_gate.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
@@ -199,14 +199,14 @@ const STAMP_TABLE: Dictionary = {
 	118: {"id": "int_wind_grate", "kind": "prop", "path": "interiors/int_wind_grate.png", "w": 1, "h": 1, "base_rows": 0, "door": null, "tiles": ["+"]},
 	119: {"id": "int_obs_slit_window", "kind": "prop", "path": "interiors/int_obs_slit_window.png", "w": 2, "h": 2, "base_rows": 0, "door": null, "tiles": ["++", "++"]},
 	120: {"id": "int_suspended_flyer", "kind": "prop", "path": "interiors/int_suspended_flyer.png", "w": 6, "h": 3, "base_rows": 0, "door": null, "tiles": ["......", "++++++", "++++++"]},
-	121: {"id": "int_space_capsule", "kind": "prop", "path": "interiors/int_space_capsule.png", "w": 3, "h": 3, "base_rows": 2, "door": null, "tiles": ["+++", "+#+", "###"]},
+	121: {"id": "int_space_capsule", "kind": "prop", "path": "interiors/int_space_capsule.png", "w": 3, "h": 3, "base_rows": 2, "door": null, "tiles": ["++.", "+#+", "###"]},
 	122: {"id": "int_radio_console", "kind": "prop", "path": "interiors/int_radio_console.png", "w": 2, "h": 2, "base_rows": 2, "door": null, "tiles": ["#+", "##"]},
 	123: {"id": "int_glass_case", "kind": "prop", "path": "interiors/int_glass_case.png", "w": 2, "h": 2, "base_rows": 2, "door": null, "tiles": ["##", "##"]},
 	124: {"id": "int_archive_bookshelf", "kind": "prop", "path": "interiors/int_archive_bookshelf.png", "w": 3, "h": 3, "base_rows": 1, "door": null, "tiles": ["+++", "+++", "###"]},
 	125: {"id": "int_reading_table_lamp", "kind": "prop", "path": "interiors/int_reading_table_lamp.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["+++", "+++"]},
 	126: {"id": "int_octagon_desk", "kind": "prop", "path": "interiors/int_octagon_desk.png", "w": 4, "h": 3, "base_rows": 2, "door": null, "tiles": ["++++", "####", "+##+"]},
 	127: {"id": "int_calder_cipher_desk", "kind": "prop", "path": "interiors/int_calder_cipher_desk.png", "w": 3, "h": 2, "base_rows": 1, "door": null, "tiles": ["+++", "+++"]},
-	128: {"id": "int_lincoln_statue", "kind": "prop", "path": "interiors/int_lincoln_statue.png", "w": 4, "h": 4, "base_rows": 2, "door": null, "tiles": [".++.", "+++.", "+##+", "###+"]},
+	128: {"id": "int_lincoln_statue", "kind": "prop", "path": "interiors/int_lincoln_statue.png", "w": 4, "h": 4, "base_rows": 2, "door": null, "tiles": [".++.", ".++.", ".##.", "###+"]},
 	129: {"id": "int_undercroft_pillar", "kind": "prop", "path": "interiors/int_undercroft_pillar.png", "w": 2, "h": 3, "base_rows": 1, "door": null, "tiles": ["++", "++", "++"]},
 	130: {"id": "int_cobalion_dais", "kind": "prop", "path": "interiors/int_cobalion_dais.png", "w": 4, "h": 3, "base_rows": 2, "door": null, "tiles": ["++++", "####", "####"]},
 	131: {"id": "int_canal_sluice_wheel", "kind": "prop", "path": "interiors/int_canal_sluice_wheel.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "+#"]},
@@ -274,7 +274,7 @@ static func compute_stamp_tiles_from_image(img: Image, w: int, h: int, base_rows
 				for px in range(tx * 16, (tx + 1) * 16):
 					if img.get_pixel(px, py).a8 > 0:
 						opaque += 1
-			if opaque == 0:
+			if opaque * 20 < 256:
 				row_str += "."
 			elif is_base and opaque >= 128:
 				row_str += "#"
@@ -282,6 +282,82 @@ static func compute_stamp_tiles_from_image(img: Image, w: int, h: int, base_rows
 				row_str += "+"
 		rows.append(row_str)
 	return rows
+
+## S1 (Decision 76): Audit a landmark/prop stamp's "tiles" mask against its PNG.
+## Rule: no '#' or '+' cell is under 5% drawn (opaque * 20 < 256, i.e. < 13 of 256 px),
+## and no '.' cell is 50% or more drawn (opaque >= 128 of 256 px).
+static func audit_stamp_mask(stamp_id: int, img_override: Image = null) -> Dictionary:
+	var sdef: Dictionary = STAMP_TABLE.get(stamp_id, {})
+	if sdef.is_empty() or not sdef.has("tiles"):
+		return {"ok": true, "skipped": true, "stamp_id": stamp_id, "id": str(sdef.get("id", "")), "empty_solid": 0, "empty_drawn": 0, "heavy_open": 0}
+	var s_w: int = int(sdef.get("w", 0))
+	var s_h: int = int(sdef.get("h", 0))
+	var s_path: String = str(sdef.get("path", ""))
+	var tiles_arr: Array = sdef.get("tiles", [])
+	var img: Image = img_override
+	if img == null:
+		img = Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/" + s_path))
+	if img == null or img.is_empty() or img.get_width() != s_w * 16 or img.get_height() != s_h * 16:
+		return {"ok": false, "skipped": false, "stamp_id": stamp_id, "id": str(sdef.get("id", "")), "error": "missing_or_bad_size", "empty_solid": 0, "empty_drawn": 0, "heavy_open": 0}
+	var empty_solid := 0
+	var empty_drawn := 0
+	var heavy_open := 0
+	for ty in range(s_h):
+		var r_str: String = str(tiles_arr[ty]) if ty < tiles_arr.size() else ""
+		for tx in range(s_w):
+			var ch: String = r_str[tx] if tx < r_str.length() else "."
+			var opaque := 0
+			for py in range(ty * 16, (ty + 1) * 16):
+				for px in range(tx * 16, (tx + 1) * 16):
+					if img.get_pixel(px, py).a8 > 0:
+						opaque += 1
+			if ch == "#" and opaque * 20 < 256:
+				empty_solid += 1
+			elif ch == "+" and opaque * 20 < 256:
+				empty_drawn += 1
+			elif ch == "." and opaque >= 128:
+				heavy_open += 1
+	return {
+		"ok": (empty_solid == 0 and empty_drawn == 0 and heavy_open == 0),
+		"skipped": false,
+		"stamp_id": stamp_id,
+		"id": str(sdef.get("id", "")),
+		"empty_solid": empty_solid,
+		"empty_drawn": empty_drawn,
+		"heavy_open": heavy_open,
+	}
+
+static func check_all_stamp_masks(img_overrides_by_id: Dictionary = {}) -> Dictionary:
+	var tot_solid := 0
+	var tot_drawn := 0
+	var tot_open := 0
+	var checked := 0
+	var failures: Array[Dictionary] = []
+	var sids: Array = STAMP_TABLE.keys()
+	sids.sort()
+	for sid_v in sids:
+		var sid: int = int(sid_v)
+		var sdef: Dictionary = STAMP_TABLE[sid]
+		var skind := str(sdef.get("kind", ""))
+		if (skind != "landmark" and skind != "prop") or not sdef.has("tiles"):
+			continue
+		checked += 1
+		var aid := str(sdef.get("id", ""))
+		var ov: Image = img_overrides_by_id.get(aid, null)
+		var r := audit_stamp_mask(sid, ov)
+		tot_solid += int(r.get("empty_solid", 0))
+		tot_drawn += int(r.get("empty_drawn", 0))
+		tot_open += int(r.get("heavy_open", 0))
+		if not bool(r.get("ok", false)):
+			failures.append(r)
+	return {
+		"ok": failures.is_empty(),
+		"checked": checked,
+		"empty_solid": tot_solid,
+		"empty_drawn": tot_drawn,
+		"heavy_open": tot_open,
+		"failures": failures,
+	}
 
 static func get_stamp_def(stamp_id: int) -> Dictionary:
 	return STAMP_TABLE.get(stamp_id, {})

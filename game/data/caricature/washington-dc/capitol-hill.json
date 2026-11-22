@@ -919,6 +919,34 @@
         83,
         22
       ]
+    },
+    {
+      "kind": "em_statue",
+      "at": [
+        37,
+        18
+      ]
+    },
+    {
+      "kind": "em_statue",
+      "at": [
+        51,
+        18
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        39,
+        20
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        47,
+        20
+      ]
     }
   ],
   "people": [

@@ -1061,6 +1061,88 @@ func run_test() -> bool:
 			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 			return false
 
+	# 18. S2 (Decision 76): Ground under every DC landmark cell is the map file's own ground (e.g. plaza under Capitol), not plain grass
+	var s2_checked := 0
+	var s2_mismatches := 0
+	var s2_sample := ""
+	var grass_coord: Vector2i = map_view.get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
+	for a_var_s2 in Neighbourhoods.areas_of("city:washington-dc"):
+		var a_s2: Dictionary = a_var_s2
+		var aid_s2 := str(a_s2.get("id", ""))
+		if not map_view._caricature_compiled_by_area.has(aid_s2):
+			continue
+		var comp_s2: Dictionary = map_view._caricature_compiled_by_area[aid_s2]
+		var placed_s2: Array = comp_s2.get("placed_objects", [])
+		var has_lm := false
+		for po_v in placed_s2:
+			var po_d: Dictionary = po_v
+			var sid_s2 := int(po_d.get("stamp_id", 0))
+			if str(TileSynth2.get_stamp_def(sid_s2).get("kind", "")) == "landmark":
+				has_lm = true
+				break
+		if not has_lm:
+			continue
+		DB.upsert_neighbourhood_state(aid_s2, "city:washington-dc", 2, "hood", 2002)
+		var raw_map_s2: Dictionary = CaricatureMap.load_map(CaricatureMap.resolve_map_path(str(a_s2.get("map", ""))))
+		var raw_rows_s2: Array = raw_map_s2.get("rows", [])
+		var orig_s2: Vector2i = comp_s2["origin"]
+		var rows_s2: int = int(comp_s2["rows"])
+		var w_s2: int = int(comp_s2["w"])
+		var cls_s2: PackedByteArray = comp_s2["class"]
+		var var_s2: PackedByteArray = comp_s2["variant"]
+		var mask_s2: PackedByteArray = comp_s2["mask"]
+		var rendered_cells: Dictionary = {}
+		for po_v in placed_s2:
+			var po_d: Dictionary = po_v
+			var sid_s2 := int(po_d.get("stamp_id", 0))
+			var sdef_s2 := TileSynth2.get_stamp_def(sid_s2)
+			if str(sdef_s2.get("kind", "")) != "landmark":
+				continue
+			var ox_s2: int = int(po_d.get("x", 0))
+			var oy_s2: int = int(po_d.get("y", 0))
+			var ow_s2: int = int(po_d.get("w", 0))
+			var oh_s2: int = int(po_d.get("h", 0))
+			for ty_s2 in range(oh_s2):
+				for tx_s2 in range(ow_s2):
+					var mx := ox_s2 + tx_s2
+					var my := oy_s2 + ty_s2
+					var midx := my * w_s2 + mx
+					var c_tile: int = cls_s2[midx]
+					if c_tile != TileSynth2.TILE_STAMP and c_tile != TileSynth2.TILE_DOOR:
+						continue
+					var c_sid: int = var_s2[midx] if c_tile == TileSynth2.TILE_STAMP else mask_s2[midx]
+					if c_sid != sid_s2:
+						continue
+					var cell_s2 := Vector2i(orig_s2.x + int(mx / 32), orig_s2.y + rows_s2 - 1 - int(my / 32))
+					if not rendered_cells.has(cell_s2):
+						map_view._render_cell(cell_s2.x, cell_s2.y)
+						rendered_cells[cell_s2] = true
+					var lx := mx % 32
+					var ly := my % 32
+					var st_s2: Vector2i = map_view._screen_tile(cell_s2.x, cell_s2.y, lx, ly)
+					var got_coord: Vector2i = world_cleared.get_cell_atlas_coords(st_s2)
+					var r_ch: String = str(raw_rows_s2[my])[mx]
+					var expected_cls: int = int((CaricatureMap.TERRAIN_MAP.get(r_ch, {"cls": TileSynth2.TILE_GRASS}) as Dictionary).get("cls", TileSynth2.TILE_GRASS))
+					var c_item_s2: Dictionary = map_view.get_lru_cache().get_item(cell_s2)
+					var u_buf_s2: PackedByteArray = c_item_s2.get("under_buf", PackedByteArray())
+					var lidx_s2: int = (ly * 32 + lx) * 3
+					var expected_coord: Vector2i = map_view.get_atlas_coords(expected_cls, 0, 0)
+					if u_buf_s2.size() == 32 * 32 * 3:
+						expected_coord = map_view.get_atlas_coords(u_buf_s2[lidx_s2], u_buf_s2[lidx_s2 + 1], u_buf_s2[lidx_s2 + 2])
+					s2_checked += 1
+					var grass_r0: int = int(map_view.get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0).y)
+					var grass_r1: int = int(map_view.get_atlas_coords(TileSynth2.TILE_GRASS, 1, 0).y)
+					var grass_r2: int = int(map_view.get_atlas_coords(TileSynth2.TILE_GRASS, 2, 0).y)
+					var got_is_grass := (got_coord.y == grass_r0 or got_coord.y == grass_r1 or got_coord.y == grass_r2)
+					if got_coord != expected_coord or (expected_cls != TileSynth2.TILE_GRASS and got_is_grass):
+						s2_mismatches += 1
+						if s2_sample.is_empty():
+							s2_sample = "%s %s (%d,%d) raw='%s' expected=%s got=%s" % [aid_s2, str(sdef_s2.get("id", "")), mx, my, r_ch, str(expected_coord), str(got_coord)]
+	if s2_checked == 0 or s2_mismatches > 0:
+		push_error("(S2) Landmark ground check failed: checked=%d mismatches=%d first=%s" % [s2_checked, s2_mismatches, s2_sample])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 	print("PASS: map_view_test (Renderer v2, layers, shaders, Decision 72 drifting fog & route mist, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")
 	return true

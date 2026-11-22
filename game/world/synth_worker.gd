@@ -374,6 +374,7 @@ func _process_request(req: Dictionary) -> Dictionary:
 	var caller_id := OS.get_thread_caller_id()
 
 	var tile_buf: PackedByteArray
+	var under_buf: PackedByteArray = PackedByteArray()
 	var signs_list: Array = []
 	var stamps_list: Array = []
 	var fixtures_list: Array = []
@@ -397,6 +398,7 @@ func _process_request(req: Dictionary) -> Dictionary:
 			c_entry.get("area", {})
 		)
 		tile_buf = c_res.get("tiles", PackedByteArray())
+		under_buf = c_res.get("under_tiles", PackedByteArray())
 		signs_list = c_res.get("signs", [])
 		stamps_list = c_res.get("stamps", [])
 		fixtures_list = c_res.get("fixtures", [])
@@ -461,6 +463,7 @@ func _process_request(req: Dictionary) -> Dictionary:
 	return {
 		"cell": cell,
 		"tiles": tile_buf,
+		"under_tiles": under_buf,
 		"signs": signs_list,
 		"stamps": stamps_list,
 		"fixtures": fixtures_list,

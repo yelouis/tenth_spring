@@ -1017,6 +1017,20 @@
         86,
         100
       ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        60,
+        33
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        65,
+        33
+      ]
     }
   ],
   "people": [

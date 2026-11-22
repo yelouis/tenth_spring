@@ -314,13 +314,20 @@ func run_test() -> bool:
 	if fh_img == null or rh_img == null or fh_img.get_data() == rh_img.get_data():
 		return _fail("G expected Emerald ROM healer sprite to differ from procedural fallback")
 
-	# Item 62b (Decision 71): bench (2x1 = 64x32) and lock gate (2x3 = 64x96) stand-ins
+	# Item 62b (Decision 71) / Decision 76: standin_bench uses promoted original props/outdoor_bench.png (2x -> 64x32);
+	# standin_lock_gate keeps the procedural plank stand-in (64x96).
 	var bench_res: Dictionary = OutFix.resolve_texture("standin_bench", false, CACHE_IMPORT)
 	var gate_res: Dictionary = OutFix.resolve_texture("standin_lock_gate", false, CACHE_IMPORT)
 	var btex: Texture2D = bench_res.get("texture", null)
 	var gtex: Texture2D = gate_res.get("texture", null)
 	if btex == null or btex.get_width() != 64 or btex.get_height() != 32:
 		return _fail("G expected 64x32 texture for 2x1 standin_bench, got %s" % str(btex))
+	var bench_orig := Image.load_from_file(ProjectSettings.globalize_path("res://assets/original/props/outdoor_bench.png"))
+	if bench_orig == null or bench_orig.is_empty():
+		return _fail("G missing res://assets/original/props/outdoor_bench.png")
+	var btex_img := btex.get_image()
+	if btex_img == null or btex_img.get_pixel(32, 16) != bench_orig.get_pixel(16, 8):
+		return _fail("G standin_bench texture did not match promoted props/outdoor_bench.png")
 	if gtex == null or gtex.get_width() != 64 or gtex.get_height() != 96:
 		return _fail("G expected 64x96 texture for 2x3 standin_lock_gate, got %s" % str(gtex))
 

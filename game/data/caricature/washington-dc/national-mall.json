@@ -900,6 +900,34 @@
         98,
         96
       ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        67,
+        35
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        73,
+        35
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        132,
+        41
+      ]
+    },
+    {
+      "kind": "em_planter_box",
+      "at": [
+        139,
+        41
+      ]
     }
   ],
   "people": [

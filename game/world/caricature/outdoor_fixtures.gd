@@ -7,16 +7,21 @@ extends RefCounted
 const AssetDB := preload("res://rom/asset_db.gd")
 const TILE_PX: int = 32
 const CFG_PATH := "res://config/emerald_tile_map.json"
+const ORIGINAL_FIXTURE_PATHS: Dictionary = {
+	"standin_bench": "res://assets/original/props/outdoor_bench.png",
+}
 
 static var _cfg_fx_cache: Dictionary = {}
 static var _cfg_loaded: bool = false
 static var _proc_tex_cache: Dictionary = {}
+static var _orig_tex_cache: Dictionary = {}
 static var _rom_tex_cache: Dictionary = {}
 static var _atlas_img_cache: Dictionary = {}
 
 
 static func clear_cache() -> void:
 	_proc_tex_cache.clear()
+	_orig_tex_cache.clear()
 	_rom_tex_cache.clear()
 	_atlas_img_cache.clear()
 	_cfg_fx_cache.clear()
@@ -98,6 +103,17 @@ static func resolve_texture(
 						"is_rom": true,
 					}
 
+	if ORIGINAL_FIXTURE_PATHS.has(kind):
+		var otex := _get_original_texture(kind, tw, th)
+		if otex != null:
+			return {
+				"texture": otex,
+				"tile_w": tw,
+				"tile_h": th,
+				"base_rows": base_rows,
+				"is_rom": false,
+			}
+
 	var ptex := _get_procedural_texture(kind, tw, th)
 	return {
 		"texture": ptex,
@@ -106,6 +122,32 @@ static func resolve_texture(
 		"base_rows": base_rows,
 		"is_rom": false,
 	}
+
+
+static func _get_original_texture(kind: String, tw: int, th: int) -> Texture2D:
+	if _orig_tex_cache.has(kind):
+		return _orig_tex_cache[kind]
+	var rel_path := str(ORIGINAL_FIXTURE_PATHS.get(kind, ""))
+	if rel_path.is_empty():
+		return null
+	var src_img: Image = null
+	var abs_path := ProjectSettings.globalize_path(rel_path)
+	if FileAccess.file_exists(abs_path):
+		src_img = Image.load_from_file(abs_path)
+	if src_img == null or src_img.is_empty():
+		var res_tex: Variant = ResourceLoader.load(rel_path)
+		if res_tex is Texture2D:
+			src_img = (res_tex as Texture2D).get_image()
+	if src_img == null or src_img.is_empty():
+		return null
+	var target_w := tw * TILE_PX
+	var target_h := th * TILE_PX
+	var out_img := src_img.duplicate() as Image
+	if out_img.get_width() != target_w or out_img.get_height() != target_h:
+		out_img.resize(target_w, target_h, Image.INTERPOLATE_NEAREST)
+	var tex := ImageTexture.create_from_image(out_img)
+	_orig_tex_cache[kind] = tex
+	return tex
 
 
 static func _get_procedural_texture(kind: String, tw: int, th: int) -> Texture2D:

@@ -576,6 +576,19 @@ func get_atlas_coords(cls: int, variant: int, mask: int) -> Vector2i:
 	var col := (mask & 7) if cls == TileSynth2.TILE_TREE else (mask if _masked_classes.get(cls, false) else 0)
 	return Vector2i(col, row)
 
+## S2 (Decision 76): Draw landmark and prop cells over the map file's own ground tile
+## (e.g. plaza under the Capitol) rather than plain grass; leave houses/blocks outside DC untouched.
+func get_tile_atlas_coords(tile_buf: PackedByteArray, under_buf: PackedByteArray, idx: int) -> Vector2i:
+	var cls: int = tile_buf[idx]
+	var v: int = tile_buf[idx + 1]
+	var mask: int = tile_buf[idx + 2]
+	if (cls == TileSynth2.TILE_STAMP or (cls == TileSynth2.TILE_DOOR and mask > 0)) and under_buf.size() == tile_buf.size():
+		var sid: int = v if cls == TileSynth2.TILE_STAMP else mask
+		var skind := str(TileSynth2.get_stamp_def(sid).get("kind", ""))
+		if skind == "landmark" or skind == "prop":
+			return get_atlas_coords(under_buf[idx], under_buf[idx + 1], under_buf[idx + 2])
+	return get_atlas_coords(cls, v, mask)
+
 func set_map_data_dir(dir_path: String) -> void:
 	_map_data_dir = dir_path
 	_load_map_stores()
@@ -1034,6 +1047,7 @@ func _focus_most_buildings() -> void:
 			var res: Dictionary = _synth_worker.request_cell_sync(cell, false, reveal_state, _preview_cleared)
 			var item := {
 				"buf": res["tiles"],
+				"under_buf": res.get("under_tiles", PackedByteArray()),
 				"signs": res["signs"],
 				"stamps": res.get("stamps", []),
 				"has_data": res["has_data"],
@@ -1124,6 +1138,7 @@ func _focus_far_buildings() -> void:
 			var res: Dictionary = _synth_worker.request_cell_sync(cell, false, reveal_state, _preview_cleared)
 			var item := {
 				"buf": res["tiles"],
+				"under_buf": res.get("under_tiles", PackedByteArray()),
 				"signs": res["signs"],
 				"stamps": res.get("stamps", []),
 				"has_data": res["has_data"],
@@ -1590,6 +1605,7 @@ func _drain_worker_results() -> void:
 		var cell: Vector2i = res["cell"]
 		_synth_cache.put(cell, {
 			"buf": res["tiles"],
+			"under_buf": res.get("under_tiles", PackedByteArray()),
 			"signs": res["signs"],
 			"stamps": res.get("stamps", []),
 			"fixtures": res.get("fixtures", []),
@@ -1701,6 +1717,7 @@ func _sign_pavement_neighbor(tile_buf: PackedByteArray, tx: int, ty: int) -> Vec
 func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 	var cell := Vector2i(cx, cy)
 	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
+	var under_buf: PackedByteArray = item.get("under_buf", PackedByteArray())
 	var reveal_state: int = item.get("reveal_state", 1)
 	var has_map_data: bool = item.get("has_data", false)
 	var is_overview := _is_overview_zoom()
@@ -1718,10 +1735,8 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 				for tx in 32:
 					var idx := (ty * 32 + tx) * 3
 					var cls: int = tile_buf[idx]
-					var v: int = tile_buf[idx + 1]
-					var mask: int = tile_buf[idx + 2]
 					var st := _screen_tile(cx, cy, tx, ty)
-					var base_coord := get_atlas_coords(cls, v, mask)
+					var base_coord := get_tile_atlas_coords(tile_buf, under_buf, idx)
 					if not _force_no_rom and cls == TileSynth2.TILE_SIGN:
 						var nb := _sign_pavement_neighbor(tile_buf, tx, ty)
 						if nb.x >= 0:
@@ -1873,6 +1888,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 		var res: Dictionary = _synth_worker.request_cell_sync(cell, _is_overview_zoom(), reveal_state, _preview_cleared)
 		item = {
 			"buf": res["tiles"],
+			"under_buf": res.get("under_tiles", PackedByteArray()),
 			"signs": res["signs"],
 			"stamps": res.get("stamps", []),
 			"fixtures": res.get("fixtures", []),
@@ -1893,6 +1909,7 @@ func _render_cell(cx: int, cy: int, _budget_exceeded: bool = false) -> bool:
 		)
 		item = {
 			"buf": c_res.get("tiles", PackedByteArray()),
+			"under_buf": c_res.get("under_tiles", PackedByteArray()),
 			"signs": c_res.get("signs", []),
 			"stamps": c_res.get("stamps", []),
 			"fixtures": c_res.get("fixtures", []),

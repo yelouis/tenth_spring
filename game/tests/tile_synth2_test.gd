@@ -1711,6 +1711,24 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
+	# (y.6) S1 (Decision 76): For every landmark/prop stamp with a "tiles" mask,
+	#       no '#' or '+' cell is < 5% drawn and no '.' cell is >= 50% drawn.
+	var s1_all := TileSynth2.check_all_stamp_masks()
+	if not bool(s1_all.get("ok", false)):
+		push_error("(y.6) S1 stamp mask audit failed: empty_solid=%d empty_drawn=%d heavy_open=%d failures=%s" % [
+			int(s1_all["empty_solid"]), int(s1_all["empty_drawn"]), int(s1_all["heavy_open"]), str(s1_all["failures"])
+		])
+		store.close()
+		_cleanup()
+		return false
+	# S1 falsifier: mut_arch_img has 128 opaque pixels in '.' tile (7, 23) -> must fail S1 heavy_open == 1
+	var s1_fals := TileSynth2.audit_stamp_mask(1, mut_arch_img)
+	if bool(s1_fals.get("ok", true)) or int(s1_fals.get("heavy_open", 0)) != 1:
+		push_error("(y.6) [falsifier] S1 failed to catch >=50%% drawn '.' cell in arch.png: %s" % str(s1_fals))
+		store.close()
+		_cleanup()
+		return false
+
 	# -------------------------------------------------------------
 	# (z) Item 38 (§14.1.5, Decision 52):
 	#     Place big ruined blocks by size (23x14, 6x12, 6x5 crop, and 200-lot design draw).
