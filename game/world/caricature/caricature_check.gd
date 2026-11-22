@@ -38,11 +38,41 @@ const EDGE_CLEAR_TILES: int = 5
 const LOOSE_FURNITURE_PER_TILES: int = 500
 const BOLLARD_WATER_MAX_DIST: int = 3
 const MIN_WATER_ANCHOR_SHARE: float = 0.80
+const SHORT_LEDGE_MAX_LEN: int = 4
+const MAX_SHORT_OPEN_LEDGES: int = 1
+const MIN_ALLOWED_OPEN_LEDGES: int = 2
 
 const LOOSE_FURNITURE_KINDS: Dictionary = {
 	"standin_bench": true,
 	"em_bollard": true,
 	"em_planter_box": true,
+}
+
+const LEDGE_NON_CLOSING_FIXTURE_KINDS: Dictionary = {
+	"em_streetlamp": true,
+	"em_wood_sign": true,
+	"em_notice_board": true,
+	"standin_bench": true,
+	"em_bollard": true,
+	"em_planter_box": true,
+	"em_planter_tall": true,
+	"em_crate_green": true,
+	"em_crate_stack": true,
+	"em_crate_wood": true,
+	"em_flower_pots": true,
+	"em_goods_basket": true,
+	"em_goods_fruit": true,
+	"em_goods_tray": true,
+	"em_goods_urn": true,
+}
+
+# Cliff runs of 2 or 3 tiles at d9169e9 (Decision 76 P13f upper bound; all unlisted maps had 0)
+const DC_CLIFF_2_3_BASELINE: Dictionary = {
+	"hood:washington-dc:georgetown": 4,
+	"route:washington-dc:connecticut-avenue#1": 1,
+	"route:washington-dc:pennsylvania-avenue#1": 1,
+	"route:washington-dc:potomac-riverfront#1": 2,
+	"route:washington-dc:rock-creek-trail#2": 1,
 }
 
 const FENCE_FIXTURE_KINDS: Dictionary = {
@@ -973,6 +1003,153 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 			if not run_anchored:
 				lone_fence_runs += 1
 
+	# P13e (Decision 76): Ledges do a job — 4-connected TILE_LEDGE runs.
+	# Ends are the tiles just past the run along its long side across every row/col it covers.
+	# An end is closed when one of those tiles blocks the way and is not a lamp, sign, bench,
+	# bollard, planter, crate, flower pot, or market goods. Map edge counts as open.
+	var ledge_closer_mask := PackedByteArray()
+	ledge_closer_mask.resize(total)
+	ledge_closer_mask.fill(0)
+	for i_l in range(total):
+		var c_l: int = cls_buf[i_l]
+		if c_l != TileSynth2.TILE_SIGN and not TileSynth2.is_walkable(c_l, var_buf[i_l], mask_buf[i_l]):
+			ledge_closer_mask[i_l] = 1
+	for fxv in fixtures_arr:
+		var fx: Dictionary = fxv
+		var fkind := str(fx.get("kind", ""))
+		if LEDGE_NON_CLOSING_FIXTURE_KINDS.has(fkind):
+			continue
+		var fx0: int = int(fx.get("x", 0))
+		var fy0: int = int(fx.get("y", 0))
+		var fw: int = int(fx.get("w", 1))
+		var fh: int = int(fx.get("h", 1))
+		var fbr: int = mini(fh, maxi(0, int(fx.get("base_rows", 1))))
+		if fbr <= 0:
+			continue
+		for ay in range(maxi(0, fy0 + fh - fbr), mini(h, fy0 + fh)):
+			for ax in range(maxi(0, fx0), mini(w, fx0 + fw)):
+				ledge_closer_mask[ay * w + ax] = 1
+
+	var ledge_visited := PackedByteArray()
+	ledge_visited.resize(total)
+	ledge_visited.fill(0)
+	var ledge_runs := 0
+	var open_ledge_runs := 0
+	var short_open_ledge_runs := 0
+	for sy_l in range(h):
+		for sx_l in range(w):
+			var l_idx: int = sy_l * w + sx_l
+			if cls_buf[l_idx] != TileSynth2.TILE_LEDGE or ledge_visited[l_idx] != 0:
+				continue
+			ledge_runs += 1
+			var l_queue: Array[Vector2i] = [Vector2i(sx_l, sy_l)]
+			ledge_visited[l_idx] = 1
+			var lq := 0
+			var min_x: int = sx_l
+			var max_x: int = sx_l
+			var min_y: int = sy_l
+			var max_y: int = sy_l
+			while lq < l_queue.size():
+				var cur_l: Vector2i = l_queue[lq]
+				lq += 1
+				if cur_l.x < min_x:
+					min_x = cur_l.x
+				if cur_l.x > max_x:
+					max_x = cur_l.x
+				if cur_l.y < min_y:
+					min_y = cur_l.y
+				if cur_l.y > max_y:
+					max_y = cur_l.y
+				for d_l in DIRS:
+					var nx_l: int = cur_l.x + d_l.x
+					var ny_l: int = cur_l.y + d_l.y
+					if nx_l >= 0 and nx_l < w and ny_l >= 0 and ny_l < h:
+						var n_lidx: int = ny_l * w + nx_l
+						if cls_buf[n_lidx] == TileSynth2.TILE_LEDGE and ledge_visited[n_lidx] == 0:
+							ledge_visited[n_lidx] = 1
+							l_queue.append(Vector2i(nx_l, ny_l))
+			var closed_a := false
+			var closed_b := false
+			if (max_x - min_x) >= (max_y - min_y):
+				var lx_a: int = min_x - 1
+				var lx_b: int = max_x + 1
+				for yy in range(min_y, max_y + 1):
+					if lx_a >= 0 and lx_a < w and ledge_closer_mask[yy * w + lx_a] == 1:
+						closed_a = true
+					if lx_b >= 0 and lx_b < w and ledge_closer_mask[yy * w + lx_b] == 1:
+						closed_b = true
+			else:
+				var ly_a: int = min_y - 1
+				var ly_b: int = max_y + 1
+				for xx in range(min_x, max_x + 1):
+					if ly_a >= 0 and ly_a < h and ledge_closer_mask[ly_a * w + xx] == 1:
+						closed_a = true
+					if ly_b >= 0 and ly_b < h and ledge_closer_mask[ly_b * w + xx] == 1:
+						closed_b = true
+			if not closed_a and not closed_b:
+				open_ledge_runs += 1
+				if l_queue.size() <= SHORT_LEDGE_MAX_LEN:
+					short_open_ledge_runs += 1
+	var allowed_open_ledges: int = maxi(MIN_ALLOWED_OPEN_LEDGES, int((ledge_runs + 3) / 4))
+
+	# P13f (Decision 76): No 1-tile cliffs; 2-3 tile cliff runs <= d9169e9 baseline.
+	# Also measure 4-connected tree clumps of 1 to 3 tiles.
+	var cliff_visited := PackedByteArray()
+	cliff_visited.resize(total)
+	cliff_visited.fill(0)
+	var cliff_runs_1 := 0
+	var cliff_runs_2_3 := 0
+	for sy_c in range(h):
+		for sx_c in range(w):
+			var c_idx: int = sy_c * w + sx_c
+			if cls_buf[c_idx] != TileSynth2.TILE_CLIFF or cliff_visited[c_idx] != 0:
+				continue
+			var c_queue: Array[Vector2i] = [Vector2i(sx_c, sy_c)]
+			cliff_visited[c_idx] = 1
+			var cq := 0
+			while cq < c_queue.size():
+				var cur_c: Vector2i = c_queue[cq]
+				cq += 1
+				for d_c in DIRS:
+					var nx_c: int = cur_c.x + d_c.x
+					var ny_c: int = cur_c.y + d_c.y
+					if nx_c >= 0 and nx_c < w and ny_c >= 0 and ny_c < h:
+						var n_cidx: int = ny_c * w + nx_c
+						if cls_buf[n_cidx] == TileSynth2.TILE_CLIFF and cliff_visited[n_cidx] == 0:
+							cliff_visited[n_cidx] = 1
+							c_queue.append(Vector2i(nx_c, ny_c))
+			if c_queue.size() == 1:
+				cliff_runs_1 += 1
+			elif c_queue.size() == 2 or c_queue.size() == 3:
+				cliff_runs_2_3 += 1
+	var cliff_2_3_max: int = int(DC_CLIFF_2_3_BASELINE.get(aid, 0))
+
+	var tree_visited := PackedByteArray()
+	tree_visited.resize(total)
+	tree_visited.fill(0)
+	var tree_clumps_1_3 := 0
+	for sy_t in range(h):
+		for sx_t in range(w):
+			var t_idx: int = sy_t * w + sx_t
+			if cls_buf[t_idx] != TileSynth2.TILE_TREE or tree_visited[t_idx] != 0:
+				continue
+			var t_queue: Array[Vector2i] = [Vector2i(sx_t, sy_t)]
+			tree_visited[t_idx] = 1
+			var tq := 0
+			while tq < t_queue.size():
+				var cur_t: Vector2i = t_queue[tq]
+				tq += 1
+				for d_t in DIRS:
+					var nx_t: int = cur_t.x + d_t.x
+					var ny_t: int = cur_t.y + d_t.y
+					if nx_t >= 0 and nx_t < w and ny_t >= 0 and ny_t < h:
+						var n_tidx: int = ny_t * w + nx_t
+						if cls_buf[n_tidx] == TileSynth2.TILE_TREE and tree_visited[n_tidx] == 0:
+							tree_visited[n_tidx] = 1
+							t_queue.append(Vector2i(nx_t, ny_t))
+			if t_queue.size() >= 1 and t_queue.size() <= 3:
+				tree_clumps_1_3 += 1
+
 	if not is_camp:
 		if loose_total > loose_max:
 			failed_rules.append("P13a")
@@ -982,6 +1159,10 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 			failed_rules.append("P13c")
 		if use_route_rules and lone_fence_runs > 0:
 			failed_rules.append("P13d")
+		if use_route_rules and (short_open_ledge_runs > MAX_SHORT_OPEN_LEDGES or open_ledge_runs > allowed_open_ledges):
+			failed_rules.append("P13e")
+		if use_route_rules and (cliff_runs_1 > 0 or cliff_runs_2_3 > cliff_2_3_max):
+			failed_rules.append("P13f")
 
 	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
 	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
@@ -1019,6 +1200,14 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"bollard_far": bollard_far,
 		"fence_runs": fence_runs,
 		"lone_fence_runs": lone_fence_runs,
+		"ledge_runs": ledge_runs,
+		"open_ledge_runs": open_ledge_runs,
+		"short_open_ledge_runs": short_open_ledge_runs,
+		"allowed_open_ledges": allowed_open_ledges,
+		"cliff_runs_1": cliff_runs_1,
+		"cliff_runs_2_3": cliff_runs_2_3,
+		"cliff_2_3_max": cliff_2_3_max,
+		"tree_clumps_1_3": tree_clumps_1_3,
 		"rendered_water": rendered_water,
 		"water_baseline": water_baseline,
 	}

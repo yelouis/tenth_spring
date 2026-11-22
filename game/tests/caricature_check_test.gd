@@ -864,6 +864,95 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected tree-anchored fence run to pass P13d, got %s" % str(m_p13d_ok))
 		return false
 
+	# Decision 76 P13e falsifiers: 2 short (<=4t) open-ended ledge runs fail P13e even when
+	# flanked by lamps/signs/benches/crates/flower pots/goods; closing an end with trees passes.
+	var p13e_fail_map := rg_map.duplicate(true)
+	var p13e_rows: Array = (p13e_fail_map["rows"] as Array).duplicate()
+	p13e_rows[18] = str(p13e_rows[18]).substr(0, 10) + "vvvv" + str(p13e_rows[18]).substr(14)
+	p13e_rows[24] = str(p13e_rows[24]).substr(0, 12) + "vvv" + str(p13e_rows[24]).substr(15)
+	p13e_fail_map["rows"] = p13e_rows
+	p13e_fail_map["fixtures"] = [
+		{"kind": "em_streetlamp", "at": [9, 17]},
+		{"kind": "em_crate_wood", "at": [14, 18]},
+		{"kind": "em_flower_pots", "at": [11, 24]},
+		{"kind": "em_goods_fruit", "at": [15, 24]},
+	]
+	p13e_fail_map["signs"] = [{"at": [9, 18], "text": "edge"}]
+	var c_p13e_fail := CaricatureMap.compile(rg_area, p13e_fail_map)
+	if not bool(c_p13e_fail.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: p13e_fail_map compile failed: %s" % str(c_p13e_fail.get("errors", [])))
+		return false
+	var m_p13e_fail := CaricatureCheck.measure(c_p13e_fail, rg_area)
+	if not (m_p13e_fail["failed_rules"] as Array).has("P13e") or int(m_p13e_fail.get("ledge_runs", 0)) != 2 or int(m_p13e_fail.get("open_ledge_runs", 0)) != 2 or int(m_p13e_fail.get("short_open_ledge_runs", 0)) != 2:
+		_cleanup()
+		push_error("caricature_check_test: expected 2 short open-ended ledges flanked by non-closers to fail P13e, got %s" % str(m_p13e_fail))
+		return false
+
+	# Closing one end of the first ledge run with a 2x2 tree group brings short_open to 1 (PASS)
+	var p13e_ok_map := p13e_fail_map.duplicate(true)
+	var p13e_ok_rows: Array = (p13e_ok_map["rows"] as Array).duplicate()
+	p13e_ok_rows[17] = str(p13e_ok_rows[17]).substr(0, 14) + "TT" + str(p13e_ok_rows[17]).substr(16)
+	p13e_ok_rows[18] = str(p13e_ok_rows[18]).substr(0, 14) + "TT" + str(p13e_ok_rows[18]).substr(16)
+	p13e_ok_map["rows"] = p13e_ok_rows
+	p13e_ok_map["fixtures"] = []
+	p13e_ok_map["signs"] = []
+	var c_p13e_ok := CaricatureMap.compile(rg_area, p13e_ok_map)
+	var m_p13e_ok := CaricatureCheck.measure(c_p13e_ok, rg_area)
+	if (m_p13e_ok["failed_rules"] as Array).has("P13e") or int(m_p13e_ok.get("open_ledge_runs", -1)) != 1 or int(m_p13e_ok.get("short_open_ledge_runs", -1)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected tree-closed ledge run to pass P13e, got %s" % str(m_p13e_ok))
+		return false
+
+	# 3 long (>=5t) open-ended ledge runs exceed max(2, ceil(3/4))=2 and fail P13e
+	var p13e_long_map := rg_map.duplicate(true)
+	var p13e_long_rows: Array = (p13e_long_map["rows"] as Array).duplicate()
+	p13e_long_rows[14] = str(p13e_long_rows[14]).substr(0, 10) + "vvvvv" + str(p13e_long_rows[14]).substr(15)
+	p13e_long_rows[20] = str(p13e_long_rows[20]).substr(0, 10) + "vvvvv" + str(p13e_long_rows[20]).substr(15)
+	p13e_long_rows[26] = str(p13e_long_rows[26]).substr(0, 10) + "vvvvv" + str(p13e_long_rows[26]).substr(15)
+	p13e_long_map["rows"] = p13e_long_rows
+	var c_p13e_long := CaricatureMap.compile(rg_area, p13e_long_map)
+	var m_p13e_long := CaricatureCheck.measure(c_p13e_long, rg_area)
+	if not (m_p13e_long["failed_rules"] as Array).has("P13e") or int(m_p13e_long.get("open_ledge_runs", 0)) != 3 or int(m_p13e_long.get("short_open_ledge_runs", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected 3 long open-ended ledges to fail P13e, got %s" % str(m_p13e_long))
+		return false
+
+	# Decision 76 P13f falsifiers: 1-tile cliff fails P13f; 2-tile cliff fails when baseline=0; 4-tile cliff passes.
+	var p13f_1_map := rg_map.duplicate(true)
+	var p13f_1_rows: Array = (p13f_1_map["rows"] as Array).duplicate()
+	p13f_1_rows[22] = str(p13f_1_rows[22]).substr(0, 14) + "^" + str(p13f_1_rows[22]).substr(15)
+	p13f_1_map["rows"] = p13f_1_rows
+	var c_p13f_1 := CaricatureMap.compile(rg_area, p13f_1_map)
+	var m_p13f_1 := CaricatureCheck.measure(c_p13f_1, rg_area)
+	if not (m_p13f_1["failed_rules"] as Array).has("P13f") or int(m_p13f_1.get("cliff_runs_1", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected 1-tile cliff to fail P13f, got %s" % str(m_p13f_1))
+		return false
+
+	var p13f_2_map := rg_map.duplicate(true)
+	var p13f_2_rows: Array = (p13f_2_map["rows"] as Array).duplicate()
+	p13f_2_rows[22] = str(p13f_2_rows[22]).substr(0, 14) + "^^" + str(p13f_2_rows[22]).substr(16)
+	p13f_2_map["rows"] = p13f_2_rows
+	var c_p13f_2 := CaricatureMap.compile(rg_area, p13f_2_map)
+	var m_p13f_2 := CaricatureCheck.measure(c_p13f_2, rg_area)
+	if not (m_p13f_2["failed_rules"] as Array).has("P13f") or int(m_p13f_2.get("cliff_runs_2_3", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected 2-tile cliff over baseline 0 to fail P13f, got %s" % str(m_p13f_2))
+		return false
+
+	var p13f_4_map := rg_map.duplicate(true)
+	var p13f_4_rows: Array = (p13f_4_map["rows"] as Array).duplicate()
+	p13f_4_rows[22] = str(p13f_4_rows[22]).substr(0, 12) + "^^^^" + str(p13f_4_rows[22]).substr(16)
+	p13f_4_rows[28] = str(p13f_4_rows[28]).substr(0, 12) + "TT" + str(p13f_4_rows[28]).substr(14)
+	p13f_4_map["rows"] = p13f_4_rows
+	var c_p13f_4 := CaricatureMap.compile(rg_area, p13f_4_map)
+	var m_p13f_4 := CaricatureCheck.measure(c_p13f_4, rg_area)
+	if (m_p13f_4["failed_rules"] as Array).has("P13f") or int(m_p13f_4.get("cliff_runs_1", -1)) != 0 or int(m_p13f_4.get("cliff_runs_2_3", -1)) != 0 or int(m_p13f_4.get("tree_clumps_1_3", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected 4-tile cliff to pass P13f and 2-tile tree clump to count as 1, got %s" % str(m_p13f_4))
+		return false
+
 	_cleanup()
 	return true
 

@@ -202,7 +202,7 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 	var w_str: String = ("%d/%d" % [int(m.get("rendered_water", 0)), w_base]) if w_base >= 0 else ("%d" % int(m.get("rendered_water", 0)))
 	if is_route:
 		print(
-			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d ends_steps=%d tall_grass=%.2f search_doors=%d benches=%d bollards=%d planters=%d alone=%d fences=%d lone_fences=%d water=%s %s" % [
+			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d ends_steps=%d tall_grass=%.2f search_doors=%d benches=%d bollards=%d planters=%d alone=%d fences=%d lone_fences=%d ledges=%d open_ledges=%d short_open_ledges=%d cliffs_1=%d cliffs_2_3=%d tree_clumps_1_3=%d water=%s %s" % [
 				area_id,
 				w,
 				h,
@@ -218,13 +218,19 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 				int(m["loose_alone"]),
 				int(m["fence_runs"]),
 				int(m["lone_fence_runs"]),
+				int(m["ledge_runs"]),
+				int(m["open_ledge_runs"]),
+				int(m["short_open_ledge_runs"]),
+				int(m["cliff_runs_1"]),
+				int(m["cliff_runs_2_3"]),
+				int(m["tree_clumps_1_3"]),
 				w_str,
 				status_str,
 			]
 		)
 	else:
 		print(
-			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d max_walk=%d landmark_max=%d tall_grass=%.2f search_doors=%d landmarks=%d/%d art_pending=%d benches=%d bollards=%d planters=%d alone=%d fences=%d lone_fences=%d water=%s %s" % [
+			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d max_walk=%d landmark_max=%d tall_grass=%.2f search_doors=%d landmarks=%d/%d art_pending=%d benches=%d bollards=%d planters=%d alone=%d fences=%d lone_fences=%d ledges=%d open_ledges=%d short_open_ledges=%d cliffs_1=%d cliffs_2_3=%d tree_clumps_1_3=%d water=%s %s" % [
 				area_id,
 				w,
 				h,
@@ -244,6 +250,12 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 				int(m["loose_alone"]),
 				int(m["fence_runs"]),
 				int(m["lone_fence_runs"]),
+				int(m["ledge_runs"]),
+				int(m["open_ledge_runs"]),
+				int(m["short_open_ledge_runs"]),
+				int(m["cliff_runs_1"]),
+				int(m["cliff_runs_2_3"]),
+				int(m["tree_clumps_1_3"]),
 				w_str,
 				status_str,
 			]
