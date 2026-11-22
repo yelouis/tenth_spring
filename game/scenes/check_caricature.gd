@@ -198,9 +198,11 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 	var failed_rules: Array = m.get("failed_rules", [])
 	var status_str := "PASS" if passed else ("FAIL " + ",".join(PackedStringArray(failed_rules)))
 
+	var w_base: int = int(m.get("water_baseline", -1))
+	var w_str: String = ("%d/%d" % [int(m.get("rendered_water", 0)), w_base]) if w_base >= 0 else ("%d" % int(m.get("rendered_water", 0)))
 	if is_route:
 		print(
-			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d ends_steps=%d tall_grass=%.2f search_doors=%d %s" % [
+			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d ends_steps=%d tall_grass=%.2f search_doors=%d benches=%d bollards=%d planters=%d alone=%d water=%s %s" % [
 				area_id,
 				w,
 				h,
@@ -210,12 +212,17 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 				int(m["ends_steps"]),
 				float(m["tall_grass_share"]),
 				int(m["search_doors"]),
+				int(m["loose_benches"]),
+				int(m["loose_bollards"]),
+				int(m["loose_planters"]),
+				int(m["loose_alone"]),
+				w_str,
 				status_str,
 			]
 		)
 	else:
 		print(
-			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d max_walk=%d landmark_max=%d tall_grass=%.2f search_doors=%d landmarks=%d/%d art_pending=%d %s" % [
+			"CARICATURE %s size=%dx%d walkable=%d unreached=%d trapped=%d max_walk=%d landmark_max=%d tall_grass=%.2f search_doors=%d landmarks=%d/%d art_pending=%d benches=%d bollards=%d planters=%d alone=%d water=%s %s" % [
 				area_id,
 				w,
 				h,
@@ -229,6 +236,11 @@ func _check_one_area(area: Dictionary, show_preview: bool, compiled_by_id: Dicti
 				int(m["landmarks_present"]),
 				int(m["landmarks_listed"]),
 				int(m["art_pending"]),
+				int(m["loose_benches"]),
+				int(m["loose_bollards"]),
+				int(m["loose_planters"]),
+				int(m["loose_alone"]),
+				w_str,
 				status_str,
 			]
 		)

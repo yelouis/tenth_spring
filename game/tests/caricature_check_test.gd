@@ -713,6 +713,109 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected route with door_share > 1/3 to fail R1, got %s" % str(res_rg_door))
 		return false
 
+	# Decision 74 falsifiers: P13a (<= 1 loose piece per 500 tiles), P13b (never alone), P13c (bollards <= 3 tiles from rendered water), WATER (rendered water >= 80% baseline)
+	var m_camp_d74 := CaricatureCheck.measure(c_camp_ok, dc_camp_area)
+	if not bool(m_camp_d74.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: camp:washington-dc must stay PASS under Decision 74, got %s" % str(m_camp_d74))
+		return false
+
+	# P13a falsifier: 5 anchored benches on a 32x64 route (limit = 4) fails P13a only
+	var p13a_map := rg_map.duplicate(true)
+	var p13a_rows: Array = (p13a_map["rows"] as Array).duplicate()
+	p13a_rows[10] = "TTT" + "F".repeat(26) + "TTT"
+	p13a_map["rows"] = p13a_rows
+	p13a_map["fixtures"] = [
+		{"kind": "standin_bench", "at": [4, 11]},
+		{"kind": "standin_bench", "at": [8, 11]},
+		{"kind": "standin_bench", "at": [12, 11]},
+		{"kind": "standin_bench", "at": [16, 11]},
+		{"kind": "standin_bench", "at": [20, 11]},
+	]
+	var c_p13a := CaricatureMap.compile(rg_area, p13a_map)
+	if not bool(c_p13a.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: p13a_map compile failed: %s" % str(c_p13a.get("errors", [])))
+		return false
+	var m_p13a := CaricatureCheck.measure(c_p13a, rg_area)
+	var f_p13a: Array = m_p13a["failed_rules"]
+	if not f_p13a.has("P13a") or f_p13a.has("P13b") or f_p13a.has("P13c") or int(m_p13a.get("loose_total", 0)) != 5 or int(m_p13a.get("loose_max", 0)) != 4:
+		_cleanup()
+		push_error("caricature_check_test: expected 5 anchored benches on 32x64 to fail P13a only, got %s" % str(m_p13a))
+		return false
+
+	# P13b falsifier: 1 lone bench in open grass fails P13b (even though count <= 4)
+	var p13b_map := rg_map.duplicate(true)
+	p13b_map["fixtures"] = [{"kind": "standin_bench", "at": [14, 25]}]
+	var c_p13b := CaricatureMap.compile(rg_area, p13b_map)
+	if not bool(c_p13b.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: p13b_map compile failed: %s" % str(c_p13b.get("errors", [])))
+		return false
+	var m_p13b := CaricatureCheck.measure(c_p13b, rg_area)
+	var f_p13b: Array = m_p13b["failed_rules"]
+	if not f_p13b.has("P13b") or f_p13b.has("P13a") or int(m_p13b.get("loose_alone", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected 1 lone bench to fail P13b only, got %s" % str(m_p13b))
+		return false
+
+	# P13c falsifier: 1 bollard touching a fence but > 3 tiles from water fails P13c; a bollard within 3 tiles of water passes P13c
+	var p13c_map := p13a_map.duplicate(true)
+	p13c_map["fixtures"] = [{"kind": "em_bollard", "at": [10, 11]}]
+	var c_p13c := CaricatureMap.compile(rg_area, p13c_map)
+	var m_p13c := CaricatureCheck.measure(c_p13c, rg_area)
+	var f_p13c: Array = m_p13c["failed_rules"]
+	if not f_p13c.has("P13c") or f_p13c.has("P13a") or f_p13c.has("P13b") or int(m_p13c.get("bollard_far", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected inland fence-adjacent bollard to fail P13c only, got %s" % str(m_p13c))
+		return false
+
+	var p13c_ok_map := p13c_map.duplicate(true)
+	var p13c_rows: Array = (p13c_ok_map["rows"] as Array).duplicate()
+	p13c_rows[13] = str(p13c_rows[13]).substr(0, 9) + "~~~" + str(p13c_rows[13]).substr(12)
+	p13c_rows[14] = str(p13c_rows[14]).substr(0, 9) + "~~~" + str(p13c_rows[14]).substr(12)
+	p13c_ok_map["rows"] = p13c_rows
+	var c_p13c_ok := CaricatureMap.compile(rg_area, p13c_ok_map)
+	var m_p13c_ok := CaricatureCheck.measure(c_p13c_ok, rg_area)
+	if (m_p13c_ok["failed_rules"] as Array).has("P13c") or int(m_p13c_ok.get("bollard_far", 1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected bollard 2 tiles from rendered water to pass P13c, got %s" % str(m_p13c_ok))
+		return false
+
+	# Rendered-tile WATER anchor falsifier: building stamp covering >20% of rendered water fails WATER even though '~' stays in raw rows
+	var dc_nm_area := Neighbourhoods.area("hood:washington-dc:national-mall")
+	var water_map := {
+		"schema": 1,
+		"id": "hood:washington-dc:national-mall",
+		"rows": [],
+		"openings": [],
+		"objects": [{"stamp": "standing_block_8x7_a", "at": [10, 10]}],
+		"fixtures": [],
+		"people": [],
+		"street_pokemon": [],
+		"signs": [],
+		"hidden_items": [],
+		"lamp": [40, 40],
+	}
+	for ry in range(128):
+		if ry < 3 or ry >= 125:
+			(water_map["rows"] as Array).append("T".repeat(160))
+		elif ry >= 12 and ry < 14:
+			# 46 raw '~' tiles (x=10..32, 2 rows = 46), of which 16 are covered by standing_block_8x7_a at (10,10)..(17,16) -> 30/46 (65%) rendered!
+			(water_map["rows"] as Array).append("TTT" + ".".repeat(7) + "~".repeat(23) + ".".repeat(124) + "TTT")
+		else:
+			(water_map["rows"] as Array).append("TTT" + ".".repeat(154) + "TTT")
+	var c_water := CaricatureMap.compile(dc_nm_area, water_map)
+	if not bool(c_water.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: water_map compile failed: %s" % str(c_water.get("errors", [])))
+		return false
+	var m_water := CaricatureCheck.measure(c_water, dc_nm_area)
+	if not (m_water["failed_rules"] as Array).has("WATER") or int(m_water.get("rendered_water", 0)) != 30 or int(m_water.get("water_baseline", 0)) != 46:
+		_cleanup()
+		push_error("caricature_check_test: expected building over pond (30/46 rendered water) to fail WATER, got %s" % str(m_water))
+		return false
+
 	_cleanup()
 	return true
 

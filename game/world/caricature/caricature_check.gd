@@ -35,6 +35,63 @@ const PLAIN_GRASS_WINDOW: int = 12
 const ROUTE_ENDS_STEPS_MULT: float = 1.5
 const MAX_END_SIGN_STEPS: int = 6
 const EDGE_CLEAR_TILES: int = 5
+const LOOSE_FURNITURE_PER_TILES: int = 500
+const BOLLARD_WATER_MAX_DIST: int = 3
+const MIN_WATER_ANCHOR_SHARE: float = 0.80
+
+const LOOSE_FURNITURE_KINDS: Dictionary = {
+	"standin_bench": true,
+	"em_bollard": true,
+	"em_planter_box": true,
+}
+
+const SOLID_ANCHOR_FIXTURE_KINDS: Dictionary = {
+	"em_streetlamp": true,
+	"em_statue": true,
+	"em_fountain": true,
+	"em_lighthouse": true,
+	"em_iron_fence_h": true,
+	"em_iron_fence_v": true,
+	"em_white_fence_h": true,
+	"em_white_fence_v": true,
+	"em_wood_fence_post": true,
+	"em_flower_patch": true,
+	"standin_lock_gate": true,
+	"em_bridge_v_rail_w": true,
+	"em_bridge_v_rail_e": true,
+	"em_bridge_v_pier_w": true,
+	"em_bridge_v_pier_e": true,
+	"em_bridge_h_rail_n": true,
+	"em_bridge_h_girder": true,
+	"em_bridge_h_pier": true,
+	"em_market_stall_blue": true,
+	"em_market_stall_peach": true,
+}
+
+# Rendered TILE_WATER baselines at d9169e9 (Decision 74 rendered-tile water anchor >= 80%)
+const DC_WATER_BASELINE: Dictionary = {
+	"camp:washington-dc": 38,
+	"hood:washington-dc:national-mall": 46,
+	"hood:washington-dc:tidal-basin": 3082,
+	"hood:washington-dc:dupont-circle": 4,
+	"hood:washington-dc:capitol-hill": 98,
+	"hood:washington-dc:union-station": 8,
+	"hood:washington-dc:georgetown": 1790,
+	"hood:washington-dc:woodley-park": 397,
+	"hood:washington-dc:lincoln-memorial": 3118,
+	"route:washington-dc:monument-grounds#1": 0,
+	"route:washington-dc:pennsylvania-avenue#1": 9,
+	"route:washington-dc:constitution-gardens#1": 256,
+	"route:washington-dc:west-potomac-park#1": 654,
+	"route:washington-dc:west-potomac-park#2": 19,
+	"route:washington-dc:upper-senate-park#1": 20,
+	"route:washington-dc:q-street#1": 196,
+	"route:washington-dc:connecticut-avenue#1": 182,
+	"route:washington-dc:massachusetts-avenue#1": 0,
+	"route:washington-dc:rock-creek-trail#1": 426,
+	"route:washington-dc:rock-creek-trail#2": 150,
+	"route:washington-dc:potomac-riverfront#1": 1245,
+}
 
 const MIN_THINGS_PER_150_ROUTE: float = 0.9
 const MAX_SIGN_SHARE_ROUTE: float = 1.0 / 3.0
@@ -684,6 +741,132 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 	if edge_violations > 0:
 		failed_rules.append("P12")
 
+	# P13 (Decision 74): Loose furniture count (<= 1 per 500 map tiles), never alone (8-neighbour solid anchor),
+	# bollards within 3 tiles of rendered water; plus rendered-tile water anchor (>= 80% of baseline).
+	var anchor_mask := PackedByteArray()
+	anchor_mask.resize(total)
+	anchor_mask.fill(0)
+	var rendered_water := 0
+	for i_w in range(total):
+		var c_w: int = cls_buf[i_w]
+		if c_w == TileSynth2.TILE_WATER:
+			rendered_water += 1
+			anchor_mask[i_w] = 1
+		elif (
+			c_w == TileSynth2.TILE_TREE
+			or c_w == TileSynth2.TILE_FENCE
+			or c_w == TileSynth2.TILE_FLOWERS
+			or c_w == TileSynth2.TILE_LEDGE
+			or c_w == TileSynth2.TILE_CLIFF
+			or c_w == TileSynth2.TILE_ROOF
+			or c_w == TileSynth2.TILE_WALL
+			or c_w == TileSynth2.TILE_DOOR
+			or c_w == TileSynth2.TILE_CUT_TREE
+			or c_w == TileSynth2.TILE_SMASH_ROCK
+			or c_w == TileSynth2.TILE_BOULDER
+		):
+			anchor_mask[i_w] = 1
+		elif c_w == TileSynth2.TILE_STAMP:
+			var s_id_w: int = var_buf[i_w]
+			var s_kind_w := str((TileSynth2.STAMP_TABLE.get(s_id_w, {}) as Dictionary).get("kind", ""))
+			if s_kind_w != "decal":
+				anchor_mask[i_w] = 1
+
+	var fixtures_arr: Array = compiled.get("fixtures", [])
+	for fxv in fixtures_arr:
+		var fx: Dictionary = fxv
+		var fkind := str(fx.get("kind", ""))
+		if not SOLID_ANCHOR_FIXTURE_KINDS.has(fkind):
+			continue
+		var fx0: int = int(fx.get("x", 0))
+		var fy0: int = int(fx.get("y", 0))
+		var fw: int = int(fx.get("w", 1))
+		var fh: int = int(fx.get("h", 1))
+		var fbr: int = int(fx.get("base_rows", 1))
+		var y_start: int = fy0 + (fh - mini(fh, fbr)) if fbr > 0 else fy0
+		for ay in range(maxi(0, y_start), mini(h, fy0 + fh)):
+			for ax in range(maxi(0, fx0), mini(w, fx0 + fw)):
+				anchor_mask[ay * w + ax] = 1
+
+	var loose_benches := 0
+	var loose_bollards := 0
+	var loose_planters := 0
+	var loose_alone := 0
+	var bollard_far := 0
+	for fxv in fixtures_arr:
+		var fx: Dictionary = fxv
+		var fkind := str(fx.get("kind", ""))
+		if not LOOSE_FURNITURE_KINDS.has(fkind):
+			continue
+		if fkind == "standin_bench":
+			loose_benches += 1
+		elif fkind == "em_bollard":
+			loose_bollards += 1
+		elif fkind == "em_planter_box":
+			loose_planters += 1
+		var fx0: int = int(fx.get("x", 0))
+		var fy0: int = int(fx.get("y", 0))
+		var fw: int = int(fx.get("w", 1))
+		var fh: int = int(fx.get("h", 1))
+		var touches_anchor := false
+		for ty in range(fy0, fy0 + fh):
+			for tx in range(fx0, fx0 + fw):
+				for dy in range(-1, 2):
+					for dx in range(-1, 2):
+						if dx == 0 and dy == 0:
+							continue
+						var nx: int = tx + dx
+						var ny: int = ty + dy
+						if nx >= fx0 and nx < fx0 + fw and ny >= fy0 and ny < fy0 + fh:
+							continue
+						if nx >= 0 and nx < w and ny >= 0 and ny < h and anchor_mask[ny * w + nx] == 1:
+							touches_anchor = true
+							break
+					if touches_anchor:
+						break
+				if touches_anchor:
+					break
+			if touches_anchor:
+				break
+		if not touches_anchor:
+			loose_alone += 1
+		if fkind == "em_bollard":
+			var near_water := false
+			for ty in range(fy0, fy0 + fh):
+				for tx in range(fx0, fx0 + fw):
+					for dy in range(-BOLLARD_WATER_MAX_DIST, BOLLARD_WATER_MAX_DIST + 1):
+						var ny: int = ty + dy
+						if ny < 0 or ny >= h:
+							continue
+						var rem: int = BOLLARD_WATER_MAX_DIST - absi(dy)
+						for dx in range(-rem, rem + 1):
+							var nx: int = tx + dx
+							if nx >= 0 and nx < w and cls_buf[ny * w + nx] == TileSynth2.TILE_WATER:
+								near_water = true
+								break
+						if near_water:
+							break
+					if near_water:
+						break
+				if near_water:
+					break
+			if not near_water:
+				bollard_far += 1
+
+	var loose_total: int = loose_benches + loose_bollards + loose_planters
+	var loose_max: int = int(total / LOOSE_FURNITURE_PER_TILES)
+	if not is_camp:
+		if loose_total > loose_max:
+			failed_rules.append("P13a")
+		if loose_alone > 0:
+			failed_rules.append("P13b")
+		if bollard_far > 0:
+			failed_rules.append("P13c")
+
+	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
+	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
+		failed_rules.append("WATER")
+
 	return {
 		"ok": failed_rules.is_empty(),
 		"failed_rules": failed_rules,
@@ -707,6 +890,15 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"has_plain_grass_12x12": has_plain_12,
 		"retired_blocks": retired_blocks,
 		"edge_violations": edge_violations,
+		"loose_benches": loose_benches,
+		"loose_bollards": loose_bollards,
+		"loose_planters": loose_planters,
+		"loose_total": loose_total,
+		"loose_max": loose_max,
+		"loose_alone": loose_alone,
+		"bollard_far": bollard_far,
+		"rendered_water": rendered_water,
+		"water_baseline": water_baseline,
 	}
 
 static func _outward_step(side: String) -> Vector2i:
