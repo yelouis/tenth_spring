@@ -45,6 +45,32 @@ const LOOSE_FURNITURE_KINDS: Dictionary = {
 	"em_planter_box": true,
 }
 
+const FENCE_FIXTURE_KINDS: Dictionary = {
+	"em_iron_fence_h": true,
+	"em_iron_fence_v": true,
+	"em_white_fence_h": true,
+	"em_white_fence_v": true,
+	"em_wood_fence_post": true,
+}
+
+const FENCE_ANCHOR_FIXTURE_KINDS: Dictionary = {
+	"em_statue": true,
+	"em_fountain": true,
+	"em_lighthouse": true,
+	"em_market_stall_blue": true,
+	"em_market_stall_peach": true,
+	"standin_lock_gate": true,
+	"em_rowboat": true,
+	"em_sailboat": true,
+	"em_bridge_v_rail_w": true,
+	"em_bridge_v_rail_e": true,
+	"em_bridge_v_pier_w": true,
+	"em_bridge_v_pier_e": true,
+	"em_bridge_h_rail_n": true,
+	"em_bridge_h_girder": true,
+	"em_bridge_h_pier": true,
+}
+
 const SOLID_ANCHOR_FIXTURE_KINDS: Dictionary = {
 	"em_streetlamp": true,
 	"em_statue": true,
@@ -855,6 +881,98 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 
 	var loose_total: int = loose_benches + loose_bollards + loose_planters
 	var loose_max: int = int(total / LOOSE_FURNITURE_PER_TILES)
+
+	# P13d (Decision 75): No lone fence runs — every 4-connected run of fence tiles
+	# (TILE_FENCE plus iron/white/wood fence fixtures) must touch, in its 8 neighbours,
+	# a solid non-fence/non-loose anchor (building/wall/door/roof/solid stamp, tree/cut tree,
+	# water/marsh, ledge/cliff, rock/boulder, or solid statue/fountain/stall/bridge/boat/lock-gate).
+	var fence_mask := PackedByteArray()
+	fence_mask.resize(total)
+	fence_mask.fill(0)
+	var fence_anchor_mask := PackedByteArray()
+	fence_anchor_mask.resize(total)
+	fence_anchor_mask.fill(0)
+	for i_f in range(total):
+		var c_f: int = cls_buf[i_f]
+		if c_f == TileSynth2.TILE_FENCE:
+			fence_mask[i_f] = 1
+		elif (
+			c_f == TileSynth2.TILE_TREE
+			or c_f == TileSynth2.TILE_WATER
+			or c_f == TileSynth2.TILE_MARSH
+			or c_f == TileSynth2.TILE_ROOF
+			or c_f == TileSynth2.TILE_WALL
+			or c_f == TileSynth2.TILE_DOOR
+			or c_f == TileSynth2.TILE_LEDGE
+			or c_f == TileSynth2.TILE_CLIFF
+			or c_f == TileSynth2.TILE_CUT_TREE
+			or c_f == TileSynth2.TILE_SMASH_ROCK
+			or c_f == TileSynth2.TILE_BOULDER
+		):
+			fence_anchor_mask[i_f] = 1
+		elif c_f == TileSynth2.TILE_STAMP:
+			if (mask_buf[i_f] & TileSynth2.STAMP_FLAG_SOLID) != 0:
+				fence_anchor_mask[i_f] = 1
+
+	for fxv in fixtures_arr:
+		var fx: Dictionary = fxv
+		var fkind := str(fx.get("kind", ""))
+		var fx0: int = int(fx.get("x", 0))
+		var fy0: int = int(fx.get("y", 0))
+		var fw: int = int(fx.get("w", 1))
+		var fh: int = int(fx.get("h", 1))
+		var fbr: int = int(fx.get("base_rows", 1))
+		var y_start: int = fy0 + (fh - mini(fh, fbr)) if fbr > 0 else fy0
+		if FENCE_FIXTURE_KINDS.has(fkind):
+			for ay in range(maxi(0, y_start), mini(h, fy0 + fh)):
+				for ax in range(maxi(0, fx0), mini(w, fx0 + fw)):
+					fence_mask[ay * w + ax] = 1
+		elif FENCE_ANCHOR_FIXTURE_KINDS.has(fkind):
+			for ay in range(maxi(0, y_start), mini(h, fy0 + fh)):
+				for ax in range(maxi(0, fx0), mini(w, fx0 + fw)):
+					fence_anchor_mask[ay * w + ax] = 1
+
+	var fence_visited := PackedByteArray()
+	fence_visited.resize(total)
+	fence_visited.fill(0)
+	var fence_runs := 0
+	var lone_fence_runs := 0
+	for sy_f in range(h):
+		for sx_f in range(w):
+			var s_idx: int = sy_f * w + sx_f
+			if fence_mask[s_idx] == 0 or fence_visited[s_idx] != 0:
+				continue
+			fence_runs += 1
+			var queue_f: Array[Vector2i] = [Vector2i(sx_f, sy_f)]
+			fence_visited[s_idx] = 1
+			var qi := 0
+			var run_anchored := false
+			while qi < queue_f.size():
+				var cur: Vector2i = queue_f[qi]
+				qi += 1
+				if not run_anchored:
+					for dy_a in range(-1, 2):
+						for dx_a in range(-1, 2):
+							if dx_a == 0 and dy_a == 0:
+								continue
+							var nx_a: int = cur.x + dx_a
+							var ny_a: int = cur.y + dy_a
+							if nx_a >= 0 and nx_a < w and ny_a >= 0 and ny_a < h and fence_anchor_mask[ny_a * w + nx_a] == 1:
+								run_anchored = true
+								break
+						if run_anchored:
+							break
+				for d_f in DIRS:
+					var nx_f: int = cur.x + d_f.x
+					var ny_f: int = cur.y + d_f.y
+					if nx_f >= 0 and nx_f < w and ny_f >= 0 and ny_f < h:
+						var n_idx: int = ny_f * w + nx_f
+						if fence_mask[n_idx] == 1 and fence_visited[n_idx] == 0:
+							fence_visited[n_idx] = 1
+							queue_f.append(Vector2i(nx_f, ny_f))
+			if not run_anchored:
+				lone_fence_runs += 1
+
 	if not is_camp:
 		if loose_total > loose_max:
 			failed_rules.append("P13a")
@@ -862,6 +980,8 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 			failed_rules.append("P13b")
 		if bollard_far > 0:
 			failed_rules.append("P13c")
+		if use_route_rules and lone_fence_runs > 0:
+			failed_rules.append("P13d")
 
 	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
 	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
@@ -897,6 +1017,8 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"loose_max": loose_max,
 		"loose_alone": loose_alone,
 		"bollard_far": bollard_far,
+		"fence_runs": fence_runs,
+		"lone_fence_runs": lone_fence_runs,
 		"rendered_water": rendered_water,
 		"water_baseline": water_baseline,
 	}

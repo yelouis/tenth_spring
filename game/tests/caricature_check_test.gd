@@ -816,6 +816,54 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected building over pond (30/46 rendered water) to fail WATER, got %s" % str(m_water))
 		return false
 
+	# Decision 75 P13d falsifiers: lone fence runs fail even beside flowers/lamps/signs/benches/crates;
+	# fence runs touching a solid non-fence anchor (trees, water, ledge, building, statue/fountain/stall/bridge/boat/lock gate) pass.
+	var p13d_lone_map := rg_map.duplicate(true)
+	var p13d_rows: Array = (p13d_lone_map["rows"] as Array).duplicate()
+	p13d_rows[20] = str(p13d_rows[20]).substr(0, 12) + "****" + str(p13d_rows[20]).substr(16)
+	p13d_rows[21] = str(p13d_rows[21]).substr(0, 12) + "FFFF" + str(p13d_rows[21]).substr(16)
+	p13d_lone_map["rows"] = p13d_rows
+	p13d_lone_map["fixtures"] = [
+		{"kind": "em_streetlamp", "at": [11, 20]},
+		{"kind": "standin_bench", "at": [13, 22]},
+		{"kind": "em_crate_wood", "at": [16, 21]},
+	]
+	p13d_lone_map["signs"] = [{"at": [11, 21], "text": "test"}]
+	var c_p13d_lone := CaricatureMap.compile(rg_area, p13d_lone_map)
+	if not bool(c_p13d_lone.get("ok", false)):
+		_cleanup()
+		push_error("caricature_check_test: p13d_lone_map compile failed: %s" % str(c_p13d_lone.get("errors", [])))
+		return false
+	var m_p13d_lone := CaricatureCheck.measure(c_p13d_lone, rg_area)
+	if not (m_p13d_lone["failed_rules"] as Array).has("P13d") or int(m_p13d_lone.get("fence_runs", 0)) != 1 or int(m_p13d_lone.get("lone_fence_runs", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected lone fence beside flowers/lamp/sign/bench/crate to fail P13d, got %s" % str(m_p13d_lone))
+		return false
+
+	# Lone fence fixture fails P13d
+	var p13d_fx_map := rg_map.duplicate(true)
+	p13d_fx_map["fixtures"] = [{"kind": "em_white_fence_h", "at": [14, 21]}, {"kind": "em_white_fence_h", "at": [15, 21]}]
+	var c_p13d_fx := CaricatureMap.compile(rg_area, p13d_fx_map)
+	var m_p13d_fx := CaricatureCheck.measure(c_p13d_fx, rg_area)
+	if not (m_p13d_fx["failed_rules"] as Array).has("P13d") or int(m_p13d_fx.get("fence_runs", 0)) != 1 or int(m_p13d_fx.get("lone_fence_runs", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected lone white fence fixture run to fail P13d, got %s" % str(m_p13d_fx))
+		return false
+
+	# Anchoring that same fence run with a 2x2 tree group makes P13d pass
+	var p13d_ok_map := p13d_lone_map.duplicate(true)
+	var p13d_ok_rows: Array = (p13d_ok_map["rows"] as Array).duplicate()
+	p13d_ok_rows[20] = str(p13d_ok_rows[20]).substr(0, 16) + "TT" + str(p13d_ok_rows[20]).substr(18)
+	p13d_ok_rows[21] = str(p13d_ok_rows[21]).substr(0, 16) + "TT" + str(p13d_ok_rows[21]).substr(18)
+	p13d_ok_map["rows"] = p13d_ok_rows
+	p13d_ok_map["fixtures"] = []
+	var c_p13d_ok := CaricatureMap.compile(rg_area, p13d_ok_map)
+	var m_p13d_ok := CaricatureCheck.measure(c_p13d_ok, rg_area)
+	if (m_p13d_ok["failed_rules"] as Array).has("P13d") or int(m_p13d_ok.get("fence_runs", 0)) != 1 or int(m_p13d_ok.get("lone_fence_runs", 1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected tree-anchored fence run to pass P13d, got %s" % str(m_p13d_ok))
+		return false
+
 	_cleanup()
 	return true
 
