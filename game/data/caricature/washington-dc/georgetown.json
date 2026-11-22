@@ -8,27 +8,27 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTT,,,,*,,,,,,T-----------*-----TTTTTT,,,,,,,,,,-------.---------TTTTFT.,,,,,*,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTT----,,,,,,.,,,,----F-------------------,,,,,,,,,,-----------------------,,,,,,,,,,,,---*-TTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTT!---,,,,,,,,,,,---TTTTTT.TTTTT---------,,,*,,,,,,-TTTTTTTTTFTT----------,,,,,,,,,,,,-*--#TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTT,,,,.,,,,,,T-----------.-----TTTTTT,,,,,,,,,,-------.---------TTTTFT.,,,,,.,,,,,TTTTTTTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT----,,,,,,.,,,,----F-------------------,,,,,,,,,,-----------------------,,,,,,,,,,,,---.-TTTTTTTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTTTT!---,,,,,,,,,,,---TTTTTT.TTTTT---------,,,.,,,,,,-TTTTTTTTTFTT----------,,,,,,,,,,,,-,--#TTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT...F,,,,,TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT,,,,,,...TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTTTTT---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT,TTTTT*TTTTTTTT",
+    "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT,TTTTT.TTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTT========================================",
     "TTTTTTTTTTTTTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
     "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT========================================",
     "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTT=======--===============================",
-    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-,,,...,,,,.,.TTT---,TTTTT*TTTTTT",
+    "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-,,,...,,,,.,.TTT---,TTTTT.TTTTTT",
     "TTTTTTTT---TTTTTTTTTTTTT.........TTTTTTTTTTTT...---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT-,........*.T.TTT---TTTTTTTTTTTTT",
     "TTTTTTT..,,,,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTT.,,,,,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
-    "TTTTTTT,,,,*,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--.....T......,T---TTTTTTTTTTTT--TTTTTTTTTTTTTT..,,,,,,TTTTTTTTT",
+    "TTTTTTT,,,,,,TTTTTTTTTTT.........TTTTTTTTTTTT,,,---TTTTTTTTTTTTT--.....T......,T---TTTTTTTTTTTT--TTTTTTTTTTTTTT..,,,,,,TTTTTTTTT",
     "TTTTTTT,,,,,,TTTT------T.........TTTTTT...*..,..---T--------------.FF...*..FF..T-----------------TTTTTTTTTTTTTT..,,,,,.TTTTTTTTT",
-    "TTTTTTT.,,,,TTTTTTTTT-###############TFF---.....------------------....---......-!--------------------------TTTT.,,,,*,.TTTTTTTTT",
-    "TTTTTTT.,,,,,TTTT.....**#T#########***..........-----------------------------------------------------------TTTT.,,,,,,.TTTTTTTTT",
-    "TTTTTTT.,,,,,TTTT.....**###########**....T......---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,T,,,TTTTTTTTTT",
+    "TTTTTTT.,,,,TTTTTTTTT-###############TFF---.....------------------....---......-!--------------------------TTTT.,,,,,,.TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....**###########***..........-----------------------------------------------------------TTTT.,,,,,,.TTTTTTTTT",
+    "TTTTTTT.,,,,,TTTT.....**###########**....T......---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,TTTTTTTTTT",
     "TTTTTTT.,,,,,TTTT.....######....#####.T.........---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
     "TTTTTTT.,,,,,TTTT.....######....#####...........!--TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
     "TTTTTTTT-o-TTTTTT---------------------------....---TTTTTTTTTTTTT--TTTTTTTTTTTTTT---TTTTTTTTTTTT--TTTTTTTTTTTTTT.,,,,,,,TTTTTTTTT",
@@ -41,10 +41,10 @@
     "TTTTTTTTT---TTTTTTTTTT.....----TTTTTTTTTT-----TT-------------------------------------------------------------TT.......TTTTTTTTTT",
     "TTTTTTTTT---TTTTTTTTTT..*..----TTTTTTTTTT-----TT-------------------------------------------------------------TT.,,,,..TTTTTTTTTT",
     "TTTTTTT,,,,,.TTTTTTTTT.....----TTTTTTTTTT-----TT------------------T------------------------------TTTTTTTTTT--TT.,,,,,.TTTTTTTTTT",
-    "TTTTTTT,,,,,.T.............--............--.............--................---................--............--.T,T,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.T.............--............--.............--................---................--............--.T,.,,,,.TTTTTTTTTT",
     "TTTTTTTT,,,,.T.............--T...........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
-    "TTTTTTT,,,,,.TF............--..F.........--.............--................F-.................-F............--.T,,,,,*.TTTTTTTTTT",
-    "TTTTTTT,,,,,*TF............--..F.........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.TF............--..F.........--.............--................F-.................-F............--.T,,,,,,.TTTTTTTTTT",
+    "TTTTTTT,,,,,.TF............--..F.........--.............--................--.................--............--.T,,,,,,.TTTTTTTTTT",
     "TTTTTTT,,,,,.T.............--............--.............--................--.................--............--.TTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TT##############################################################################################-#TTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TT======##=========##==========##==========##=##############====##=========##==========##=========-------TTTTTTTTTTT",
@@ -57,12 +57,12 @@
     "TTTTTTT---TTTT.==....--..........==.................--...................==...........--..........--.....--...TT.....,,.TTTTTTTT",
     "TTTTTT......TT.==....--..........==.................--...................==...........--..........--.....--...TT..,,,,,,TTTTTTTT",
     "TTTTTT.,,,..TT.==....--..........==.................--...................==...........--..........--.....--...TT.,,,,,,,TTTTTTTT",
-    "TTTTTT.,,,*.TT-==---------------------------------------------------------------------------------------------TT.,,T,,,,TTTTTTTT",
+    "TTTTTT.,,,-.TT-==---------------------------------------------------------------------------------------------TT.,,,,,,,TTTTTTTT",
     "TTTTTT,,,,,,TT-==---------------------------------------------------------------------------------------------TT.,,,,,,,TTTTTTTT",
     "TTTTTT,,,,,,TT-==--------F*F-#---==----------F*---------*F----*F-#--*F---==-----*F-#------*F---#----*F--------TT.,,,,,,TTTTTTTTT",
     "TTTTTT,,,,,TTT-==------------#---==----^^--^^---------------------#------==---------.-----------#-------------TT,,,,,,,,TTTTTTTT",
     "TTTTTT,,,,,,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT,,,,,,,,TTTTTTTT",
-    "TTTTTT.,,,.,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT.,,,,*,,TTTTTTTT",
+    "TTTTTT.,,,.,T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT.,,,,,,,TTTTTTTT",
     "TTTTTT.,,,,.T~~BB~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~TT..,,,,,,TTTTTTTT",
     "TTTTTTT---TTTT--------------##-----F---^^--^^-----------------------#*-----------*-----------#----------------TT---TTTTTTTTTTTTT",
     "TTTTTTT---TTTT------------------------------------------------------------------------------------------------TT---TTTTTTTTTTTTT",
@@ -73,56 +73,56 @@
     "TTTTTTTTT---TTTTT...............T==TTTTTTTTTTF######....*...T.......TTTTT==-------------.......*........T--TTTT........TTTTTTTTT",
     "TTTTTTTTT---TTTTT...............T==TTTTTTTTTT#######..........######TTTTT==-------------.........T.....TT--TTTT...,,,,,TTTTTTTTT",
     "TTTTTTT......TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTT#------..........######TTTTT==TTTTTTTTTTTTT..............*.T--TTTT.,,,,,,,TTTTTTTTT",
-    "TTTTTTT...,,.TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------..........#-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,*,TTTTTTTTT",
-    "TTTTTTT.,,,*,TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,,,TTTTTTTTT",
-    "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T.T,,,,,,TTTTTTTTT",
+    "TTTTTTT...,,.TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------..........#-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,.,TTTTTTTTT",
+    "TTTTTTT.,,,-,TTTTTTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------........T--TTTT,,,,,,,,TTTTTTTTT",
+    "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T.-,,,,,,TTTTTTTTT",
     "TTTTTTTT,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTT------TTTTTTTTTTT-----TTTTT==TTTTTTTTTTTTT--------TTTTTTTTT-----T..,,,,,,TTTTTTTTT",
     "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT----------------------------------------------------TTTTTTTTT-----T....,,,.TTTTTTTTT",
-    "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT-----------------------------------------*!----#----TTTTTFTTT-----T........TTTTTTTTT",
+    "TTTTTTT,,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTT-----------------------------------------.!----#----TTTTTFTTT-----T........TTTTTTTTT",
     "TTTTTTT.,,,,,TT==TTTTTTTTTTTTTTTT==TTTTTTTTTTTTTTTTTTT--TTTTTTTTTTTTTTTTT==TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT--TTTT---TTTTTTTTTTT",
     "TTTTTTTTT---TT.==################==T.......,,,........--........,,,......==TTTTTTTTT#######################T--TTTT---TTTTTTTTTTT",
-    "TTTTTTTTT---TTT==################==T.....,,,,,,.......--......,,,,,,.....==*TTTTTTTT#######################T--#TTT---TTTTTTTTTTT",
-    "TTTTTTT-----TTT==################==T....,*,,,,,,......--....,*,,TT,,,....==........T#######################T--TTTT---TTTTTTTTTTT",
+    "TTTTTTTTT---TTT==################==T.....,,,,,,.......--......,,,,,,.....===TTTTTTTT#######################T--#TTT---TTTTTTTTTTT",
+    "TTTTTTT-----TTT==################==T....,.,,,,,,......--....,.,,TT,,,....==........T#######################T--TTTT---TTTTTTTTTTT",
     "TTTTTTT----TTTT==################=----,,,,,,,,,,......-----,^,,,,,,,,,...==........T#######################T--TT-----TTTTTTTTTTT",
-    "TTTTTTT----TTTT==################=----,,,,,,,,,,..kT..-----,,,!,,,,,.,T..==........T#######################T--TT---TTTTTTTTTTTTT",
+    "TTTTTTT----TTTT==################=----,,,,,,,,,,..k...-----,,,!,,,,,.,...==........T#######################T--TT---TTTTTTTTTTTTT",
     "TTTTTTTF---TTTT==################==T....,,,,,,,,......--....,,,,,,,,,....==........T#######################T--TT---TTFTTTTTTTTTT",
-    "TTTTTTT----TTT*==################==T....^^^^s^^^^.....--.......,,,,,.....==........T#######################T--TT---TTTTTTTTTTTTT",
+    "TTTTTTT----TTT.==################==T....^^^^s^^^^.....--.......,,,,,.....==........T#######################T--TT---TTTTTTTTTTTTT",
     "TTTTTT...,,..TT==################==T....^^^^s^^^^.....--......vvvvvv.....==........T#######################T--T...,,,TTTTTTTTTTT",
-    "TTTTTT.,,,,,.TT==################==T................F.--.....,,,,......T.==---------#######################T--*...,,,TTTTTTTTTTT",
-    "TTTTTT.,,,,,,TT==################==T....,,,,,,,,,,,...--...T,,,,,,,,,....==---------#######################T--T..,,r,TTTTTTTTTTT",
-    "TTTTTT,,,,,,,TT==################==T..T,,,,,,,,,,,,,----...,,,,,,,,,,,,----..,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
-    "TTTTTT,,,,,,TTT==################==*...,,.,,T,,,,*,,----...,,,,,,T,,,*,----.^,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
-    "TTTTTT.,,,,,,TF==################==T...,,,,,,,,,,,,,..--...,,,,,,,,,,T,..==.,,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
-    "TTTTTT..,,,,.TT==################==T...,T,,,,,,,,,,,..--...,,,,,,,,,,,.T.==..,,,,,.T#######################T--T.,,.,,TTTTTTTTTTT",
-    "TTTTTT..,,*,.TT==----#------#-----=T....,,,,,,,,,,T...--....,,,,,,,,.....==..,,,,..T--#----.-----#-----#---T--F.,,,,,TTTTTTTTTTT",
-    "TTTTTT....,..TT==-------------.---=T.....,,,,.........--.....,,,,,.......==TTTTTTTTT-----.-----#-----*-----T--T..,,,*TTTTTTTTTTT",
-    "TTTTTTT----TTTT==TTTTTT--TTTTTTTT==T..................--......,,.........==TTTTTTTTTTTTTTT*T---TTTTTT#TTTTTT--T..,,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,.TT==################==T................F.--.....,,,,......*.==---------#######################T---...,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,,TT==################==T....,,,,,,,,,,,...--....,,,,,,,,,....==---------#######################T--T..,,r,TTTTTTTTTTT",
+    "TTTTTT,,,,,,,TT==################==T...,,,,,,,,,,,,,----...,,,,,,,,,,,,----..,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT,,,,,,TTT==################==#...,,.,,,,,,,.,,----...,,,,,,,,,,,,----.^,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT.,,,,,,TF==################==T...,,,,,,,,,,,,,..--...,,,,,,,,,,,,..==.,,,,,,.T#######################T--T.,,,,,TTTTTTTTTTT",
+    "TTTTTT..,,,,.TT==################==T...,.,,,,,,,,,,,..--...,,,,,,,,,,,...==..,,,,,.T#######################T--T.,,.,,TTTTTTTTTTT",
+    "TTTTTT..,,-,.TT==----#------#-----=T....,,,,,,,,,,....--....,,,,,,,,.....==..,,,,..T--#----.-----#-----#---T--F.,,,,,TTTTTTTTTTT",
+    "TTTTTT....,..TT==-------------.---=T.....,,,,.........--.....,,,,,.......==TTTTTTTTT-----.-----#-----#-----T--T..,,,,TTTTTTTTTTT",
+    "TTTTTTT----TTTT==TTTTTT--TTTTTTTT==T..................--......,,.........==TTTTTTTTTTTTTTT##---TTTTTT#TTTTTT--T..,,,,TTTTTTTTTTT",
     "TTTTTTT----TTTT==TTTTTT--TTTTTTTT==TTTTTTTTTTTTT.TTTTT--TTTTTTTTTTTTTTTTT==TTTTT---------------TTTTTTTTTTTTT--TT---TTTTTTTTTTTTT",
-    "TTTTTTT-------T-----------------------------------------TTTTT*T.........T==T#TTT-----------------------------------TTTTTTTTTTTTT",
+    "TTTTTTT-------T-----------------------------------------TTTTT-T.........T==T#TTT-----------------------------------TTTTTTTTTTTTT",
     "TTTTTTT-------T---------........------........-----------------.........---------TTTTT........---------------------TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT==TTTTTTT........T--TTT........TTTTTTTT---------.........---------TTTTT...*....TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT==TTTTTTT........T--TTT........TTTTTTTT---------.........---------TTTTT...-....TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT=======-T........T--TTT....,,,,TTTTTTTTTTTTTT--T.........T========TTTTT......#.TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT----===TT........T--TTT...,,,,,TTTTTTTTTTTTTT--T.........T========TTTTT.F......TTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT----==TTT*.......T--TTT...,,,,*TT-----------------------.------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTT----==TTT,.......T--TTT...,,,,.TT-----------------------.------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTT----==---.-----------------------------------------------------===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT---TTTTTTTTTTTTT",
-    "TTTTTTTTTTTTTTT----==-----------------------------------##--*-------------TTTT===TTT.TTTTTT*TTTTTTT.TTTTTTTTTFTT--.TTTTT*TTTTTTT",
-    "TTTTTTTTTTTTTTTTTT:==:--#--*-------F#--*----#-#-BB--*-~~~~~~~---#--*----#-:TTT=========#========#=========#==========#==========",
+    "TTTTTTTTTTTTTTT----==-----------------------------------##--.-------------TTTT===TTT.TTTTTT.TTTTTTT.TTTTTTTTTFTT--.TTTTT.TTTTTTT",
+    "TTTTTTTTTTTTTTTTTT:==:--#--.-------F#--.----#-#-BB--.-~~~~~~~---#--.----#-:TTT=========#========#=========#==========-==========",
     "TTTTTTTTTTTTTTTTTT:==:::::::~~~~~~::::~~~~::::::BB::::~~~~~~~::::~~~~~~~:::TTT=========#========#=========#==========#==========",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT###======#========#=========#==========#==========",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT=========#========#=========#==========#==========",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT===TTTT,TTTTT--TFTTTTTTT*TTTTT---.TTTTTTT.TTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT===TTTT,TTTTT--,FTTTTTTT.TTTTT---.TTTTTTT.TTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--.,,,,.TTTT.,,,,---.....TTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT.===T,,,,TTTTT--,,,,,,TTTT,,,,,---.TTTTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT*===T,,,,TTTTT--,,vvT,TTTT,,.,,---,TTTTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--,,,,,,TTTT,,*,,---,TTTTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT###T.,T,,,.FF-------.....,,,,,---.TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTT====T,,,,TTTTT--,,vv,,TTTT,,.,,---,TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~TTTTT===T,,,,TTTTT--,,,,,,TTTT,,,,,---,TTTTTTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~TTT###T.,,,,,.FF-------.....,,,,,---.TTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~####~~~~~~~~~~~~~~~~~~~~~~~~TTT===------------^^S^^-------------.TTTTTTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~####~~~~~~~~~~~~~~~~~~~~~~~~TTT===------------^^S^^-------------.TTTTTTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===T...*.....--........T.TTTTT---.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===T.........--........T.TTTTT---.....TTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T.TTTTTT..--.........kTTTTT---.....TTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T.TTTTTT..--...*......TTTTT---*....TTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT.###T.TTTTTT----------------------...T.TTTTTTTTTTTT",
-    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT*===T,,,,,,,----------------------.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T.TTTTTT..--..........TTTTT---,....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT.###T.TTTTTT----------------------.....TTTTTTTTTTTT",
+    "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT====T,,,,,,,----------------------.....TTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTTT===T,,,,,,,,,,.TTTTTT,,,,,,,,,,,......TTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===T,T,,,,,,,,.TTTTTT,,,,,------......TTTTTTTTTTTT",
     "TTT~~~~~~~~~~~~~~~~BB~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~TTT===TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -1129,7 +1129,7 @@
       "kind": "standin_bench",
       "at": [
         56,
-        102
+        101
       ]
     },
     {
@@ -1584,17 +1584,87 @@
       "solid": true
     },
     {
-      "kind": "em_bollard",
+      "kind": "em_iron_fence_h",
       "at": [
-        55,
-        81
+        24,
+        29
       ]
     },
     {
-      "kind": "standin_bench",
+      "kind": "em_iron_fence_h",
       "at": [
-        54,
-        91
+        25,
+        29
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        32,
+        29
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        33,
+        29
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        34,
+        29
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        44,
+        49
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        45,
+        49
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        83,
+        49
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        84,
+        49
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        95,
+        49
+      ]
+    },
+    {
+      "kind": "em_iron_fence_h",
+      "at": [
+        96,
+        49
+      ]
+    },
+    {
+      "kind": "em_streetlamp",
+      "at": [
+        22,
+        101
       ]
     }
   ],
