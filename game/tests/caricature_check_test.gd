@@ -508,11 +508,43 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected georgetown >13 signs to fail T6, got %s" % str(res_gt_sign))
 		return false
 
-	var gt_extra_item := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, false, 8)
-	var res_gt_item := CaricatureCheck.check_town(gt_extra_item["compiled"], dc_gt_area)
-	if bool(res_gt_item.get("ok", true)) or not (res_gt_item["failed_rules"] as Array).has("T6") or int(res_gt_item.get("town_items", 0)) <= 8:
+	# Decision 77 (F76): neighbourhood town item cap is 9 (9 pass, 10 fail; camp stays 8)
+	var gt_nine_items := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, false, 8)
+	var res_gt_nine := CaricatureCheck.check_town(gt_nine_items["compiled"], dc_gt_area)
+	if (res_gt_nine["failed_rules"] as Array).has("T6") or int(res_gt_nine.get("town_items", 0)) != 9:
 		_cleanup()
-		push_error("caricature_check_test: expected georgetown +1 item to fail T6 (>8), got %s" % str(res_gt_item))
+		push_error("caricature_check_test: expected georgetown 9 town items to pass T6, got %s" % str(res_gt_nine))
+		return false
+
+	var gt_ten_items := _copy_with_extra_town_thing(dc_gt_area, dc_gt_map, false, 9)
+	var res_gt_ten := CaricatureCheck.check_town(gt_ten_items["compiled"], dc_gt_area)
+	if bool(res_gt_ten.get("ok", true)) or not (res_gt_ten["failed_rules"] as Array).has("T6") or int(res_gt_ten.get("town_items", 0)) != 10:
+		_cleanup()
+		push_error("caricature_check_test: expected georgetown 10 town items to fail T6 (>9), got %s" % str(res_gt_ten))
+		return false
+
+	# Decision 77 (F76): neighbourhood street_pokemon cap is 13 (13 pass, 14 fail)
+	var gt_pkm_13 := dc_gt_map.duplicate(true)
+	var sample_gt_pkm: Dictionary = ((gt_pkm_13.get("street_pokemon", []) as Array)[0] as Dictionary).duplicate(true)
+	var sample_pkm_13 := sample_gt_pkm.duplicate(true)
+	sample_pkm_13["at"] = [52, 43]
+	(gt_pkm_13["street_pokemon"] as Array).append(sample_pkm_13)
+	var c_gt_pkm_13 := CaricatureMap.compile(dc_gt_area, gt_pkm_13)
+	var res_gt_pkm_13 := CaricatureCheck.check_town(c_gt_pkm_13, dc_gt_area)
+	if (res_gt_pkm_13["failed_rules"] as Array).has("T6") or int(res_gt_pkm_13.get("street_pokemon", 0)) != 13:
+		_cleanup()
+		push_error("caricature_check_test: expected georgetown 13 street_pokemon to pass T6, got %s" % str(res_gt_pkm_13))
+		return false
+
+	var gt_pkm_14 := gt_pkm_13.duplicate(true)
+	var sample_pkm_14 := sample_gt_pkm.duplicate(true)
+	sample_pkm_14["at"] = [53, 43]
+	(gt_pkm_14["street_pokemon"] as Array).append(sample_pkm_14)
+	var c_gt_pkm_14 := CaricatureMap.compile(dc_gt_area, gt_pkm_14)
+	var res_gt_pkm_14 := CaricatureCheck.check_town(c_gt_pkm_14, dc_gt_area)
+	if bool(res_gt_pkm_14.get("ok", true)) or not (res_gt_pkm_14["failed_rules"] as Array).has("T6") or int(res_gt_pkm_14.get("street_pokemon", 0)) != 14:
+		_cleanup()
+		push_error("caricature_check_test: expected georgetown 14 street_pokemon to fail T6 (>13), got %s" % str(res_gt_pkm_14))
 		return false
 
 	# Non-camp / non-Georgetown neighbourhood with a town part runs check_town AND enforces its own zone pool
@@ -951,6 +983,50 @@ func run_test() -> bool:
 	if (m_p13f_4["failed_rules"] as Array).has("P13f") or int(m_p13f_4.get("cliff_runs_1", -1)) != 0 or int(m_p13f_4.get("cliff_runs_2_3", -1)) != 0 or int(m_p13f_4.get("tree_clumps_1_3", 0)) != 1:
 		_cleanup()
 		push_error("caricature_check_test: expected 4-tile cliff to pass P13f and 2-tile tree clump to count as 1, got %s" % str(m_p13f_4))
+		return false
+
+	# Decision 77 P14 falsifiers: person on sign fails P14; street_pokemon on lamp top tile fails P14;
+	# visible item ball on bench fails P14; hidden item under bench passes P14.
+	var p14_base := rg_map.duplicate(true)
+	p14_base["people"] = [{"id": "p14_npc", "name": "Scout", "at": [18, 18], "facing": "S", "sprite": "hiker", "role": "talk", "lines": ["Hello."]}]
+	p14_base["signs"] = [{"at": [20, 18], "text": "Signpost."}]
+	p14_base["street_pokemon"] = [{"dex": 506, "at": [22, 18], "zone": "residential"}]
+	p14_base["fixtures"] = [
+		{"kind": "em_streetlamp", "at": [24, 18]},
+		{"kind": "standin_bench", "at": [26, 18]},
+	]
+	p14_base["hidden_items"] = [{"at": [26, 18], "item": "Potion", "note": "Under the bench."}]
+	var c_p14_ok := CaricatureMap.compile(rg_area, p14_base)
+	var m_p14_ok := CaricatureCheck.measure(c_p14_ok, rg_area)
+	if (m_p14_ok["failed_rules"] as Array).has("P14") or int(m_p14_ok.get("tile_overlaps", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected clean P14 setup (with hidden item under bench) to pass P14, got %s" % str(m_p14_ok))
+		return false
+
+	var p14_person_sign := p14_base.duplicate(true)
+	p14_person_sign["people"][0]["at"] = [20, 18]
+	var m_p14_ps := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_person_sign), rg_area)
+	if not (m_p14_ps["failed_rules"] as Array).has("P14") or int(m_p14_ps.get("tile_overlaps", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected person on sign to fail P14, got %s" % str(m_p14_ps))
+		return false
+
+	var p14_pkm_lamp := p14_base.duplicate(true)
+	p14_pkm_lamp["street_pokemon"][0]["at"] = [24, 18]
+	var m_p14_pl := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_pkm_lamp), rg_area)
+	if not (m_p14_pl["failed_rules"] as Array).has("P14") or int(m_p14_pl.get("tile_overlaps", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected street_pokemon on lamp top tile to fail P14, got %s" % str(m_p14_pl))
+		return false
+
+	var p14_ball_bench := p14_base.duplicate(true)
+	var p14_bb_rows: Array = (p14_ball_bench["rows"] as Array).duplicate()
+	p14_bb_rows[18] = str(p14_bb_rows[18]).substr(0, 26) + "!" + str(p14_bb_rows[18]).substr(27)
+	p14_ball_bench["rows"] = p14_bb_rows
+	var m_p14_bb := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_ball_bench), rg_area)
+	if not (m_p14_bb["failed_rules"] as Array).has("P14") or int(m_p14_bb.get("tile_overlaps", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected visible item ball on bench to fail P14, got %s" % str(m_p14_bb))
 		return false
 
 	_cleanup()

@@ -10,10 +10,10 @@ const MapConstants := preload("res://world/map_constants.gd")
 
 const PINNED_SHA256: Dictionary = {
 	"camp:washington-dc": "3018af791784d1c0232e2c4ddbd6cbccb8c151ebd6d99dba1f71727c31934a2c",
-	"hood:washington-dc:national-mall": "088613d972c728ae18cf7add08cf30f9cd059362c7f8a20e547ad09b16f25fc4",
-	"hood:washington-dc:tidal-basin": "420129da4087afcdd27dea030e00dd3c08158cffc8dd408e2dc293eac9632894",
+	"hood:washington-dc:national-mall": "23edf7b6bd3e84504f911d0de501e534fba2c93b69f3e371887d4f282a7db196",
+	"hood:washington-dc:tidal-basin": "71354ff88aa63c3bd1ad89678e8bd4c339604111dccb453bef0c3db552a2da9f",
 	"hood:washington-dc:dupont-circle": "6c33d0d604377481b76c973f8bb9354112a0738c3864a4ee4561110f80c29a65",
-	"hood:washington-dc:capitol-hill": "5d419c41cc5ba37c56e1a664a49cb28b566e8c3d92cfffdef61366873bcbf701",
+	"hood:washington-dc:capitol-hill": "21c67f4a081af6acc66ec94b08e7b189ae13b657fc41113e3104e9b389901c49",
 	"hood:washington-dc:union-station": "ece42d932127d304f72b9f88500fe7111b935dbee13ed6c1d48c886b8cb9b0f3",
 	"hood:washington-dc:georgetown": "fb94536091300873b88e74efdd60d4c596e6f129d5007512e88af9ca73014dd8",
 	"hood:washington-dc:woodley-park": "a8dce8feb3a3476ad4d87bfdaf25a0d1e105b05a94ceaad3e415b3df5c0414f6",

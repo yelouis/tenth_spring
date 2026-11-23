@@ -1164,6 +1164,48 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		if use_route_rules and (cliff_runs_1 > 0 or cliff_runs_2_3 > cliff_2_3_max):
 			failed_rules.append("P13f")
 
+	# P14 (Decision 77): On every map, no two of a person, street Pokemon, sign, or visible item ball
+	# may share a tile, and none of them may stand on any tile covered by a fixture (hidden items exempt).
+	var fixture_cover := PackedByteArray()
+	fixture_cover.resize(total)
+	fixture_cover.fill(0)
+	for fxv_p14 in fixtures_arr:
+		var fx_p14: Dictionary = fxv_p14
+		var fx0_p14: int = int(fx_p14.get("x", 0))
+		var fy0_p14: int = int(fx_p14.get("y", 0))
+		var fw_p14: int = int(fx_p14.get("w", 1))
+		var fh_p14: int = int(fx_p14.get("h", 1))
+		for yy_p14 in range(maxi(0, fy0_p14), mini(h, fy0_p14 + fh_p14)):
+			for xx_p14 in range(maxi(0, fx0_p14), mini(w, fx0_p14 + fw_p14)):
+				fixture_cover[yy_p14 * w + xx_p14] = 1
+	var visible_occ: Dictionary = {}
+	for pv_p14 in (compiled.get("people", []) as Array):
+		var pd_p14: Dictionary = pv_p14
+		var pt_p14 := Vector2i(int(pd_p14["x"]), int(pd_p14["y"]))
+		visible_occ[pt_p14] = int(visible_occ.get(pt_p14, 0)) + 1
+	for kv_p14 in (compiled.get("street_pokemon", []) as Array):
+		var kd_p14: Dictionary = kv_p14
+		var pt_p14 := Vector2i(int(kd_p14["x"]), int(kd_p14["y"]))
+		visible_occ[pt_p14] = int(visible_occ.get(pt_p14, 0)) + 1
+	for sv_p14 in signs_arr:
+		var sd_p14: Dictionary = sv_p14
+		var pt_p14 := Vector2i(int(sd_p14["x"]), int(sd_p14["y"]))
+		visible_occ[pt_p14] = int(visible_occ.get(pt_p14, 0)) + 1
+	for y_p14 in range(h):
+		for x_p14 in range(w):
+			if cls_buf[y_p14 * w + x_p14] == TileSynth2.TILE_ITEM_BALL:
+				var pt_p14 := Vector2i(x_p14, y_p14)
+				visible_occ[pt_p14] = int(visible_occ.get(pt_p14, 0)) + 1
+	var tile_overlaps := 0
+	for pt_v in visible_occ.keys():
+		var pt_o: Vector2i = pt_v
+		var cnt_o: int = int(visible_occ[pt_v])
+		var on_fx: bool = (pt_o.x >= 0 and pt_o.x < w and pt_o.y >= 0 and pt_o.y < h and fixture_cover[pt_o.y * w + pt_o.x] == 1)
+		if cnt_o > 1 or on_fx:
+			tile_overlaps += 1
+	if tile_overlaps > 0:
+		failed_rules.append("P14")
+
 	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
 	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
 		failed_rules.append("WATER")
@@ -1208,6 +1250,7 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"cliff_runs_2_3": cliff_runs_2_3,
 		"cliff_2_3_max": cliff_2_3_max,
 		"tree_clumps_1_3": tree_clumps_1_3,
+		"tile_overlaps": tile_overlaps,
 		"rendered_water": rendered_water,
 		"water_baseline": water_baseline,
 	}
@@ -1724,7 +1767,9 @@ const MAX_OPEN_GROUND_TOWN: float = 0.05
 const MAX_TOWN_SIGNS_CAMP: int = 19
 const MAX_TOWN_ITEMS_CAMP: int = 8
 const MAX_TOWN_SIGNS_HOOD: int = 13
-const MAX_TOWN_ITEMS_HOOD: int = 8
+const MAX_TOWN_ITEMS_HOOD: int = 9
+const MIN_STREET_POKEMON_HOOD: int = 6
+const MAX_STREET_POKEMON_HOOD: int = 13
 
 static var _spawn_pool_cache: Dictionary = {}
 
@@ -2212,7 +2257,7 @@ static func check_town(compiled: Dictionary, area: Dictionary, town_rect_overrid
 			t6_ok = false
 		if total_survivors < 3 or total_survivors > 6:
 			t6_ok = false
-		if street_pkm.size() < 6 or street_pkm.size() > 12:
+		if street_pkm.size() < MIN_STREET_POKEMON_HOOD or street_pkm.size() > MAX_STREET_POKEMON_HOOD:
 			t6_ok = false
 		if route_items_per_5_screens < 1.0:
 			t6_ok = false
