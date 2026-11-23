@@ -1143,6 +1143,18 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
+	# Decision 77: S2 ground layer must ONLY be built for cells holding a landmark or prop stamp.
+	var ma_area_s2: Dictionary = Neighbourhoods.area("route:washington-dc:massachusetts-avenue#1")
+	if map_view._caricature_compiled_by_area.has("route:washington-dc:massachusetts-avenue#1"):
+		var ma_comp_s2: Dictionary = map_view._caricature_compiled_by_area["route:washington-dc:massachusetts-avenue#1"]
+		var ma_orig_s2: Vector2i = ma_comp_s2["origin"]
+		var ma_res_s2: Dictionary = CaricatureMap.cell_result(ma_comp_s2, ma_orig_s2, ma_area_s2)
+		var ma_under_s2: PackedByteArray = ma_res_s2.get("under_tiles", PackedByteArray())
+		if not ma_under_s2.is_empty():
+			push_error("(S2) Non-landmark cell on massachusetts-avenue#1 built unexpected under_tiles (%d bytes)" % ma_under_s2.size())
+			_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+			return false
+
 	_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 	print("PASS: map_view_test (Renderer v2, layers, shaders, Decision 72 drifting fog & route mist, overview 1/16, LRU 1024, preview-cleared, F43 North-Up, landmark atlas & tooltips, steady timeout, stamp layers verified)")
 	return true

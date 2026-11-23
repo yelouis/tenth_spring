@@ -1400,39 +1400,9 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road
 	)
 
-	# S2 (Decision 76): Synthesize underlying map ground tiles so landmark/prop cells render over
-	# the map file's own ground (e.g. plaza under the Capitol) rather than plain grass.
-	var under_output := PackedByteArray()
-	var g_cls_src: PackedByteArray = compiled.get("ground_class", PackedByteArray())
-	var g_var_src: PackedByteArray = compiled.get("ground_variant", PackedByteArray())
-	if g_cls_src.size() == w * h and g_var_src.size() == w * h:
-		var u_grid_cls := PackedByteArray()
-		u_grid_cls.resize(total_work)
-		u_grid_cls.fill(TileSynth2.TILE_VOID)
-		var u_grid_var := PackedByteArray()
-		u_grid_var.resize(total_work)
-		u_grid_var.fill(0)
-		var u_grid_mask := PackedByteArray()
-		u_grid_mask.resize(total_work)
-		u_grid_mask.fill(0)
-		for r in range(TileSynth2.WORK_SIZE):
-			var my: int = base_y + (r - 4)
-			if my < 0 or my >= h:
-				continue
-			for c in range(TileSynth2.WORK_SIZE):
-				var mx: int = base_x + (c - 4)
-				if mx < 0 or mx >= w:
-					continue
-				var src_idx: int = my * w + mx
-				var dst_idx: int = r * TileSynth2.WORK_SIZE + c
-				u_grid_cls[dst_idx] = g_cls_src[src_idx]
-				u_grid_var[dst_idx] = g_var_src[src_idx]
-		under_output = TileSynth2.finalize_cell_output(
-			cell.x, cell.y, u_grid_cls, u_grid_var, u_grid_mask, world_seed, road_v1_thresh, preserve_road
-		)
-
 	# Gather every compiled stamp whose box touches this cell (§3.8 step 4, tile_synth2.gd:1664)
 	var cell_stamps: Array[Dictionary] = []
+	var has_landmark_or_prop := false
 	var all_stamps: Array = compiled.get("stamps", [])
 	var cell_c0: int = cell.x * 32
 	var cell_r0: int = (-cell.y - 1) * 32
@@ -1443,13 +1413,50 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 		var sw: int = int(s["w"])
 		var sh: int = int(s["h"])
 		if agx + sw > cell_c0 and agx < cell_c0 + 32 and agy + sh > cell_r0 and agy < cell_r0 + 32:
+			var sid_c: int = int(s["stamp_id"])
 			cell_stamps.append({
-				"stamp_id": int(s["stamp_id"]),
+				"stamp_id": sid_c,
 				"anchor_gx": agx,
 				"anchor_gy": agy,
 				"w": sw,
 				"h": sh,
 			})
+			if not has_landmark_or_prop:
+				var skind_c := str(TileSynth2.get_stamp_def(sid_c).get("kind", ""))
+				if skind_c == "landmark" or skind_c == "prop":
+					has_landmark_or_prop = true
+
+	# S2 (Decision 76 & Decision 77): Synthesize underlying map ground tiles ONLY for cells that
+	# hold a landmark or prop stamp so other cells pay zero second-pass cost.
+	var under_output := PackedByteArray()
+	if has_landmark_or_prop:
+		var g_cls_src: PackedByteArray = compiled.get("ground_class", PackedByteArray())
+		var g_var_src: PackedByteArray = compiled.get("ground_variant", PackedByteArray())
+		if g_cls_src.size() == w * h and g_var_src.size() == w * h:
+			var u_grid_cls := PackedByteArray()
+			u_grid_cls.resize(total_work)
+			u_grid_cls.fill(TileSynth2.TILE_VOID)
+			var u_grid_var := PackedByteArray()
+			u_grid_var.resize(total_work)
+			u_grid_var.fill(0)
+			var u_grid_mask := PackedByteArray()
+			u_grid_mask.resize(total_work)
+			u_grid_mask.fill(0)
+			for r in range(TileSynth2.WORK_SIZE):
+				var my: int = base_y + (r - 4)
+				if my < 0 or my >= h:
+					continue
+				for c in range(TileSynth2.WORK_SIZE):
+					var mx: int = base_x + (c - 4)
+					if mx < 0 or mx >= w:
+						continue
+					var src_idx: int = my * w + mx
+					var dst_idx: int = r * TileSynth2.WORK_SIZE + c
+					u_grid_cls[dst_idx] = g_cls_src[src_idx]
+					u_grid_var[dst_idx] = g_var_src[src_idx]
+			under_output = TileSynth2.finalize_cell_output(
+				cell.x, cell.y, u_grid_cls, u_grid_var, u_grid_mask, world_seed, road_v1_thresh, preserve_road
+			)
 
 	cell_stamps.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		var ay: int = int(a["anchor_gy"]) + int(a["h"])

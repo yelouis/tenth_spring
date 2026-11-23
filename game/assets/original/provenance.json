@@ -1181,9 +1181,9 @@
     "missed": [
       "fill: 0.321 (needs 0.45)",
       "door: 0.188 (needs 0.30)",
-      "style_distance: 0.539 (needs <= 0.42); Step 2 R3 8/8 escalated, awaiting user verdict between v2_s808 and R3 v2_s1010"
+      "style_distance: 0.539 (needs <= 0.42)"
     ],
-    "approval": "2026-11-22 (Decision 76 Step 2/3 pause)"
+    "approval": "2026-11-22 (Decision 77 — human exception; Step 2 R3 8/8 kept in <W4b> as record)"
   },
   {
     "asset": "dc_castle",
