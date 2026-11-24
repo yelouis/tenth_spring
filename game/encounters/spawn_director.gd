@@ -9,6 +9,7 @@ const Grid := preload("res://world/grid.gd")
 const PlacesPack := preload("res://world/places_pack.gd")
 const CellClassifier := preload("res://world/cell_classifier.gd")
 const DistortionFields := preload("res://world/distortion_fields.gd")
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 
 const SPAWN_TABLES_PATH: String = "res://config/spawn_tables.json"
 const METERS_PER_MILE: float = 1609.344
@@ -54,6 +55,61 @@ static func compute_distance_miles(cell: Vector2i, starter_place_id: String = ""
 	var cell_ll: Vector2 = Grid.cell_center_latlon(cell)
 	var dist_m: float = Grid.ground_distance_m(cell_ll.x, cell_ll.y, float(wp.get("lat", 0.0)), float(wp.get("lon", 0.0)))
 	return dist_m / METERS_PER_MILE
+
+static func resolve_area_real_anchor(area_id: String) -> Dictionary:
+	if area_id.is_empty():
+		return {"ok": false}
+	var a: Dictionary = Neighbourhoods.area(area_id)
+	if not a.is_empty():
+		var anch_var: Variant = a.get("anchor", null)
+		if anch_var is Dictionary and not (anch_var as Dictionary).is_empty():
+			var anch: Dictionary = anch_var
+			return {"ok": true, "lat": float(anch.get("lat", 0.0)), "lon": float(anch.get("lon", 0.0))}
+		if str(a.get("kind", "")) == "route":
+			var rid := str(a.get("route_id", ""))
+			if not rid.is_empty():
+				return resolve_area_real_anchor(rid)
+	var bare_rid := area_id.split("#")[0] if area_id.contains("#") else area_id
+	var r: Dictionary = Neighbourhoods.route(bare_rid)
+	if not r.is_empty():
+		var ends_var: Variant = r.get("ends", [])
+		if ends_var is Array and (ends_var as Array).size() >= 2:
+			var e0: Dictionary = resolve_area_real_anchor(str((ends_var as Array)[0]))
+			var e1: Dictionary = resolve_area_real_anchor(str((ends_var as Array)[1]))
+			if bool(e0.get("ok", false)) and bool(e1.get("ok", false)):
+				return {
+					"ok": true,
+					"lat": (float(e0["lat"]) + float(e1["lat"])) * 0.5,
+					"lon": (float(e0["lon"]) + float(e1["lon"])) * 0.5,
+				}
+	return {"ok": false}
+
+static func compute_area_distance_miles(area_id: String, starter_place_id: String = "") -> float:
+	if starter_place_id.is_empty() or not PlacesPack.has_place(starter_place_id):
+		return 0.0
+	var wp: Dictionary = PlacesPack.waypost(starter_place_id)
+	if wp.is_empty():
+		return 0.0
+	var anch := resolve_area_real_anchor(area_id)
+	if not bool(anch.get("ok", false)):
+		return 0.0
+	var dist_m: float = Grid.ground_distance_m(
+		float(anch["lat"]),
+		float(anch["lon"]),
+		float(wp.get("lat", 0.0)),
+		float(wp.get("lon", 0.0))
+	)
+	return dist_m / METERS_PER_MILE
+
+static func compute_area_level_band(
+	area_id: String,
+	starter_place_id: String = "",
+	is_haunted_pool: bool = false,
+	time_band: String = "day",
+	haunt_stage: int = 0
+) -> Vector2i:
+	var d := compute_area_distance_miles(area_id, starter_place_id)
+	return compute_level_band(d, is_haunted_pool, time_band, haunt_stage)
 
 static func compute_level_band(
 	distance_miles: float,
@@ -127,6 +183,8 @@ static func roll_encounter(ctx: Dictionary, rng: RandomNumberGenerator = null) -
 	var distance_miles: float = 0.0
 	if ctx.has("distance_miles"):
 		distance_miles = float(ctx.get("distance_miles", 0.0))
+	elif ctx.has("area_id") and not str(ctx.get("area_id", "")).is_empty():
+		distance_miles = compute_area_distance_miles(str(ctx.get("area_id", "")), str(ctx.get("starter_place_id", "")))
 	elif ctx.has("cell"):
 		var cell: Vector2i = ctx["cell"]
 		var starter_pid: String = str(ctx.get("starter_place_id", ""))

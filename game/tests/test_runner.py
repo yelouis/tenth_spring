@@ -129,6 +129,7 @@ def main():
 	godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
 	EXPECTED = [
+		"area_level_band_test",
 		"caricature_check_test",
 		"caricature_dc_test",
 		"caricature_map_test",

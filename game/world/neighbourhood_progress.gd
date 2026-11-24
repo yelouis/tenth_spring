@@ -9,6 +9,7 @@ const Grid := preload("res://world/grid.gd")
 const CellClassifier := preload("res://world/cell_classifier.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const ProfilePaths := preload("res://scripts/profile_paths.gd")
+const WorldClock := preload("res://world/world_clock.gd")
 
 const METERS_PER_MILE: float = 1609.344
 
@@ -81,22 +82,78 @@ static func night_danger(area_dict: Dictionary) -> String:
 		return "medium"
 	return "low"
 
-static func trip_minutes(_place_id: String, from_area_id: String, to_area_id: String) -> int:
-	var a1: Dictionary = Neighbourhoods.area(from_area_id)
-	var a2: Dictionary = Neighbourhoods.area(to_area_id)
-	if a1.is_empty() or a2.is_empty():
+static func _real_anchor_latlon(area_id: String) -> Dictionary:
+	if area_id.is_empty():
+		return {"ok": false}
+	var a: Dictionary = Neighbourhoods.area(area_id)
+	if not a.is_empty():
+		var anch_var: Variant = a.get("anchor", null)
+		if anch_var is Dictionary and not (anch_var as Dictionary).is_empty():
+			var anch: Dictionary = anch_var
+			return {"ok": true, "lat": float(anch.get("lat", 0.0)), "lon": float(anch.get("lon", 0.0))}
+		if str(a.get("kind", "")) == "route":
+			var rid := str(a.get("route_id", ""))
+			if not rid.is_empty():
+				return _real_anchor_latlon(rid)
+	var bare_rid := area_id.split("#")[0] if area_id.contains("#") else area_id
+	var r: Dictionary = Neighbourhoods.route(bare_rid)
+	if not r.is_empty():
+		var ends_var: Variant = r.get("ends", [])
+		if ends_var is Array and (ends_var as Array).size() >= 2:
+			var e0 := _real_anchor_latlon(str((ends_var as Array)[0]))
+			var e1 := _real_anchor_latlon(str((ends_var as Array)[1]))
+			if bool(e0.get("ok", false)) and bool(e1.get("ok", false)):
+				return {
+					"ok": true,
+					"lat": (float(e0["lat"]) + float(e1["lat"])) * 0.5,
+					"lon": (float(e0["lon"]) + float(e1["lon"])) * 0.5,
+				}
+	return {"ok": false}
+
+static func trip_minutes(_place_id: String, from_area_id: String, to_area_id: String, has_bicycle: bool = false) -> int:
+	var anch1: Dictionary = _real_anchor_latlon(from_area_id)
+	var anch2: Dictionary = _real_anchor_latlon(to_area_id)
+	if not bool(anch1.get("ok", false)) or not bool(anch2.get("ok", false)):
 		return 1
-	var anch1: Dictionary = a1.get("anchor", {}) if a1.get("anchor") is Dictionary else {}
-	var anch2: Dictionary = a2.get("anchor", {}) if a2.get("anchor") is Dictionary else {}
 	var dist_m := Grid.ground_distance_m(
-		float(anch1.get("lat", 0.0)),
-		float(anch1.get("lon", 0.0)),
-		float(anch2.get("lat", 0.0)),
-		float(anch2.get("lon", 0.0))
+		float(anch1["lat"]),
+		float(anch1["lon"]),
+		float(anch2["lat"]),
+		float(anch2["lon"])
 	)
 	var miles := dist_m / METERS_PER_MILE
-	var game_minutes_per_mile := 60.0 / _walk_speed_mph()
-	return maxi(1, int(ceili(miles * game_minutes_per_mile)))
+	return WorldClock.estimate_trip_minutes(miles, has_bicycle)
+
+static func route_distance_miles(route_id: String) -> float:
+	var bare_rid := route_id.split("#")[0] if route_id.contains("#") else route_id
+	var r: Dictionary = Neighbourhoods.route(bare_rid)
+	if r.is_empty():
+		return 0.0
+	var ends_var: Variant = r.get("ends", [])
+	if not (ends_var is Array) or (ends_var as Array).size() < 2:
+		return 0.0
+	var e0 := _real_anchor_latlon(str((ends_var as Array)[0]))
+	var e1 := _real_anchor_latlon(str((ends_var as Array)[1]))
+	if not bool(e0.get("ok", false)) or not bool(e1.get("ok", false)):
+		return 0.0
+	var dist_m := Grid.ground_distance_m(
+		float(e0["lat"]),
+		float(e0["lon"]),
+		float(e1["lat"]),
+		float(e1["lon"])
+	)
+	return dist_m / METERS_PER_MILE
+
+static func route_walk_minutes(route_id: String, has_bicycle: bool = false) -> int:
+	return WorldClock.estimate_trip_minutes(route_distance_miles(route_id), has_bicycle)
+
+static func waypost_minutes_from_area(place_id: String, area_id: String, has_bicycle: bool = false) -> int:
+	var city_dict: Dictionary = Neighbourhoods.city(place_id)
+	var camp_var: Variant = city_dict.get("camp", {})
+	var camp_id := str((camp_var as Dictionary).get("id", "")) if camp_var is Dictionary else ""
+	if camp_id.is_empty() or area_id == camp_id:
+		return 0
+	return trip_minutes(place_id, area_id, camp_id, has_bicycle)
 
 static func _states_by_area(db, place_id: String) -> Dictionary:
 	var out: Dictionary = {}
