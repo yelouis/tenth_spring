@@ -11,7 +11,9 @@ func _ready() -> void:
 		"user://tenth_spring.db.tmp",
 		"user://sync_identity/pc.key",
 		"user://sync_identity/pc.crt",
-		"user://sync_identity/pc_id.txt"
+		"user://sync_identity/pc_id.txt",
+		"user://walk_dc/tenth_spring.db",
+		"user://walk_dc/tenth_spring.db.tmp"
 	]
 	var pre_states = {}
 	for p in protected_files:

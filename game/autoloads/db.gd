@@ -5,7 +5,7 @@ extends Node
 # Uses WAL journal mode, synchronous FULL, bound parameters on all queries,
 # and one-time legacy JSON import without runtime fallback.
 
-const CURRENT_SCHEMA_VERSION: int = 5
+const CURRENT_SCHEMA_VERSION: int = 6
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
@@ -44,6 +44,15 @@ const MIGRATIONS: Array = [
 		"statements": [
 			"CREATE TABLE IF NOT EXISTS neighbourhood_state (area_id TEXT PRIMARY KEY, place_id TEXT NOT NULL, state INTEGER NOT NULL, opened_at INTEGER NOT NULL, opened_by TEXT NOT NULL, entered_at INTEGER, finished_at INTEGER);"
 		]
+	},
+	{
+		"version": 6,
+		"statements": [
+			"CREATE TABLE IF NOT EXISTS player_session (id INTEGER PRIMARY KEY CHECK (id = 1), place_id TEXT NOT NULL DEFAULT '', area_id TEXT NOT NULL DEFAULT '', tile_x INTEGER NOT NULL DEFAULT 0, tile_y INTEGER NOT NULL DEFAULT 0, facing TEXT NOT NULL DEFAULT 'S', interior_id TEXT NOT NULL DEFAULT '', interior_floor INTEGER NOT NULL DEFAULT 0, interior_x INTEGER NOT NULL DEFAULT 0, interior_y INTEGER NOT NULL DEFAULT 0, return_area_id TEXT NOT NULL DEFAULT '', return_x INTEGER NOT NULL DEFAULT 0, return_y INTEGER NOT NULL DEFAULT 0, route_origin_area_id TEXT NOT NULL DEFAULT '', active_route_id TEXT NOT NULL DEFAULT '', route_time_accum_milli INTEGER NOT NULL DEFAULT 0, route_time_charged_min INTEGER NOT NULL DEFAULT 0);",
+			"INSERT OR IGNORE INTO player_session (id) VALUES (1);",
+			"CREATE TABLE IF NOT EXISTS collected_item (item_key TEXT PRIMARY KEY, area_id TEXT NOT NULL, kind TEXT NOT NULL, item_name TEXT NOT NULL, collected_at INTEGER NOT NULL);"
+		],
+		"custom": "_apply_migration_6"
 	}
 ]
 
@@ -54,8 +63,8 @@ func configure_paths(new_db_path: String, new_tmp_path: String) -> void:
 		_db.path = DB_PATH
 
 func assert_test_safe() -> bool:
-	if DB_PATH == DEFAULT_DB_PATH or DB_TMP_PATH == DEFAULT_DB_TMP_PATH:
-		push_error("FAIL: active save path equals production save file user://tenth_spring.db; test cannot run against production save file")
+	if DB_PATH == DEFAULT_DB_PATH or DB_TMP_PATH == DEFAULT_DB_TMP_PATH or DB_PATH.begins_with("user://walk_dc/") or DB_TMP_PATH.begins_with("user://walk_dc/"):
+		push_error("FAIL: active save path points to a protected save file (%s); test cannot run against protected player state" % DB_PATH)
 		return false
 	return true
 
@@ -673,6 +682,102 @@ func upsert_neighbourhood_state(area_id: String, place_id: String, state: int, o
 	return _q("INSERT INTO neighbourhood_state (area_id, place_id, state, opened_at, opened_by, entered_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(area_id) DO UPDATE SET state = MAX(neighbourhood_state.state, excluded.state), entered_at = COALESCE(neighbourhood_state.entered_at, excluded.entered_at), finished_at = COALESCE(neighbourhood_state.finished_at, excluded.finished_at);", [
 		area_id, place_id, state, ts, opened_by, entered_val, finished_val
 	])
+
+func _apply_migration_6() -> bool:
+	return _q("UPDATE world_clock SET game_epoch_minutes = 480 WHERE id = 1 AND game_epoch_minutes = 0 AND last_wall_sync = 0;")
+
+func get_world_clock() -> Dictionary:
+	if _db == null:
+		return {}
+	var rows = _rows("SELECT id, game_epoch_minutes, last_wall_sync FROM world_clock WHERE id = 1;")
+	return rows[0] if not rows.is_empty() else {}
+
+func set_world_clock_minutes(game_epoch_minutes: int, last_wall_sync: int = -1) -> bool:
+	last_error = ""
+	var wall_ts: int = last_wall_sync if last_wall_sync >= 0 else int(Time.get_unix_time_from_system())
+	return _q("INSERT INTO world_clock (id, game_epoch_minutes, last_wall_sync) VALUES (1, ?, ?) ON CONFLICT(id) DO UPDATE SET game_epoch_minutes = excluded.game_epoch_minutes, last_wall_sync = excluded.last_wall_sync;", [
+		maxi(0, game_epoch_minutes), wall_ts
+	])
+
+func get_player_session() -> Dictionary:
+	if _db == null:
+		return {}
+	var rows = _rows("SELECT id, place_id, area_id, tile_x, tile_y, facing, interior_id, interior_floor, interior_x, interior_y, return_area_id, return_x, return_y, route_origin_area_id, active_route_id, route_time_accum_milli, route_time_charged_min FROM player_session WHERE id = 1;")
+	return rows[0] if not rows.is_empty() else {}
+
+func save_player_session(session: Dictionary) -> bool:
+	last_error = ""
+	var facing_str := str(session.get("facing", "S"))
+	if facing_str != "N" and facing_str != "S" and facing_str != "E" and facing_str != "W":
+		facing_str = "S"
+	return _q("INSERT INTO player_session (id, place_id, area_id, tile_x, tile_y, facing, interior_id, interior_floor, interior_x, interior_y, return_area_id, return_x, return_y, route_origin_area_id, active_route_id, route_time_accum_milli, route_time_charged_min) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET place_id = excluded.place_id, area_id = excluded.area_id, tile_x = excluded.tile_x, tile_y = excluded.tile_y, facing = excluded.facing, interior_id = excluded.interior_id, interior_floor = excluded.interior_floor, interior_x = excluded.interior_x, interior_y = excluded.interior_y, return_area_id = excluded.return_area_id, return_x = excluded.return_x, return_y = excluded.return_y, route_origin_area_id = excluded.route_origin_area_id, active_route_id = excluded.active_route_id, route_time_accum_milli = excluded.route_time_accum_milli, route_time_charged_min = excluded.route_time_charged_min;", [
+		str(session.get("place_id", "")),
+		str(session.get("area_id", "")),
+		int(session.get("tile_x", 0)),
+		int(session.get("tile_y", 0)),
+		facing_str,
+		str(session.get("interior_id", "")),
+		int(session.get("interior_floor", 0)),
+		int(session.get("interior_x", 0)),
+		int(session.get("interior_y", 0)),
+		str(session.get("return_area_id", "")),
+		int(session.get("return_x", 0)),
+		int(session.get("return_y", 0)),
+		str(session.get("route_origin_area_id", "")),
+		str(session.get("active_route_id", "")),
+		int(session.get("route_time_accum_milli", 0)),
+		int(session.get("route_time_charged_min", 0)),
+	])
+
+func clear_player_session_place() -> bool:
+	return save_player_session({
+		"place_id": "",
+		"area_id": "",
+		"tile_x": 0,
+		"tile_y": 0,
+		"facing": "S",
+		"interior_id": "",
+		"interior_floor": 0,
+		"interior_x": 0,
+		"interior_y": 0,
+		"return_area_id": "",
+		"return_x": 0,
+		"return_y": 0,
+		"route_origin_area_id": "",
+		"active_route_id": "",
+		"route_time_accum_milli": 0,
+		"route_time_charged_min": 0,
+	})
+
+func is_item_collected(item_key: String) -> bool:
+	if _db == null or item_key.is_empty():
+		return false
+	var rows = _rows("SELECT 1 FROM collected_item WHERE item_key = ?;", [item_key])
+	return not rows.is_empty()
+
+func mark_item_collected(item_key: String, area_id: String, kind: String, item_name: String, collected_at: int = -1) -> bool:
+	last_error = ""
+	var ts: int = collected_at if collected_at >= 0 else int(Time.get_unix_time_from_system())
+	return _q("INSERT OR IGNORE INTO collected_item (item_key, area_id, kind, item_name, collected_at) VALUES (?, ?, ?, ?, ?);", [
+		item_key, area_id, kind, item_name, ts
+	])
+
+func get_collected_items_in_area(area_id: String) -> Array:
+	if _db == null:
+		return []
+	return _rows("SELECT item_key, area_id, kind, item_name, collected_at FROM collected_item WHERE area_id = ? ORDER BY item_key;", [area_id])
+
+func get_player_sprite_index() -> int:
+	if _db == null:
+		return 0
+	var rows = _rows("SELECT sprite_index FROM player_profile WHERE id = 1;")
+	if rows.is_empty():
+		return 0
+	return clampi(int(rows[0].get("sprite_index", 0)), 0, 1)
+
+func set_player_sprite_index(sprite_index: int) -> bool:
+	last_error = ""
+	return _q("UPDATE player_profile SET sprite_index = ? WHERE id = 1;", [clampi(sprite_index, 0, 1)])
 
 func close() -> void:
 	if _db != null:

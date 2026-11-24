@@ -94,6 +94,10 @@ PROTECTED_SAVE_FILES = [
 	"sync_identity/pc.key",
 	"sync_identity/pc.crt",
 	"sync_identity/pc_id.txt",
+	"walk_dc/tenth_spring.db",
+	"walk_dc/tenth_spring.db-wal",
+	"walk_dc/tenth_spring.db-shm",
+	"walk_dc/tenth_spring.db.tmp",
 ]
 
 def snapshot_protected_files(user_dir):
@@ -155,7 +159,8 @@ def main():
 		"sync_ingest_isolation_test",
 		"sync_session_test",
 		"tile_synth2_test",
-		"town_map_test"
+		"town_map_test",
+		"world_clock_test"
 	]
 
 	if args.only:
@@ -567,7 +572,7 @@ def main():
 	if os.path.exists(sync_server_path):
 		with open(sync_server_path, 'r', encoding='utf-8') as f:
 			content = f.read()
-		forbidden = ["inventory_item", "base_state", "item_id", "qty", "neighbourhood_state"]
+		forbidden = ["inventory_item", "base_state", "item_id", "qty", "neighbourhood_state", "collected_item", "player_session"]
 		for token in forbidden:
 			if token in content:
 				print(f"\n[GOLDEN INVARIANT VIOLATION] sync_server.gd contains illegal token '{token}'")

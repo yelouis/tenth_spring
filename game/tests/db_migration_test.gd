@@ -41,8 +41,8 @@ func run_test() -> bool:
 	PlacesPack.set_active_pack_path(PlacesPack.FIXTURE_PACK_PATH)
 	DB.init_db()
 
-	if DB.get_schema_version() != 5:
-		push_error("FAIL: Expected initial schema_version 5 on fresh DB, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 6:
+		push_error("FAIL: Expected initial schema_version 6 on fresh DB, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -122,12 +122,12 @@ func run_test() -> bool:
 	var dl_before := DB.get_all_distort_entries()
 
 	# -------------------------------------------------------------
-	# 2. Run migration v2 -> v3 -> v4 -> v5
+	# 2. Run migration v2 -> v3 -> v4 -> v5 -> v6
 	# -------------------------------------------------------------
 	DB._run_migrations(DB.MIGRATIONS)
 
-	if DB.get_schema_version() != 5:
-		push_error("FAIL: Expected schema_version 5 after migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 6:
+		push_error("FAIL: Expected schema_version 6 after migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -234,17 +234,17 @@ func run_test() -> bool:
 	var v4_mc := DB.get_map_cell(4, 4)
 
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 5:
-		push_error("FAIL: Expected schema_version 5 after v4 -> v5 migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 6:
+		push_error("FAIL: Expected schema_version 6 after v4 -> v5 -> v6 migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 	var v5_tbl := DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'neighbourhood_state';")
 	if v5_tbl.is_empty():
-		push_error("FAIL: neighbourhood_state table missing after v4 -> v5 migration")
+		push_error("FAIL: neighbourhood_state table missing after v4 -> v5 -> v6 migration")
 		_cleanup_test_files()
 		return false
 	if DB.get_all_area_reveals() != v4_ar or DB.get_all_distort_entries() != v4_dl or DB.get_map_cell(4, 4) != v4_mc:
-		push_error("FAIL: Earlier rows altered during v4 -> v5 migration")
+		push_error("FAIL: Earlier rows altered during v4 -> v5 -> v6 migration")
 		_cleanup_test_files()
 		return false
 
@@ -275,17 +275,134 @@ func run_test() -> bool:
 		_cleanup_test_files()
 		return false
 
-	# 3. Re-running migration v5 is a no-op (idempotent)
+	# -------------------------------------------------------------
+	# 2c. Explicit v5 -> v6 migration check (Item 67 / travel plan §(l)):
+	# Test both fresh v5 save (world_clock 0/0 -> 480) and active v5 save (1234 stays 1234),
+	# player_session singleton row, collected_item table, zero REAL columns, and CRUD helpers.
+	# -------------------------------------------------------------
+	DB.execute_query("DROP TABLE IF EXISTS player_session;")
+	DB.execute_query("DROP TABLE IF EXISTS collected_item;")
+	DB.execute_query("UPDATE world_clock SET game_epoch_minutes = 0, last_wall_sync = 0 WHERE id = 1;")
+	DB.execute_query("UPDATE meta SET value = '5' WHERE key = 'schema_version';")
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 5 or DB.get_neighbourhood_states("city:fixture-city").size() != 1:
-		push_error("FAIL: Expected schema_version to remain 5 with rows intact on idempotent re-run")
+	if DB.get_schema_version() != 6:
+		push_error("FAIL: Expected schema_version 6 after v5 -> v6 fresh migration, got %d" % DB.get_schema_version())
+		_cleanup_test_files()
+		return false
+	var wc_fresh := DB.get_world_clock()
+	if int(wc_fresh.get("game_epoch_minutes", -1)) != 480:
+		push_error("FAIL: Expected fresh v5->v6 world_clock to initialize to 480 (08:00), got %s" % str(wc_fresh))
 		_cleanup_test_files()
 		return false
 
-	# 4. Failing migration statement rolls back and leaves version at 5
+	# Existing non-zero v5 clock must NOT be overwritten by Migration 6
+	DB.execute_query("DROP TABLE IF EXISTS player_session;")
+	DB.execute_query("DROP TABLE IF EXISTS collected_item;")
+	DB.execute_query("UPDATE world_clock SET game_epoch_minutes = 1234, last_wall_sync = 55555 WHERE id = 1;")
+	DB.execute_query("UPDATE meta SET value = '5' WHERE key = 'schema_version';")
+	DB._run_migrations(DB.MIGRATIONS)
+	var wc_existing := DB.get_world_clock()
+	if int(wc_existing.get("game_epoch_minutes", -1)) != 1234 or int(wc_existing.get("last_wall_sync", -1)) != 55555:
+		push_error("FAIL: Migration 6 overwrote existing world_clock: %s" % str(wc_existing))
+		_cleanup_test_files()
+		return false
+
+	# Verify player_session & collected_item have ZERO REAL columns (Golden Invariant 2)
+	for new_tbl in ["player_session", "collected_item"]:
+		var cols6 := DB._rows("PRAGMA table_info(" + new_tbl + ");")
+		if cols6.is_empty():
+			push_error("FAIL: Table %s missing after v5 -> v6 migration" % new_tbl)
+			_cleanup_test_files()
+			return false
+		for col in cols6:
+			if str(col.get("type", "")).to_upper().contains("REAL"):
+				push_error("FAIL: Golden Invariant 2 violated — REAL column in %s: %s" % [new_tbl, str(col)])
+				_cleanup_test_files()
+				return false
+
+	# Verify player_session singleton exists and round-trips cleanly
+	var ps_init := DB.get_player_session()
+	if int(ps_init.get("id", 0)) != 1 or str(ps_init.get("facing", "")) != "S" or str(ps_init.get("place_id", "x")) != "":
+		push_error("FAIL: Initial player_session mismatch: %s" % str(ps_init))
+		_cleanup_test_files()
+		return false
+	if not DB.save_player_session({
+		"place_id": "city:washington-dc",
+		"area_id": "hood:washington-dc:georgetown",
+		"tile_x": 55,
+		"tile_y": 62,
+		"facing": "W",
+		"interior_id": "dc:georgetown-ruins",
+		"interior_floor": 1,
+		"interior_x": 7,
+		"interior_y": 9,
+		"return_area_id": "hood:washington-dc:georgetown",
+		"return_x": 55,
+		"return_y": 63,
+		"route_origin_area_id": "hood:washington-dc:dupont-circle",
+		"active_route_id": "route:washington-dc:q-street",
+		"route_time_accum_milli": 430,
+		"route_time_charged_min": 2,
+	}):
+		push_error("FAIL: save_player_session failed")
+		_cleanup_test_files()
+		return false
+	var ps_saved := DB.get_player_session()
+	if str(ps_saved.get("area_id", "")) != "hood:washington-dc:georgetown" or int(ps_saved.get("tile_x", -1)) != 55 or int(ps_saved.get("route_time_accum_milli", -1)) != 430 or int(ps_saved.get("interior_floor", -1)) != 1:
+		push_error("FAIL: saved player_session mismatch: %s" % str(ps_saved))
+		_cleanup_test_files()
+		return false
+	if not DB.clear_player_session_place():
+		push_error("FAIL: clear_player_session_place failed")
+		_cleanup_test_files()
+		return false
+	var ps_cleared := DB.get_player_session()
+	if str(ps_cleared.get("place_id", "x")) != "" or str(ps_cleared.get("interior_id", "x")) != "" or int(ps_cleared.get("route_time_accum_milli", -1)) != 0:
+		push_error("FAIL: cleared player_session mismatch: %s" % str(ps_cleared))
+		_cleanup_test_files()
+		return false
+
+	# Verify collected_item CRUD
+	if DB.is_item_collected("ball:camp:washington-dc:10:12"):
+		push_error("FAIL: Uncollected item reported as collected")
+		_cleanup_test_files()
+		return false
+	if not DB.mark_item_collected("ball:camp:washington-dc:10:12", "camp:washington-dc", "ball", "Potion", 123456):
+		push_error("FAIL: mark_item_collected failed")
+		_cleanup_test_files()
+		return false
+	if not DB.is_item_collected("ball:camp:washington-dc:10:12"):
+		push_error("FAIL: Collected item not found")
+		_cleanup_test_files()
+		return false
+	var area_items := DB.get_collected_items_in_area("camp:washington-dc")
+	if area_items.size() != 1 or str(area_items[0].get("item_name", "")) != "Potion":
+		push_error("FAIL: get_collected_items_in_area mismatch: %s" % str(area_items))
+		_cleanup_test_files()
+		return false
+
+	# Verify player_profile.sprite_index CRUD
+	if DB.get_player_sprite_index() != 0:
+		push_error("FAIL: Expected default player sprite_index 0")
+		_cleanup_test_files()
+		return false
+	if not DB.set_player_sprite_index(1) or DB.get_player_sprite_index() != 1:
+		push_error("FAIL: Failed to persist player sprite_index 1")
+		_cleanup_test_files()
+		return false
+	DB.set_player_sprite_index(0)
+
+	# 3. Re-running migration v6 is a no-op (idempotent)
+	DB._run_migrations(DB.MIGRATIONS)
+	if DB.get_schema_version() != 6 or DB.get_neighbourhood_states("city:fixture-city").size() != 1:
+		push_error("FAIL: Expected schema_version to remain 6 with rows intact on idempotent re-run")
+		_cleanup_test_files()
+		return false
+
+	# 4. Failing migration statement rolls back and leaves version at 6
 	var mig_fail = [
 		{
-			"version": 6,
+			"version": 7,
 			"statements": [
 				"ALTER TABLE map_cell ADD COLUMN valid_col INTEGER;",
 				"SYNTAX ERROR INVALID SQL STATEMENT;"
@@ -295,8 +412,8 @@ func run_test() -> bool:
 	DB._run_migrations(mig_fail)
 	DB.init_db()
 
-	if DB.get_schema_version() != 5:
-		push_error("FAIL: Expected schema_version to remain 5 after failed migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 6:
+		push_error("FAIL: Expected schema_version to remain 6 after failed migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
