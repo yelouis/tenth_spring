@@ -339,8 +339,12 @@ func step_simulation(delta: float, held_dir: Vector2i, running: bool) -> void:
 			var needed: float = _move_duration - _move_elapsed
 			if rem + 1e-9 >= needed:
 				rem = maxf(0.0, rem - needed)
+				var expected_tile := _move_to
 				_finish_current_move()
-				if held_dir != Vector2i.ZERO and _state == State.IDLE and _move_kind != "slide":
+				if grid_pos != expected_tile or _state != State.IDLE:
+					# Handler triggered a floor transition, teleport, or forced gust slide
+					break
+				if held_dir != Vector2i.ZERO and _move_kind != "slide":
 					var next_dir_str := dir_vec_to_facing(held_dir)
 					if next_dir_str != facing:
 						facing = next_dir_str

@@ -91,6 +91,8 @@ const CLASS_TO_TOKEN: Dictionary = {
 
 static var _fallback_tex: ImageTexture = null
 static var _fallback_bundle_cache: Dictionary = {}
+static var _emerald_bundle_cache: Dictionary = {}
+static var _tileset_cache: Dictionary = {}
 static var _tile_map_cfg_cache: Dictionary = {}
 static var _known_kits_cache: Dictionary = {}
 static var _known_fixtures_cache: Dictionary = {}
@@ -194,8 +196,11 @@ static func resolve_atlas_bundle(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, 
 			var em_tex: Texture2D = em_dict.get("texture", null)
 			var em_json: Variant = em_dict.get("json", null)
 			if em_tex != null and em_json is Dictionary and str((em_json as Dictionary).get("format", "")) == "emerald_indoor_v2":
+				var tex_id := em_tex.get_instance_id()
+				if _emerald_bundle_cache.has(cache_dir) and int((_emerald_bundle_cache[cache_dir] as Dictionary).get("_tex_id", -1)) == tex_id:
+					return _emerald_bundle_cache[cache_dir] as Dictionary
 				var jd := em_json as Dictionary
-				return {
+				var bundle := {
 					"texture": em_tex,
 					"source": "emerald",
 					"cols": int(jd.get("cols", CLASS_COUNT)),
@@ -203,8 +208,29 @@ static func resolve_atlas_bundle(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, 
 					"kits": jd.get("kits", {}),
 					"fixtures": jd.get("fixtures", {}),
 					"stamp_overrides": jd.get("stamp_overrides", {}),
+					"_tex_id": tex_id,
 				}
+				_emerald_bundle_cache[cache_dir] = bundle
+				return bundle
 	return build_fallback_bundle()
+
+static func resolve_tileset(strip_tex: Texture2D, cols: int = CLASS_COUNT, rows: int = 1) -> TileSet:
+	if strip_tex == null:
+		return TileSet.new()
+	var key := "%d:%d:%d" % [strip_tex.get_instance_id(), cols, rows]
+	if _tileset_cache.has(key):
+		return _tileset_cache[key] as TileSet
+	var ts := TileSet.new()
+	ts.tile_size = Vector2i(TILE_PX, TILE_PX)
+	var src := TileSetAtlasSource.new()
+	src.texture = strip_tex
+	src.texture_region_size = Vector2i(TILE_PX, TILE_PX)
+	for ry in range(rows):
+		for cx in range(cols):
+			src.create_tile(Vector2i(cx, ry))
+	ts.add_source(src, 0)
+	_tileset_cache[key] = ts
+	return ts
 
 static func resolve_atlas_texture(cache_dir: String = AssetDB.DEFAULT_CACHE_DIR, force_fallback: bool = false) -> Dictionary:
 	var bundle := resolve_atlas_bundle(cache_dir, force_fallback)

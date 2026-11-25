@@ -143,6 +143,7 @@ def main():
 		"grid_test",
 		"idempotent_sync_test",
 		"interior_dc_test",
+		"interior_doors_walk_test",
 		"interior_map_test",
 		"map_view_test",
 		"neighbourhood_progress_test",

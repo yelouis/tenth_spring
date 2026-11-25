@@ -265,19 +265,17 @@ func resume_from_session(force_no_rom: bool = false, host_override: Node = null)
 			)
 		var interior_id := str(sess.get("interior_id", ""))
 		if not interior_id.is_empty():
-			_warm_map_view = map_view
-			map_view.visible = false
-			map_view.process_mode = Node.PROCESS_MODE_DISABLED
-			var iv := InteriorView.new()
-			iv.name = "InteriorView"
-			host.add_child(iv)
 			var ifloor := int(sess.get("interior_floor", 0))
-			if iv.load_interior(interior_id, ifloor, AssetDB.DEFAULT_CACHE_DIR, force_no_rom):
+			var ipos := Vector2i(int(sess.get("interior_x", -1)), int(sess.get("interior_y", -1)))
+			var ret_info := {
+				"place_id": resume_place_id,
+				"return_area_id": str(sess.get("return_area_id", sess_area)),
+				"return_x": int(sess.get("return_x", tx)),
+				"return_y": int(sess.get("return_y", ty)),
+			}
+			var iv := enter_interior_from_map(map_view, interior_id, ret_info, ifloor, ipos, facing_str, host)
+			if iv != null:
 				return iv
-			iv.queue_free()
-			map_view.visible = true
-			map_view.process_mode = Node.PROCESS_MODE_INHERIT
-			_warm_map_view = null
 		map_view.show_banner(map_view.format_resume_banner(resume_place_id, sess_area, pname))
 	else:
 		var city_dict: Dictionary = Neighbourhoods.city(resume_place_id)
@@ -303,11 +301,52 @@ func get_resume_place_id(custom_stores: Dictionary = {}) -> String:
 	return ""
 
 func clear_current_view() -> void:
+	_warm_map_view = null
 	for child in get_children():
 		if child is CanvasLayer:
 			child.queue_free()
 		elif child.name.begins_with("MapViewer") or child.name.begins_with("HomeHub") or child.name.begins_with("TownMap") or child.name.begins_with("InteriorView"):
 			child.queue_free()
+
+func enter_interior_from_map(map_view: Node, interior_id: String, return_info: Dictionary, floor_index: int = 0, spawn_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "N", host_override: Node = null) -> InteriorView:
+	if map_view == null or interior_id.is_empty():
+		return null
+	var host: Node = host_override if host_override != null else (map_view.get_parent() if map_view.get_parent() != null else self)
+	_warm_map_view = map_view
+	map_view.visible = false
+	map_view.process_mode = Node.PROCESS_MODE_DISABLED
+
+	var iv := InteriorView.new()
+	iv.name = "InteriorView"
+	host.add_child(iv)
+	var use_fallback := bool(map_view._force_no_rom) if ("_force_no_rom" in map_view) else false
+	if not iv.load_interior(interior_id, floor_index, AssetDB.DEFAULT_CACHE_DIR, use_fallback):
+		if iv.get_parent() != null:
+			iv.get_parent().remove_child(iv)
+		iv.queue_free()
+		map_view.visible = true
+		map_view.process_mode = Node.PROCESS_MODE_INHERIT
+		_warm_map_view = null
+		return null
+	var clk = map_view.get_world_clock() if map_view.has_method("get_world_clock") else null
+	iv.enable_walking(spawn_tile, facing_str, return_info, clk, DB)
+	iv.exit_requested.connect(func(ret_dict: Dictionary): exit_interior_to_map(iv, ret_dict))
+	return iv
+
+func exit_interior_to_map(iv: InteriorView, return_info: Dictionary) -> Node:
+	if iv != null and is_instance_valid(iv):
+		if iv.get_parent() != null:
+			iv.get_parent().remove_child(iv)
+		iv.queue_free()
+	var mv := _warm_map_view
+	_warm_map_view = null
+	if mv != null and is_instance_valid(mv):
+		if mv.has_method("resume_from_interior"):
+			mv.resume_from_interior(return_info)
+		else:
+			mv.visible = true
+			mv.process_mode = Node.PROCESS_MODE_INHERIT
+	return mv
 
 func open_interior_view(interior_id: String, floor_index: int = 0, force_fallback: bool = false) -> InteriorView:
 	clear_current_view()

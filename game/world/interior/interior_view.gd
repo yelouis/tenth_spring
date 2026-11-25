@@ -10,20 +10,51 @@ extends Node2D
 
 const InteriorTiles := preload("res://world/interior/interior_tiles.gd")
 const InteriorMap := preload("res://world/interior/interior_map.gd")
+const InteriorCheck := preload("res://world/interior/interior_check.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
 const PeopleSprites := preload("res://world/people_sprites.gd")
+const PlayerWalker := preload("res://world/player_walker.gd")
+const WorldClock := preload("res://world/world_clock.gd")
 
 const TILE_PX: int = 32
 const STAMP_SCALE: float = 2.0
+const WALK_ZOOM_STEPS: Array = [0.5, 1.0, 2.0]
+
+signal exit_requested(return_info: Dictionary)
+signal floor_changed(new_floor_index: int, spawn_tile: Vector2i)
+signal session_changed(interior_id: String, floor_index: int, tile: Vector2i, facing: String)
+signal switch_toggled(switch_id: String, opened_gates: Array)
+
+static var _shared_stamp_tex_cache: Dictionary = {}
 
 var screenshot_timeout_sec: float = 120.0
 
 var _compiled: Dictionary = {}
 var _floor_index: int = 0
 var _atlas_source_kind: String = "fallback"
+var _cache_dir: String = AssetDB.DEFAULT_CACHE_DIR
+var _force_fallback: bool = false
 var _stamp_tex_cache: Dictionary = {}
 var _npc_tex_cache: Dictionary = {}
 var _atlas_slice_cache: Dictionary = {}
+
+var _walk_mode: bool = false
+var _player_walker: PlayerWalker = null
+var _world_clock: WorldClock = null
+var _db_override = null
+var _return_info: Dictionary = {}
+var _zoom_step: float = 2.0
+var _open_gates: Dictionary = {} # gate_id -> true (session-scoped)
+var _gate_sprites: Dictionary = {} # gate_id -> Array[Sprite2D]
+var _collected_item_keys: Dictionary = {} # item_key -> true
+var _item_sprites_by_pos: Dictionary = {} # Vector2i -> Sprite2D
+var _item_defs_by_pos: Dictionary = {} # Vector2i -> Dictionary
+var _npc_entries_by_pos: Dictionary = {} # Vector2i -> Dictionary {"sprite": Sprite2D, "npc": Dictionary}
+var _block_mask: PackedByteArray = PackedByteArray()
+var _toast_panel: PanelContainer = null
+var _toast_label: Label = null
+var _toast_timer: float = 0.0
+var _last_toast_text: String = ""
 
 var _backdrop: ColorRect = null
 var _tile_layer: TileMapLayer = null
@@ -49,6 +80,43 @@ func _ready() -> void:
 
 func get_atlas_source_kind() -> String:
 	return _atlas_source_kind
+
+func get_floor_index() -> int:
+	return _floor_index
+
+func get_player_walker() -> PlayerWalker:
+	return _player_walker
+
+func get_last_toast_text() -> String:
+	return _last_toast_text
+
+func get_world_clock() -> WorldClock:
+	return _world_clock
+
+func _get_db():
+	if _db_override != null:
+		return _db_override
+	var tree := get_tree()
+	if tree != null and tree.root != null and tree.root.has_node("DB"):
+		return tree.root.get_node("DB")
+	return null
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if _walk_mode and not _screenshot_active:
+			if _world_clock != null:
+				_world_clock.save_to_db()
+			persist_indoor_session()
+
+static func indoor_item_key(interior_id: String, floor_id: String, item_dict: Dictionary) -> String:
+	var iid := str(item_dict.get("id", ""))
+	if not iid.is_empty():
+		return "indoor:%s:%s" % [interior_id, iid]
+	var at_v: Variant = InteriorMap._parse_vec2i(item_dict.get("at", null))
+	if at_v is Vector2i:
+		var p: Vector2i = at_v
+		return "indoor:%s:%s:%d:%d" % [interior_id, floor_id, p.x, p.y]
+	return ""
 
 func get_floor_size() -> Vector2i:
 	var floors: Array = _compiled.get("floors", [])
@@ -205,6 +273,8 @@ func load_from_dict(doc: Dictionary, floor_index: int = 0, cache_dir: String = A
 		return false
 	_compiled = comp
 	_floor_index = floor_index
+	_cache_dir = cache_dir
+	_force_fallback = force_fallback
 	_rebuild_scene(cache_dir, force_fallback)
 	return true
 
@@ -224,9 +294,18 @@ func _clear_scene() -> void:
 	_tint_rect = null
 	_banner = null
 	_title_label = null
+	_toast_panel = null
+	_toast_label = null
+	_player_walker = null
+	_gate_sprites.clear()
+	_item_sprites_by_pos.clear()
+	_item_defs_by_pos.clear()
+	_npc_entries_by_pos.clear()
 	_atlas_slice_cache.clear()
 
 func _load_stamp_texture(rel_path: String) -> Texture2D:
+	if _shared_stamp_tex_cache.has(rel_path):
+		return _shared_stamp_tex_cache[rel_path]
 	if _stamp_tex_cache.has(rel_path):
 		return _stamp_tex_cache[rel_path]
 	var abs_p := ProjectSettings.globalize_path("res://assets/original/" + rel_path)
@@ -238,6 +317,7 @@ func _load_stamp_texture(rel_path: String) -> Texture2D:
 		return null
 	img.convert(Image.FORMAT_RGBA8)
 	var tex := ImageTexture.create_from_image(img)
+	_shared_stamp_tex_cache[rel_path] = tex
 	_stamp_tex_cache[rel_path] = tex
 	return tex
 
@@ -245,16 +325,7 @@ func _get_npc_texture(role: String, sprite_key: String = "", facing: String = "S
 	return PeopleSprites.resolve_texture(sprite_key, facing, role, force_fallback, cache_dir)
 
 func _build_tileset(strip_tex: Texture2D, cols: int = InteriorTiles.CLASS_COUNT, rows: int = 1) -> TileSet:
-	var ts := TileSet.new()
-	ts.tile_size = Vector2i(TILE_PX, TILE_PX)
-	var src := TileSetAtlasSource.new()
-	src.texture = strip_tex
-	src.texture_region_size = Vector2i(TILE_PX, TILE_PX)
-	for ry in range(rows):
-		for cx in range(cols):
-			src.create_tile(Vector2i(cx, ry))
-	ts.add_source(src, 0)
-	return ts
+	return InteriorTiles.resolve_tileset(strip_tex, cols, rows)
 
 func _get_atlas_cell_tex(strip_tex: Texture2D, col: int, row: int) -> AtlasTexture:
 	var key := "%d:%d" % [col, row]
@@ -384,6 +455,15 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 					holder.add_child(fsp)
 			_ysort_layer.add_child(holder)
 
+	var interior_id := str(_compiled.get("id", ""))
+	var floor_id := str(fd.get("floor_id", str(_floor_index)))
+	for it_v in (fd.get("items", []) as Array):
+		if it_v is Dictionary:
+			var it_d: Dictionary = it_v
+			var it_at: Variant = InteriorMap._parse_vec2i(it_d.get("at", null))
+			if it_at is Vector2i:
+				_item_defs_by_pos[it_at as Vector2i] = it_d
+
 	var stamp_overrides: Dictionary = bundle.get("stamp_overrides", {})
 	for st_v in (fd["stamps"] as Array):
 		var st: Dictionary = st_v
@@ -393,6 +473,7 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 		var sw := int(st["w"])
 		var sh := int(st["h"])
 		var sbase := int(st["base_rows"])
+		var gate_id := str(st.get("gate_id", ""))
 
 		var sp := Sprite2D.new()
 		sp.set_meta("stamp_id", sid)
@@ -415,6 +496,19 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 			sp.texture = tex
 			sp.scale = Vector2(STAMP_SCALE, STAMP_SCALE)
 			sp.set_meta("stamp_source", "fallback_stamp")
+
+		if not gate_id.is_empty():
+			if not _gate_sprites.has(gate_id):
+				_gate_sprites[gate_id] = []
+			(_gate_sprites[gate_id] as Array).append(sp)
+			if _open_gates.has(gate_id):
+				sp.visible = false
+		if str(st.get("id", "")) == "int_item_ball" or sid == 110:
+			_item_sprites_by_pos[at] = sp
+			if _item_defs_by_pos.has(at):
+				var ikey := indoor_item_key(interior_id, floor_id, _item_defs_by_pos[at] as Dictionary)
+				if not ikey.is_empty() and _collected_item_keys.has(ikey):
+					sp.visible = false
 
 		if sid == 120:
 			# Ceiling-hung suspended flyer: draw subtle shadow on floor below + sprite overhead
@@ -456,6 +550,7 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 			nsp.position = Vector2(float(np_pos.x * TILE_PX), float((np_pos.y + 1) * TILE_PX))
 			nsp.offset = Vector2(0.0, -64.0)
 			_ysort_layer.add_child(nsp)
+			_npc_entries_by_pos[np_pos] = {"sprite": nsp, "npc": npc}
 
 	# 5. Camera centered on floor
 	_camera = Camera2D.new()
@@ -503,6 +598,340 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	_banner.add_child(_title_label)
 	_hud_canvas.add_child(_banner)
 
+	_toast_panel = PanelContainer.new()
+	_toast_panel.name = "InteriorToastPanel"
+	_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_toast_panel.anchor_left = 0.5
+	_toast_panel.anchor_right = 0.5
+	_toast_panel.anchor_top = 1.0
+	_toast_panel.anchor_bottom = 1.0
+	_toast_panel.offset_left = -260.0
+	_toast_panel.offset_right = 260.0
+	_toast_panel.offset_top = -58.0
+	_toast_panel.offset_bottom = -22.0
+	var tsb := StyleBoxFlat.new()
+	tsb.bg_color = Color(0.09, 0.11, 0.17, 0.92)
+	tsb.border_color = Color(0.82, 0.68, 0.36, 0.85)
+	tsb.set_border_width_all(1)
+	tsb.set_corner_radius_all(5)
+	tsb.content_margin_left = 12.0
+	tsb.content_margin_right = 12.0
+	tsb.content_margin_top = 5.0
+	tsb.content_margin_bottom = 5.0
+	_toast_panel.add_theme_stylebox_override("panel", tsb)
+	_toast_label = Label.new()
+	_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_toast_label.add_theme_color_override("font_color", Color(0.98, 0.94, 0.82, 1.0))
+	_toast_label.add_theme_font_size_override("font_size", 13)
+	_toast_panel.add_child(_toast_label)
+	_toast_panel.visible = false
+	_hud_canvas.add_child(_toast_panel)
+
+func show_toast(msg: String, duration: float = 3.5) -> void:
+	_last_toast_text = msg
+	_toast_timer = maxf(0.5, duration)
+	if _toast_label != null:
+		_toast_label.text = msg
+	if _toast_panel != null:
+		_toast_panel.visible = not msg.is_empty()
+
+func _load_collected_indoor_items() -> void:
+	_collected_item_keys.clear()
+	var db = _get_db()
+	var interior_id := str(_compiled.get("id", ""))
+	if db != null and db.is_open() and db.has_method("get_collected_items_in_area") and not interior_id.is_empty():
+		for row_v in db.get_collected_items_in_area(interior_id):
+			if row_v is Dictionary:
+				_collected_item_keys[str((row_v as Dictionary).get("item_key", ""))] = true
+
+func _rebuild_block_mask() -> void:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size():
+		_block_mask = PackedByteArray()
+		return
+	var fd: Dictionary = floors[_floor_index]
+	var w := int(fd["w"])
+	var h := int(fd["h"])
+	_block_mask = InteriorCheck._build_block_mask(fd, _open_gates, false, true)
+	# Collected indoor items clear their int_item_ball stamp tile in _block_mask
+	var interior_id := str(_compiled.get("id", ""))
+	var floor_id := str(fd.get("floor_id", str(_floor_index)))
+	for pos_v in _item_defs_by_pos.keys():
+		var pos: Vector2i = pos_v
+		var ikey := indoor_item_key(interior_id, floor_id, _item_defs_by_pos[pos] as Dictionary)
+		if pos.x >= 0 and pos.x < w and pos.y >= 0 and pos.y < h:
+			if not ikey.is_empty() and _collected_item_keys.has(ikey):
+				_block_mask[pos.y * w + pos.x] = 0
+				if _item_sprites_by_pos.has(pos) and is_instance_valid(_item_sprites_by_pos[pos]):
+					(_item_sprites_by_pos[pos] as Sprite2D).visible = false
+			else:
+				_block_mask[pos.y * w + pos.x] = 1
+	for npc_pos_v in _npc_entries_by_pos.keys():
+		var npos: Vector2i = npc_pos_v
+		if npos.x >= 0 and npos.x < w and npos.y >= 0 and npos.y < h:
+			_block_mask[npos.y * w + npos.x] = 1
+
+func is_tile_passable_for_walker(x: int, y: int) -> bool:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size():
+		return false
+	return InteriorCheck._is_tile_passable(floors[_floor_index] as Dictionary, _block_mask, x, y)
+
+func mark_indoor_item_collected(pos: Vector2i) -> void:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size() or not _item_defs_by_pos.has(pos):
+		return
+	var fd: Dictionary = floors[_floor_index]
+	var interior_id := str(_compiled.get("id", ""))
+	var floor_id := str(fd.get("floor_id", str(_floor_index)))
+	var it_d: Dictionary = _item_defs_by_pos[pos]
+	var ikey := indoor_item_key(interior_id, floor_id, it_d)
+	if ikey.is_empty():
+		return
+	_collected_item_keys[ikey] = true
+	var db = _get_db()
+	if db != null and db.is_open() and db.has_method("mark_item_collected"):
+		db.mark_item_collected(ikey, interior_id, "indoor", str(it_d.get("name", "Item")))
+	if _item_sprites_by_pos.has(pos) and is_instance_valid(_item_sprites_by_pos[pos]):
+		(_item_sprites_by_pos[pos] as Sprite2D).visible = false
+	_rebuild_block_mask()
+
+func enable_walking(spawn_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "N", return_info: Dictionary = {}, clock_override = null, db_override = null) -> bool:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size():
+		return false
+	_db_override = db_override
+	_return_info = return_info.duplicate(true)
+	_walk_mode = true
+	_zoom_step = 2.0 # Emerald 15x10 screen at 960x640 (Decision 79 / F81)
+
+	var db = _get_db()
+	if clock_override != null:
+		_world_clock = clock_override
+		_world_clock.set_running(true)
+	else:
+		_world_clock = WorldClock.new()
+		_world_clock.load_from_db(db)
+		_world_clock.set_running(true)
+
+	_load_collected_indoor_items()
+	_rebuild_block_mask()
+
+	var fd: Dictionary = floors[_floor_index]
+	var target_pos := spawn_tile
+	if target_pos.x < 0 or target_pos.y < 0:
+		var dms: Array = fd.get("door_mats", [])
+		if not dms.is_empty():
+			target_pos = dms[0] as Vector2i
+		else:
+			target_pos = Vector2i(int(fd["w"]) / 2, int(fd["h"]) - 2)
+
+	_spawn_or_place_walker(target_pos, facing_str)
+	if _camera != null:
+		_camera.zoom = Vector2(_zoom_step, _zoom_step)
+		_camera.position = _player_walker.get_camera_target()
+		_camera.make_current()
+	set_process(true)
+	persist_indoor_session()
+	return true
+
+func _spawn_or_place_walker(tile: Vector2i, facing_str: String) -> void:
+	if _player_walker == null or not is_instance_valid(_player_walker):
+		_player_walker = PlayerWalker.new()
+		_player_walker.name = "PlayerWalker"
+		_player_walker.set_force_no_rom(_force_fallback)
+		_player_walker.set_step_evaluator(Callable(self, "_evaluate_interior_step"))
+		_player_walker.step_completed.connect(_on_interior_step_completed)
+		_player_walker.door_stepped.connect(_on_interior_door_stepped)
+		_player_walker.interact_pressed.connect(_on_interior_interact_pressed)
+		if _ysort_layer != null:
+			_ysort_layer.add_child(_player_walker)
+		else:
+			add_child(_player_walker)
+	var db = _get_db()
+	var sidx := 0
+	if db != null and db.is_open() and db.has_method("get_player_sprite_index"):
+		sidx = int(db.get_player_sprite_index())
+	_player_walker.set_sprite_index(sidx)
+	_player_walker.set_force_no_rom(_force_fallback)
+	_player_walker.place_at(tile, facing_str)
+
+func switch_floor(new_floor_index: int, spawn_tile: Vector2i, facing_str: String = "S") -> bool:
+	var floors: Array = _compiled.get("floors", [])
+	if new_floor_index < 0 or new_floor_index >= floors.size():
+		return false
+	_floor_index = new_floor_index
+	var saved_zoom := _zoom_step
+	var preserved_walker: PlayerWalker = null
+	if _walk_mode and _player_walker != null and is_instance_valid(_player_walker):
+		preserved_walker = _player_walker
+		if preserved_walker.get_parent() != null:
+			preserved_walker.get_parent().remove_child(preserved_walker)
+		_player_walker = null
+	_rebuild_scene(_cache_dir, _force_fallback)
+	_zoom_step = saved_zoom
+	if _walk_mode:
+		if preserved_walker != null:
+			_player_walker = preserved_walker
+			if _ysort_layer != null:
+				_ysort_layer.add_child(_player_walker)
+			else:
+				add_child(_player_walker)
+		_rebuild_block_mask()
+		_spawn_or_place_walker(spawn_tile, facing_str)
+		if _camera != null:
+			_camera.zoom = Vector2(_zoom_step, _zoom_step)
+			_camera.position = _player_walker.get_camera_target()
+			_camera.make_current()
+		set_process(true)
+		persist_indoor_session()
+	floor_changed.emit(_floor_index, spawn_tile)
+	return true
+
+func persist_indoor_session() -> void:
+	if not _walk_mode or _screenshot_active or _player_walker == null:
+		return
+	var db = _get_db()
+	var interior_id := str(_compiled.get("id", ""))
+	if db == null or not db.is_open() or not db.has_method("save_player_session") or interior_id.is_empty():
+		return
+	var ret_area := str(_return_info.get("return_area_id", str(_compiled.get("area_id", ""))))
+	var ret_x := int(_return_info.get("return_x", 0))
+	var ret_y := int(_return_info.get("return_y", 0))
+	var place_id := str(_return_info.get("place_id", "city:washington-dc"))
+	db.save_player_session({
+		"place_id": place_id,
+		"area_id": ret_area,
+		"tile_x": ret_x,
+		"tile_y": ret_y,
+		"facing": _player_walker.facing,
+		"interior_id": interior_id,
+		"interior_floor": _floor_index,
+		"interior_x": _player_walker.grid_pos.x,
+		"interior_y": _player_walker.grid_pos.y,
+		"return_area_id": ret_area,
+		"return_x": ret_x,
+		"return_y": ret_y,
+		"route_origin_area_id": "",
+		"active_route_id": "",
+		"route_time_accum_milli": 0,
+		"route_time_charged_min": 0,
+	})
+	session_changed.emit(interior_id, _floor_index, _player_walker.grid_pos, _player_walker.facing)
+
+func _evaluate_interior_step(from_tile: Vector2i, dir: Vector2i) -> Dictionary:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size():
+		return {"action": "blocked", "reason": "wall", "tile": from_tile + dir}
+	var fd: Dictionary = floors[_floor_index]
+	var w := int(fd["w"])
+	var h := int(fd["h"])
+	var tiles: PackedByteArray = fd["tiles"]
+
+	# Stepping South off a floor-0 door_mat exits the interior cleanly
+	if _floor_index == 0 and dir == Vector2i(0, 1):
+		if from_tile.x >= 0 and from_tile.x < w and from_tile.y >= 0 and from_tile.y < h:
+			if int(tiles[from_tile.y * w + from_tile.x]) == InteriorTiles.TILE_INT_DOOR_MAT:
+				return {"action": "door", "exit_interior": true}
+
+	var to := from_tile + dir
+	if InteriorCheck._is_tile_passable(fd, _block_mask, to.x, to.y):
+		return {"action": "step", "to": to}
+	return {"action": "blocked", "reason": "wall", "tile": to}
+
+func _on_interior_door_stepped(door_info: Dictionary) -> void:
+	if bool(door_info.get("exit_interior", false)):
+		exit_requested.emit(_return_info.duplicate(true))
+
+func _on_interior_step_completed(tile: Vector2i, info: Dictionary) -> void:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size():
+		return
+	var fd: Dictionary = floors[_floor_index]
+	var floor_by_id: Dictionary = _compiled.get("floor_by_id", {})
+
+	# 1. Stairs & warps
+	for tr_key in ["stairs", "warps"]:
+		for tr_v in (fd.get(tr_key, []) as Array):
+			if not (tr_v is Dictionary):
+				continue
+			var tr: Dictionary = tr_v
+			var at_v: Variant = InteriorMap._parse_vec2i(tr.get("at", null))
+			if at_v is Vector2i and (at_v as Vector2i) == tile:
+				var to_fid := str(tr.get("to_floor", ""))
+				var to_v: Variant = InteriorMap._parse_vec2i(tr.get("to", null))
+				if floor_by_id.has(to_fid) and to_v is Vector2i:
+					var next_facing := _player_walker.facing if _player_walker != null else "S"
+					switch_floor(int(floor_by_id[to_fid]), to_v as Vector2i, next_facing)
+					return
+
+	# 2. Gust arrows (Emerald 8 frames/tile = 7.5 tps)
+	var w := int(fd["w"])
+	var h := int(fd["h"])
+	var tiles: PackedByteArray = fd["tiles"]
+	if not bool(info.get("slide_end", false)) and tile.x >= 0 and tile.x < w and tile.y >= 0 and tile.y < h:
+		var cls := int(tiles[tile.y * w + tile.x])
+		if InteriorTiles.is_gust_arrow(cls):
+			var dest := InteriorCheck._slide_destination(fd, _block_mask, tile)
+			var slide_tiles := absi(dest.x - tile.x) + absi(dest.y - tile.y)
+			if dest != tile and slide_tiles > 0 and _player_walker != null:
+				_player_walker.start_forced_slide(dest, slide_tiles, {"slide_end": true})
+				return
+
+	persist_indoor_session()
+
+func trigger_interact_for_walker() -> void:
+	if _player_walker == null:
+		return
+	_on_interior_interact_pressed(_player_walker.facing_tile(), _player_walker.grid_pos, _player_walker.facing)
+
+func _on_interior_interact_pressed(facing_tile: Vector2i, _standing_tile: Vector2i, _facing_dir: String) -> void:
+	var floors: Array = _compiled.get("floors", [])
+	if _floor_index < 0 or _floor_index >= floors.size():
+		return
+	var fd: Dictionary = floors[_floor_index]
+	# Switches (6 across DC famous interiors)
+	for sw_v in (fd.get("switches", []) as Array):
+		if not (sw_v is Dictionary):
+			continue
+		var sw: Dictionary = sw_v
+		var sw_at: Variant = InteriorMap._parse_vec2i(sw.get("at", null))
+		if sw_at is Vector2i and (sw_at as Vector2i) == facing_tile:
+			var opens: Array = sw.get("opens", []) if sw.get("opens") is Array else []
+			var opened_list: Array[String] = []
+			for gid_v in opens:
+				var gid := str(gid_v)
+				if gid.is_empty():
+					continue
+				_open_gates[gid] = true
+				opened_list.append(gid)
+				if _gate_sprites.has(gid):
+					for gsp in (_gate_sprites[gid] as Array):
+						if is_instance_valid(gsp):
+							(gsp as Sprite2D).visible = false
+			_rebuild_block_mask()
+			show_toast("A distant latch clicks open.")
+			switch_toggled.emit(str(sw.get("id", "")), opened_list)
+			return
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not _walk_mode or _screenshot_active or _camera == null:
+		return
+	if event is InputEventMouseButton:
+		var mb := event as InputEventMouseButton
+		if mb.pressed and (mb.button_index == MOUSE_BUTTON_WHEEL_UP or mb.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+			var cur_idx := WALK_ZOOM_STEPS.size() - 1
+			for i in range(WALK_ZOOM_STEPS.size()):
+				if is_equal_approx(_zoom_step, float(WALK_ZOOM_STEPS[i])):
+					cur_idx = i
+					break
+			var delta_i := 1 if mb.button_index == MOUSE_BUTTON_WHEEL_UP else -1
+			var next_idx := clampi(cur_idx + delta_i, 0, WALK_ZOOM_STEPS.size() - 1)
+			_zoom_step = float(WALK_ZOOM_STEPS[next_idx])
+			_camera.zoom = Vector2(_zoom_step, _zoom_step)
+			get_viewport().set_input_as_handled()
+
 func setup_screenshot(path: String, zoom_val: float = 1.0, frames: int = 10, interior_view_mode: String = "whole") -> void:
 	_screenshot_path = path
 	_screenshot_frames_left = maxi(2, frames)
@@ -544,6 +973,16 @@ func setup_screenshot(path: String, zoom_val: float = 1.0, frames: int = 10, int
 	set_process(true)
 
 func _process(delta: float) -> void:
+	if _walk_mode and not _screenshot_active:
+		if _camera != null and _player_walker != null:
+			_camera.position = _player_walker.get_camera_target()
+		if _world_clock != null:
+			_world_clock.tick(delta)
+		if _toast_timer > 0.0:
+			_toast_timer -= delta
+			if _toast_timer <= 0.0 and _toast_panel != null:
+				_toast_panel.visible = false
+		return
 	if not _screenshot_active:
 		return
 	_screenshot_elapsed_sec += delta

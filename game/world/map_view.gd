@@ -20,6 +20,8 @@ const PeopleSprites := preload("res://world/people_sprites.gd")
 const PlayerWalker := preload("res://world/player_walker.gd")
 const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
 
+signal door_entered(interior_id: String, return_info: Dictionary)
+
 const CELL_SIZE_PX := 1024.0
 const TILE_SIZE_PX := 32
 const CELL_TILES := 32
@@ -977,6 +979,7 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 		_player_walker.set_step_evaluator(Callable(self, "_evaluate_walker_step"))
 		_player_walker.step_completed.connect(_on_walker_step_completed)
 		_player_walker.step_blocked.connect(_on_walker_step_blocked)
+		_player_walker.door_stepped.connect(_on_walker_door_stepped)
 		_player_walker.interact_pressed.connect(_on_walker_interact_pressed)
 		if _stamp_base_layer != null:
 			_stamp_base_layer.add_child(_player_walker)
@@ -985,6 +988,8 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 	else:
 		if not _player_walker.step_blocked.is_connected(_on_walker_step_blocked):
 			_player_walker.step_blocked.connect(_on_walker_step_blocked)
+		if not _player_walker.door_stepped.is_connected(_on_walker_door_stepped):
+			_player_walker.door_stepped.connect(_on_walker_door_stepped)
 		if not _player_walker.interact_pressed.is_connected(_on_walker_interact_pressed):
 			_player_walker.interact_pressed.connect(_on_walker_interact_pressed)
 
@@ -1045,6 +1050,42 @@ func _evaluate_walker_step(from_tile: Vector2i, dir: Vector2i) -> Dictionary:
 func _on_walker_step_blocked(_tile: Vector2i, info: Dictionary) -> void:
 	if str(info.get("reason", "")) == "fog":
 		show_toast("Thick fog blocks the way — open the next neighbourhood at the Waypost board first.")
+
+func _on_walker_door_stepped(door_info: Dictionary) -> void:
+	if not _walk_mode_active or _screenshot_mode:
+		return
+	var d_entry: Dictionary = door_info.get("door", {}) if door_info.get("door") is Dictionary else {}
+	var iid := str(d_entry.get("interior", ""))
+	if iid.is_empty():
+		return
+	var aid := str(door_info.get("area_id", _current_walk_area_id))
+	var d_local: Vector2i = door_info.get("door_local", Vector2i.ZERO)
+	var return_info := {
+		"place_id": _active_place_id,
+		"return_area_id": aid,
+		"return_x": d_local.x,
+		"return_y": d_local.y + 1,
+		"door_name": str(d_entry.get("name", "")),
+	}
+	door_entered.emit(iid, return_info)
+	var main_node = get_parent()
+	if main_node != null and main_node.has_method("enter_interior_from_map"):
+		main_node.enter_interior_from_map(self, iid, return_info)
+
+func resume_from_interior(return_info: Dictionary) -> void:
+	visible = true
+	process_mode = Node.PROCESS_MODE_INHERIT
+	var db = _get_db()
+	_world_clock.load_from_db(db)
+	_world_clock.set_running(not _screenshot_mode)
+	var ret_aid := str(return_info.get("return_area_id", _current_walk_area_id))
+	var ret_pos := Vector2i(int(return_info.get("return_x", -1)), int(return_info.get("return_y", -1)))
+	place_player_in_area(ret_aid, ret_pos, "S", false)
+	if _camera != null:
+		_camera.make_current()
+		if _player_walker != null:
+			_camera.position = _player_walker.get_camera_target()
+	_sync_modal_input_lock()
 
 func _accrue_route_step_time(route_id: String, tiles_moved: int) -> void:
 	if route_id.is_empty() or _walker_grid == null:
