@@ -119,6 +119,160 @@ static func _count_walkable_components(floor_dict: Dictionary, block_mask: Packe
 							q.append(np)
 	return comps
 
+static func _build_live_block_mask(floor_dict: Dictionary, open_gates: Dictionary) -> PackedByteArray:
+	# Game's live walkability rules (Item 80 / F99):
+	# rubble and boulders stay solid (allow_clearable = false), people and uncollected item balls
+	# are solid, and gates open only if present in open_gates.
+	var w: int = int(floor_dict["w"])
+	var h: int = int(floor_dict["h"])
+	var mask := _build_block_mask(floor_dict, open_gates, false, true)
+	for npc_v in (floor_dict.get("npcs", []) as Array):
+		if npc_v is Dictionary:
+			var np_at: Variant = InteriorMap._parse_vec2i((npc_v as Dictionary).get("at", null))
+			if np_at is Vector2i and _in_bounds((np_at as Vector2i).x, (np_at as Vector2i).y, w, h):
+				mask[(np_at as Vector2i).y * w + (np_at as Vector2i).x] = 1
+	for it_v in (floor_dict.get("items", []) as Array):
+		if it_v is Dictionary:
+			var it_at: Variant = InteriorMap._parse_vec2i((it_v as Dictionary).get("at", null))
+			if it_at is Vector2i and _in_bounds((it_at as Vector2i).x, (it_at as Vector2i).y, w, h):
+				mask[(it_at as Vector2i).y * w + (it_at as Vector2i).x] = 1
+	return mask
+
+static func _run_multifloor_bfs_with_masks(floors: Array, floor_by_id: Dictionary, block_masks: Array) -> Dictionary:
+	var link_map: Array[Dictionary] = []
+	for f_idx in range(floors.size()):
+		var fd: Dictionary = floors[f_idx]
+		var ldict: Dictionary = {}
+		for tr_list_key in ["stairs", "warps"]:
+			for tr_v in (fd[tr_list_key] as Array):
+				var tr: Dictionary = tr_v
+				var at_v: Variant = InteriorMap._parse_vec2i(tr.get("at", null))
+				var to_v: Variant = InteriorMap._parse_vec2i(tr.get("to", null))
+				var to_fid := str(tr.get("to_floor", ""))
+				if at_v is Vector2i and to_v is Vector2i and floor_by_id.has(to_fid):
+					var tf_idx := int(floor_by_id[to_fid])
+					if not ldict.has(at_v):
+						ldict[at_v] = []
+					(ldict[at_v] as Array).append({"floor": tf_idx, "pos": to_v as Vector2i})
+		link_map.append(ldict)
+
+	var reached: Dictionary = {}
+	var queue: Array[Dictionary] = []
+	if not floors.is_empty():
+		var f0: Dictionary = floors[0]
+		for dm in (f0["door_mats"] as Array):
+			var dmp: Vector2i = dm
+			if _is_tile_passable(f0, block_masks[0], dmp.x, dmp.y):
+				var k0 := "0:%d:%d" % [dmp.x, dmp.y]
+				if not reached.has(k0):
+					reached[k0] = true
+					queue.append({"f": 0, "p": dmp})
+
+	var head := 0
+	while head < queue.size():
+		var cur: Dictionary = queue[head]
+		head += 1
+		var fi: int = int(cur["f"])
+		var p: Vector2i = cur["p"]
+		var fd: Dictionary = floors[fi]
+		var bm: PackedByteArray = block_masks[fi]
+
+		for d in DIRS:
+			var np := p + d
+			if _is_tile_passable(fd, bm, np.x, np.y):
+				var landed := _slide_destination(fd, bm, np)
+				var kl := "%d:%d:%d" % [fi, landed.x, landed.y]
+				if not reached.has(kl):
+					reached[kl] = true
+					queue.append({"f": fi, "p": landed})
+
+		var ldict_f: Dictionary = link_map[fi]
+		if ldict_f.has(p):
+			for dest_v in (ldict_f[p] as Array):
+				var dest: Dictionary = dest_v
+				var tfi := int(dest["floor"])
+				var tp: Vector2i = dest["pos"]
+				if _is_tile_passable(floors[tfi], block_masks[tfi], tp.x, tp.y):
+					var tland := _slide_destination(floors[tfi], block_masks[tfi], tp)
+					var kt := "%d:%d:%d" % [tfi, tland.x, tland.y]
+					if not reached.has(kt):
+						reached[kt] = true
+						queue.append({"f": tfi, "p": tland})
+
+	return {"reached": reached, "block_masks": block_masks, "link_map": link_map}
+
+static func _runtime_gates_persist() -> bool:
+	var db_scr: Script = load("res://autoloads/db.gd") as Script
+	var iv_scr: Script = load("res://world/interior/interior_view.gd") as Script
+	if db_scr == null or iv_scr == null:
+		return false
+	var has_db_mark := false
+	var has_db_get := false
+	for m in db_scr.get_script_method_list():
+		var nm := str((m as Dictionary).get("name", ""))
+		if nm == "mark_gate_opened":
+			has_db_mark = true
+		elif nm == "get_opened_gates_in_interior":
+			has_db_get = true
+	var has_iv_load := false
+	for m in iv_scr.get_script_method_list():
+		if str((m as Dictionary).get("name", "")) == "_load_opened_gates":
+			has_iv_load = true
+	return has_db_mark and has_db_get and has_iv_load
+
+static func check_live_return(compiled: Dictionary, gates_persist: bool = true) -> Dictionary:
+	var floors: Array = compiled.get("floors", [])
+	var floor_by_id: Dictionary = compiled.get("floor_by_id", {})
+	var open_gates: Dictionary = {}
+	var changed := true
+	var bfs_state: Dictionary = {}
+	while changed:
+		changed = false
+		var masks: Array = []
+		for f_idx in range(floors.size()):
+			masks.append(_build_live_block_mask(floors[f_idx] as Dictionary, open_gates))
+		bfs_state = _run_multifloor_bfs_with_masks(floors, floor_by_id, masks)
+		var rset: Dictionary = bfs_state["reached"]
+		for f_idx in range(floors.size()):
+			var fd: Dictionary = floors[f_idx]
+			for sw_v in (fd.get("switches", []) as Array):
+				var sw: Dictionary = sw_v
+				var sw_at_v: Variant = InteriorMap._parse_vec2i(sw.get("at", null))
+				if sw_at_v is Vector2i and _can_interact_point(rset, f_idx, sw_at_v as Vector2i):
+					for gid_v in (sw.get("opens", []) as Array):
+						var gid := str(gid_v)
+						if not gid.is_empty() and not open_gates.has(gid):
+							open_gates[gid] = true
+							changed = true
+
+	var reached: Dictionary = bfs_state.get("reached", {})
+	var before_masks: Array = bfs_state.get("block_masks", [])
+	var link_map: Array = bfs_state.get("link_map", [])
+	var relaunch_gates: Dictionary = open_gates if gates_persist else {}
+	var after_masks: Array = []
+	for f_idx in range(floors.size()):
+		after_masks.append(_build_live_block_mask(floors[f_idx] as Dictionary, relaunch_gates))
+
+	var trapped_before := 0
+	var trapped_after := 0
+	for rk in reached.keys():
+		var parts := str(rk).split(":")
+		var rfi := parts[0].to_int()
+		var rpx := parts[1].to_int()
+		var rpy := parts[2].to_int()
+		if not _can_return_to_exit(floors, before_masks, link_map, rfi, Vector2i(rpx, rpy)):
+			trapped_before += 1
+		if not _can_return_to_exit(floors, after_masks, link_map, rfi, Vector2i(rpx, rpy)):
+			trapped_after += 1
+
+	return {
+		"ok": (trapped_before == 0 and trapped_after == 0),
+		"reached_count": reached.size(),
+		"opened_gates": open_gates.keys(),
+		"trapped_before": trapped_before,
+		"trapped_after": trapped_after,
+	}
+
 static func _run_multifloor_bfs(floors: Array, floor_by_id: Dictionary, open_gates: Dictionary, allow_clearable: bool) -> Dictionary:
 	var block_masks: Array[PackedByteArray] = []
 	var link_map: Array[Dictionary] = []
@@ -242,7 +396,7 @@ static func _can_return_to_exit(floors: Array, block_masks: Array, link_map: Arr
 
 static func check(compiled: Dictionary) -> Dictionary:
 	var rule_errors: Dictionary = (compiled.get("rule_errors", {}) as Dictionary).duplicate(true)
-	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6"]:
+	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7"]:
 		if not rule_errors.has(r_id):
 			rule_errors[r_id] = []
 
@@ -409,8 +563,22 @@ static func check(compiled: Dictionary) -> Dictionary:
 		if trapped_tiles > 0:
 			(rule_errors["I4"] as Array).append("%d reachable tile(s) cannot return to entrance door_mat (deadlock)" % trapped_tiles)
 
+	# -------------------------------------------------------------
+	# I7: Live-rules reachability & return-to-exit before & after relaunch (Item 80 / F99)
+	# -------------------------------------------------------------
+	var live_trapped_before := 0
+	var live_trapped_after := 0
+	if not has_i1_i2 and (rule_errors["I3"] as Array).is_empty():
+		var live_res := check_live_return(compiled, _runtime_gates_persist())
+		live_trapped_before = int(live_res.get("trapped_before", 0))
+		live_trapped_after = int(live_res.get("trapped_after", 0))
+		if live_trapped_before > 0:
+			(rule_errors["I7"] as Array).append("%d live-reachable tile(s) cannot return to door_mat before relaunch" % live_trapped_before)
+		if live_trapped_after > 0:
+			(rule_errors["I7"] as Array).append("%d live-reachable tile(s) cannot return to door_mat after relaunch" % live_trapped_after)
+
 	var failed_rules: Array[String] = []
-	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6"]:
+	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7"]:
 		if not (rule_errors[r_id] as Array).is_empty():
 			failed_rules.append(r_id)
 
@@ -421,6 +589,8 @@ static func check(compiled: Dictionary) -> Dictionary:
 		"stamps": int(compiled.get("total_stamps", 0)),
 		"art_pending": int(compiled.get("art_pending", 0)),
 		"trapped": trapped_tiles,
+		"live_trapped_before": live_trapped_before,
+		"live_trapped_after": live_trapped_after,
 		"failed_rules": failed_rules,
 		"rule_errors": rule_errors,
 		"compiled": compiled,
@@ -433,8 +603,10 @@ static func format_summary(res: Dictionary) -> String:
 	var n_pending := int(res.get("art_pending", 0))
 	var ok := bool(res.get("ok", false))
 	var failed: Array = res.get("failed_rules", [])
+	var ltb := int(res.get("live_trapped_before", 0))
+	var lta := int(res.get("live_trapped_after", 0))
 	var status := "PASS" if ok else ("FAIL " + ",".join(PackedStringArray(failed)))
-	return "INTERIOR %s floors=%d stamps=%d art_pending=%d %s" % [id_str, n_floors, n_stamps, n_pending, status]
+	return "INTERIOR %s floors=%d stamps=%d art_pending=%d live_trapped=%d/%d %s" % [id_str, n_floors, n_stamps, n_pending, ltb, lta, status]
 
 static func _validate_placement_list(
 	items: Array,

@@ -1544,6 +1544,7 @@ func resume_from_interior(return_info: Dictionary) -> void:
 	place_player_in_area(ret_aid, ret_pos, "S", false)
 	if _camera != null:
 		_camera.make_current()
+		_camera.call_deferred("make_current")
 		if _player_walker != null:
 			_camera.position = _player_walker.get_camera_target()
 	_sync_modal_input_lock()

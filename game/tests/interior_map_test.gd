@@ -199,13 +199,77 @@ func run_test() -> bool:
 		return _fail("Expected 12 9-slice rug overlay cells for 4x3 rug, got %d" % (resolved_kit["overlay"] as Array).size())
 
 	# ------------------------------------------------------------------
-	# 2. ▶ Valid Fixture Compilation & I1..I6 PASS
+	# 2. ▶ Valid Fixture Compilation & I1..I7 PASS
 	# ------------------------------------------------------------------
 	var res_ok := InteriorCheck.compile_and_check(base_doc)
 	print("VALID_FIXTURE: " + InteriorCheck.format_summary(res_ok))
 	if not bool(res_ok.get("ok", false)):
-		return _fail("Valid fixture failed I1..I6: %s" % str(res_ok))
+		return _fail("Valid fixture failed I1..I7: %s" % str(res_ok))
 	if int(res_ok.get("floors", 0)) != 2 or int(res_ok.get("stamps", 0)) != 6 or int(res_ok.get("art_pending", -1)) != 0:
 		return _fail("Unexpected valid fixture counts: %s" % str(res_ok))
+
+	# ------------------------------------------------------------------
+	# 3. ▶ Item 80 / F99 Live-Rules I7 Falsifiers (synthetic + 5c6b2f2 74-tile check)
+	# ------------------------------------------------------------------
+	# Falsifier I7a: one-way gust drops into pocket whose only return goes through clearable rubble.
+	# Under I4 (allow_clearable=true), rubble is ignored; under I7 (live rules, rubble stays solid),
+	# the pocket is live-reachable and trapped before relaunch!
+	var bad_i7 := base_doc.duplicate(true)
+	bad_i7["floors"][0]["grid"] = [
+		"##############",
+		"==========U===",
+		"#............#",
+		"#..#####.....#",
+		"#..#...#.....#",
+		"#..>...#.....#",
+		"#..#.###.....#",
+		"#..#.#.......#",
+		"#............#",
+		"#......DD....#",
+		"#......DD....#",
+		"##############",
+	]
+	bad_i7["floors"][0]["stamps"] = [
+		{"stamp": "int_smash_rubble", "at": [4, 6], "clearable": true},
+		{"stamp": "int_item_ball", "at": [11, 8]},
+	]
+	var res_i7a := InteriorCheck.compile_and_check(bad_i7)
+	print("FALSIFIER_I7: " + InteriorCheck.format_summary(res_i7a))
+	if bool(res_i7a.get("ok", true)) or not (res_i7a.get("failed_rules", []) as Array).has("I7") or int(res_i7a.get("live_trapped_before", 0)) <= 0:
+		return _fail("I7a falsifier (one-way gust behind solid rubble) should fail I7 with live_trapped_before > 0, got: %s" % str(res_i7a))
+	if (res_i7a.get("failed_rules", []) as Array).has("I4"):
+		return _fail("I7a falsifier should pass I4 (rubble treated clearable) while failing I7, got: %s" % str(res_i7a))
+
+	# Falsifier I7b: without gate persistence (5c6b2f2 behavior), exact 74 tiles trap the player
+	# across DC's 94 interiors (Monument 12, Lincoln 26, Georgetown Ruins 18, Woodley Vet 18);
+	# with gate persistence (Item 80), 0 tiles trap before or after relaunch.
+	var expected_5c6b2f2 := {
+		"dc:washington-monument": 12,
+		"dc:lincoln-memorial": 26,
+		"dc:georgetown-ruins": 18,
+		"dc:woodley-vet": 18,
+	}
+	var total_nonpersist := 0
+	var dc_paths := InteriorMap.list_all_dc_interior_paths()
+	if dc_paths.size() != 94:
+		return _fail("Expected 94 DC interior paths for I7 check, got %d" % dc_paths.size())
+	for dp in dc_paths:
+		var ddoc := InteriorMap.load_json(dp)
+		var dcomp := InteriorMap.compile(ddoc)
+		var did := str(dcomp.get("id", ""))
+		var r_old := InteriorCheck.check_live_return(dcomp, false)
+		var r_new := InteriorCheck.check_live_return(dcomp, true)
+		var exp_n := int(expected_5c6b2f2.get(did, 0))
+		if int(r_old.get("trapped_after", -1)) != exp_n or int(r_old.get("trapped_before", -1)) != 0:
+			return _fail("I7b (5c6b2f2 non-persist) mismatch on %s: expected 0/%d, got %d/%d" % [
+				did, exp_n, int(r_old.get("trapped_before", -1)), int(r_old.get("trapped_after", -1))
+			])
+		total_nonpersist += int(r_old.get("trapped_after", 0))
+		if int(r_new.get("trapped_before", -1)) != 0 or int(r_new.get("trapped_after", -1)) != 0:
+			return _fail("I7b (Item 80 persist) failed on %s: got %d/%d" % [
+				did, int(r_new.get("trapped_before", -1)), int(r_new.get("trapped_after", -1))
+			])
+	if total_nonpersist != 74:
+		return _fail("I7b expected exact 74 trapped tiles under 5c6b2f2 non-persist rules, got %d" % total_nonpersist)
 
 	return true

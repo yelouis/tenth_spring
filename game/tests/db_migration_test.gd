@@ -41,8 +41,8 @@ func run_test() -> bool:
 	PlacesPack.set_active_pack_path(PlacesPack.FIXTURE_PACK_PATH)
 	DB.init_db()
 
-	if DB.get_schema_version() != 6:
-		push_error("FAIL: Expected initial schema_version 6 on fresh DB, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 7:
+		push_error("FAIL: Expected initial schema_version 7 on fresh DB, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -126,8 +126,8 @@ func run_test() -> bool:
 	# -------------------------------------------------------------
 	DB._run_migrations(DB.MIGRATIONS)
 
-	if DB.get_schema_version() != 6:
-		push_error("FAIL: Expected schema_version 6 after migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 7:
+		push_error("FAIL: Expected schema_version 7 after migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 
@@ -234,8 +234,8 @@ func run_test() -> bool:
 	var v4_mc := DB.get_map_cell(4, 4)
 
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 6:
-		push_error("FAIL: Expected schema_version 6 after v4 -> v5 -> v6 migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 7:
+		push_error("FAIL: Expected schema_version 7 after v4 -> v5 -> v6 -> v7 migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 	var v5_tbl := DB._rows("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'neighbourhood_state';")
@@ -285,8 +285,8 @@ func run_test() -> bool:
 	DB.execute_query("UPDATE world_clock SET game_epoch_minutes = 0, last_wall_sync = 0 WHERE id = 1;")
 	DB.execute_query("UPDATE meta SET value = '5' WHERE key = 'schema_version';")
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 6:
-		push_error("FAIL: Expected schema_version 6 after v5 -> v6 fresh migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 7:
+		push_error("FAIL: Expected schema_version 7 after v5 -> v6 -> v7 fresh migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 	var wc_fresh := DB.get_world_clock()
@@ -392,17 +392,53 @@ func run_test() -> bool:
 		return false
 	DB.set_player_sprite_index(0)
 
-	# 3. Re-running migration v6 is a no-op (idempotent)
+	# 2d. Explicit v6 -> v7 migration check (Item 80 / F99 opened_gate table)
+	DB.execute_query("DROP TABLE IF EXISTS opened_gate;")
+	DB.execute_query("UPDATE meta SET value = '6' WHERE key = 'schema_version';")
 	DB._run_migrations(DB.MIGRATIONS)
-	if DB.get_schema_version() != 6 or DB.get_neighbourhood_states("city:fixture-city").size() != 1:
-		push_error("FAIL: Expected schema_version to remain 6 with rows intact on idempotent re-run")
+	if DB.get_schema_version() != 7:
+		push_error("FAIL: Expected schema_version 7 after v6 -> v7 migration, got %d" % DB.get_schema_version())
+		_cleanup_test_files()
+		return false
+	var og_cols := DB._rows("PRAGMA table_info(opened_gate);")
+	if og_cols.is_empty():
+		push_error("FAIL: opened_gate table missing after v6 -> v7 migration")
+		_cleanup_test_files()
+		return false
+	for col in og_cols:
+		if str(col.get("type", "")).to_upper().contains("REAL"):
+			push_error("FAIL: Golden Invariant 2 violated — REAL column in opened_gate: %s" % str(col))
+			_cleanup_test_files()
+			return false
+	if DB.is_gate_opened("dc:georgetown-ruins", "gate_canal_keystone"):
+		push_error("FAIL: Fresh opened_gate table should start with every gate closed")
+		_cleanup_test_files()
+		return false
+	if not DB.mark_gate_opened("dc:georgetown-ruins", "gate_canal_keystone", 222222):
+		push_error("FAIL: mark_gate_opened failed")
+		_cleanup_test_files()
+		return false
+	if not DB.is_gate_opened("dc:georgetown-ruins", "gate_canal_keystone"):
+		push_error("FAIL: Opened gate not persisted in opened_gate")
+		_cleanup_test_files()
+		return false
+	var og_rows := DB.get_opened_gates_in_interior("dc:georgetown-ruins")
+	if og_rows.size() != 1 or str(og_rows[0].get("gate_id", "")) != "gate_canal_keystone":
+		push_error("FAIL: get_opened_gates_in_interior mismatch: %s" % str(og_rows))
 		_cleanup_test_files()
 		return false
 
-	# 4. Failing migration statement rolls back and leaves version at 6
+	# 3. Re-running migration v7 is a no-op (idempotent)
+	DB._run_migrations(DB.MIGRATIONS)
+	if DB.get_schema_version() != 7 or DB.get_neighbourhood_states("city:fixture-city").size() != 1:
+		push_error("FAIL: Expected schema_version to remain 7 with rows intact on idempotent re-run")
+		_cleanup_test_files()
+		return false
+
+	# 4. Failing migration statement rolls back and leaves version at 7
 	var mig_fail = [
 		{
-			"version": 7,
+			"version": 8,
 			"statements": [
 				"ALTER TABLE map_cell ADD COLUMN valid_col INTEGER;",
 				"SYNTAX ERROR INVALID SQL STATEMENT;"
@@ -412,8 +448,8 @@ func run_test() -> bool:
 	DB._run_migrations(mig_fail)
 	DB.init_db()
 
-	if DB.get_schema_version() != 6:
-		push_error("FAIL: Expected schema_version to remain 6 after failed migration, got %d" % DB.get_schema_version())
+	if DB.get_schema_version() != 7:
+		push_error("FAIL: Expected schema_version to remain 7 after failed migration, got %d" % DB.get_schema_version())
 		_cleanup_test_files()
 		return false
 

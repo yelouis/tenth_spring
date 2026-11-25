@@ -5,7 +5,7 @@ extends Node
 # Uses WAL journal mode, synchronous FULL, bound parameters on all queries,
 # and one-time legacy JSON import without runtime fallback.
 
-const CURRENT_SCHEMA_VERSION: int = 6
+const CURRENT_SCHEMA_VERSION: int = 7
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
 const JSON_BAK_PATH: String = "user://tenth_spring.db.jsonbak"
@@ -54,6 +54,12 @@ const MIGRATIONS: Array = [
 			"CREATE TABLE IF NOT EXISTS collected_item (item_key TEXT PRIMARY KEY, area_id TEXT NOT NULL, kind TEXT NOT NULL, item_name TEXT NOT NULL, collected_at INTEGER NOT NULL);"
 		],
 		"custom": "_apply_migration_6"
+	},
+	{
+		"version": 7,
+		"statements": [
+			"CREATE TABLE IF NOT EXISTS opened_gate (interior_id TEXT NOT NULL, gate_id TEXT NOT NULL, opened_at INTEGER NOT NULL, PRIMARY KEY (interior_id, gate_id));"
+		]
 	}
 ]
 
@@ -771,6 +777,26 @@ func get_collected_items_in_area(area_id: String) -> Array:
 	if _db == null:
 		return []
 	return _rows("SELECT item_key, area_id, kind, item_name, collected_at FROM collected_item WHERE area_id = ? ORDER BY item_key;", [area_id])
+
+func is_gate_opened(interior_id: String, gate_id: String) -> bool:
+	if _db == null or interior_id.is_empty() or gate_id.is_empty():
+		return false
+	var rows = _rows("SELECT 1 FROM opened_gate WHERE interior_id = ? AND gate_id = ?;", [interior_id, gate_id])
+	return not rows.is_empty()
+
+func mark_gate_opened(interior_id: String, gate_id: String, opened_at: int = -1) -> bool:
+	last_error = ""
+	if interior_id.is_empty() or gate_id.is_empty():
+		return false
+	var ts: int = opened_at if opened_at >= 0 else int(Time.get_unix_time_from_system())
+	return _q("INSERT OR IGNORE INTO opened_gate (interior_id, gate_id, opened_at) VALUES (?, ?, ?);", [
+		interior_id, gate_id, ts
+	])
+
+func get_opened_gates_in_interior(interior_id: String) -> Array:
+	if _db == null or interior_id.is_empty():
+		return []
+	return _rows("SELECT gate_id, opened_at FROM opened_gate WHERE interior_id = ? ORDER BY gate_id;", [interior_id])
 
 func get_player_sprite_index() -> int:
 	if _db == null:

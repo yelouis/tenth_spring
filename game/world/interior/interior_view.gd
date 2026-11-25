@@ -44,7 +44,7 @@ var _world_clock: WorldClock = null
 var _db_override = null
 var _return_info: Dictionary = {}
 var _zoom_step: float = 2.0
-var _open_gates: Dictionary = {} # gate_id -> true (session-scoped)
+var _open_gates: Dictionary = {} # gate_id -> true (persisted per interior in DB opened_gate)
 var _gate_sprites: Dictionary = {} # gate_id -> Array[Sprite2D]
 var _collected_item_keys: Dictionary = {} # item_key -> true
 var _item_sprites_by_pos: Dictionary = {} # Vector2i -> Sprite2D
@@ -283,11 +283,15 @@ func load_from_dict(doc: Dictionary, floor_index: int = 0, cache_dir: String = A
 	_floor_index = floor_index
 	_cache_dir = cache_dir
 	_force_fallback = force_fallback
+	_open_gates.clear()
+	_load_opened_gates()
 	_rebuild_scene(cache_dir, force_fallback)
 	return true
 
 func _clear_scene() -> void:
 	for ch in get_children():
+		if ch == _camera and is_instance_valid(_camera):
+			continue
 		remove_child(ch)
 		ch.free()
 	_backdrop = null
@@ -297,7 +301,6 @@ func _clear_scene() -> void:
 	_floor_flat_layer = null
 	_ysort_layer = null
 	_ceiling_layer = null
-	_camera = null
 	_hud_canvas = null
 	_tint_rect = null
 	_banner = null
@@ -561,12 +564,13 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 			_ysort_layer.add_child(nsp)
 			_npc_entries_by_pos[np_pos] = {"sprite": nsp, "npc": npc}
 
-	# 5. Camera centered on floor
-	_camera = Camera2D.new()
-	_camera.name = "InteriorCamera"
+	# 5. Camera centered on floor (kept persistent across floors to prevent F98 camera loss)
+	if _camera == null or not is_instance_valid(_camera):
+		_camera = Camera2D.new()
+		_camera.name = "InteriorCamera"
+		_camera.enabled = true
+		add_child(_camera)
 	_camera.position = Vector2(world_w * 0.5, world_h * 0.5)
-	_camera.enabled = true
-	add_child(_camera)
 	_camera.make_current()
 
 	# 6. Haunted lighting tint & compact HUD header
@@ -675,6 +679,25 @@ func _load_collected_indoor_items() -> void:
 			if row_v is Dictionary:
 				_collected_item_keys[str((row_v as Dictionary).get("item_key", ""))] = true
 
+func _load_opened_gates() -> void:
+	var db = _get_db()
+	var interior_id := str(_compiled.get("id", ""))
+	if db != null and db.is_open() and db.has_method("get_opened_gates_in_interior") and not interior_id.is_empty():
+		for row_v in db.get_opened_gates_in_interior(interior_id):
+			if row_v is Dictionary:
+				var gid := str((row_v as Dictionary).get("gate_id", ""))
+				if not gid.is_empty():
+					_open_gates[gid] = true
+	for gid in _open_gates.keys():
+		if _gate_sprites.has(gid):
+			for gsp in (_gate_sprites[gid] as Array):
+				if is_instance_valid(gsp):
+					(gsp as Sprite2D).visible = false
+
+func _ensure_camera_current() -> void:
+	if _camera != null and is_instance_valid(_camera) and is_inside_tree():
+		_camera.make_current()
+
 func _rebuild_block_mask() -> void:
 	var floors: Array = _compiled.get("floors", [])
 	if _floor_index < 0 or _floor_index >= floors.size():
@@ -746,6 +769,8 @@ func enable_walking(spawn_tile: Vector2i = Vector2i(-1, -1), facing_str: String 
 		_world_clock.set_running(true)
 
 	_load_collected_indoor_items()
+	_open_gates.clear()
+	_load_opened_gates()
 	_rebuild_block_mask()
 
 	var fd: Dictionary = floors[_floor_index]
@@ -762,6 +787,7 @@ func enable_walking(spawn_tile: Vector2i = Vector2i(-1, -1), facing_str: String 
 		_camera.zoom = Vector2(_zoom_step, _zoom_step)
 		_camera.position = _player_walker.get_camera_target()
 		_camera.make_current()
+		call_deferred("_ensure_camera_current")
 	set_process(true)
 	persist_indoor_session()
 	return true
@@ -799,6 +825,7 @@ func switch_floor(new_floor_index: int, spawn_tile: Vector2i, facing_str: String
 		if preserved_walker.get_parent() != null:
 			preserved_walker.get_parent().remove_child(preserved_walker)
 		_player_walker = null
+	_load_opened_gates()
 	_rebuild_scene(_cache_dir, _force_fallback)
 	_zoom_step = saved_zoom
 	if _walk_mode:
@@ -814,6 +841,7 @@ func switch_floor(new_floor_index: int, spawn_tile: Vector2i, facing_str: String
 			_camera.zoom = Vector2(_zoom_step, _zoom_step)
 			_camera.position = _player_walker.get_camera_target()
 			_camera.make_current()
+			call_deferred("_ensure_camera_current")
 		set_process(true)
 		persist_indoor_session()
 	floor_changed.emit(_floor_index, spawn_tile)
@@ -991,12 +1019,16 @@ func _dispatch_interior_interact(facing_tile: Vector2i, _standing_tile: Vector2i
 		if sw_at is Vector2i and (sw_at as Vector2i) == facing_tile:
 			var opens: Array = sw.get("opens", []) if sw.get("opens") is Array else []
 			var opened_list: Array[String] = []
+			var db_sw = _get_db()
+			var iid_sw := str(_compiled.get("id", ""))
 			for gid_v in opens:
 				var gid := str(gid_v)
 				if gid.is_empty():
 					continue
 				_open_gates[gid] = true
 				opened_list.append(gid)
+				if db_sw != null and db_sw.is_open() and db_sw.has_method("mark_gate_opened") and not iid_sw.is_empty():
+					db_sw.mark_gate_opened(iid_sw, gid)
 				if _gate_sprites.has(gid):
 					for gsp in (_gate_sprites[gid] as Array):
 						if is_instance_valid(gsp):
