@@ -25,10 +25,12 @@ signal door_stepped(door_info: Dictionary)
 signal turned(new_facing: String)
 signal interact_pressed(facing_tile: Vector2i, standing_tile: Vector2i, facing_dir: String)
 signal cancel_pressed()
+signal visual_position_updated()
 
 enum State { IDLE, TURNING, MOVING, BUMPING }
 
 var grid_pos: Vector2i = Vector2i.ZERO
+var render_origin_tile: Vector2i = Vector2i.ZERO
 var facing: String = "S"
 var sprite_index: int = 0
 var input_enabled: bool = true
@@ -61,6 +63,8 @@ var _dust_frame: int = 0
 var _dust_world_pos: Vector2 = Vector2.ZERO
 
 func _init() -> void:
+	# Run PlayerWalker._process before MapViewer._process so camera and sprite always lock to the same frame (F89)
+	process_priority = -10
 	# Shadow sits on ground under the player (Emerald FLDEFF_SHADOW: gFieldEffectObjectTemplate_ShadowMedium)
 	_shadow_sprite = Sprite2D.new()
 	_shadow_sprite.name = "JumpShadow"
@@ -160,6 +164,18 @@ static func facing_to_dir_vec(dir_str: String) -> Vector2i:
 static func tile_to_foot_world_pos(tile: Vector2i) -> Vector2:
 	return Vector2(float(tile.x) * TILE_PX, float(tile.y + 1) * TILE_PX)
 
+func tile_to_foot_render_pos(tile: Vector2i) -> Vector2:
+	return Vector2(float(tile.x - render_origin_tile.x) * TILE_PX, float(tile.y - render_origin_tile.y + 1) * TILE_PX)
+
+func set_render_origin_tile(origin_tile: Vector2i) -> void:
+	render_origin_tile = origin_tile
+	if _state == State.MOVING:
+		_update_moving_visual()
+	else:
+		_visual_world_pos = tile_to_foot_render_pos(grid_pos)
+		position = Vector2(round(_visual_world_pos.x), round(_visual_world_pos.y))
+		visual_position_updated.emit()
+
 func place_at(tile: Vector2i, dir_str: String = "S", reset_parity: bool = true) -> void:
 	grid_pos = tile
 	facing = PlayerSprites.normalize_facing(dir_str)
@@ -178,8 +194,8 @@ func place_at(tile: Vector2i, dir_str: String = "S", reset_parity: bool = true) 
 	_dust_active = false
 	_dust_elapsed = 0.0
 	_dust_frame = 0
-	_visual_world_pos = tile_to_foot_world_pos(tile)
-	position = _visual_world_pos
+	_visual_world_pos = tile_to_foot_render_pos(tile)
+	position = Vector2(round(_visual_world_pos.x), round(_visual_world_pos.y))
 	_cur_mode = "walk"
 	_cur_pose = "stand"
 	if _shadow_sprite != null:
@@ -187,6 +203,7 @@ func place_at(tile: Vector2i, dir_str: String = "S", reset_parity: bool = true) 
 	if _dust_sprite != null:
 		_dust_sprite.visible = false
 	_apply_sprite_visual()
+	visual_position_updated.emit()
 
 func is_moving() -> bool:
 	return _state == State.MOVING
@@ -295,7 +312,7 @@ func _spawn_landing_dust(at_tile: Vector2i) -> void:
 	_dust_active = true
 	_dust_elapsed = 0.0
 	_dust_frame = 0
-	_dust_world_pos = tile_to_foot_world_pos(at_tile)
+	_dust_world_pos = tile_to_foot_render_pos(at_tile)
 	if _dust_sprite != null:
 		_dust_sprite.texture = PlayerSprites.resolve_dust_texture(0, _force_no_rom)
 		_dust_sprite.position = Vector2(round(_dust_world_pos.x - position.x), round(_dust_world_pos.y - position.y))
@@ -465,8 +482,8 @@ func _finish_current_move() -> void:
 	var finished_info := _move_info
 	var finished_kind := _move_kind
 	grid_pos = _move_to
-	_visual_world_pos = tile_to_foot_world_pos(grid_pos)
-	position = _visual_world_pos
+	_visual_world_pos = tile_to_foot_render_pos(grid_pos)
+	position = Vector2(round(_visual_world_pos.x), round(_visual_world_pos.y))
 	_hop_offset_px = 0.0
 	_state = State.IDLE
 	_move_elapsed = 0.0
@@ -482,6 +499,7 @@ func _finish_current_move() -> void:
 	_cur_mode = "walk"
 	_cur_pose = "stand"
 	_apply_sprite_visual()
+	visual_position_updated.emit()
 	step_completed.emit(grid_pos, finished_info)
 
 func _update_bumping_visual() -> void:
@@ -498,10 +516,11 @@ func _update_turning_visual() -> void:
 
 func _update_moving_visual() -> void:
 	var t: float = clampf(_move_elapsed / maxf(0.0001, _move_duration), 0.0, 1.0)
-	var p0 := tile_to_foot_world_pos(_move_from)
-	var p1 := tile_to_foot_world_pos(_move_to)
+	var p0 := tile_to_foot_render_pos(_move_from)
+	var p1 := tile_to_foot_render_pos(_move_to)
 	_visual_world_pos = p0.lerp(p1, t)
 	position = Vector2(round(_visual_world_pos.x), round(_visual_world_pos.y))
+	visual_position_updated.emit()
 
 	if _move_kind == "ledge":
 		var f_idx := clampi(floori(_move_elapsed * 60.0 + 1e-6), 0, 31)

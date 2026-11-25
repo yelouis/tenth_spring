@@ -183,6 +183,8 @@ var _distortion_field_rect: ColorRect = null
 var _distortion_field_chip: Label = null
 var _active_distortion_field: Dictionary = {}
 var _active_place_id: String = ""
+var _render_origin_sc: Vector2i = Vector2i.ZERO # Top-left screen-cell (scx=cx, scy=-cy-1) of loaded place (Item 75 / F88-F89)
+var _render_origin_tile: Vector2i = Vector2i.ZERO # _render_origin_sc * 32 in whole tiles
 var _active_waypost_cell: Vector2i = Vector2i.ZERO
 var _active_waypost_wm: Vector2 = Vector2.ZERO
 var _has_active_waypost: bool = false
@@ -742,13 +744,40 @@ func _focus_initial_cell() -> void:
 
 	focus_on_cell(target_cell.x, target_cell.y)
 
+func get_render_origin_tile() -> Vector2i:
+	return _render_origin_tile
+
+func get_render_origin_screen_cell() -> Vector2i:
+	return _render_origin_sc
+
+func _set_render_origin_from_screen_cell(sc: Vector2i) -> void:
+	_render_origin_sc = sc
+	_render_origin_tile = Vector2i(sc.x * CELL_TILES, sc.y * CELL_TILES)
+	if _player_walker != null:
+		_player_walker.set_render_origin_tile(_render_origin_tile)
+
+func _global_to_render_tile(gt: Vector2i) -> Vector2i:
+	return gt - _render_origin_tile
+
+func _render_px_to_global_tile(rp: Vector2) -> Vector2i:
+	return Vector2i(floori(rp.x / float(TILE_SIZE_PX)), floori(rp.y / float(TILE_SIZE_PX))) + _render_origin_tile
+
+func _cell_to_render_px_center(cx: int, cy: int) -> Vector2:
+	var scx := cx - _render_origin_sc.x
+	var scy := (-cy - 1) - _render_origin_sc.y
+	return Vector2((float(scx) + 0.5) * CELL_SIZE_PX, (float(scy) + 0.5) * CELL_SIZE_PX)
+
+func _sync_camera_to_player() -> void:
+	if _walk_mode_active and _camera_follows_player and _camera != null and _player_walker != null:
+		_camera.position = _player_walker.get_camera_target()
+
 func focus_on_cell(cx: int, cy: int) -> void:
 	_focused_area_id = ""
 	_focused_area_tiles = Vector2i.ZERO
 	_focused_city_cells = Vector2i.ZERO
 	_camera_follows_player = false
 	if _camera != null:
-		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
+		_camera.position = _cell_to_render_px_center(cx, cy)
 	_update_return_home_visibility()
 
 func set_force_no_rom(enabled: bool) -> void:
@@ -1070,9 +1099,11 @@ func refresh_time_of_day_and_hud() -> void:
 			sm.set_shader_parameter("player_world_tiles", p_tile)
 			sm.set_shader_parameter("has_player", has_p)
 			var near_lamps: Array[Vector2] = []
+			var origin_tf := Vector2(_render_origin_tile)
 			for lt in _all_lamp_world_tiles:
-				if lt.distance_to(cam_center_t) <= 48.0 and near_lamps.size() < 16:
-					near_lamps.append(lt)
+				var lt_render := lt - origin_tf
+				if lt_render.distance_to(cam_center_t) <= 48.0 and near_lamps.size() < 16:
+					near_lamps.append(lt_render)
 			sm.set_shader_parameter("lamp_count", near_lamps.size())
 			var padded_lamps: Array[Vector2] = []
 			padded_lamps.resize(16)
@@ -1210,23 +1241,28 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 	if _player_walker == null:
 		_player_walker = PlayerWalker.new()
 		_player_walker.name = "PlayerWalker"
+		_player_walker.set_render_origin_tile(_render_origin_tile)
 		_player_walker.set_force_no_rom(_force_no_rom)
 		_player_walker.set_step_evaluator(Callable(self, "_evaluate_walker_step"))
 		_player_walker.step_completed.connect(_on_walker_step_completed)
 		_player_walker.step_blocked.connect(_on_walker_step_blocked)
 		_player_walker.door_stepped.connect(_on_walker_door_stepped)
 		_player_walker.interact_pressed.connect(_on_walker_interact_pressed)
+		_player_walker.visual_position_updated.connect(_sync_camera_to_player)
 		if _stamp_base_layer != null:
 			_stamp_base_layer.add_child(_player_walker)
 		else:
 			add_child(_player_walker)
 	else:
+		_player_walker.set_render_origin_tile(_render_origin_tile)
 		if not _player_walker.step_blocked.is_connected(_on_walker_step_blocked):
 			_player_walker.step_blocked.connect(_on_walker_step_blocked)
 		if not _player_walker.door_stepped.is_connected(_on_walker_door_stepped):
 			_player_walker.door_stepped.connect(_on_walker_door_stepped)
 		if not _player_walker.interact_pressed.is_connected(_on_walker_interact_pressed):
 			_player_walker.interact_pressed.connect(_on_walker_interact_pressed)
+		if not _player_walker.visual_position_updated.is_connected(_sync_camera_to_player):
+			_player_walker.visual_position_updated.connect(_sync_camera_to_player)
 
 	var db = _get_db()
 	var sidx := 0
@@ -1580,24 +1616,24 @@ func focus_on_area(area_id: String, whole: bool = false) -> void:
 		_camera_follows_player = false
 	if _camera != null:
 		if _has_screenshot_tile:
-			var tgx: int = origin.x * 32 + _screenshot_tile.x
-			var tgy: int = (-(origin.y + rows - 1) - 1) * 32 + _screenshot_tile.y
+			var tgx: int = origin.x * 32 + _screenshot_tile.x - _render_origin_tile.x
+			var tgy: int = (-(origin.y + rows - 1) - 1) * 32 + _screenshot_tile.y - _render_origin_tile.y
 			_camera.position = Vector2((float(tgx) + 0.5) * float(TILE_SIZE_PX), (float(tgy) + 0.5) * float(TILE_SIZE_PX))
 		elif whole:
 			_camera.position = Vector2(
-				(float(origin.x) + float(cols) * 0.5) * CELL_SIZE_PX,
-				-(float(origin.y) + float(rows) * 0.5) * CELL_SIZE_PX
+				(float(origin.x - _render_origin_sc.x) + float(cols) * 0.5) * CELL_SIZE_PX,
+				(float(-(origin.y + rows) - _render_origin_sc.y) + float(rows) * 0.5) * CELL_SIZE_PX
 			)
 		elif _caricature_compiled_by_area.has(area_id):
 			var comp: Dictionary = _caricature_compiled_by_area[area_id]
 			var arr: Vector2i = comp.get("arrival", Vector2i(16, 16))
-			var gx: int = origin.x * 32 + arr.x
-			var gy: int = (-(origin.y + rows - 1) - 1) * 32 + arr.y
+			var gx: int = origin.x * 32 + arr.x - _render_origin_tile.x
+			var gy: int = (-(origin.y + rows - 1) - 1) * 32 + arr.y - _render_origin_tile.y
 			_camera.position = Vector2((float(gx) + 0.5) * float(TILE_SIZE_PX), (float(gy) + 0.5) * float(TILE_SIZE_PX))
 		else:
 			_camera.position = Vector2(
-				(float(origin.x) + float(cols) * 0.5) * CELL_SIZE_PX,
-				-(float(origin.y) + float(rows) * 0.5) * CELL_SIZE_PX
+				(float(origin.x - _render_origin_sc.x) + float(cols) * 0.5) * CELL_SIZE_PX,
+				(float(-(origin.y + rows) - _render_origin_sc.y) + float(rows) * 0.5) * CELL_SIZE_PX
 			)
 	_update_return_home_visibility()
 
@@ -1619,8 +1655,8 @@ func focus_on_city(place_id: String) -> float:
 	_set_zoom_step(fit_zoom)
 	if _camera != null:
 		_camera.position = Vector2(
-			(float(bounds.position.x) + float(bounds.size.x) * 0.5) * CELL_SIZE_PX,
-			-(float(bounds.position.y) + float(bounds.size.y) * 0.5) * CELL_SIZE_PX
+			(float(bounds.position.x - _render_origin_sc.x) + float(bounds.size.x) * 0.5) * CELL_SIZE_PX,
+			(float(-(bounds.position.y + bounds.size.y) - _render_origin_sc.y) + float(bounds.size.y) * 0.5) * CELL_SIZE_PX
 		)
 	_update_return_home_visibility()
 	return fit_zoom
@@ -1733,6 +1769,26 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 		_caricature_cells = new_cells
 		_caricature_compiled_by_area = new_compiled
 		_caricature_camp_id = camp_id
+		# Item 75 (F88, F89): Local render origin at top-left screen-cell of this place so all drawn
+		# coordinates stay small (~0..40,000 px), preventing 32-bit float shake and y-sort is_equal_approx ties.
+		var has_origin_sc := false
+		var min_scx := 0
+		var min_scy := 0
+		for c_v in new_cells.keys():
+			var cc: Vector2i = c_v
+			var scx_c := cc.x
+			var scy_c := -cc.y - 1
+			if not has_origin_sc:
+				min_scx = scx_c
+				min_scy = scy_c
+				has_origin_sc = true
+			else:
+				min_scx = mini(min_scx, scx_c)
+				min_scy = mini(min_scy, scy_c)
+		if has_origin_sc:
+			_set_render_origin_from_screen_cell(Vector2i(min_scx, min_scy))
+		else:
+			_set_render_origin_from_screen_cell(Vector2i(camp_origin.x, -camp_origin.y - 1))
 		_all_lamp_world_tiles.clear()
 		for l_aid in new_compiled.keys():
 			var l_comp: Dictionary = new_compiled[l_aid]
@@ -1795,6 +1851,8 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 			_active_waypost_cell = Grid.latlon_to_cell(w_lat, w_lon)
 			_active_waypost_wm = Grid.latlon_to_wm(w_lat, w_lon)
 			_has_active_waypost = true
+			_set_render_origin_from_screen_cell(Vector2i(_active_waypost_cell.x, -_active_waypost_cell.y - 1))
+			_clear_rendered_layers()
 			if _synth_worker != null:
 				_synth_worker.set_waypost_wm(_active_waypost_wm)
 			if center_waypost:
@@ -1806,9 +1864,9 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 func get_camera_cell() -> Vector2i:
 	if _camera == null:
 		return Vector2i.ZERO
-	var cx := int(floor(_camera.position.x / CELL_SIZE_PX))
-	var cy := int(floor(-_camera.position.y / CELL_SIZE_PX))
-	return Vector2i(cx, cy)
+	var scx := int(floor(_camera.position.x / CELL_SIZE_PX)) + _render_origin_sc.x
+	var scy := int(floor(_camera.position.y / CELL_SIZE_PX)) + _render_origin_sc.y
+	return Vector2i(scx, -scy - 1)
 
 func _update_return_home_visibility() -> void:
 	if _is_caricature_place:
@@ -2153,10 +2211,11 @@ func _erase_collected_ball_visual(global_tile: Vector2i) -> void:
 				buf[tidx] = TileSynth2.TILE_GRASS
 				buf[tidx + 1] = 0
 				buf[tidx + 2] = 0
-	if _world_cleared != null and _world_cleared.get_cell_source_id(global_tile) != -1:
-		_world_cleared.set_cell(global_tile, 0, repl_coord)
-	if _world_known != null and _world_known.get_cell_source_id(global_tile) != -1:
-		_world_known.set_cell(global_tile, 0, repl_coord)
+	var rst := _global_to_render_tile(global_tile)
+	if _world_cleared != null and _world_cleared.get_cell_source_id(rst) != -1:
+		_world_cleared.set_cell(rst, 0, repl_coord)
+	if _world_known != null and _world_known.get_cell_source_id(rst) != -1:
+		_world_known.set_cell(rst, 0, repl_coord)
 
 func _try_collect_hidden_item_at(global_tile: Vector2i) -> bool:
 	if _walker_grid == null:
@@ -2503,7 +2562,10 @@ func _focus_landmark() -> void:
 					var visible_h := float(mini(sh, 18)) if _current_zoom_step <= 1.0 else float(mini(sh, 10))
 					var center_ty := float(door_gy - d_row + sh) - visible_h * 0.5
 					if _camera != null:
-						_camera.position = Vector2(center_tx * 32.0, center_ty * 32.0)
+						_camera.position = Vector2(
+							(center_tx - float(_render_origin_tile.x)) * 32.0,
+							(center_ty - float(_render_origin_tile.y)) * 32.0
+						)
 					_update_return_home_visibility()
 					return
 				var fb_cell := Grid.latlon_to_cell(d_lat, d_lon)
@@ -2577,7 +2639,7 @@ func _update_sign_tooltip() -> void:
 		return
 
 	var mouse_world := get_global_mouse_position()
-	var st := Vector2i(floori(mouse_world.x / 32.0), floori(mouse_world.y / 32.0))
+	var st := _render_px_to_global_tile(mouse_world)
 	var cx := floori(float(st.x) / 32.0)
 	var col := posmod(st.x, 32)
 	var cell_row := floori(float(st.y) / 32.0)
@@ -2760,16 +2822,19 @@ func _update_frustum_culling() -> void:
 	var cam_pos := _camera.position
 	var vis_rect := Rect2(cam_pos - vp_size * 0.5, vp_size).grow(CELL_SIZE_PX)
 
-	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX))
-	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX))
+	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX)) + _render_origin_sc.x
+	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX)) + _render_origin_sc.x
 	var top := vis_rect.position.y
 	var bottom := vis_rect.position.y + vis_rect.size.y
-	var r0 := int(floor(top / CELL_SIZE_PX))
-	var r1 := int(floor(bottom / CELL_SIZE_PX))
+	var r0 := int(floor(top / CELL_SIZE_PX)) + _render_origin_sc.y
+	var r1 := int(floor(bottom / CELL_SIZE_PX)) + _render_origin_sc.y
 	var min_cy := -r1 - 1
 	var max_cy := -r0 - 1
 
-	var cam_cell_center := Vector2(cam_pos.x / CELL_SIZE_PX, -cam_pos.y / CELL_SIZE_PX - 1.0)
+	var cam_cell_center := Vector2(
+		cam_pos.x / CELL_SIZE_PX + float(_render_origin_sc.x),
+		-(cam_pos.y / CELL_SIZE_PX + float(_render_origin_sc.y)) - 1.0
+	)
 	var visible_cell_set: Dictionary = {}
 	var has_unmapped_revealed_cell := false
 	var new_requests: Array[Dictionary] = []
@@ -2967,7 +3032,10 @@ func _blit_cell_to_overview_chunk(cx: int, cy: int, cell_img: Image) -> void:
 		var sprite := Sprite2D.new()
 		sprite.centered = false
 		# North-up: chunk covers cells cy in [chunk_cy .. chunk_cy + 7], so its top screen edge is at (-chunk_cy - 8) * CELL_SIZE_PX
-		sprite.position = Vector2(float(chunk_cx) * CELL_SIZE_PX, float(-chunk_cy - 8) * CELL_SIZE_PX)
+		sprite.position = Vector2(
+			float(chunk_cx - _render_origin_sc.x) * CELL_SIZE_PX,
+			float((-chunk_cy - 8) - _render_origin_sc.y) * CELL_SIZE_PX
+		)
 		sprite.scale = Vector2(32, 32)
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		sprite.texture = chunk_tex
@@ -3029,11 +3097,12 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 					var idx := (ty * 32 + tx) * 3
 					var cls: int = tile_buf[idx]
 					var st := _screen_tile(cx, cy, tx, ty)
+					var gst := _global_screen_tile(cx, cy, tx, ty)
 					var base_coord := get_tile_atlas_coords(tile_buf, under_buf, idx)
 					if cls == TileSynth2.TILE_ITEM_BALL and _is_caricature_place and _walker_grid != null:
-						var b_aid := _walker_grid.area_at_global(st.x, st.y)
+						var b_aid := _walker_grid.area_at_global(gst.x, gst.y)
 						if not b_aid.is_empty() and _caricature_compiled_by_area.has(b_aid):
-							var b_loc := CaricatureWalkerGrid.global_to_local(_caricature_compiled_by_area[b_aid], st.x, st.y)
+							var b_loc := CaricatureWalkerGrid.global_to_local(_caricature_compiled_by_area[b_aid], gst.x, gst.y)
 							if _walker_grid.is_ball_collected(b_aid, b_loc.x, b_loc.y):
 								var nb_b := _sign_pavement_neighbor(tile_buf, tx, ty)
 								base_coord = get_atlas_coords(nb_b.x, 0, nb_b.y) if nb_b.x >= 0 else get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
@@ -3115,8 +3184,11 @@ func _build_overview_image(tile_buf: PackedByteArray, reveal_state: int) -> Imag
 			img.set_pixel(c, r, base_col)
 	return img
 
-func _screen_tile(cx: int, cy: int, tx: int, ty: int) -> Vector2i:
+func _global_screen_tile(cx: int, cy: int, tx: int, ty: int) -> Vector2i:
 	return Vector2i(cx * 32 + tx, (-cy - 1) * 32 + ty)
+
+func _screen_tile(cx: int, cy: int, tx: int, ty: int) -> Vector2i:
+	return Vector2i(cx * 32 + tx - _render_origin_tile.x, (-cy - 1) * 32 + ty - _render_origin_tile.y)
 
 func _is_cell_hidden(cx: int, cy: int) -> bool:
 	if _is_caricature_place:
@@ -3335,6 +3407,9 @@ func _update_fog_overlay_rect() -> void:
 	var sz := Vector2(half_w * 2.0, half_h * 2.0)
 	_fog_layer.position = top_left
 	_fog_layer.size = sz
+	if _background_layer != null:
+		_background_layer.position = top_left
+		_background_layer.size = sz
 	if _fog_layer.material is ShaderMaterial:
 		var sm := _fog_layer.material as ShaderMaterial
 		sm.set_shader_parameter("rect_origin_tiles", top_left / float(TILE_SIZE_PX))
@@ -3345,7 +3420,7 @@ func _sync_fog_field(caricature_states_by_area: Dictionary = {}) -> void:
 	if _fog_grid_img == null or _fog_grid_tex == null:
 		_init_fog_overlay()
 	var cam_st := (_camera.position / float(TILE_SIZE_PX)) if _camera != null else Vector2.ZERO
-	var cam_sc := Vector2i(floori(cam_st.x / 32.0), floori(cam_st.y / 32.0))
+	var cam_sc := Vector2i(floori(cam_st.x / 32.0), floori(cam_st.y / 32.0)) + _render_origin_sc
 	var half_g := int(FOG_GRID_SIZE / 2)
 	if _fog_dirty or absi(cam_sc.x - (_fog_grid_origin.x + half_g)) > 16 or absi(cam_sc.y - (_fog_grid_origin.y + half_g)) > 16:
 		_fog_grid_origin = Vector2i(cam_sc.x - half_g, cam_sc.y - half_g)
@@ -3436,13 +3511,14 @@ func _sync_fog_field(caricature_states_by_area: Dictionary = {}) -> void:
 	if _fog_layer != null and _fog_layer.material is ShaderMaterial:
 		var sm := _fog_layer.material as ShaderMaterial
 		sm.set_shader_parameter("cell_reveal_tex", _fog_grid_tex)
-		sm.set_shader_parameter("cell_grid_origin", Vector2(_fog_grid_origin))
+		sm.set_shader_parameter("cell_grid_origin", Vector2(_fog_grid_origin - _render_origin_sc))
 		sm.set_shader_parameter("cell_grid_size", Vector2(FOG_GRID_SIZE, FOG_GRID_SIZE))
 		sm.set_shader_parameter("town_rect_count", _fog_town_rects.size())
+		var origin_t4 := Vector4(float(_render_origin_tile.x), float(_render_origin_tile.y), float(_render_origin_tile.x), float(_render_origin_tile.y))
 		var padded: Array[Vector4] = []
 		padded.resize(32)
 		for i in range(32):
-			padded[i] = _fog_town_rects[i] if i < _fog_town_rects.size() else Vector4.ZERO
+			padded[i] = (_fog_town_rects[i] - origin_t4) if i < _fog_town_rects.size() else Vector4.ZERO
 		sm.set_shader_parameter("town_rects", padded)
 	_fog_dirty = false
 	_fog_state_sig = sig
@@ -3626,7 +3702,10 @@ func _add_sliced_sprite_to_layers(cx: int, cell_r0: int, agx: int, agy: int, sw:
 		o_sp.region_enabled = true
 		o_sp.region_rect = Rect2(float(tx0 * tex_tile_px), float(o_ty0 * tex_tile_px), float((tx1 - tx0) * tex_tile_px), float((o_ty1 - o_ty0) * tex_tile_px))
 		o_sp.scale = Vector2(sprite_scale, sprite_scale)
-		o_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
+		o_sp.position = Vector2(
+			float((agx + tx0 - _render_origin_tile.x) * 32),
+			float((agy + sh - _render_origin_tile.y) * 32)
+		)
 		o_sp.offset = Vector2(0.0, float((o_ty0 - sh) * tex_tile_px))
 		o_sp.material = known_mat
 		_stamp_overhang_layer.add_child(o_sp)
@@ -3642,7 +3721,10 @@ func _add_sliced_sprite_to_layers(cx: int, cell_r0: int, agx: int, agy: int, sw:
 		b_sp.region_enabled = true
 		b_sp.region_rect = Rect2(float(tx0 * tex_tile_px), float(b_ty0 * tex_tile_px), float((tx1 - tx0) * tex_tile_px), float((b_ty1 - b_ty0) * tex_tile_px))
 		b_sp.scale = Vector2(sprite_scale, sprite_scale)
-		b_sp.position = Vector2(float((agx + tx0) * 32), float((agy + sh) * 32))
+		b_sp.position = Vector2(
+			float((agx + tx0 - _render_origin_tile.x) * 32),
+			float((agy + sh - _render_origin_tile.y) * 32)
+		)
 		b_sp.offset = Vector2(0.0, float((b_ty0 - sh) * tex_tile_px))
 		b_sp.material = known_mat
 		_stamp_base_layer.add_child(b_sp)
@@ -3735,7 +3817,10 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 			continue
 		var agx := int(k.get("anchor_gx", 0))
 		var agy := int(k.get("anchor_gy", 0))
-		var base_pos := Vector2(float(agx * 32 - 16), float((agy + 1) * 32))
+		var base_pos := Vector2(
+			float((agx - _render_origin_tile.x) * 32 - 16),
+			float((agy - _render_origin_tile.y + 1) * 32)
+		)
 		if _stamp_overhang_layer != null:
 			var o_sp := Sprite2D.new()
 			o_sp.centered = false
@@ -3781,7 +3866,10 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 							ssp.texture = sign_tex
 							ssp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 							ssp.scale = Vector2(1.0, 1.0)
-							ssp.position = Vector2(float((cx * 32 + tx) * 32), float((cell_r0 + ty) * 32))
+							ssp.position = Vector2(
+								float((cx * 32 + tx - _render_origin_tile.x) * 32),
+								float((cell_r0 + ty - _render_origin_tile.y) * 32)
+							)
 							ssp.material = known_mat
 							_stamp_base_layer.add_child(ssp)
 							created.append(ssp)
@@ -3818,10 +3906,10 @@ func pending_parts() -> Vector2i:
 	var cam_pos := _camera.position
 	var vis_rect := Rect2(cam_pos - vp_size * 0.5, vp_size).grow(CELL_SIZE_PX)
 
-	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX))
-	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX))
-	var r0 := int(floor(vis_rect.position.y / CELL_SIZE_PX))
-	var r1 := int(floor((vis_rect.position.y + vis_rect.size.y) / CELL_SIZE_PX))
+	var min_cx := int(floor(vis_rect.position.x / CELL_SIZE_PX)) + _render_origin_sc.x
+	var max_cx := int(floor((vis_rect.position.x + vis_rect.size.x) / CELL_SIZE_PX)) + _render_origin_sc.x
+	var r0 := int(floor(vis_rect.position.y / CELL_SIZE_PX)) + _render_origin_sc.y
+	var r1 := int(floor((vis_rect.position.y + vis_rect.size.y) / CELL_SIZE_PX)) + _render_origin_sc.y
 	var min_cy := -r1 - 1
 	var max_cy := -r0 - 1
 	var pending_cells := 0
@@ -3839,10 +3927,10 @@ func count_visible_doors() -> int:
 	var cam_pos: Vector2 = _camera.position
 	var view_rect := Rect2(cam_pos - vp_size * 0.5, vp_size)
 
-	var min_cx := int(floor(view_rect.position.x / CELL_SIZE_PX))
-	var max_cx := int(floor((view_rect.position.x + view_rect.size.x) / CELL_SIZE_PX))
-	var r0 := int(floor(view_rect.position.y / CELL_SIZE_PX))
-	var r1 := int(floor((view_rect.position.y + view_rect.size.y) / CELL_SIZE_PX))
+	var min_cx := int(floor(view_rect.position.x / CELL_SIZE_PX)) + _render_origin_sc.x
+	var max_cx := int(floor((view_rect.position.x + view_rect.size.x) / CELL_SIZE_PX)) + _render_origin_sc.x
+	var r0 := int(floor(view_rect.position.y / CELL_SIZE_PX)) + _render_origin_sc.y
+	var r1 := int(floor((view_rect.position.y + view_rect.size.y) / CELL_SIZE_PX)) + _render_origin_sc.y
 	var min_cy := -r1 - 1
 	var max_cy := -r0 - 1
 
@@ -4150,8 +4238,8 @@ func set_active_distortion_field(field_info: Dictionary) -> void:
 	if _distortion_field_rect != null:
 		# Screen Y grows south, so northmost cell max_cell.y has top Y = (-max_cell.y - 1) * CELL_SIZE_PX
 		_distortion_field_rect.position = Vector2(
-			float(min_cell.x) * CELL_SIZE_PX,
-			float(-max_cell.y - 1) * CELL_SIZE_PX
+			float(min_cell.x - _render_origin_sc.x) * CELL_SIZE_PX,
+			float((-max_cell.y - 1) - _render_origin_sc.y) * CELL_SIZE_PX
 		)
 		_distortion_field_rect.size = Vector2(
 			float(width_cells) * CELL_SIZE_PX,
