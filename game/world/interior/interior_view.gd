@@ -601,7 +601,7 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	_banner.add_theme_stylebox_override("panel", sb)
 
 	_title_label = Label.new()
-	_title_label.text = "%s  —  %s" % [str(_compiled.get("title", "")), str(fd.get("label", ""))]
+	_title_label.text = format_floor_banner_title(str(_compiled.get("title", "")), str(fd.get("label", "")))
 	_title_label.add_theme_color_override("font_color", Color(0.94, 0.95, 0.98, 1.0))
 	_title_label.add_theme_font_size_override("font_size", 14)
 	_banner.add_child(_title_label)
@@ -636,6 +636,27 @@ func _rebuild_scene(cache_dir: String, force_fallback: bool) -> void:
 	_toast_panel.add_child(_toast_label)
 	_toast_panel.visible = false
 	_hud_canvas.add_child(_toast_panel)
+
+static func format_floor_banner_title(title: String, floor_label: String) -> String:
+	var t := title.strip_edges()
+	var fl := floor_label.strip_edges()
+	if t.is_empty():
+		return fl
+	if fl.is_empty() or fl == t:
+		return t
+	var cleaned := fl
+	for sep in ["  —  ", " — ", " - "]:
+		var suffix: String = sep + t
+		if cleaned.ends_with(suffix):
+			cleaned = cleaned.substr(0, cleaned.length() - suffix.length()).strip_edges()
+			break
+		var prefix: String = t + sep
+		if cleaned.begins_with(prefix):
+			cleaned = cleaned.substr(prefix.length()).strip_edges()
+			break
+	if cleaned.is_empty() or cleaned == t:
+		return t
+	return "%s — %s" % [t, cleaned]
 
 func show_toast(msg: String, duration: float = 3.5) -> void:
 	_last_toast_text = msg

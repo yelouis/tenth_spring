@@ -10,6 +10,7 @@ signal distort_requested()
 signal pairing_requested()
 signal character_changed(sprite_index: int)
 
+@onready var room_art: Control = $RoomArt
 @onready var distort_button: Button = $UI/Panel/VBox/DistortButton
 @onready var character_button: Button = $UI/Panel/VBox/CharacterButton
 @onready var rest_button: Button = $UI/Panel/VBox/RestButton
@@ -19,6 +20,10 @@ signal character_changed(sprite_index: int)
 @onready var status_label: Label = $UI/Panel/VBox/StatusLabel
 
 func _ready() -> void:
+	_sync_to_viewport()
+	var vp := get_viewport()
+	if vp != null and not vp.size_changed.is_connected(_sync_to_viewport):
+		vp.size_changed.connect(_sync_to_viewport)
 	if distort_button != null:
 		distort_button.pressed.connect(_on_distort_pressed)
 	if character_button != null:
@@ -39,6 +44,19 @@ func _ready() -> void:
 
 	_refresh_character_button()
 	_update_hub_status()
+
+func _sync_to_viewport() -> void:
+	var vp_size := get_viewport_rect().size
+	if vp_size.x > 0.0 and vp_size.y > 0.0:
+		if not (get_parent() is Control):
+			anchor_left = 0.0
+			anchor_top = 0.0
+			anchor_right = 0.0
+			anchor_bottom = 0.0
+			position = Vector2.ZERO
+			size = vp_size
+		if room_art != null:
+			room_art.queue_redraw()
 
 func _refresh_character_button() -> void:
 	if character_button == null:

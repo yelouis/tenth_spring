@@ -2,6 +2,15 @@ extends Control
 
 # home_hub_room.gd — Procedural original pixel/vector safehouse room art
 
+func _ready() -> void:
+	if not resized.is_connected(queue_redraw):
+		resized.connect(queue_redraw)
+	queue_redraw()
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_RESIZED:
+		queue_redraw()
+
 func _draw() -> void:
 	var w := size.x
 	var h := size.y

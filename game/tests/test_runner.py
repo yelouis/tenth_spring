@@ -169,6 +169,7 @@ def main():
 		"tile_synth2_test",
 		"time_of_day_test",
 		"town_map_test",
+		"ui_layout_960x640_test",
 		"walkability_parity_test",
 		"world_clock_test"
 	]

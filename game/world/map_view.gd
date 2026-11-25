@@ -888,10 +888,10 @@ func _init_walk_banners(attr_ui: Node) -> void:
 		_banner_panel.anchor_right = 0.5
 		_banner_panel.anchor_top = 0.0
 		_banner_panel.anchor_bottom = 0.0
-		_banner_panel.offset_left = -300.0
-		_banner_panel.offset_right = 300.0
-		_banner_panel.offset_top = 14.0
-		_banner_panel.offset_bottom = 52.0
+		_banner_panel.offset_left = -360.0
+		_banner_panel.offset_right = 360.0
+		_banner_panel.offset_top = 50.0
+		_banner_panel.offset_bottom = 88.0
 		var bstyle := StyleBoxFlat.new()
 		bstyle.bg_color = Color(0.08, 0.11, 0.17, 0.90)
 		bstyle.border_width_left = 1
@@ -1914,9 +1914,9 @@ func _update_return_home_visibility() -> void:
 				or (_has_active_waypost and (cam_cell == _active_waypost_cell))
 			)
 		if _return_home_button != null:
-			_return_home_button.visible = in_camp
+			_return_home_button.visible = in_camp and (not _walk_mode_active)
 		if _board_button != null:
-			_board_button.visible = in_camp
+			_board_button.visible = in_camp and (not _walk_mode_active)
 		if _back_to_camp_button != null:
 			# Decision 79 fix (c): lamps-only fast travel — hide global Back to camp button while walking
 			_back_to_camp_button.visible = (not in_camp) and (not _walk_mode_active)

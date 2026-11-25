@@ -951,11 +951,18 @@ func run_test() -> bool:
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 
-	# Focus on camp's north-east cell (camp_origin + (1, 1)): still inside 2x2 camp!
+	# Item 78 (Decision 81): while walking in camp, ReturnHome/Board/BackToCamp stay hidden;
+	# in camera-pan mode (walk mode disabled), camp's 2x2 north-east cell keeps ReturnHome/Board visible.
+	if ret_btn.visible or board_btn.visible or back_btn.visible or not map_view.can_return_home():
+		push_error("(78) Walking in 2x2 camp must hide ReturnHome/Board/BackToCamp while keeping can_return_home(): ret=%s board=%s back=%s" % [str(ret_btn.visible), str(board_btn.visible), str(back_btn.visible)])
+		Neighbourhoods.set_config_path_for_tests("")
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
+	map_view.disable_walk_mode()
 	var camp_rf_orig := Neighbourhoods.block_origin(Neighbourhoods.area("camp:fixture-city"))
 	map_view.focus_on_cell(camp_rf_orig.x + 1, camp_rf_orig.y + 1)
 	if not ret_btn.visible or not board_btn.visible or back_btn.visible:
-		push_error("(53) 2x2 camp north-east cell did not keep ReturnHome/Board visible: ret=%s board=%s back=%s" % [str(ret_btn.visible), str(board_btn.visible), str(back_btn.visible)])
+		push_error("(53) 2x2 camp north-east cell did not keep ReturnHome/Board visible in camera mode: ret=%s board=%s back=%s" % [str(ret_btn.visible), str(board_btn.visible), str(back_btn.visible)])
 		Neighbourhoods.set_config_path_for_tests("")
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false

@@ -219,25 +219,30 @@ func refresh() -> void:
 		row_style.corner_radius_top_right = 4
 		row_style.corner_radius_bottom_left = 4
 		row_style.corner_radius_bottom_right = 4
-		row_style.content_margin_left = 12.0
-		row_style.content_margin_right = 12.0
-		row_style.content_margin_top = 7.0
-		row_style.content_margin_bottom = 7.0
+		row_style.content_margin_left = 10.0
+		row_style.content_margin_right = 10.0
+		row_style.content_margin_top = 6.0
+		row_style.content_margin_bottom = 6.0
 		row_panel.add_theme_stylebox_override("panel", row_style)
+		row_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 		var row_hbox := HBoxContainer.new()
-		row_hbox.add_theme_constant_override("separation", 12)
+		row_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		row_hbox.add_theme_constant_override("separation", 8)
 		row_panel.add_child(row_hbox)
 
 		var left_vbox := VBoxContainer.new()
 		left_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		left_vbox.custom_minimum_size = Vector2(180, 0)
 		left_vbox.add_theme_constant_override("separation", 2)
 		row_hbox.add_child(left_vbox)
 
 		var name_lbl := Label.new()
 		name_lbl.name = "NameLabel"
 		name_lbl.text = name_line
-		name_lbl.add_theme_font_size_override("font_size", 14)
+		name_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		name_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		name_lbl.add_theme_font_size_override("font_size", 13)
 		name_lbl.add_theme_color_override(
 			"font_color",
 			Color(0.96, 0.97, 0.99, 1.0) if (has_row or is_openable) else Color(0.68, 0.72, 0.78, 1.0)
@@ -245,18 +250,22 @@ func refresh() -> void:
 		left_vbox.add_child(name_lbl)
 
 		var card_hbox := HBoxContainer.new()
-		card_hbox.add_theme_constant_override("separation", 8)
+		card_hbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card_hbox.add_theme_constant_override("separation", 6)
 		var card_lbl := Label.new()
 		card_lbl.name = "CardLabel"
 		card_lbl.text = "Types: %s · Night: %s · Pays: %s" % [types_str, night_str, pays_str]
-		card_lbl.add_theme_font_size_override("font_size", 12)
+		card_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		card_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		card_lbl.add_theme_font_size_override("font_size", 11)
 		card_lbl.add_theme_color_override("font_color", Color(0.76, 0.81, 0.88, 0.95))
 		card_hbox.add_child(card_lbl)
 
 		var trip_lbl := Label.new()
 		trip_lbl.name = "TripLabel"
 		trip_lbl.text = "· Trip: %d min" % trip_min
-		trip_lbl.add_theme_font_size_override("font_size", 12)
+		trip_lbl.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		trip_lbl.add_theme_font_size_override("font_size", 11)
 		trip_lbl.add_theme_color_override("font_color", trip_col)
 		card_hbox.add_child(trip_lbl)
 		left_vbox.add_child(card_hbox)
@@ -265,22 +274,25 @@ func refresh() -> void:
 			var walk_hint_lbl := Label.new()
 			walk_hint_lbl.name = "WalkHintLabel"
 			walk_hint_lbl.text = "\n".join(PackedStringArray(card_lines.slice(1)))
+			walk_hint_lbl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			walk_hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			walk_hint_lbl.add_theme_font_size_override("font_size", 11)
 			walk_hint_lbl.add_theme_color_override("font_color", Color(0.90, 0.82, 0.56, 0.95))
 			left_vbox.add_child(walk_hint_lbl)
 
 		var state_lbl := Label.new()
 		state_lbl.name = "StateLabel"
-		state_lbl.custom_minimum_size = Vector2(105, 0)
+		state_lbl.custom_minimum_size = Vector2(82, 0)
 		state_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		state_lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		state_lbl.text = state_text
-		state_lbl.add_theme_font_size_override("font_size", 13)
+		state_lbl.add_theme_font_size_override("font_size", 12)
 		state_lbl.add_theme_color_override("font_color", state_color)
 		row_hbox.add_child(state_lbl)
 
 		var btn_hbox := HBoxContainer.new()
 		btn_hbox.name = "Buttons"
+		btn_hbox.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		btn_hbox.add_theme_constant_override("separation", 6)
 		row_hbox.add_child(btn_hbox)
 
@@ -294,7 +306,7 @@ func refresh() -> void:
 			var open_btn := Button.new()
 			open_btn.name = "OpenButton"
 			open_btn.text = "Open"
-			open_btn.custom_minimum_size = Vector2(68, 30)
+			open_btn.custom_minimum_size = Vector2(60, 28)
 			open_btn.add_theme_font_size_override("font_size", 12)
 			var captured_open_id := area_id
 			open_btn.pressed.connect(func(): _on_open_pressed(captured_open_id))
@@ -305,14 +317,22 @@ func refresh() -> void:
 			var go_btn := Button.new()
 			go_btn.name = "GoButton"
 			go_btn.text = "Go"
-			go_btn.custom_minimum_size = Vector2(58, 30)
+			go_btn.custom_minimum_size = Vector2(50, 28)
 			go_btn.add_theme_font_size_override("font_size", 12)
 			var captured_go_id := area_id
 			go_btn.pressed.connect(func(): _on_go_pressed(captured_go_id))
 			btn_hbox.add_child(go_btn)
 
 		if is_demo and has_row and not can_go_flag:
-			for walk_rid in NeighbourhoodProgress.walk_from(db, area_id):
+			var walk_rids: Array[String] = NeighbourhoodProgress.walk_from(db, area_id)
+			var walk_parent: Container = btn_hbox
+			if walk_rids.size() > 1:
+				var walk_vbox := VBoxContainer.new()
+				walk_vbox.name = "DemoWalkButtons"
+				walk_vbox.add_theme_constant_override("separation", 4)
+				btn_hbox.add_child(walk_vbox)
+				walk_parent = walk_vbox
+			for walk_rid in walk_rids:
 				var wr_dict: Dictionary = Neighbourhoods.route(walk_rid)
 				var wr_ends: Variant = wr_dict.get("ends", [])
 				if not (wr_ends is Array) or (wr_ends as Array).size() != 2:
@@ -325,19 +345,19 @@ func refresh() -> void:
 				var walk_btn := Button.new()
 				walk_btn.name = "DemoWalk_" + walk_rid.replace(":", "_").replace("-", "_")
 				walk_btn.text = "Walk %s (demo)" % wr_name
-				walk_btn.custom_minimum_size = Vector2(150, 30)
+				walk_btn.custom_minimum_size = Vector2(140, 28)
 				walk_btn.add_theme_font_size_override("font_size", 11)
 				var cap_rid := walk_rid
 				var cap_from := walk_origin_id
 				walk_btn.pressed.connect(func(): _on_demo_walk_pressed(cap_rid, cap_from))
-				btn_hbox.add_child(walk_btn)
+				walk_parent.add_child(walk_btn)
 
 		if is_demo and state_val >= 2 and state_val < 3:
 			has_demo_finish_btn = true
 			var demo_btn := Button.new()
 			demo_btn.name = "DemoFinishButton"
 			demo_btn.text = "Mark main quest done (demo)"
-			demo_btn.custom_minimum_size = Vector2(190, 30)
+			demo_btn.custom_minimum_size = Vector2(165, 28)
 			demo_btn.add_theme_font_size_override("font_size", 11)
 			var captured_fin_id := area_id
 			demo_btn.pressed.connect(func(): _on_demo_finish_pressed(captured_fin_id))

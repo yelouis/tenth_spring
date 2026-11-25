@@ -430,6 +430,8 @@ func open_home_hub() -> Node:
 	if hub_scene != null:
 		var hub = hub_scene.instantiate()
 		add_child(hub)
+		if hub.has_method("_sync_to_viewport"):
+			hub._sync_to_viewport()
 		return hub
 	return null
 
