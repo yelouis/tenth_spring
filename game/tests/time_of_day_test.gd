@@ -178,6 +178,22 @@ func run_test() -> bool:
 		return _fail("InteriorView must NOT have outdoor TimeOfDayLayer")
 	iv.queue_free()
 
+	# Regression: hiding MapViewer overlays on interior entry hides BOTH CanvasLayers (TimeOfDayLayer & AttributionUI)
+	mv.set_overlays_visible(false)
+	if tod_layer.visible or attr_ui.visible:
+		NeighbourhoodProgress.set_demo_override_for_tests(-1)
+		mv.queue_free()
+		DB.close()
+		_cleanup_db(db_path)
+		return _fail("set_overlays_visible(false) must hide TimeOfDayLayer and AttributionUI so interiors stay untouched at night")
+	mv.set_overlays_visible(true)
+	if not tod_layer.visible or not attr_ui.visible:
+		NeighbourhoodProgress.set_demo_override_for_tests(-1)
+		mv.queue_free()
+		DB.close()
+		_cleanup_db(db_path)
+		return _fail("set_overlays_visible(true) must restore TimeOfDayLayer and AttributionUI")
+
 	mv.queue_free()
 	NeighbourhoodProgress.set_demo_override_for_tests(-1)
 	DB.close()

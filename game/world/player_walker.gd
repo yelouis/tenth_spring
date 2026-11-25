@@ -70,15 +70,6 @@ func _init() -> void:
 	_shadow_sprite.visible = false
 	add_child(_shadow_sprite)
 
-	# Ground impact dust sits pinned to the landing tile (Emerald FLDEFF_DUST: 16x8 -> 32x16 at +8, +12 GBA px)
-	_dust_sprite = Sprite2D.new()
-	_dust_sprite.name = "LandingDust"
-	_dust_sprite.centered = false
-	_dust_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_dust_sprite.offset = Vector2(0.0, -16.0)
-	_dust_sprite.visible = false
-	add_child(_dust_sprite)
-
 	# Player sprite drawn above shadow
 	_sprite = Sprite2D.new()
 	_sprite.name = "PlayerSprite"
@@ -86,6 +77,15 @@ func _init() -> void:
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_sprite.offset = Vector2(0.0, -64.0)
 	add_child(_sprite)
+
+	# Ground impact dust drawn in front of player feet on landing tile (Emerald FLDEFF_DUST: 16x8 -> 32x16)
+	_dust_sprite = Sprite2D.new()
+	_dust_sprite.name = "LandingDust"
+	_dust_sprite.centered = false
+	_dust_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_dust_sprite.offset = Vector2(0.0, -12.0)
+	_dust_sprite.visible = false
+	add_child(_dust_sprite)
 	_refresh_sprite_texture()
 	_refresh_effect_textures()
 

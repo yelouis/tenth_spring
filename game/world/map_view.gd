@@ -1451,8 +1451,16 @@ func _on_walker_door_stepped(door_info: Dictionary) -> void:
 	if main_node != null and main_node.has_method("enter_interior_from_map"):
 		main_node.enter_interior_from_map(self, iid, return_info)
 
+func set_overlays_visible(show: bool) -> void:
+	if _time_of_day_layer != null:
+		_time_of_day_layer.visible = show
+	var attr_ui := get_node_or_null("AttributionUI") as CanvasLayer
+	if attr_ui != null:
+		attr_ui.visible = show
+
 func resume_from_interior(return_info: Dictionary) -> void:
 	visible = true
+	set_overlays_visible(true)
 	process_mode = Node.PROCESS_MODE_INHERIT
 	invalidate_neighbourhood_state_cache()
 	var db = _get_db()

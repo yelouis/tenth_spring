@@ -352,6 +352,8 @@ func enter_interior_from_map(map_view: Node, interior_id: String, return_info: D
 	var host: Node = host_override if host_override != null else (map_view.get_parent() if map_view.get_parent() != null else self)
 	_warm_map_view = map_view
 	map_view.visible = false
+	if map_view.has_method("set_overlays_visible"):
+		map_view.set_overlays_visible(false)
 	map_view.process_mode = Node.PROCESS_MODE_DISABLED
 
 	var iv := InteriorView.new()
@@ -363,6 +365,8 @@ func enter_interior_from_map(map_view: Node, interior_id: String, return_info: D
 			iv.get_parent().remove_child(iv)
 		iv.queue_free()
 		map_view.visible = true
+		if map_view.has_method("set_overlays_visible"):
+			map_view.set_overlays_visible(true)
 		map_view.process_mode = Node.PROCESS_MODE_INHERIT
 		_warm_map_view = null
 		return null
