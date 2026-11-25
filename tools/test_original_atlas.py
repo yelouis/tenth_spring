@@ -71,14 +71,18 @@ class TestOriginalAtlas(unittest.TestCase):
             masked = entry["masked"]
             if r_idx in active_rows:
                 t0 = atlas_img.crop(0, r_idx * 32, 32, (r_idx + 1) * 32)
-                self.assertEqual(t0.opaque_count(), 1024, f"Row {r_idx} col 0 must be fully opaque")
+                if r_idx in (6, 7):
+                    self.assertGreater(t0.opaque_count(), 0, f"Tree row {r_idx} base col 0 must have opaque foliage/trunk")
+                    self.assertLess(t0.opaque_count(), 1024, f"Tree row {r_idx} base col 0 must have transparent background (F92)")
+                else:
+                    self.assertEqual(t0.opaque_count(), 1024, f"Row {r_idx} col 0 must be fully opaque")
             if masked and r_idx in active_rows:
                 seen_hashes = set()
                 for m in range(16):
                     tm = atlas_img.crop(m * 32, r_idx * 32, (m + 1) * 32, (r_idx + 1) * 32)
-                    if r_idx in (6, 7) and m >= 8:
-                        self.assertGreater(tm.opaque_count(), 0, f"Tree row {r_idx} top-crown col {m} must have opaque foliage")
-                        self.assertLess(tm.opaque_count(), 1024, f"Tree row {r_idx} top-crown col {m} must have transparent overhang corners")
+                    if r_idx in (6, 7):
+                        self.assertGreater(tm.opaque_count(), 0, f"Tree row {r_idx} col {m} must have opaque foliage/trunk")
+                        self.assertLess(tm.opaque_count(), 1024, f"Tree row {r_idx} col {m} must have transparent background (F92)")
                     else:
                         self.assertEqual(tm.opaque_count(), 1024, f"Masked row {r_idx} col {m} must be fully opaque")
                     h = hashlib.sha256(bytes(tm.px)).hexdigest()

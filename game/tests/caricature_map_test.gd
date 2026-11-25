@@ -12,7 +12,7 @@ const FIXTURE_ROSTER := "res://tests/fixtures/neighbourhoods_fixture.json"
 const FIXTURE_MAP := "res://tests/fixtures/caricature_fixture_map.json"
 
 # Pinned SHA-256 across the four compiled 32x32 cell tile buffers of caricature_fixture_map.json
-const PINNED_FIXTURE_SHA256 := "6efd7369d7832e93813f540915a8803a9680547b9cd3842400413a7f529cc221"
+const PINNED_FIXTURE_SHA256 := "e0e5482d1307f86338d4681eb9b2602719b0c247912775f466aed8c043508e53"
 
 func _cleanup() -> void:
 	Neighbourhoods.set_config_path_for_tests("")

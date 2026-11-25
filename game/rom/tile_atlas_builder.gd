@@ -102,10 +102,11 @@ static func build_emerald_atlas(
 				var rule: Dictionary = masks_dict[mask_key_v]
 				var mt_id := int(rule.get("metatile", 0))
 				var ts_name := str(rule.get("tileset", "primary"))
+				var mt_layer := str(rule.get("layer", "full"))
 				var secondary: Variant = null if ts_name == "primary" else decoded_tilesets.get(ts_name, null)
 				if ts_name != "primary" and not (secondary is Dictionary):
 					return {"ok": false, "error": "Missing secondary tileset '%s' for %s" % [ts_name, lookup_key]}
-				var cell_img := Gen3TilesRef.render_metatile_32(primary_ts, secondary, mt_id)
+				var cell_img := Gen3TilesRef.render_metatile_layer1_32(primary_ts, secondary, mt_id) if mt_layer == "l1" else Gen3TilesRef.render_metatile_32(primary_ts, secondary, mt_id)
 				atlas_img.blit_rect(cell_img, Rect2i(0, 0, tile_px, tile_px), Vector2i(col_idx * tile_px, row_idx * tile_px))
 				tiles_written += 1
 

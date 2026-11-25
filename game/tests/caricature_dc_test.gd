@@ -7,29 +7,30 @@ const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 const CaricatureCheck := preload("res://world/caricature/caricature_check.gd")
 const MapConstants := preload("res://world/map_constants.gd")
+const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 
 const PINNED_SHA256: Dictionary = {
-	"camp:washington-dc": "aca74572f33a1f83574603bf6d19b603c9b77b81425a3a5753c19c02f081afb3",
-	"hood:washington-dc:national-mall": "1c528fc290a99552294f546e4a6c8386d315bbdc5c2c65cd580eccfc070fcbc9",
-	"hood:washington-dc:tidal-basin": "d7130b9c48199feb4c639381c4f1927a9a95abefd53911f17599bb638b8c2929",
-	"hood:washington-dc:dupont-circle": "f82d92905913e55129a1e30702032dd73c32bb9b39871b54e10d563742e6c492",
-	"hood:washington-dc:capitol-hill": "88b74825b88255c44cb286b3f8a5f3c09c143f6aff3ee7a16d7329cc0f6cf439",
-	"hood:washington-dc:union-station": "21719ce10d2ace8e00222e40337f7beeb7fc3a64c94896119005710d116b7d1f",
-	"hood:washington-dc:georgetown": "a6d7145195963daf7a15726d0168ab2af1c1c74f4f0f58a3efef2c18500a156b",
-	"hood:washington-dc:woodley-park": "b6b5d74ee07e16002a054161e4e38504159279de35ea23a7fd51c5fedfb7c004",
-	"hood:washington-dc:lincoln-memorial": "660d4fe91e1f62720e83dea832eb12c686e910a8811082592c538761b56cec8b",
-	"route:washington-dc:monument-grounds#1": "d428342df0ed03570485950c5c720d3a5d517c337893a8ed94f31ba5162cafd7",
-	"route:washington-dc:pennsylvania-avenue#1": "8ebdca3da74af159dae111b2d3bb9a690ccb11bb0a37a301ff3b99df29bd8199",
-	"route:washington-dc:constitution-gardens#1": "6eb7e4ed9689152bf65e22c51b3cabe083242102060a9fa2c899616ad13870ec",
-	"route:washington-dc:west-potomac-park#1": "5e4a3d3ea5ff51997050b0dbd891403f7dbae727f1a85f003339a5b9a178d514",
-	"route:washington-dc:west-potomac-park#2": "451135160e94debf924b0f2e1e8de757a28d29f24e7d07d30c63f63327e7b604",
-	"route:washington-dc:upper-senate-park#1": "4ae04a7899c122b5f2947389290e834c9ff435868b84a7d629a6d48578350527",
-	"route:washington-dc:q-street#1": "c3adfbb84233a16483fd1efa9c84d3ec191eef43e69776a23b33388d01958bd5",
-	"route:washington-dc:connecticut-avenue#1": "bef5a84f2f767ebd7ad9b388c066d598384bc6a7d986e88c9192c561c0895906",
-	"route:washington-dc:massachusetts-avenue#1": "eba52023c6ab3298a96045d2b19086cc598b56c1635d2aa46d3cddcff7dd853f",
-	"route:washington-dc:rock-creek-trail#1": "1c30451f2fe158565203221d783cfd85a507737bec1c5aec9ac9ab93f74bde69",
-	"route:washington-dc:rock-creek-trail#2": "5ecf36c746d2c7b4bf4637b3bbf77f370ea843d65dcfe62b96d94adedd036ae8",
-	"route:washington-dc:potomac-riverfront#1": "95b385e1db835ab6d59899826fd69cc754964bebf0f7da07577ab94ca741c530",
+	"camp:washington-dc": "ef65ecdb01a7eea5fec5f3a6c5f949254d05174365f25343b291811f23397d40",
+	"hood:washington-dc:national-mall": "b1567107cb98f226120e5589295abe51bb9f851afeaa5347220eeacb01a5f40b",
+	"hood:washington-dc:tidal-basin": "92e9c189014515b11813f35f7bcf10b7222bd44240d38f72fb2b2fe84e49e30d",
+	"hood:washington-dc:dupont-circle": "8ea7360e57fd0a9a7327df2570dddf519c0848ab8baa493ca8787ffd35250f04",
+	"hood:washington-dc:capitol-hill": "1cf560a1aecc3cb23f79e702e40b58099ee933de74c4bfa1b7ff875b5ebb7abc",
+	"hood:washington-dc:union-station": "a5d618641d2ba67fbb3d5eeea2a41e38fbeb782a9b08e53878e7e00f9a7f1dac",
+	"hood:washington-dc:georgetown": "20ec8e6a1c07c6289ef1e1b8f262c996ff996cff2ef3a667bb899394c793759e",
+	"hood:washington-dc:woodley-park": "c0b0c3130cc7f9d0cfe4141cbd39fc363d5351fcc52c1541a07afda0e7397ee4",
+	"hood:washington-dc:lincoln-memorial": "d87e19c7c6c478a9d3c49fe3948f5668127c95656c463b70ec1654648fc23355",
+	"route:washington-dc:monument-grounds#1": "bbf9d94d759d3633029ba55d181aaabc2b2683366f24b56214fd0498c80ff299",
+	"route:washington-dc:pennsylvania-avenue#1": "9de7dbace0876b9068c6a1d258858b41ecb98868d99158da655dce7e1a960acf",
+	"route:washington-dc:constitution-gardens#1": "3b507c889f78d8da0a2323d5d886940fa92252244e60ac991c1c09dd6478bfcb",
+	"route:washington-dc:west-potomac-park#1": "308ae21d8f6f4f32822422f3ad6e28d9d520f9455249db73ed53df1204b35d8c",
+	"route:washington-dc:west-potomac-park#2": "e5a379005dff5bb09e73e4d0c8a206ba9a6d7afe6ec4a2d332f1aaf799e81865",
+	"route:washington-dc:upper-senate-park#1": "7520abc13692ca05c0cf92bc2c16b467367d391ca640ef9c80ff1e31bb81f27f",
+	"route:washington-dc:q-street#1": "7bd6e799c4260445323a7e05af73e4e4fea17d97ee9b08e43d3b878dcef12856",
+	"route:washington-dc:connecticut-avenue#1": "0c6e80d3dce0ad7243a3f338132ff14e3e18223eafec09f9cca04e586166e973",
+	"route:washington-dc:massachusetts-avenue#1": "4f6eaa2a9053ddc0db5a471458680c467065081cce7556151d631673215a13b4",
+	"route:washington-dc:rock-creek-trail#1": "e35d9c5e93c9f61dfe374df0dba7d96ec3728df5418ba9350b633faeb9c432e0",
+	"route:washington-dc:rock-creek-trail#2": "596cf421d80e9f483975e846e40b83c5c58ba0505a931532d9283a190f75b0ac",
+	"route:washington-dc:potomac-riverfront#1": "a2dfbc826e792f4c82d5df3a87a838cc20d0a497fa0a3f94a01aaf52dee23e4c",
 }
 
 func _hash_all_cells(compiled: Dictionary, area: Dictionary, cells: Array[Vector2i]) -> String:
@@ -145,6 +146,78 @@ func run_test() -> bool:
 		return false
 	if int(cc.get("openings_aligned", 0)) != 22 or int(cc.get("openings_total", 0)) != 22 or int(cc.get("connected", 0)) != 8:
 		push_error("caricature_dc_test: unexpected city check counts: %s" % str(cc))
+		return false
+
+	# Decision 81 (Item 77 / F92): On all 21 DC maps, every 4-connected clump of TILE_TREE tiles
+	# has a single kind (no tree tile differs from the tree tile directly above, below, left, or right),
+	# and ~30% of clumps are pine/dark (variant == 1). Verify on final synthesized cell buffers!
+	var total_tree_clumps := 0
+	var pine_tree_clumps := 0
+	for a_var in areas:
+		var area_t: Dictionary = a_var
+		var aid_t := str(area_t.get("id", ""))
+		var comp_t: Dictionary = compiled_by_id[aid_t]
+		var w_t: int = int(comp_t["w"])
+		var h_t: int = int(comp_t["h"])
+		var orig_t: Vector2i = comp_t["origin"]
+		var rows_t: int = int(comp_t["rows"])
+		var synth_cls := PackedByteArray()
+		synth_cls.resize(w_t * h_t)
+		synth_cls.fill(0)
+		var synth_var := PackedByteArray()
+		synth_var.resize(w_t * h_t)
+		synth_var.fill(0)
+		for cell_t in Neighbourhoods.block_cells(area_t):
+			var cr_t := CaricatureMap.cell_result(comp_t, cell_t, area_t)
+			var tb_t: PackedByteArray = cr_t["tiles"]
+			var bx_t: int = (cell_t.x - orig_t.x) * 32
+			var by_t: int = (orig_t.y + rows_t - 1 - cell_t.y) * 32
+			for ly_t in range(32):
+				for lx_t in range(32):
+					var ti_t := (ly_t * 32 + lx_t) * 3
+					var gi_t := (by_t + ly_t) * w_t + (bx_t + lx_t)
+					synth_cls[gi_t] = tb_t[ti_t]
+					synth_var[gi_t] = tb_t[ti_t + 1]
+		var seen_t := PackedByteArray()
+		seen_t.resize(w_t * h_t)
+		seen_t.fill(0)
+		for y_t in range(h_t):
+			for x_t in range(w_t):
+				var idx_t := y_t * w_t + x_t
+				if synth_cls[idx_t] != TileSynth2.TILE_TREE:
+					continue
+				var v_t: int = synth_var[idx_t]
+				if y_t + 1 < h_t and synth_cls[(y_t + 1) * w_t + x_t] == TileSynth2.TILE_TREE and synth_var[(y_t + 1) * w_t + x_t] != v_t:
+					push_error("caricature_dc_test: [F92] %s tree (%d,%d) var=%d differs from south tree (%d,%d) var=%d" % [aid_t, x_t, y_t, v_t, x_t, y_t + 1, synth_var[(y_t + 1) * w_t + x_t]])
+					return false
+				if x_t + 1 < w_t and synth_cls[idx_t + 1] == TileSynth2.TILE_TREE and synth_var[idx_t + 1] != v_t:
+					push_error("caricature_dc_test: [F92] %s tree (%d,%d) var=%d differs from east tree (%d,%d) var=%d" % [aid_t, x_t, y_t, v_t, x_t + 1, y_t, synth_var[idx_t + 1]])
+					return false
+				if seen_t[idx_t] == 0:
+					total_tree_clumps += 1
+					if v_t == 1:
+						pine_tree_clumps += 1
+					var q_t: Array[int] = [idx_t]
+					seen_t[idx_t] = 1
+					var hq := 0
+					while hq < q_t.size():
+						var cur := q_t[hq]
+						hq += 1
+						var cx2 := cur % w_t
+						var cy2 := int(cur / w_t)
+						for nb_idx in [
+							cur - 1 if cx2 > 0 else -1,
+							cur + 1 if cx2 + 1 < w_t else -1,
+							cur - w_t if cy2 > 0 else -1,
+							cur + w_t if cy2 + 1 < h_t else -1,
+						]:
+							if nb_idx >= 0 and synth_cls[nb_idx] == TileSynth2.TILE_TREE and seen_t[nb_idx] == 0:
+								seen_t[nb_idx] = 1
+								q_t.append(nb_idx)
+	var pine_share := float(pine_tree_clumps) / float(maxi(1, total_tree_clumps))
+	print("[TREE CLUMPS DC] total_clumps=%d pine_clumps=%d share=%.3f" % [total_tree_clumps, pine_tree_clumps, pine_share])
+	if total_tree_clumps < 50 or pine_share < 0.20 or pine_share > 0.40:
+		push_error("caricature_dc_test: [F92] unexpected pine clump share %.3f (%d/%d)" % [pine_share, pine_tree_clumps, total_tree_clumps])
 		return false
 
 	return all_ok

@@ -594,8 +594,8 @@ def generate_original_atlas(pack_sheet_path=None):
                 tg_m.set(15, y, grass0.get(15, y) if y % 3 != 2 else TS_TERRAIN_PALETTE["tall_upper"])
         put_16(mask, idx["tall_grass"], tg_m)
 
-    # Rows 6..7: TREE 0 (round) and TREE 1 (conifer) — 2-block-tall (16x32 px) Tier 4 sprites (§3.2, §6.3)
-    # Columns 0..7 store the bottom 16x16 half (trunk + lower crown) composited over grass0;
+    # Rows 6..7: TREE 0 (round) and TREE 1 (conifer) — 2-block-tall (16x32 px) Tier 4 sprites (§3.2, §6.3, Decision 81 F92)
+    # Columns 0..7 store the bottom 16x16 half (trunk + lower crown with transparent background — no baked grass square);
     # columns 8..15 store the top 16x16 half (upper crown with transparent background) for the canopy overhang layer.
     terrain_dir = os.path.join(repo_root, "game", "assets", "original", "terrain")
     tree_round_img = al.read_png(os.path.join(terrain_dir, "tree_round.png"))
@@ -604,9 +604,8 @@ def generate_original_atlas(pack_sheet_path=None):
         top_16 = tree_img.crop(0, 0, 16, 16)
         bot_16 = tree_img.crop(0, 16, 16, 32)
         for m in range(8):
-            # Bottom half (cols 0..7): composited over grass0 (100% opaque)
-            b_m = grass0.copy()
-            b_m.paste(bot_16, 0, 0, only_opaque=True)
+            # Bottom half (cols 0..7): transparent background around trunk + lower crown (drawn over map ground)
+            b_m = bot_16.copy()
             b_m.set(6, 3, TS_TERRAIN_PALETTE["tall_tip"] if (m & 1) else TS_TERRAIN_PALETTE["tall_mid"])
             b_m.set(7, 3, TS_TERRAIN_PALETTE["tall_tip"] if (m & 2) else TS_TERRAIN_PALETTE["tall_deep"])
             b_m.set(8, 3, TS_TERRAIN_PALETTE["tall_upper"] if (m & 4) else TS_TERRAIN_PALETTE["tall_mid"])

@@ -7,6 +7,7 @@
     "sec04": 4,
     "sec05": 5,
     "sec07": 7,
+    "sec08": 8,
     "sec10": 10,
     "sec01": 1,
     "sec09": 9
@@ -57,66 +58,76 @@
     "3": {
       "0": {
         "0": {
-          "metatile": 14
-        },
-        "2": {
-          "metatile": 14
-        },
-        "4": {
-          "metatile": 14
-        },
-        "6": {
-          "metatile": 14
-        },
-        "8": {
-          "metatile": 14
-        },
-        "10": {
-          "metatile": 14
-        },
-        "12": {
-          "metatile": 14
-        },
-        "14": {
-          "metatile": 14
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
         },
         "1": {
-          "metatile": 22
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
+        },
+        "2": {
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
         },
         "3": {
-          "metatile": 22
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
         },
-        "9": {
-          "metatile": 22
-        },
-        "11": {
-          "metatile": 22
+        "4": {
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
         },
         "5": {
-          "metatile": 198
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
+        },
+        "6": {
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
         },
         "7": {
-          "metatile": 198
+          "metatile": 595,
+          "tileset": "sec08",
+          "layer": "l1"
         },
-        "13": {
-          "metatile": 198
-        },
-        "15": {
-          "metatile": 198
-        }
-      },
-      "1": {
-        "6": {
-          "metatile": 30
-        },
-        "12": {
-          "metatile": 31
-        },
-        "3": {
-          "metatile": 38
+        "8": {
+          "metatile": 14,
+          "layer": "l1"
         },
         "9": {
-          "metatile": 39
+          "metatile": 14,
+          "layer": "l1"
+        },
+        "10": {
+          "metatile": 14,
+          "layer": "l1"
+        },
+        "11": {
+          "metatile": 14,
+          "layer": "l1"
+        },
+        "12": {
+          "metatile": 14,
+          "layer": "l1"
+        },
+        "13": {
+          "metatile": 14,
+          "layer": "l1"
+        },
+        "14": {
+          "metatile": 14,
+          "layer": "l1"
+        },
+        "15": {
+          "metatile": 14,
+          "layer": "l1"
         }
       }
     },

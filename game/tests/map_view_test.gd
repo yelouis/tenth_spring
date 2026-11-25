@@ -670,9 +670,16 @@ func run_test() -> bool:
 	map_view._clear_cell_stamps(Vector2i(0, 0))
 	map_view._clear_cell_stamps(Vector2i(0, 1))
 
-	# 14. Item 42 (§6.3): Two-block-tall (1x2) tree canopy layer (TreeTopKnown / TreeTopCleared)
+	# 14. Item 42 (§6.3) + Item 77 (F92): Two-block-tall (1x2) transparent tree base (TreeBaseKnown/Cleared, z=0 over ground)
+	#     and canopy overhang layer (TreeTopKnown/Cleared, z=2 above sprites)
+	var tree_base_known := map_view.get_node_or_null("TreeBaseKnown") as TileMapLayer
+	var tree_base_cleared := map_view.get_node_or_null("TreeBaseCleared") as TileMapLayer
 	var tree_top_known := map_view.get_node_or_null("TreeTopKnown") as TileMapLayer
 	var tree_top_cleared := map_view.get_node_or_null("TreeTopCleared") as TileMapLayer
+	if tree_base_known == null or tree_base_cleared == null or tree_base_known.z_index != 0 or tree_base_cleared.z_index != 0:
+		push_error("(77) TreeBaseKnown / TreeBaseCleared missing or wrong z_index: known=%s cleared=%s" % [str(tree_base_known), str(tree_base_cleared)])
+		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
+		return false
 	if tree_top_known == null or tree_top_cleared == null or tree_top_known.z_index != 2 or tree_top_cleared.z_index != 2:
 		push_error("(42) TreeTopKnown / TreeTopCleared missing or wrong z_index: known=%s cleared=%s" % [str(tree_top_known), str(tree_top_cleared)])
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
@@ -691,15 +698,16 @@ func run_test() -> bool:
 	map_view._render_cell(14, 14)
 	var tree_st: Vector2i = map_view._screen_tile(14, 14, 8, 10)
 	var tree_top_st: Vector2i = tree_st + Vector2i(0, -1)
-	var got_base_tree: Vector2i = world_known.get_cell_atlas_coords(tree_st)
+	var got_ground_tree: Vector2i = world_known.get_cell_atlas_coords(tree_st)
+	var got_base_tree: Vector2i = tree_base_known.get_cell_atlas_coords(tree_st)
 	var got_top_tree: Vector2i = tree_top_known.get_cell_atlas_coords(tree_top_st)
-	if got_base_tree != Vector2i(5, 6) or got_top_tree != Vector2i(13, 6):
-		push_error("(42) Expected TILE_TREE (v=0, m=13) to place base Vector2i(5, 6) at st and canopy Vector2i(13, 6) at st+(0,-1), got base=%s top=%s" % [str(got_base_tree), str(got_top_tree)])
+	if got_ground_tree != Vector2i(0, 1) or got_base_tree != Vector2i(5, 6) or got_top_tree != Vector2i(13, 6):
+		push_error("(42/77) Expected TILE_TREE (v=0, m=13) to place grass (0,1) on WorldKnown, base (5,6) on TreeBaseKnown, and canopy (13,6) on TreeTopKnown; got ground=%s base=%s top=%s" % [str(got_ground_tree), str(got_base_tree), str(got_top_tree)])
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 	map_view._unrender_cell(14, 14)
-	if tree_top_known.get_cell_atlas_coords(tree_top_st) != Vector2i(-1, -1):
-		push_error("(42) _unrender_cell did not erase tree canopy tile at st+(0,-1)")
+	if tree_base_known.get_cell_atlas_coords(tree_st) != Vector2i(-1, -1) or tree_top_known.get_cell_atlas_coords(tree_top_st) != Vector2i(-1, -1):
+		push_error("(42/77) _unrender_cell did not erase tree base/canopy tiles")
 		_cleanup(map_view, test_db_path, test_store_path, test_f43_store_path)
 		return false
 

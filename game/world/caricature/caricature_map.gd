@@ -1146,6 +1146,51 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 	if not errors.is_empty():
 		return _fail_result(errors, origin, cols, rows, area_kind)
 
+	# Decision 81 (Item 77 / F92): Pick tree kind (0 = standard/round, 1 = pine/dark) once per
+	# 4-connected clump of TILE_TREE tiles (~30% of clumps pine), eliminating per-tile mixing.
+	var tree_seen := PackedByteArray()
+	tree_seen.resize(total)
+	tree_seen.fill(0)
+	var tree_q: Array[int] = []
+	for ty_c in range(h):
+		for tx_c in range(w):
+			var seed_idx: int = ty_c * w + tx_c
+			if cls_buf[seed_idx] != TileSynth2.TILE_TREE or tree_seen[seed_idx] != 0:
+				continue
+			var clump_gx: int = _global_col(origin, tx_c)
+			var clump_gy: int = _seed_gy(origin, rows, ty_c)
+			var clump_var: int = 1 if TileSynth2.u_rand(clump_gx, clump_gy, world_seed, TileSynth2.SALT_TREE_VARIANT) < 0.30 else 0
+			tree_seen[seed_idx] = 1
+			tree_q.clear()
+			tree_q.append(seed_idx)
+			var q_head := 0
+			while q_head < tree_q.size():
+				var cur_idx: int = tree_q[q_head]
+				q_head += 1
+				var_buf[cur_idx] = clump_var
+				var cx_t: int = cur_idx % w
+				var cy_t: int = int(cur_idx / w)
+				if cx_t > 0:
+					var ni := cur_idx - 1
+					if cls_buf[ni] == TileSynth2.TILE_TREE and tree_seen[ni] == 0:
+						tree_seen[ni] = 1
+						tree_q.append(ni)
+				if cx_t + 1 < w:
+					var ni := cur_idx + 1
+					if cls_buf[ni] == TileSynth2.TILE_TREE and tree_seen[ni] == 0:
+						tree_seen[ni] = 1
+						tree_q.append(ni)
+				if cy_t > 0:
+					var ni := cur_idx - w
+					if cls_buf[ni] == TileSynth2.TILE_TREE and tree_seen[ni] == 0:
+						tree_seen[ni] = 1
+						tree_q.append(ni)
+				if cy_t + 1 < h:
+					var ni := cur_idx + w
+					if cls_buf[ni] == TileSynth2.TILE_TREE and tree_seen[ni] == 0:
+						tree_seen[ni] = 1
+						tree_q.append(ni)
+
 	var public_openings: Array[Dictionary] = []
 	for op_rec in compiled_openings:
 		public_openings.append({
@@ -1400,7 +1445,7 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 	var preserve_road := bool(compiled.get("has_town_rules", false)) or str(compiled.get("kind", "")) == "route"
 
 	var output := TileSynth2.finalize_cell_output(
-		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road
+		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road, true
 	)
 
 	# Gather every compiled stamp whose box touches this cell (§3.8 step 4, tile_synth2.gd:1664)

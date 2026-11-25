@@ -285,6 +285,18 @@ func run_test() -> bool:
 					if em_img.get_pixel(px, row_y + py) != orig_img.get_pixel(px, row_y + py):
 						return _fail("F Rule B pixel diff on class %d row %d at (%d,%d)" % [r_cls, int(r_entry["row"]), px, py])
 
+	# Decision 81 (Item 77 / F92): Both tree rows (rows 6 & 7, cols 0..15) in emerald_v1.png must have
+	# transparent backgrounds around leaf/trunk silhouettes (no baked grass square).
+	for t_row in [6, 7]:
+		for t_col in range(16):
+			var op_cnt := 0
+			for py in range(32):
+				for px in range(32):
+					if em_img.get_pixel(t_col * 32 + px, t_row * 32 + py).a > 0.5:
+						op_cnt += 1
+			if op_cnt <= 0 or op_cnt >= 1024:
+				return _fail("F [F92] Emerald tree tile (row=%d col=%d) must have transparent background (0 < opaque < 1024), got %d" % [t_row, t_col, op_cnt])
+
 	# Decision 71 (Item 62b): worn path/road/plaza (classes 7, 8, 11 at variant 1) must draw identical to variant 0
 	for clean_cls in [7, 8, 11]:
 		if not clean_v0_row.has(clean_cls) or not clean_v1_row.has(clean_cls):
