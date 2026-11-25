@@ -69,20 +69,34 @@ static func daylight_minutes_left_for_minute(min_of_day: int) -> int:
 static func daylight_tag_for_cost(cost_min: int, remaining_daylight_min: int) -> String:
 	if remaining_daylight_min <= 0:
 		return "red"
-	if cost_min > remaining_daylight_min:
-		return "red"
-	if cost_min > remaining_daylight_min - 60:
+	var c := maxi(1, cost_min)
+	if remaining_daylight_min >= c * 2:
+		return "green"
+	if remaining_daylight_min >= c:
 		return "amber"
-	return "green"
+	return "red"
 
 static func daylight_color(tag: String) -> Color:
 	match tag:
 		"green":
-			return Color(0.35, 0.85, 0.45, 1.0)
+			return Color("#56e68a")
 		"amber":
-			return Color(0.95, 0.72, 0.25, 1.0)
+			return Color("#f2c14e")
 		_:
-			return Color(0.95, 0.35, 0.35, 1.0)
+			return Color("#ef6461")
+
+static func format_route_sign_daylight(route_name: String, cost_min: int, remaining_daylight_min: int) -> Dictionary:
+	var tag := daylight_tag_for_cost(cost_min, remaining_daylight_min)
+	var suffix := "night ahead"
+	if tag == "green":
+		suffix = "round trip before dusk"
+	elif tag == "amber":
+		suffix = "one-way before dusk"
+	return {
+		"tag": tag,
+		"color": daylight_color(tag),
+		"text": "%s — %d min on foot (%s)" % [route_name, cost_min, suffix],
+	}
 
 static func estimate_trip_minutes(
 	miles: float,

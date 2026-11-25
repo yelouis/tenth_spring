@@ -114,10 +114,13 @@ func run_test() -> bool:
 			_cleanup()
 			return false
 
-	# Daylight tags: at 17:30 (1050, 90 min left): 15m -> green, 45m -> amber, 95m -> red; at dusk/night -> red
-	clk2.set_minutes(1050, false)
-	if clk2.daylight_tag(15) != "green" or clk2.daylight_tag(45) != "amber" or clk2.daylight_tag(95) != "red":
-		push_error("FAIL: Daylight tags wrong at 17:30: 15=%s 45=%s 95=%s" % [clk2.daylight_tag(15), clk2.daylight_tag(45), clk2.daylight_tag(95)])
+	# Daylight tags (design_travel_and_time.md §2 / plan §(e)):
+	# green = round trip before dusk (>= 2*cost), amber = one-way before dusk (>= cost, < 2*cost), red = < cost or dusk/night
+	clk2.set_minutes(1050, false) # 17:30 -> 90 min left until 19:00 dusk
+	if clk2.daylight_tag(15) != "green" or clk2.daylight_tag(45) != "green" or clk2.daylight_tag(46) != "amber" or clk2.daylight_tag(90) != "amber" or clk2.daylight_tag(91) != "red":
+		push_error("FAIL: Daylight tags wrong at 17:30: 15=%s 45=%s 46=%s 90=%s 91=%s" % [
+			clk2.daylight_tag(15), clk2.daylight_tag(45), clk2.daylight_tag(46), clk2.daylight_tag(90), clk2.daylight_tag(91)
+		])
 		_cleanup()
 		return false
 	clk2.set_minutes(1200, false) # 20:00 dusk

@@ -12,6 +12,8 @@ const SynthWorker := preload("res://world/synth_worker.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
 const Grid := preload("res://world/grid.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
+const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
+const WorldClock := preload("res://world/world_clock.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 const OutdoorFixtures := preload("res://world/caricature/outdoor_fixtures.gd")
 const PeopleSprites := preload("res://world/people_sprites.gd")
@@ -180,6 +182,20 @@ var _camera_follows_player: bool = false
 var _player_walker: PlayerWalker = null
 var _walker_grid: CaricatureWalkerGrid = null
 var _current_walk_area_id: String = ""
+var _world_clock: WorldClock = WorldClock.new()
+var _route_origin_area_id: String = ""
+var _active_route_id: String = ""
+var _route_time_accum_milli: int = 0
+var _route_time_charged_min: int = 0
+var _route_idle_seconds: float = 0.0
+var _toast_panel: PanelContainer = null
+var _toast_label: Label = null
+var _toast_timer: float = 0.0
+var _last_toast_text: String = ""
+var _banner_panel: PanelContainer = null
+var _banner_label: Label = null
+var _banner_timer: float = 0.0
+var _last_banner_text: String = ""
 var _focused_area_id: String = ""
 var _focused_area_tiles: Vector2i = Vector2i.ZERO
 var _focused_city_cells: Vector2i = Vector2i.ZERO
@@ -353,6 +369,7 @@ func _ready() -> void:
 			_distortion_field_chip.position = Vector2(16.0, 52.0)
 			_distortion_field_chip.visible = false
 			attr_ui.add_child(_distortion_field_chip)
+		_init_walk_banners(attr_ui)
 
 	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
@@ -724,6 +741,184 @@ func get_walker_grid() -> CaricatureWalkerGrid:
 func get_current_walk_area_id() -> String:
 	return _current_walk_area_id
 
+func get_world_clock() -> WorldClock:
+	return _world_clock
+
+func get_last_toast_text() -> String:
+	return _last_toast_text
+
+func get_last_banner_text() -> String:
+	return _last_banner_text
+
+func get_route_crossing_state() -> Dictionary:
+	return {
+		"route_origin_area_id": _route_origin_area_id,
+		"active_route_id": _active_route_id,
+		"route_time_accum_milli": _route_time_accum_milli,
+		"route_time_charged_min": _route_time_charged_min,
+	}
+
+func set_route_crossing_state(origin_area_id: String, route_id: String, accum_milli: int = 0, charged_min: int = 0) -> void:
+	_route_origin_area_id = origin_area_id
+	_active_route_id = route_id
+	_route_time_accum_milli = maxi(0, accum_milli)
+	_route_time_charged_min = maxi(0, charged_min)
+	_route_idle_seconds = 0.0
+
+func _init_walk_banners(attr_ui: Node) -> void:
+	if _banner_panel == null:
+		_banner_panel = PanelContainer.new()
+		_banner_panel.name = "WalkBannerPanel"
+		_banner_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_banner_panel.anchor_left = 0.5
+		_banner_panel.anchor_right = 0.5
+		_banner_panel.anchor_top = 0.0
+		_banner_panel.anchor_bottom = 0.0
+		_banner_panel.offset_left = -300.0
+		_banner_panel.offset_right = 300.0
+		_banner_panel.offset_top = 14.0
+		_banner_panel.offset_bottom = 52.0
+		var bstyle := StyleBoxFlat.new()
+		bstyle.bg_color = Color(0.08, 0.11, 0.17, 0.90)
+		bstyle.border_width_left = 1
+		bstyle.border_width_top = 1
+		bstyle.border_width_right = 1
+		bstyle.border_width_bottom = 1
+		bstyle.border_color = Color(0.55, 0.72, 0.92, 0.85)
+		bstyle.corner_radius_top_left = 6
+		bstyle.corner_radius_top_right = 6
+		bstyle.corner_radius_bottom_left = 6
+		bstyle.corner_radius_bottom_right = 6
+		bstyle.content_margin_left = 14.0
+		bstyle.content_margin_right = 14.0
+		bstyle.content_margin_top = 6.0
+		bstyle.content_margin_bottom = 6.0
+		_banner_panel.add_theme_stylebox_override("panel", bstyle)
+		_banner_label = Label.new()
+		_banner_label.name = "WalkBannerLabel"
+		_banner_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_banner_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_banner_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_banner_label.add_theme_font_size_override("font_size", 14)
+		_banner_label.add_theme_color_override("font_color", Color(0.96, 0.98, 1.0, 1.0))
+		_banner_panel.add_child(_banner_label)
+		_banner_panel.visible = false
+		attr_ui.add_child(_banner_panel)
+
+	if _toast_panel == null:
+		_toast_panel = PanelContainer.new()
+		_toast_panel.name = "WalkToastPanel"
+		_toast_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_toast_panel.anchor_left = 0.5
+		_toast_panel.anchor_right = 0.5
+		_toast_panel.anchor_top = 1.0
+		_toast_panel.anchor_bottom = 1.0
+		_toast_panel.offset_left = -310.0
+		_toast_panel.offset_right = 310.0
+		_toast_panel.offset_top = -62.0
+		_toast_panel.offset_bottom = -24.0
+		var tstyle := StyleBoxFlat.new()
+		tstyle.bg_color = Color(0.10, 0.12, 0.18, 0.90)
+		tstyle.border_width_left = 1
+		tstyle.border_width_top = 1
+		tstyle.border_width_right = 1
+		tstyle.border_width_bottom = 1
+		tstyle.border_color = Color(0.82, 0.68, 0.36, 0.85)
+		tstyle.corner_radius_top_left = 5
+		tstyle.corner_radius_top_right = 5
+		tstyle.corner_radius_bottom_left = 5
+		tstyle.corner_radius_bottom_right = 5
+		tstyle.content_margin_left = 12.0
+		tstyle.content_margin_right = 12.0
+		tstyle.content_margin_top = 5.0
+		tstyle.content_margin_bottom = 5.0
+		_toast_panel.add_theme_stylebox_override("panel", tstyle)
+		_toast_label = Label.new()
+		_toast_label.name = "WalkToastLabel"
+		_toast_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_toast_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		_toast_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_toast_label.add_theme_font_size_override("font_size", 13)
+		_toast_label.add_theme_color_override("font_color", Color(0.98, 0.94, 0.82, 1.0))
+		_toast_panel.add_child(_toast_label)
+		_toast_panel.visible = false
+		attr_ui.add_child(_toast_panel)
+
+func show_toast(msg: String, duration: float = 4.0) -> void:
+	_last_toast_text = msg
+	_toast_timer = maxf(0.5, duration)
+	if _toast_label != null:
+		_toast_label.text = msg
+	if _toast_panel != null:
+		_toast_panel.visible = not msg.is_empty()
+
+func show_banner(msg: String, duration: float = 5.0) -> void:
+	_last_banner_text = msg
+	_banner_timer = maxf(0.5, duration)
+	if _banner_label != null:
+		_banner_label.text = msg
+	if _banner_panel != null:
+		_banner_panel.visible = not msg.is_empty()
+
+func _area_meta(area_id: String) -> Dictionary:
+	if _walker_grid != null:
+		return _walker_grid.area_meta(area_id)
+	return Neighbourhoods.area(area_id)
+
+func _area_kind(area_id: String) -> String:
+	if area_id.is_empty():
+		return ""
+	var meta := _area_meta(area_id)
+	var k := str(meta.get("kind", ""))
+	if not k.is_empty():
+		return k
+	if area_id.begins_with("camp:"):
+		return "camp"
+	if area_id.begins_with("route:"):
+		return "route"
+	return "hood"
+
+func _area_name(area_id: String) -> String:
+	var meta := _area_meta(area_id)
+	return str(meta.get("name", area_id))
+
+func _area_route_id(area_id: String) -> String:
+	var meta := _area_meta(area_id)
+	var rid := str(meta.get("route_id", ""))
+	if not rid.is_empty():
+		return rid
+	var hash_idx := area_id.find("#")
+	return area_id.substr(0, hash_idx) if hash_idx > 0 else area_id
+
+func persist_player_session() -> void:
+	if not _walk_mode_active or _screenshot_mode or _player_walker == null or _current_walk_area_id.is_empty():
+		return
+	var db = _get_db()
+	if db == null or not db.is_open() or not db.has_method("save_player_session"):
+		return
+	if not _caricature_compiled_by_area.has(_current_walk_area_id):
+		return
+	var comp: Dictionary = _caricature_compiled_by_area[_current_walk_area_id]
+	var lpos := CaricatureWalkerGrid.global_to_local(comp, _player_walker.grid_pos.x, _player_walker.grid_pos.y)
+	db.save_player_session({
+		"place_id": _active_place_id,
+		"area_id": _current_walk_area_id,
+		"tile_x": lpos.x,
+		"tile_y": lpos.y,
+		"facing": _player_walker.facing,
+		"interior_id": "",
+		"interior_floor": 0,
+		"interior_x": 0,
+		"interior_y": 0,
+		"return_area_id": "",
+		"return_x": 0,
+		"return_y": 0,
+		"route_origin_area_id": _route_origin_area_id,
+		"active_route_id": _active_route_id,
+		"route_time_accum_milli": _route_time_accum_milli,
+		"route_time_charged_min": _route_time_charged_min,
+	})
+
 func _rebuild_walker_grid() -> void:
 	var collected := {}
 	var db = _get_db()
@@ -738,7 +933,8 @@ func _rebuild_walker_grid() -> void:
 		_caricature_compiled_by_area,
 		_caricature_cells,
 		Callable(self, "_caricature_reveal_state"),
-		collected
+		collected,
+		_active_place_id
 	)
 
 func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "S") -> bool:
@@ -756,10 +952,13 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 		_player_walker.set_force_no_rom(_force_no_rom)
 		_player_walker.set_step_evaluator(Callable(self, "_evaluate_walker_step"))
 		_player_walker.step_completed.connect(_on_walker_step_completed)
+		_player_walker.step_blocked.connect(_on_walker_step_blocked)
 		if _stamp_base_layer != null:
 			_stamp_base_layer.add_child(_player_walker)
 		else:
 			add_child(_player_walker)
+	elif not _player_walker.step_blocked.is_connected(_on_walker_step_blocked):
+		_player_walker.step_blocked.connect(_on_walker_step_blocked)
 
 	var db = _get_db()
 	var sidx := 0
@@ -770,6 +969,9 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 	_player_walker.visible = true
 	_player_walker.input_enabled = true
 
+	_world_clock.load_from_db(db)
+	_world_clock.set_running(not _screenshot_mode)
+
 	_walk_mode_active = true
 	_camera_follows_player = true
 	_set_zoom_step(2.0) # Emerald 15x10 screen at 960x640 (Decision 79 / F81)
@@ -778,11 +980,12 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 func disable_walk_mode() -> void:
 	_walk_mode_active = false
 	_camera_follows_player = false
+	_world_clock.set_running(false)
 	if _player_walker != null:
 		_player_walker.visible = false
 		_player_walker.input_enabled = false
 
-func place_player_in_area(area_id: String, local_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "S") -> bool:
+func place_player_in_area(area_id: String, local_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "S", preserve_route_state: bool = false) -> bool:
 	if _player_walker == null or not _caricature_compiled_by_area.has(area_id):
 		return false
 	var comp: Dictionary = _caricature_compiled_by_area[area_id]
@@ -792,11 +995,18 @@ func place_player_in_area(area_id: String, local_tile: Vector2i = Vector2i(-1, -
 	var gpos := CaricatureWalkerGrid.local_to_global(comp, lpos.x, lpos.y)
 	_current_walk_area_id = area_id
 	_focused_area_id = area_id
+	if not preserve_route_state:
+		_route_origin_area_id = ""
+		_active_route_id = ""
+		_route_time_accum_milli = 0
+		_route_time_charged_min = 0
+		_route_idle_seconds = 0.0
 	_camera_follows_player = true
 	_player_walker.place_at(gpos, facing_str)
 	if _camera != null:
 		_camera.position = _player_walker.get_camera_target()
 	_update_return_home_visibility()
+	persist_player_session()
 	return true
 
 func _evaluate_walker_step(from_tile: Vector2i, dir: Vector2i) -> Dictionary:
@@ -804,19 +1014,84 @@ func _evaluate_walker_step(from_tile: Vector2i, dir: Vector2i) -> Dictionary:
 		return {"action": "blocked", "reason": "none", "tile": from_tile + dir, "area_id": _current_walk_area_id}
 	return _walker_grid.evaluate_step(from_tile.x, from_tile.y, dir)
 
+func _on_walker_step_blocked(_tile: Vector2i, info: Dictionary) -> void:
+	if str(info.get("reason", "")) == "fog":
+		show_toast("Thick fog blocks the way — open the next neighbourhood at the Waypost board first.")
+
+func _accrue_route_step_time(route_id: String, tiles_moved: int) -> void:
+	if route_id.is_empty() or _walker_grid == null:
+		return
+	var route_min := NeighbourhoodProgress.route_walk_minutes(route_id, false)
+	var ends_steps := _walker_grid.get_route_total_ends_steps(route_id)
+	var per_tile_milli := maxi(1, int(round(float(route_min * 1000) / float(maxi(1, ends_steps)))))
+	_route_time_accum_milli += per_tile_milli * maxi(1, tiles_moved)
+	while _route_time_accum_milli >= 1000:
+		_route_time_accum_milli -= 1000
+		_world_clock.advance_minutes(1)
+		_route_time_charged_min += 1
+
 func _on_walker_step_completed(tile: Vector2i, info: Dictionary) -> void:
+	var from_aid := str(info.get("from_area", _current_walk_area_id))
 	var to_aid := str(info.get("to_area", ""))
-	if not to_aid.is_empty():
-		_current_walk_area_id = to_aid
-		_focused_area_id = to_aid
-	elif _walker_grid != null:
-		var detected := _walker_grid.area_at_global(tile.x, tile.y)
-		if not detected.is_empty():
-			_current_walk_area_id = detected
-			_focused_area_id = detected
+	if to_aid.is_empty() and _walker_grid != null:
+		to_aid = _walker_grid.area_at_global(tile.x, tile.y)
+	if to_aid.is_empty():
+		to_aid = _current_walk_area_id
+
+	var from_kind := _area_kind(from_aid)
+	var to_kind := _area_kind(to_aid)
+	var step_tiles := int(info.get("step_tiles", 1))
+
+	if from_kind == "hood" and to_kind == "route":
+		# Entered a route from a neighbourhood: start tracking origin & fractional route travel clock
+		_route_origin_area_id = from_aid
+		_active_route_id = _area_route_id(to_aid)
+		_route_time_accum_milli = 0
+		_route_time_charged_min = 0
+		_route_idle_seconds = 0.0
+		_accrue_route_step_time(_active_route_id, step_tiles)
+	elif to_kind == "route":
+		# Stepping along a route (or seamlessly across leg #1 <-> leg #2): keep origin, accrue fractional travel time
+		if _active_route_id.is_empty():
+			_active_route_id = _area_route_id(to_aid)
+		_route_idle_seconds = 0.0
+		_accrue_route_step_time(_active_route_id, step_tiles)
+	elif from_kind == "route" and to_kind == "hood":
+		var db = _get_db()
+		var route_id := _active_route_id if not _active_route_id.is_empty() else _area_route_id(from_aid)
+		if not route_id.is_empty() and not _route_origin_area_id.is_empty():
+			if to_aid != _route_origin_area_id:
+				# Crossed to the far end of the route: flush remaining route travel time & call walk_route
+				var req_min := NeighbourhoodProgress.route_walk_minutes(route_id, false)
+				if _route_time_charged_min < req_min:
+					_world_clock.advance_minutes(req_min - _route_time_charged_min)
+				var prev_state := 0
+				if db != null and db.is_open():
+					var prev_row: Dictionary = db.get_neighbourhood_state(to_aid)
+					prev_state = int(prev_row.get("state", 0))
+				var wr := NeighbourhoodProgress.walk_route(db, route_id, _route_origin_area_id)
+				if bool(wr.get("ok", false)):
+					_fog_dirty = true
+					_sync_fog_field()
+					_update_frustum_culling()
+					var hood_name := _area_name(to_aid)
+					if prev_state < 2:
+						show_banner("Arrived in %s — lamp lit for fast travel." % hood_name)
+					else:
+						show_banner(hood_name)
+			# Else: player turned back into origin neighbourhood — do NOT call walk_route
+		_route_origin_area_id = ""
+		_active_route_id = ""
+		_route_time_accum_milli = 0
+		_route_time_charged_min = 0
+		_route_idle_seconds = 0.0
+
+	_current_walk_area_id = to_aid
+	_focused_area_id = to_aid
 	if _camera_follows_player and _camera != null and _player_walker != null:
 		_camera.position = _player_walker.get_camera_target()
 	_update_return_home_visibility()
+	persist_player_session()
 
 func force_caricature_area(area_id: String) -> void:
 	_forced_caricature_area_id = area_id
@@ -1375,8 +1650,27 @@ func _process(delta: float) -> void:
 	if _walk_mode_active and _player_walker != null:
 		if _camera_follows_player and _camera != null:
 			_camera.position = _player_walker.get_camera_target()
+		if not _screenshot_mode:
+			if _area_kind(_current_walk_area_id) == "route":
+				if _player_walker.is_moving():
+					_route_idle_seconds = 0.0
+				else:
+					_route_idle_seconds += delta
+					if _route_idle_seconds >= 2.0:
+						_world_clock.tick(delta)
+			else:
+				_route_idle_seconds = 0.0
+				_world_clock.tick(delta)
 	else:
 		_handle_keyboard_pan(delta)
+	if _toast_timer > 0.0:
+		_toast_timer -= delta
+		if _toast_timer <= 0.0 and _toast_panel != null:
+			_toast_panel.visible = false
+	if _banner_timer > 0.0:
+		_banner_timer -= delta
+		if _banner_timer <= 0.0 and _banner_panel != null:
+			_banner_panel.visible = false
 	_update_frustum_culling()
 	_drain_worker_results()
 	_blit_pending_cells()
