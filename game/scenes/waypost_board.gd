@@ -11,9 +11,11 @@ signal closed()
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const RevealEngine := preload("res://world/reveal_engine.gd")
+const WorldClock := preload("res://world/world_clock.gd")
 
 var _place_id: String = ""
 var _db_override = null
+var _clock_override = null
 var _row_info_by_area: Dictionary = {}
 
 @onready var title_label: Label = $BoardPanel/Margin/RootVBox/Header/TitleLabel
@@ -26,6 +28,24 @@ func _ready() -> void:
 		close_button.pressed.connect(_on_close_pressed)
 	if not _place_id.is_empty():
 		refresh()
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
+	if event is InputEventKey:
+		var ke := event as InputEventKey
+		if ke.pressed and not ke.echo and (ke.keycode == KEY_ESCAPE or ke.keycode == KEY_X):
+			_on_close_pressed()
+			get_viewport().set_input_as_handled()
+
+func _current_daylight_left(db) -> int:
+	if _clock_override != null and _clock_override.has_method("daylight_minutes_left"):
+		return int(_clock_override.daylight_minutes_left())
+	if db != null and db.is_open() and db.has_method("get_world_clock"):
+		var row: Dictionary = db.get_world_clock()
+		if not row.is_empty():
+			return WorldClock.daylight_minutes_left_for_minute(int(row.get("game_epoch_minutes", WorldClock.DEFAULT_START_MINUTES)))
+	return WorldClock.daylight_minutes_left_for_minute(WorldClock.DEFAULT_START_MINUTES)
 
 func _get_db():
 	if _db_override != null:
@@ -41,9 +61,10 @@ func _resolve_city_name(place_id: String) -> String:
 			return str((p_var as Dictionary).get("name", place_id))
 	return place_id
 
-func open_for_place(place_id: String, db_override = null) -> void:
+func open_for_place(place_id: String, db_override = null, clock_override = null) -> void:
 	_place_id = place_id
 	_db_override = db_override
+	_clock_override = clock_override
 	visible = true
 	refresh()
 
@@ -103,6 +124,7 @@ func refresh() -> void:
 	var camp_dict: Dictionary = city_dict.get("camp", {}) if city_dict.get("camp") is Dictionary else {}
 	var camp_id := str(camp_dict.get("id", ""))
 	var is_demo := NeighbourhoodProgress.is_demo_profile()
+	var rem_daylight := _current_daylight_left(db)
 
 	var hoods_var: Variant = city_dict.get("neighbourhoods", [])
 	if not (hoods_var is Array):
@@ -151,6 +173,8 @@ func refresh() -> void:
 		var mq: Dictionary = hood.get("main_quest", {}) if hood.get("main_quest") is Dictionary else {}
 		var pays_str := str(mq.get("pays", ""))
 		var trip_min := NeighbourhoodProgress.trip_minutes(_place_id, camp_id, area_id)
+		var trip_tag := WorldClock.daylight_tag_for_cost(trip_min, rem_daylight)
+		var trip_col := WorldClock.daylight_color(trip_tag)
 
 		var card_lines: Array[String] = [
 			"Types: %s · Night: %s · Pays: %s · Trip: %d min" % [
@@ -220,12 +244,30 @@ func refresh() -> void:
 		)
 		left_vbox.add_child(name_lbl)
 
+		var card_hbox := HBoxContainer.new()
+		card_hbox.add_theme_constant_override("separation", 8)
 		var card_lbl := Label.new()
 		card_lbl.name = "CardLabel"
-		card_lbl.text = card_text
+		card_lbl.text = "Types: %s · Night: %s · Pays: %s" % [types_str, night_str, pays_str]
 		card_lbl.add_theme_font_size_override("font_size", 12)
 		card_lbl.add_theme_color_override("font_color", Color(0.76, 0.81, 0.88, 0.95))
-		left_vbox.add_child(card_lbl)
+		card_hbox.add_child(card_lbl)
+
+		var trip_lbl := Label.new()
+		trip_lbl.name = "TripLabel"
+		trip_lbl.text = "· Trip: %d min" % trip_min
+		trip_lbl.add_theme_font_size_override("font_size", 12)
+		trip_lbl.add_theme_color_override("font_color", trip_col)
+		card_hbox.add_child(trip_lbl)
+		left_vbox.add_child(card_hbox)
+
+		if card_lines.size() > 1:
+			var walk_hint_lbl := Label.new()
+			walk_hint_lbl.name = "WalkHintLabel"
+			walk_hint_lbl.text = "\n".join(PackedStringArray(card_lines.slice(1)))
+			walk_hint_lbl.add_theme_font_size_override("font_size", 11)
+			walk_hint_lbl.add_theme_color_override("font_color", Color(0.90, 0.82, 0.56, 0.95))
+			left_vbox.add_child(walk_hint_lbl)
 
 		var state_lbl := Label.new()
 		state_lbl.name = "StateLabel"
@@ -307,6 +349,9 @@ func refresh() -> void:
 			"name_text": name_line,
 			"state_text": state_text,
 			"card_text": card_text,
+			"trip_min": trip_min,
+			"trip_daylight_tag": trip_tag,
+			"trip_daylight_color": trip_col,
 			"has_open": has_open_btn,
 			"has_go": has_go_btn,
 			"has_demo_finish": has_demo_finish_btn,

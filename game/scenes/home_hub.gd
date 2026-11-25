@@ -4,6 +4,7 @@ extends Control
 # Contract: docs/implementation_plan_famous_places.md §5, docs/agent_execution_guide.md §7.4
 
 const PlayerSprites := preload("res://world/player_sprites.gd")
+const WorldClock := preload("res://world/world_clock.gd")
 
 signal distort_requested()
 signal pairing_requested()
@@ -68,6 +69,10 @@ func _update_hub_status() -> void:
 		return
 	var db_inst = _get_db()
 	if db_inst != null and db_inst.is_open():
+		var clk := WorldClock.new()
+		clk.load_from_db(db_inst)
+		clk.set_running(false)
+		var clock_str := "Clock paused (%s %s)" % [clk.format_hhmm(), clk.time_band()]
 		var starter = db_inst.get_distort_entry_by_reason("starter") if db_inst.has_method("get_distort_entry_by_reason") else {}
 		if starter.is_empty():
 			var dists = db_inst.get_all_distort_entries()
@@ -76,9 +81,9 @@ func _update_hub_status() -> void:
 					starter = d
 					break
 		if not starter.is_empty():
-			status_label.text = "Safehouse Active • Starter City: %s" % str(starter.get("place_id", ""))
+			status_label.text = "Safehouse Active • %s • Starter City: %s" % [clock_str, str(starter.get("place_id", ""))]
 		else:
-			status_label.text = "Safehouse Active • Starter City pending"
+			status_label.text = "Safehouse Active • %s • Starter City pending" % clock_str
 	else:
 		status_label.text = "Safehouse Active"
 

@@ -162,6 +162,7 @@ var _return_home_button: Button = null
 var _board_button: Button = null
 var _back_to_camp_button: Button = null
 var _waypost_board: Control = null
+var _lamp_menu: Control = null
 var _distortion_field_layer: Node2D = null
 var _distortion_field_rect: ColorRect = null
 var _distortion_field_chip: Label = null
@@ -744,6 +745,29 @@ func get_current_walk_area_id() -> String:
 func get_world_clock() -> WorldClock:
 	return _world_clock
 
+static func format_arrival_banner(place_name: String) -> String:
+	return "You are in %s. You have what you carry. The way home is this Waypost." % place_name
+
+static func format_resume_banner(place_id: String, area_id: String, place_name: String) -> String:
+	var a_dict: Dictionary = Neighbourhoods.area(area_id)
+	var kind := str(a_dict.get("kind", ""))
+	if kind == "camp" or area_id.begins_with("camp:"):
+		return format_arrival_banner(place_name)
+	var display_name := str(a_dict.get("name", area_id))
+	if kind == "route" or area_id.begins_with("route:"):
+		var rid := str(a_dict.get("route_id", ""))
+		if not rid.is_empty():
+			var r_dict: Dictionary = Neighbourhoods.route(rid)
+			display_name = str(r_dict.get("name", display_name))
+	var mins := NeighbourhoodProgress.waypost_minutes_from_area(place_id, area_id, false)
+	return "You are in %s. The Waypost is %d min on foot." % [display_name, mins]
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		if _walk_mode_active and not _screenshot_mode:
+			_world_clock.save_to_db()
+			persist_player_session()
+
 func get_last_toast_text() -> String:
 	return _last_toast_text
 
@@ -953,12 +977,16 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 		_player_walker.set_step_evaluator(Callable(self, "_evaluate_walker_step"))
 		_player_walker.step_completed.connect(_on_walker_step_completed)
 		_player_walker.step_blocked.connect(_on_walker_step_blocked)
+		_player_walker.interact_pressed.connect(_on_walker_interact_pressed)
 		if _stamp_base_layer != null:
 			_stamp_base_layer.add_child(_player_walker)
 		else:
 			add_child(_player_walker)
-	elif not _player_walker.step_blocked.is_connected(_on_walker_step_blocked):
-		_player_walker.step_blocked.connect(_on_walker_step_blocked)
+	else:
+		if not _player_walker.step_blocked.is_connected(_on_walker_step_blocked):
+			_player_walker.step_blocked.connect(_on_walker_step_blocked)
+		if not _player_walker.interact_pressed.is_connected(_on_walker_interact_pressed):
+			_player_walker.interact_pressed.connect(_on_walker_interact_pressed)
 
 	var db = _get_db()
 	var sidx := 0
@@ -1346,25 +1374,32 @@ func get_camera_cell() -> Vector2i:
 
 func _update_return_home_visibility() -> void:
 	if _is_caricature_place:
-		var cam_cell := get_camera_cell()
-		var cell_entry: Dictionary = _caricature_cells.get(cam_cell, {}) if _caricature_cells.has(cam_cell) else {}
-		var cell_area: Dictionary = cell_entry.get("area", {}) if cell_entry.get("area") is Dictionary else {}
-		var in_camp: bool = (
-			str(cell_area.get("kind", "")) == "camp"
-			or (_has_active_waypost and (cam_cell == _active_waypost_cell))
-		)
+		var in_camp := false
+		if _walk_mode_active:
+			in_camp = (_area_kind(_current_walk_area_id) == "camp")
+		else:
+			var cam_cell := get_camera_cell()
+			var cell_entry: Dictionary = _caricature_cells.get(cam_cell, {}) if _caricature_cells.has(cam_cell) else {}
+			var cell_area: Dictionary = cell_entry.get("area", {}) if cell_entry.get("area") is Dictionary else {}
+			in_camp = (
+				str(cell_area.get("kind", "")) == "camp"
+				or (_has_active_waypost and (cam_cell == _active_waypost_cell))
+			)
 		if _return_home_button != null:
 			_return_home_button.visible = in_camp
 		if _board_button != null:
 			_board_button.visible = in_camp
 		if _back_to_camp_button != null:
-			_back_to_camp_button.visible = not in_camp
+			# Decision 79 fix (c): lamps-only fast travel — hide global Back to camp button while walking
+			_back_to_camp_button.visible = (not in_camp) and (not _walk_mode_active)
 		return
 
 	if _board_button != null:
 		_board_button.visible = false
 	if _waypost_board != null:
 		_waypost_board.visible = false
+	if _lamp_menu != null:
+		_lamp_menu.visible = false
 	if _back_to_camp_button != null:
 		_back_to_camp_button.visible = false
 	if _return_home_button == null:
@@ -1377,9 +1412,21 @@ func _update_return_home_visibility() -> void:
 	var dist_y: int = abs(cam_cell.y - _active_waypost_cell.y)
 	_return_home_button.visible = (dist_x <= 1 and dist_y <= 1)
 
+func _sync_modal_input_lock() -> void:
+	if _player_walker == null:
+		return
+	var modal_open := false
+	if _waypost_board != null and is_instance_valid(_waypost_board) and _waypost_board.visible:
+		modal_open = true
+	if _lamp_menu != null and is_instance_valid(_lamp_menu) and _lamp_menu.visible:
+		modal_open = true
+	_player_walker.input_enabled = _walk_mode_active and not modal_open
+
 func open_board() -> Control:
 	if not _is_caricature_place or _active_place_id.is_empty():
 		return null
+	if _lamp_menu != null and is_instance_valid(_lamp_menu):
+		_lamp_menu.visible = false
 	if _waypost_board == null or not is_instance_valid(_waypost_board):
 		var board_scene := load("res://scenes/waypost_board.tscn") as PackedScene
 		if board_scene == null:
@@ -1395,33 +1442,178 @@ func open_board() -> Control:
 			_waypost_board.connect("go_requested", Callable(self, "_on_board_go_requested"))
 		if _waypost_board.has_signal("state_changed"):
 			_waypost_board.connect("state_changed", Callable(self, "_on_board_state_changed"))
+		if _waypost_board.has_signal("closed"):
+			_waypost_board.connect("closed", Callable(self, "_on_modal_overlay_closed"))
 	if _waypost_board.has_method("open_for_place"):
-		_waypost_board.open_for_place(_active_place_id, _get_db())
+		_waypost_board.open_for_place(_active_place_id, _get_db(), _world_clock)
+	_sync_modal_input_lock()
 	return _waypost_board
 
-func _on_board_go_requested(area_id: String) -> void:
-	focus_on_area(area_id, false)
+func open_lamp_menu() -> Control:
+	if not _is_caricature_place or _active_place_id.is_empty():
+		return null
+	var cur_aid := _current_walk_area_id if not _current_walk_area_id.is_empty() else _focused_area_id
+	if cur_aid.is_empty() or _area_kind(cur_aid) == "route":
+		return null
+	if _waypost_board != null and is_instance_valid(_waypost_board):
+		_waypost_board.visible = false
+	if _lamp_menu == null or not is_instance_valid(_lamp_menu):
+		var lamp_scene := load("res://scenes/lamp_menu.tscn") as PackedScene
+		if lamp_scene == null:
+			return null
+		_lamp_menu = lamp_scene.instantiate() as Control
+		_lamp_menu.name = "LampMenu"
+		var attr_ui := get_node_or_null("AttributionUI")
+		if attr_ui != null:
+			attr_ui.add_child(_lamp_menu)
+		else:
+			add_child(_lamp_menu)
+		if _lamp_menu.has_signal("travel_requested"):
+			_lamp_menu.connect("travel_requested", Callable(self, "_on_lamp_travel_requested"))
+		if _lamp_menu.has_signal("board_requested"):
+			_lamp_menu.connect("board_requested", Callable(self, "_on_lamp_board_requested"))
+		if _lamp_menu.has_signal("distort_home_requested"):
+			_lamp_menu.connect("distort_home_requested", Callable(self, "_on_lamp_distort_home_requested"))
+		if _lamp_menu.has_signal("closed"):
+			_lamp_menu.connect("closed", Callable(self, "_on_modal_overlay_closed"))
+	if _lamp_menu.has_method("open_for_area"):
+		_lamp_menu.open_for_area(_active_place_id, cur_aid, _get_db(), _world_clock)
+	_sync_modal_input_lock()
+	return _lamp_menu
+
+func _on_modal_overlay_closed() -> void:
+	_sync_modal_input_lock()
+
+func travel_to_area_via_waypost(area_id: String, from_board: bool = false) -> bool:
+	if not _caricature_compiled_by_area.has(area_id):
+		return false
+	var db = _get_db()
+	var origin_aid := _current_walk_area_id if not _current_walk_area_id.is_empty() else _caricature_camp_id
+	if from_board:
+		if not NeighbourhoodProgress.can_go(db, area_id):
+			return false
+		if _area_kind(area_id) == "hood":
+			NeighbourhoodProgress.enter(db, area_id)
+	else:
+		if area_id != _caricature_camp_id:
+			if db == null or not db.is_open():
+				return false
+			var dest_row: Dictionary = db.get_neighbourhood_state(area_id)
+			if dest_row.is_empty() or int(dest_row.get("state", 0)) < 2:
+				return false
+	var cost := 0
+	if origin_aid != area_id and not origin_aid.is_empty():
+		cost = NeighbourhoodProgress.trip_minutes(_active_place_id, origin_aid, area_id, false)
+		_world_clock.advance_minutes(cost)
+	if not place_player_in_area(area_id, Vector2i(-1, -1), "S", false):
+		return false
+	_fog_dirty = true
+	_sync_fog_field()
 	_update_frustum_culling()
+	_sync_modal_input_lock()
+	if cost > 0:
+		show_toast("%s (took %d min)" % [_area_name(area_id), cost])
+	return true
+
+func _on_board_go_requested(area_id: String) -> void:
+	if _walk_mode_active:
+		travel_to_area_via_waypost(area_id, true)
+	else:
+		focus_on_area(area_id, false)
+		_update_frustum_culling()
+
+func _on_lamp_travel_requested(dest_area_id: String, _cost_min: int) -> void:
+	if _walk_mode_active:
+		travel_to_area_via_waypost(dest_area_id, false)
+	else:
+		focus_on_area(dest_area_id, false)
+		_update_frustum_culling()
+
+func _on_lamp_board_requested() -> void:
+	open_board()
+
+func _on_lamp_distort_home_requested() -> void:
+	try_return_home()
 
 func _on_board_state_changed(_place_id: String) -> void:
+	_fog_dirty = true
+	_sync_fog_field()
 	_update_frustum_culling()
 
 func _on_board_pressed() -> void:
 	open_board()
 
 func _on_back_to_camp_pressed() -> void:
+	if _walk_mode_active:
+		return
 	if not _caricature_camp_id.is_empty():
 		focus_on_area(_caricature_camp_id, false)
 
-func _on_return_home_pressed() -> void:
+func can_return_home() -> bool:
+	if _is_caricature_place:
+		if _walk_mode_active:
+			return _area_kind(_current_walk_area_id) == "camp"
+		return _return_home_button != null and _return_home_button.visible
+	return _return_home_button != null and _return_home_button.visible
+
+func try_return_home() -> bool:
+	if not can_return_home():
+		return false
+	_world_clock.save_to_db()
+	_world_clock.set_running(false)
 	var db = _get_db()
 	if db != null and db.is_open():
 		db.delete_db_meta("last_place")
+		if db.has_method("clear_player_session_place"):
+			db.clear_player_session_place()
 	var main_node = get_parent()
 	if main_node != null and main_node.has_method("open_home_hub"):
 		main_node.open_home_hub()
 	elif get_tree() != null and get_tree().current_scene == self:
 		get_tree().change_scene_to_file("res://scenes/home_hub.tscn")
+	return true
+
+func _on_return_home_pressed() -> void:
+	try_return_home()
+
+func _is_tile_on_waypost_board(area_id: String, local_tile: Vector2i) -> bool:
+	if not _caricature_compiled_by_area.has(area_id):
+		return false
+	var comp: Dictionary = _caricature_compiled_by_area[area_id]
+	for st_v in comp.get("stamps", []):
+		if not (st_v is Dictionary):
+			continue
+		var st: Dictionary = st_v
+		var sid := int(st.get("stamp_id", -1))
+		var def := TileSynth2.get_stamp_def(sid)
+		if str(def.get("id", "")) != "waypost_board":
+			continue
+		var agx := int(st.get("anchor_gx", 0))
+		var agy := int(st.get("anchor_gy", 0))
+		var sw := int(st.get("w", def.get("w", 2)))
+		var sh := int(st.get("h", def.get("h", 2)))
+		var anchor_l := CaricatureWalkerGrid.global_to_local(comp, agx, agy)
+		if local_tile.x >= anchor_l.x and local_tile.x < anchor_l.x + sw and local_tile.y >= anchor_l.y and local_tile.y < anchor_l.y + sh:
+			return true
+	return false
+
+func _on_walker_interact_pressed(facing_tile: Vector2i, _standing_tile: Vector2i, _facing_dir: String) -> void:
+	if not _walk_mode_active or _walker_grid == null:
+		return
+	var aid := _walker_grid.area_at_global(facing_tile.x, facing_tile.y)
+	if aid.is_empty() or not _caricature_compiled_by_area.has(aid):
+		return
+	var comp: Dictionary = _caricature_compiled_by_area[aid]
+	var f_local := CaricatureWalkerGrid.global_to_local(comp, facing_tile.x, facing_tile.y)
+	# 1. Waypost Notice Board (Camp only)
+	if _area_kind(aid) == "camp" and _is_tile_on_waypost_board(aid, f_local):
+		open_board()
+		return
+	# 2. Waypost Lamp (Camp + all 8 neighbourhoods)
+	var lamp_pos: Vector2i = comp.get("lamp", Vector2i(-1, -1))
+	if lamp_pos.x >= 0 and (f_local == lamp_pos or f_local == Vector2i(lamp_pos.x, lamp_pos.y - 1)):
+		open_lamp_menu()
+		return
 
 func _focus_most_buildings() -> void:
 	if _camera == null:

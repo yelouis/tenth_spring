@@ -131,6 +131,9 @@ func select_place(place_id: String) -> bool:
 	place_selected.emit(place_id, w_lat, w_lon)
 
 	var main_node = get_parent()
+	if main_node != null and main_node.has_method("distort_to_place"):
+		main_node.distort_to_place(place_id)
+		return true
 	if main_node != null and main_node.has_method("open_map_view_for_place"):
 		main_node.open_map_view_for_place(place_id)
 		return true

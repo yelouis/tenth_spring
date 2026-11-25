@@ -130,12 +130,14 @@ def main():
 
 	EXPECTED = [
 		"area_level_band_test",
+		"board_and_lamp_travel_test",
 		"caricature_check_test",
 		"caricature_dc_test",
 		"caricature_map_test",
 		"db_legacy_import_test",
 		"db_migration_test",
 		"db_test",
+		"distort_and_resume_test",
 		"emerald_landscape_and_puzzles_test",
 		"frame_codec_test",
 		"grid_test",

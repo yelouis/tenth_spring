@@ -8,6 +8,19 @@ const MapStore := preload("res://world/region_import/map_store.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const InteriorView := preload("res://world/interior/interior_view.gd")
+const WorldClock := preload("res://world/world_clock.gd")
+
+var _warm_map_view: Node = null
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST:
+		for ch in get_children():
+			if ch.has_method("persist_player_session"):
+				ch.persist_player_session()
+			if ch.has_method("get_world_clock"):
+				var clk = ch.get_world_clock()
+				if clk != null and clk.has_method("save_to_db"):
+					clk.save_to_db()
 
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
@@ -170,14 +183,109 @@ func _ready() -> void:
 	SyncServer.configure_identity(identity)
 	SyncServer.start_server()
 
-	# Boot and resume (explore plan §4.4):
-	# - if last_place is set and its store is installed, open that place's map view at its Waypost;
+	# Boot and resume (explore plan §4.4 & Phase 4 §(j)):
+	# - if last_place / player_session is active, resume at exact saved tile (or interior) with §5 banner;
 	# - otherwise open the home hub.
 	var resume_place_id := get_resume_place_id()
 	if not resume_place_id.is_empty():
-		open_map_view_for_place(resume_place_id)
+		resume_from_session()
 	else:
 		open_home_hub()
+
+func _resolve_place_name(place_id: String) -> String:
+	for p_var in RevealEngine.load_places():
+		if p_var is Dictionary and str((p_var as Dictionary).get("id", "")) == place_id:
+			return str((p_var as Dictionary).get("name", place_id))
+	return place_id
+
+func distort_to_place(place_id: String, force_no_rom: bool = false, host_override: Node = null) -> Node:
+	if not Neighbourhoods.is_ready(place_id):
+		return open_map_view_for_place(place_id)
+	var host: Node = host_override if host_override != null else self
+	if DB.is_open():
+		NeighbourhoodProgress.ensure_camp(DB, place_id)
+		DB.set_db_meta("last_place", place_id)
+	if host == self:
+		clear_current_view()
+	var map_view_scene = load("res://world/map_view.tscn")
+	if map_view_scene == null:
+		return null
+	var map_view = map_view_scene.instantiate()
+	if force_no_rom and map_view.has_method("set_force_no_rom"):
+		map_view.set_force_no_rom(true)
+	host.add_child(map_view)
+	if not map_view.load_place(place_id, false):
+		return null
+	var city_dict: Dictionary = Neighbourhoods.city(place_id)
+	var camp_dict: Dictionary = city_dict.get("camp", {}) if city_dict.get("camp") is Dictionary else {}
+	var camp_id := str(camp_dict.get("id", ""))
+	if map_view.has_method("enable_walk_mode"):
+		map_view.enable_walk_mode(camp_id, Vector2i(-1, -1), "S")
+	var pname := _resolve_place_name(place_id)
+	if map_view.has_method("show_banner"):
+		map_view.show_banner(map_view.format_arrival_banner(pname))
+	return map_view
+
+func resume_from_session(force_no_rom: bool = false, host_override: Node = null) -> Node:
+	var resume_place_id := get_resume_place_id()
+	if resume_place_id.is_empty():
+		return open_home_hub() if host_override == null else null
+	if not Neighbourhoods.is_ready(resume_place_id):
+		return open_map_view_for_place(resume_place_id)
+
+	var host: Node = host_override if host_override != null else self
+	var sess: Dictionary = DB.get_player_session() if (DB.is_open() and DB.has_method("get_player_session")) else {}
+	if host == self:
+		clear_current_view()
+	var map_view_scene = load("res://world/map_view.tscn")
+	if map_view_scene == null:
+		return null
+	var map_view = map_view_scene.instantiate()
+	if force_no_rom and map_view.has_method("set_force_no_rom"):
+		map_view.set_force_no_rom(true)
+	host.add_child(map_view)
+	if not map_view.load_place(resume_place_id, false):
+		return null
+
+	var pname := _resolve_place_name(resume_place_id)
+	var sess_place := str(sess.get("place_id", ""))
+	var sess_area := str(sess.get("area_id", ""))
+	var has_valid_sess: bool = (sess_place == resume_place_id and not sess_area.is_empty() and bool(map_view._caricature_compiled_by_area.has(sess_area)))
+	if has_valid_sess:
+		var tx := int(sess.get("tile_x", -1))
+		var ty := int(sess.get("tile_y", -1))
+		var facing_str := str(sess.get("facing", "S"))
+		map_view.enable_walk_mode(sess_area, Vector2i(tx, ty), facing_str)
+		if map_view.has_method("set_route_crossing_state"):
+			map_view.set_route_crossing_state(
+				str(sess.get("route_origin_area_id", "")),
+				str(sess.get("active_route_id", "")),
+				int(sess.get("route_time_accum_milli", 0)),
+				int(sess.get("route_time_charged_min", 0))
+			)
+		var interior_id := str(sess.get("interior_id", ""))
+		if not interior_id.is_empty():
+			_warm_map_view = map_view
+			map_view.visible = false
+			map_view.process_mode = Node.PROCESS_MODE_DISABLED
+			var iv := InteriorView.new()
+			iv.name = "InteriorView"
+			host.add_child(iv)
+			var ifloor := int(sess.get("interior_floor", 0))
+			if iv.load_interior(interior_id, ifloor, AssetDB.DEFAULT_CACHE_DIR, force_no_rom):
+				return iv
+			iv.queue_free()
+			map_view.visible = true
+			map_view.process_mode = Node.PROCESS_MODE_INHERIT
+			_warm_map_view = null
+		map_view.show_banner(map_view.format_resume_banner(resume_place_id, sess_area, pname))
+	else:
+		var city_dict: Dictionary = Neighbourhoods.city(resume_place_id)
+		var camp_dict: Dictionary = city_dict.get("camp", {}) if city_dict.get("camp") is Dictionary else {}
+		var camp_id := str(camp_dict.get("id", ""))
+		map_view.enable_walk_mode(camp_id, Vector2i(-1, -1), "S")
+		map_view.show_banner(map_view.format_arrival_banner(pname))
+	return map_view
 
 func get_resume_place_id(custom_stores: Dictionary = {}) -> String:
 	if not DB.is_open():
