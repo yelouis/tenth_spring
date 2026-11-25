@@ -396,7 +396,7 @@ static func _can_return_to_exit(floors: Array, block_masks: Array, link_map: Arr
 
 static func check(compiled: Dictionary) -> Dictionary:
 	var rule_errors: Dictionary = (compiled.get("rule_errors", {}) as Dictionary).duplicate(true)
-	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7"]:
+	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"]:
 		if not rule_errors.has(r_id):
 			rule_errors[r_id] = []
 
@@ -577,8 +577,27 @@ static func check(compiled: Dictionary) -> Dictionary:
 		if live_trapped_after > 0:
 			(rule_errors["I7"] as Array).append("%d live-reachable tile(s) cannot return to door_mat after relaunch" % live_trapped_after)
 
+	# -------------------------------------------------------------
+	# I8: Every indoor item must carry a non-empty string "name" (Item 81 / F100)
+	# -------------------------------------------------------------
+	for f_idx in range(floors.size()):
+		var fd_i8: Dictionary = floors[f_idx]
+		var fid_i8 := str(fd_i8.get("floor_id", str(f_idx)))
+		var items_i8: Array = fd_i8.get("items", []) as Array
+		for it_idx in range(items_i8.size()):
+			var it_v: Variant = items_i8[it_idx]
+			if not (it_v is Dictionary):
+				(rule_errors["I8"] as Array).append("floor %s item[%d] is not a dictionary" % [fid_i8, it_idx])
+				continue
+			var it_d: Dictionary = it_v
+			var nm_v: Variant = it_d.get("name", null)
+			if typeof(nm_v) != TYPE_STRING or str(nm_v).strip_edges().is_empty():
+				(rule_errors["I8"] as Array).append("floor %s item[%d] at %s missing non-empty 'name'" % [
+					fid_i8, it_idx, str(it_d.get("at", []))
+				])
+
 	var failed_rules: Array[String] = []
-	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7"]:
+	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"]:
 		if not (rule_errors[r_id] as Array).is_empty():
 			failed_rules.append(r_id)
 

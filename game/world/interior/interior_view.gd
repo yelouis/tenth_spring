@@ -994,6 +994,25 @@ static func _indoor_role_line(role: String, npc_name: String) -> String:
 		_:
 			return "Glad to see another traveler indoors. The streets outside stay quiet after dusk."
 
+static func _indoor_stamp_line(stamp_id: int) -> String:
+	match stamp_id:
+		115: # int_smash_rubble
+			return "A cracked rock blocks the path. A strong blow could break it."
+		114: # int_push_boulder
+			return "A heavy boulder blocks the way. It won't move by hand."
+		132: # int_keystone_pedestal
+			return "An old keystone rests on the pedestal. It hums faintly."
+		122: # int_radio_console
+			return "The relay console flickers, still waiting for a signal."
+		127: # int_calder_cipher_desk
+			return "Coded notes cover the desk. Someone left mid-sentence."
+		130: # int_cobalion_dais
+			return "Hoofprints are worn deep into the stone dais."
+		119: # int_obs_slit_window
+			return "Through the slit, the quiet Mall stretches out below."
+		_:
+			return ""
+
 func trigger_interact_for_walker() -> bool:
 	if _player_walker == null:
 		return false
@@ -1079,6 +1098,24 @@ func _dispatch_interior_interact(facing_tile: Vector2i, _standing_tile: Vector2i
 		if not ikey.is_empty() and not _collected_item_keys.has(ikey):
 			mark_indoor_item_collected(facing_tile)
 			open_dialogue(["Found %s!" % str(it_d.get("name", "Item"))])
+			return true
+
+	# 5. Indoor rubble, boulders & goal pieces / capstones (Decision 82 / Item 81 / F102)
+	for st_v in (fd.get("stamps", []) as Array):
+		if not (st_v is Dictionary):
+			continue
+		var st: Dictionary = st_v
+		var st_at: Variant = st.get("at", null)
+		if not (st_at is Vector2i):
+			continue
+		var sp := st_at as Vector2i
+		var sw := maxi(1, int(st.get("w", 1)))
+		var sh := maxi(1, int(st.get("h", 1)))
+		if facing_tile.x < sp.x or facing_tile.x >= sp.x + sw or facing_tile.y < sp.y or facing_tile.y >= sp.y + sh:
+			continue
+		var st_line := _indoor_stamp_line(int(st.get("stamp_id", -1)))
+		if not st_line.is_empty():
+			open_dialogue([st_line])
 			return true
 	return false
 

@@ -4,10 +4,12 @@ extends Node
 ## Contract: docs/implementation_plan_travel_and_time.md §(d), §(e), §(h), §(n)
 
 const MainScript := preload("res://scenes/main.gd")
+const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
+const InteriorMap := preload("res://world/interior/interior_map.gd")
 const InteriorView := preload("res://world/interior/interior_view.gd")
 
 const TEST_DB_PATH: String = "user://test/interactions_test.db"
@@ -276,7 +278,7 @@ func run_test() -> bool:
 	dlg.close()
 	mv.set_data_cache_dir(AssetDB.DEFAULT_CACHE_DIR)
 
-	# 7. Water / HM / ordinary-door hint test (camp has water pond & ordinary door)
+	# 7. Water / HM / ordinary-door hint test (Decision 82 / Item 81 / F101 exact strings)
 	var found_water_hint := false
 	var c_w := int(camp_comp["w"])
 	var c_h := int(camp_comp["h"])
@@ -288,14 +290,14 @@ func run_test() -> bool:
 				if not wnb.is_empty():
 					mv.place_player_in_area("camp:washington-dc", wnb["stand"], wnb["facing"])
 					mv.trigger_interact_for_walker()
-					if dlg.current_text().contains("River Oar"):
+					if dlg.current_text() == "The water is deep here. You'd need a way across.":
 						found_water_hint = true
 					dlg.close()
 					break
 		if found_water_hint:
 			break
 	if not found_water_hint:
-		push_error("FAIL: Facing water did not show River Oar hint")
+		push_error("FAIL [F101]: Facing water did not show exact F101 water line")
 		_cleanup([mv, main_node])
 		return false
 
@@ -362,6 +364,190 @@ func run_test() -> bool:
 	mv2.place_player_in_area("camp:washington-dc", Vector2i(53, 16), "N")
 	if mv2.trigger_interact_for_walker():
 		push_error("FAIL [falsifier]: Collected hidden item reappeared after reload!")
+		_cleanup([mv2, main2])
+		return false
+
+	# 10. Item 81 / F101: All outdoor obstacle & locked-door exact strings across DC
+	var dlg2: Control = mv2.get_dialogue_box()
+	var grid2: CaricatureWalkerGrid = mv2.get_walker_grid()
+	var f101_targets := {
+		TileSynth2.TILE_CUT_TREE: "Tangled brush blocks the path. Something sharp could clear it.",
+		TileSynth2.TILE_SMASH_ROCK: "A cracked rock blocks the path. A strong blow could break it.",
+		TileSynth2.TILE_BOULDER: "A heavy boulder blocks the way. It won't move by hand.",
+		TileSynth2.TILE_DOOR: "The door is locked.",
+	}
+	var f101_seen := {}
+	for aid_v in mv2._caricature_compiled_by_area.keys():
+		var aid_s := str(aid_v)
+		var comp_s: Dictionary = mv2._caricature_compiled_by_area[aid_v]
+		var sw_s := int(comp_s["w"])
+		var sh_s := int(comp_s["h"])
+		var cls_s: PackedByteArray = comp_s["class"]
+		for ty_s in range(sh_s):
+			for tx_s in range(sw_s):
+				var tc: int = cls_s[ty_s * sw_s + tx_s]
+				if not f101_targets.has(tc) or f101_seen.has(tc):
+					continue
+				if tc == TileSynth2.TILE_DOOR:
+					var has_int := false
+					for dv_s in comp_s.get("doors", []):
+						if dv_s is Dictionary and int((dv_s as Dictionary).get("x", -1)) == tx_s and int((dv_s as Dictionary).get("y", -1)) == ty_s and not str((dv_s as Dictionary).get("interior", "")).is_empty():
+							has_int = true
+							break
+					if has_int:
+						continue
+				var nb_s := _find_standable_neighbor(grid2, aid_s, Vector2i(tx_s, ty_s))
+				if nb_s.is_empty():
+					continue
+				mv2.place_player_in_area(aid_s, nb_s["stand"], nb_s["facing"])
+				if not mv2.trigger_interact_for_walker() or dlg2.current_text() != str(f101_targets[tc]):
+					push_error("FAIL [F101]: Tile class %d in %s gave '%s', expected '%s'" % [tc, aid_s, dlg2.current_text(), str(f101_targets[tc])])
+					_cleanup([mv2, main2])
+					return false
+				dlg2.close()
+				f101_seen[tc] = true
+			if f101_seen.size() == f101_targets.size():
+				break
+		if f101_seen.size() == f101_targets.size():
+			break
+	if f101_seen.size() != f101_targets.size():
+		push_error("FAIL [F101]: Only verified %d/%d obstacle/door classes: %s" % [f101_seen.size(), f101_targets.size(), str(f101_seen.keys())])
+		_cleanup([mv2, main2])
+		return false
+
+	# 11. Item 81 / F102: All 8 neighbourhood notice boards, 3 indoor rubble, 2 indoor boulders & 6 goal pieces
+	var all_dc_hoods := [
+		"hood:washington-dc:national-mall",
+		"hood:washington-dc:tidal-basin",
+		"hood:washington-dc:dupont-circle",
+		"hood:washington-dc:capitol-hill",
+		"hood:washington-dc:union-station",
+		"hood:washington-dc:georgetown",
+		"hood:washington-dc:woodley-park",
+		"hood:washington-dc:lincoln-memorial",
+	]
+	for haid in all_dc_hoods:
+		var hcomp: Dictionary = mv2._caricature_compiled_by_area[haid]
+		var board_hit := false
+		for st_v in hcomp.get("stamps", []):
+			if st_v is Dictionary:
+				var sid_b := int((st_v as Dictionary).get("stamp_id", -1))
+				if str(TileSynth2.get_stamp_def(sid_b).get("id", "")) == "waypost_board":
+					var al := CaricatureWalkerGrid.global_to_local(hcomp, int((st_v as Dictionary)["anchor_gx"]), int((st_v as Dictionary)["anchor_gy"]))
+					var bnb := _find_standable_neighbor(grid2, haid, Vector2i(al.x, al.y + 1))
+					if bnb.is_empty():
+						bnb = _find_standable_neighbor(grid2, haid, Vector2i(al.x + 1, al.y + 1))
+					mv2.place_player_in_area(haid, bnb["stand"], bnb["facing"])
+					var hood_d: Dictionary = Neighbourhoods.area(haid)
+					var exp_board := "%s notice board — Types: %s · Night: %s · Pays: %s." % [
+						str(hood_d.get("name", "")),
+						str(NeighbourhoodProgress.ZONE_CARD_TYPES.get(str(hood_d.get("zone", "residential")), "Normal")),
+						NeighbourhoodProgress.night_danger(hood_d),
+						str((hood_d.get("main_quest", {}) as Dictionary).get("pays", "")),
+					]
+					if not mv2.trigger_interact_for_walker() or dlg2.current_text() != exp_board:
+						push_error("FAIL [F102]: Board in %s gave '%s', expected '%s'" % [haid, dlg2.current_text(), exp_board])
+						_cleanup([mv2, main2])
+						return false
+					dlg2.close()
+					board_hit = true
+					break
+		if not board_hit:
+			push_error("FAIL [F102]: No waypost_board found in %s" % haid)
+			_cleanup([mv2, main2])
+			return false
+
+	# 11b. All 5 indoor rubble/boulders + all 6 capstones (11 indoor stamp targets)
+	var indoor_stamp_cases := [
+		{"iid": "dc:air-and-space", "fl": 0, "stand": Vector2i(5, 7), "face": "E", "exp": "A cracked rock blocks the path. A strong blow could break it."},
+		{"iid": "dc:georgetown-ruins", "fl": 0, "stand": Vector2i(13, 7), "face": "E", "exp": "A cracked rock blocks the path. A strong blow could break it."},
+		{"iid": "dc:lincoln-memorial", "fl": 1, "stand": Vector2i(11, 10), "face": "E", "exp": "A cracked rock blocks the path. A strong blow could break it."},
+		{"iid": "dc:washington-monument", "fl": 1, "stand": Vector2i(7, 3), "face": "E", "exp": "A heavy boulder blocks the way. It won't move by hand."},
+		{"iid": "dc:lincoln-memorial", "fl": 1, "stand": Vector2i(6, 9), "face": "E", "exp": "A heavy boulder blocks the way. It won't move by hand."},
+		{"iid": "dc:georgetown-ruins", "fl": 0, "stand": Vector2i(8, 2), "face": "E", "exp": "An old keystone rests on the pedestal. It hums faintly."},
+		{"iid": "dc:woodley-vet", "fl": 0, "stand": Vector2i(8, 2), "face": "E", "exp": "An old keystone rests on the pedestal. It hums faintly."},
+		{"iid": "dc:air-and-space", "fl": 0, "stand": Vector2i(16, 8), "face": "E", "exp": "The relay console flickers, still waiting for a signal."},
+		{"iid": "dc:library-of-congress", "fl": 1, "stand": Vector2i(16, 9), "face": "E", "exp": "Coded notes cover the desk. Someone left mid-sentence."},
+		{"iid": "dc:lincoln-memorial", "fl": 1, "stand": Vector2i(5, 2), "face": "E", "exp": "Hoofprints are worn deep into the stone dais."},
+		{"iid": "dc:washington-monument", "fl": 2, "stand": Vector2i(8, 2), "face": "N", "exp": "Through the slit, the quiet Mall stretches out below."},
+	]
+	for ic in indoor_stamp_cases:
+		var iv_c := InteriorView.new()
+		add_child(iv_c)
+		iv_c.load_interior(str(ic["iid"]), int(ic["fl"]), AssetDB.DEFAULT_CACHE_DIR, true)
+		iv_c.enable_walking(ic["stand"] as Vector2i, str(ic["face"]), {}, null, DB)
+		iv_c.get_player_walker().live_input_enabled = false
+		var ok_ic := iv_c.trigger_interact_for_walker()
+		var got_ic: String = str(iv_c.get_dialogue_box().current_text()) if iv_c.get_dialogue_box() != null else ""
+		remove_child(iv_c)
+		iv_c.free()
+		if not ok_ic or got_ic != str(ic["exp"]):
+			push_error("FAIL [F102]: Indoor %s fl=%d stand=%s face=%s -> ok=%s got='%s' expected='%s'" % [
+				str(ic["iid"]), int(ic["fl"]), str(ic["stand"]), str(ic["face"]), str(ok_ic), got_ic, str(ic["exp"])
+			])
+			_cleanup([mv2, main2])
+			return false
+
+	# 12. Item 81 / F100: ALL 50 DC indoor items show real names (never "Found Item!") and persist item_name in DB
+	var picked_indoor := 0
+	for ipath in InteriorMap.list_all_dc_interior_paths():
+		var idoc := InteriorMap.load_json(ipath)
+		var iid_p := str(idoc.get("id", ""))
+		var fls_p: Array = idoc.get("floors", []) as Array
+		for fi_p in range(fls_p.size()):
+			var fl_p: Dictionary = fls_p[fi_p]
+			var items_p: Array = fl_p.get("items", []) as Array
+			if items_p.is_empty():
+				continue
+			var iv_p := InteriorView.new()
+			add_child(iv_p)
+			iv_p.load_interior(iid_p, fi_p, AssetDB.DEFAULT_CACHE_DIR, true)
+			iv_p.enable_walking(Vector2i(-1, -1), "N", {}, null, DB)
+			var iw_p: PlayerWalker = iv_p.get_player_walker()
+			iw_p.live_input_enabled = false
+			for it_v in items_p:
+				var it_d: Dictionary = it_v
+				var it_name := str(it_d.get("name", ""))
+				var it_at: Vector2i = InteriorMap._parse_vec2i(it_d.get("at", null))
+				if it_name.is_empty() or it_name == "Item":
+					push_error("FAIL [F100]: Bad item name '%s' in %s" % [it_name, iid_p])
+					remove_child(iv_p)
+					iv_p.free()
+					_cleanup([mv2, main2])
+					return false
+				# Skip if already picked up earlier in test (dc:washington-monument Metal Coat at [15,9])
+				var ikey_p := InteriorView.indoor_item_key(iid_p, str(fl_p.get("floor_id", str(fi_p))), it_d)
+				if not DB.is_item_collected(ikey_p):
+					iw_p.place_at(Vector2i(it_at.x, it_at.y + 1), "N", false)
+					if not iv_p.trigger_interact_for_walker():
+						iw_p.place_at(Vector2i(it_at.x - 1, it_at.y), "E", false)
+						iv_p.trigger_interact_for_walker()
+					var got_nm: String = str(iv_p.get_dialogue_box().current_text())
+					iv_p.get_dialogue_box().close()
+					if got_nm != "Found %s!" % it_name:
+						push_error("FAIL [F100]: Pickup in %s gave '%s', expected 'Found %s!'" % [iid_p, got_nm, it_name])
+						remove_child(iv_p)
+						iv_p.free()
+						_cleanup([mv2, main2])
+						return false
+				# Verify DB record carries the real item_name
+				var db_rows: Array = DB.get_collected_items_in_area(iid_p)
+				var matched_db := false
+				for dr_v in db_rows:
+					if dr_v is Dictionary and str((dr_v as Dictionary).get("item_key", "")) == ikey_p and str((dr_v as Dictionary).get("item_name", "")) == it_name:
+						matched_db = true
+						break
+				if not matched_db:
+					push_error("FAIL [F100]: DB collected_item missing real item_name '%s' for key '%s'" % [it_name, ikey_p])
+					remove_child(iv_p)
+					iv_p.free()
+					_cleanup([mv2, main2])
+					return false
+				picked_indoor += 1
+			remove_child(iv_p)
+			iv_p.free()
+	if picked_indoor != 50:
+		push_error("FAIL [F100]: Expected 50 DC indoor items verified, got %d" % picked_indoor)
 		_cleanup([mv2, main2])
 		return false
 

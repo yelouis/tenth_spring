@@ -272,4 +272,35 @@ func run_test() -> bool:
 	if total_nonpersist != 74:
 		return _fail("I7b expected exact 74 trapped tiles under 5c6b2f2 non-persist rules, got %d" % total_nonpersist)
 
+	# ------------------------------------------------------------------
+	# 4. ▶ Item 81 / F100 Rule I8 Falsifiers (every indoor item has non-empty "name")
+	# ------------------------------------------------------------------
+	var bad_i8_key := base_doc.duplicate(true)
+	bad_i8_key["floors"][0]["items"] = [{"at": [11, 8], "item": "Full Heal"}]
+	var res_i8a := InteriorCheck.compile_and_check(bad_i8_key)
+	print("FALSIFIER_I8a: " + InteriorCheck.format_summary(res_i8a))
+	if bool(res_i8a.get("ok", true)) or not (res_i8a.get("failed_rules", []) as Array).has("I8"):
+		return _fail("I8a falsifier (item key instead of name) should fail I8, got: %s" % str(res_i8a))
+
+	var bad_i8_empty := base_doc.duplicate(true)
+	bad_i8_empty["floors"][0]["items"] = [{"at": [11, 8], "name": "   "}]
+	var res_i8b := InteriorCheck.compile_and_check(bad_i8_empty)
+	if bool(res_i8b.get("ok", true)) or not (res_i8b.get("failed_rules", []) as Array).has("I8"):
+		return _fail("I8b falsifier (blank name) should fail I8, got: %s" % str(res_i8b))
+
+	var total_dc_indoor_items := 0
+	for dp8 in dc_paths:
+		var ddoc8 := InteriorMap.load_json(dp8)
+		var r8 := InteriorCheck.compile_and_check(ddoc8)
+		if not bool(r8.get("ok", false)):
+			return _fail("I8 failed on DC interior %s: %s" % [dp8, str(r8)])
+		for fl8 in (ddoc8.get("floors", []) as Array):
+			for it8 in ((fl8 as Dictionary).get("items", []) as Array):
+				total_dc_indoor_items += 1
+				var nm8 := str((it8 as Dictionary).get("name", "")).strip_edges()
+				if nm8.is_empty():
+					return _fail("DC interior %s has item with empty name: %s" % [dp8, str(it8)])
+	if total_dc_indoor_items != 50:
+		return _fail("Expected 50 DC indoor items checked by I8, got %d" % total_dc_indoor_items)
+
 	return true

@@ -20,14 +20,19 @@ var _db_override = null
 var _clock_override = null
 var _entries: Array[Dictionary] = []
 
+@onready var center_panel: PanelContainer = $CenterPanel
 @onready var title_label: Label = $CenterPanel/Margin/RootVBox/Header/TitleLabel
 @onready var subtitle_label: Label = $CenterPanel/Margin/RootVBox/SubtitleLabel
 @onready var close_button: Button = $CenterPanel/Margin/RootVBox/Header/CloseButton
+@onready var scroll_container: ScrollContainer = $CenterPanel/Margin/RootVBox/Scroll
 @onready var rows_vbox: VBoxContainer = $CenterPanel/Margin/RootVBox/Scroll/RowsVBox
 
 func _ready() -> void:
 	if close_button != null and not close_button.pressed.is_connected(_on_close_pressed):
 		close_button.pressed.connect(_on_close_pressed)
+	var vp := get_viewport()
+	if vp != null and not vp.size_changed.is_connected(_update_panel_height):
+		vp.size_changed.connect(_update_panel_height)
 	if not _place_id.is_empty():
 		refresh()
 
@@ -126,6 +131,7 @@ func refresh() -> void:
 		home_btn.custom_minimum_size = Vector2(0, 36)
 		home_btn.pressed.connect(_on_distort_home_pressed)
 		rows_vbox.add_child(home_btn)
+		_update_panel_height()
 		return
 
 	var cur_name := str(cur_area.get("name", _current_area_id))
@@ -165,6 +171,39 @@ func refresh() -> void:
 			var cost := NeighbourhoodProgress.trip_minutes(_place_id, _current_area_id, aid, false)
 			var tag := WorldClock.daylight_tag_for_cost(cost, rem_daylight)
 			_add_travel_row(aid, aname, cost, tag)
+
+	_update_panel_height()
+
+func _update_panel_height() -> void:
+	if center_panel == null or rows_vbox == null:
+		return
+	var row_count := rows_vbox.get_child_count()
+	var rows_h := 0.0
+	for ch in rows_vbox.get_children():
+		if ch is Control:
+			var cmin := (ch as Control).get_combined_minimum_size().y
+			rows_h += maxf(30.0, cmin)
+	if row_count > 1:
+		rows_h += float(row_count - 1) * 6.0
+	# Chrome: 28 px margins + 4 px panel border + Header (~28) + Subtitle (~18) + HSeparator (~4) + 3*10 separations + 12 px breathing room
+	var header_h := 28.0
+	var hdr := center_panel.get_node_or_null("Margin/RootVBox/Header") as Control
+	if hdr != null:
+		header_h = maxf(header_h, hdr.get_combined_minimum_size().y)
+	var sub_h := 18.0
+	if subtitle_label != null:
+		sub_h = maxf(sub_h, subtitle_label.get_combined_minimum_size().y)
+	var chrome_h := 28.0 + 4.0 + header_h + sub_h + 4.0 + 30.0 + 12.0
+	var vp_h := 640.0
+	var vr := get_viewport_rect().size
+	if vr.y > 0.0:
+		vp_h = vr.y
+	elif size.y > 0.0:
+		vp_h = size.y
+	var max_h := maxf(240.0, vp_h - 48.0)
+	var desired_h := clampf(chrome_h + rows_h, 200.0, max_h)
+	center_panel.offset_top = -floorf(desired_h * 0.5)
+	center_panel.offset_bottom = ceilf(desired_h * 0.5)
 
 func _add_travel_row(dest_area_id: String, label_text: String, cost_min: int, daylight_tag: String) -> void:
 	var col := WorldClock.daylight_color(daylight_tag)

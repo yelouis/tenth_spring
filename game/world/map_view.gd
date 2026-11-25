@@ -2300,9 +2300,21 @@ func _dispatch_walker_interact(facing_tile: Vector2i, standing_tile: Vector2i, f
 		var w := int(comp.get("w", 0))
 		var h := int(comp.get("h", 0))
 
-		# 1. Waypost Notice Board (Camp only)
+		# 1. Waypost Notice Board (Camp opens board; 8 neighbourhood boards read local summary — F102)
 		if _area_kind(aid) == "camp" and _is_tile_on_waypost_board(aid, f_local):
 			open_board()
+			return true
+		elif _is_tile_on_waypost_board(aid, f_local):
+			var hood: Dictionary = Neighbourhoods.area(aid)
+			var hood_name := str(hood.get("name", _area_name(aid)))
+			var zone := str(hood.get("zone", "residential"))
+			var types_str := str(NeighbourhoodProgress.ZONE_CARD_TYPES.get(zone, "Normal"))
+			var night_str := NeighbourhoodProgress.night_danger(hood)
+			var mq: Dictionary = hood.get("main_quest", {}) if hood.get("main_quest") is Dictionary else {}
+			var pays_str := str(mq.get("pays", ""))
+			open_dialogue(["%s notice board — Types: %s · Night: %s · Pays: %s." % [
+				hood_name, types_str, night_str, pays_str
+			]])
 			return true
 		# 2. Waypost Lamp (Camp + all 8 neighbourhoods)
 		var lamp_pos: Vector2i = comp.get("lamp", Vector2i(-1, -1))
@@ -2358,16 +2370,16 @@ func _dispatch_walker_interact(facing_tile: Vector2i, standing_tile: Vector2i, f
 			var cls_buf2: PackedByteArray = comp["class"]
 			var f_cls2: int = cls_buf2[f_local.y * w + f_local.x]
 			if f_cls2 == TileSynth2.TILE_WATER:
-				open_dialogue(["Deep water — you'll need the River Oar to cross (later phase)."])
+				open_dialogue(["The water is deep here. You'd need a way across."])
 				return true
 			if f_cls2 == TileSynth2.TILE_CUT_TREE:
-				open_dialogue(["Tangled brush blocks the path (needs a Cut tool — later phase)."])
+				open_dialogue(["Tangled brush blocks the path. Something sharp could clear it."])
 				return true
 			if f_cls2 == TileSynth2.TILE_SMASH_ROCK:
-				open_dialogue(["Cracked stone blocks the path (needs a Rock Smash tool — later phase)."])
+				open_dialogue(["A cracked rock blocks the path. A strong blow could break it."])
 				return true
 			if f_cls2 == TileSynth2.TILE_BOULDER:
-				open_dialogue(["A heavy boulder blocks the way (needs Lift Gloves — Phase 7)."])
+				open_dialogue(["A heavy boulder blocks the way. It won't move by hand."])
 				return true
 			if f_cls2 == TileSynth2.TILE_DOOR:
 				var is_enterable := false
@@ -2377,7 +2389,7 @@ func _dispatch_walker_interact(facing_tile: Vector2i, standing_tile: Vector2i, f
 							is_enterable = true
 						break
 				if not is_enterable:
-					open_dialogue(["Door locked — doorway searching arrives in Phase 7."])
+					open_dialogue(["The door is locked."])
 					return true
 
 	# 9. Hidden Item at standing tile

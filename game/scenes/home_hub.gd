@@ -5,6 +5,7 @@ extends Control
 
 const PlayerSprites := preload("res://world/player_sprites.gd")
 const WorldClock := preload("res://world/world_clock.gd")
+const RevealEngine := preload("res://world/reveal_engine.gd")
 
 signal distort_requested()
 signal pairing_requested()
@@ -31,16 +32,16 @@ func _ready() -> void:
 	if pair_button != null:
 		pair_button.pressed.connect(_on_pair_pressed)
 
-	# Disabled buttons marked "coming in Phase 4–7"
+	# Disabled buttons not yet open
 	if rest_button != null:
 		rest_button.disabled = true
-		rest_button.tooltip_text = "Rest — coming in Phase 4–7"
+		rest_button.tooltip_text = "Not open yet."
 	if pc_box_button != null:
 		pc_box_button.disabled = true
-		pc_box_button.tooltip_text = "PC Box — coming in Phase 4–7"
+		pc_box_button.tooltip_text = "Not open yet."
 	if garden_button != null:
 		garden_button.disabled = true
-		garden_button.tooltip_text = "Garden — coming in Phase 4–7"
+		garden_button.tooltip_text = "Not open yet."
 
 	_refresh_character_button()
 	_update_hub_status()
@@ -99,11 +100,23 @@ func _update_hub_status() -> void:
 					starter = d
 					break
 		if not starter.is_empty():
-			status_label.text = "Safehouse Active • %s • Starter City: %s" % [clock_str, str(starter.get("place_id", ""))]
+			var starter_name := _resolve_place_name(str(starter.get("place_id", "")))
+			status_label.text = "Safehouse Active • %s • Starter City: %s" % [clock_str, starter_name]
 		else:
 			status_label.text = "Safehouse Active • %s • Starter City pending" % clock_str
 	else:
 		status_label.text = "Safehouse Active"
+
+static func _resolve_place_name(place_id: String) -> String:
+	var pid := place_id.strip_edges()
+	if pid.is_empty():
+		return ""
+	for p_v in RevealEngine.load_places():
+		if p_v is Dictionary and str((p_v as Dictionary).get("id", "")) == pid:
+			var nm := str((p_v as Dictionary).get("name", "")).strip_edges()
+			if not nm.is_empty():
+				return nm
+	return pid
 
 func _on_distort_pressed() -> void:
 	distort_requested.emit()

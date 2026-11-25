@@ -120,7 +120,9 @@ func select_place(place_id: String) -> bool:
 	if not is_place_lit(place_id):
 		# Locked place cannot be opened (falsifier)
 		if info_label != null:
-			info_label.text = "Cannot travel to locked place: %s" % place_id
+			var lp_info: Dictionary = _places_by_id.get(place_id, {})
+			var lp_name := str(lp_info.get("name", place_id))
+			info_label.text = "Cannot travel to locked place: %s" % lp_name
 		return false
 
 	var p_info: Dictionary = _places_by_id.get(place_id, {})

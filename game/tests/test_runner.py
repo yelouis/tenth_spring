@@ -660,6 +660,83 @@ def main():
 						total_errors += 1
 						break
 
+	# Item 81 (F101) Static Rule: No player-facing string under game/ may mention "Phase", "later phase",
+	# or raw place/area/interior IDs (city:, hood:, camp:, route:, dc:).
+	f101_forbidden_re = re.compile(r'\bPhase\b|later phase|\b(?:city|hood|camp|route|dc):[a-z0-9_-]+', re.IGNORECASE)
+	ui_line_markers = ("open_dialogue(", "show_toast(", "show_banner(", ".text =", ".tooltip_text =")
+	for gdf in gd_files:
+		rel_path = os.path.relpath(gdf, game_dir)
+		with open(gdf, "r", encoding="utf-8") as gf:
+			for line_no, raw_line in enumerate(gf, 1):
+				stripped = raw_line.strip()
+				if stripped.startswith("#"):
+					continue
+				code_part = raw_line.split("#", 1)[0]
+				if not any(m in code_part for m in ui_line_markers):
+					continue
+				for lit in re.findall(r'"([^"]*)"', code_part):
+					if f101_forbidden_re.search(lit):
+						print(f"\n[LINT FAIL] {rel_path}:{line_no}: player-facing string violates F101: {lit!r}")
+						total_errors += 1
+	for root, _, files in os.walk(game_dir):
+		if os.path.basename(root) == "tests":
+			continue
+		for fn in sorted(files):
+			if fn.endswith(".tscn"):
+				tp = os.path.join(root, fn)
+				rel_tp = os.path.relpath(tp, game_dir)
+				with open(tp, "r", encoding="utf-8") as tf:
+					for line_no, raw_line in enumerate(tf, 1):
+						s = raw_line.strip()
+						if s.startswith("text = \"") or s.startswith("tooltip_text = \""):
+							for lit in re.findall(r'"([^"]*)"', s):
+								if f101_forbidden_re.search(lit):
+									print(f"\n[LINT FAIL] {rel_tp}:{line_no}: scene text violates F101: {lit!r}")
+									total_errors += 1
+	data_dir = os.path.join(game_dir, "data")
+	if os.path.isdir(data_dir):
+		import json as _json
+		for root, _, files in os.walk(data_dir):
+			for fn in sorted(files):
+				if not fn.endswith(".json"):
+					continue
+				jp = os.path.join(root, fn)
+				rel_jp = os.path.relpath(jp, game_dir)
+				with open(jp, "r", encoding="utf-8") as jf:
+					jd = _json.load(jf)
+				texts_to_check = []
+				if isinstance(jd, dict):
+					for k in ("title", "name"):
+						if isinstance(jd.get(k), str):
+							texts_to_check.append((k, jd[k]))
+					for sg in jd.get("signs", []) if isinstance(jd.get("signs"), list) else []:
+						if isinstance(sg, dict) and isinstance(sg.get("text"), str):
+							texts_to_check.append(("sign.text", sg["text"]))
+					for pe in jd.get("people", []) if isinstance(jd.get("people"), list) else []:
+						if isinstance(pe, dict):
+							for ln in pe.get("lines", []) if isinstance(pe.get("lines"), list) else []:
+								if isinstance(ln, str):
+									texts_to_check.append(("person.line", ln))
+					for hi in jd.get("hidden_items", []) if isinstance(jd.get("hidden_items"), list) else []:
+						if isinstance(hi, dict) and isinstance(hi.get("note"), str):
+							texts_to_check.append(("hidden.note", hi["note"]))
+					for fl in jd.get("floors", []) if isinstance(jd.get("floors"), list) else []:
+						if isinstance(fl, dict):
+							if isinstance(fl.get("label"), str):
+								texts_to_check.append(("floor.label", fl["label"]))
+							for sg in fl.get("signs", []) if isinstance(fl.get("signs"), list) else []:
+								if isinstance(sg, dict) and isinstance(sg.get("text"), str):
+									texts_to_check.append(("floor.sign", sg["text"]))
+							for pe in fl.get("npcs", []) if isinstance(fl.get("npcs"), list) else []:
+								if isinstance(pe, dict):
+									for ln in pe.get("lines", []) if isinstance(pe.get("lines"), list) else []:
+										if isinstance(ln, str):
+											texts_to_check.append(("floor.npc.line", ln))
+				for fld, val in texts_to_check:
+					if f101_forbidden_re.search(val):
+						print(f"\n[LINT FAIL] {rel_jp} ({fld}): data text violates F101: {val!r}")
+						total_errors += 1
+
 	if total_errors > 0:
 		print(f"\nStatic lint failed with {total_errors} error(s).")
 		sys.exit(1)

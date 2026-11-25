@@ -9,6 +9,7 @@ extends Node
 ##   5. Camp buttons: ReturnHomeButton & BoardButton stay hidden everywhere in camp while walking
 
 const WaypostBoardScene := preload("res://scenes/waypost_board.tscn")
+const LampMenuScene := preload("res://scenes/lamp_menu.tscn")
 const HomeHubScene := preload("res://scenes/home_hub.tscn")
 const MapViewScene := preload("res://world/map_view.tscn")
 const InteriorViewScript := preload("res://world/interior/interior_view.gd")
@@ -269,6 +270,97 @@ func run_test() -> bool:
 		_cleanup(mv)
 		return false
 	iv.queue_free()
+
+	# 5. Item 81 / F107: With all 8 DC neighbourhoods lit, LampMenu at EVERY DC neighbourhood lamp
+	#    fits inside 960x640 with ALL 8 Go buttons completely inside Scroll's visible rectangle!
+	var now_f107 := int(Time.get_unix_time_from_system())
+	var dc_hoods_f107 := [
+		"hood:washington-dc:national-mall",
+		"hood:washington-dc:tidal-basin",
+		"hood:washington-dc:dupont-circle",
+		"hood:washington-dc:capitol-hill",
+		"hood:washington-dc:union-station",
+		"hood:washington-dc:georgetown",
+		"hood:washington-dc:woodley-park",
+		"hood:washington-dc:lincoln-memorial",
+	]
+	for h107 in dc_hoods_f107:
+		DB.upsert_neighbourhood_state(h107, "city:washington-dc", 2, "pick", now_f107)
+
+	var sv_lamp := SubViewport.new()
+	sv_lamp.size = Vector2i(960, 640)
+	add_child(sv_lamp)
+	var lm_ctrl: Control = LampMenuScene.instantiate()
+	sv_lamp.add_child(lm_ctrl)
+	lm_ctrl.size = Vector2(960.0, 640.0)
+
+	for h107 in dc_hoods_f107:
+		lm_ctrl.open_for_area("city:washington-dc", h107, DB)
+		var cpanel := lm_ctrl.get_node("CenterPanel") as PanelContainer
+		var scroll_c := lm_ctrl.get_node("CenterPanel/Margin/RootVBox/Scroll") as ScrollContainer
+		var rvbox := lm_ctrl.get_node("CenterPanel/Margin/RootVBox/Scroll/RowsVBox") as VBoxContainer
+		# Force layout calculation inside headless SubViewport
+		lm_ctrl.notification(Control.NOTIFICATION_RESIZED)
+		cpanel.position = Vector2(480.0 + cpanel.offset_left, 320.0 + cpanel.offset_top)
+		cpanel.size = Vector2(cpanel.offset_right - cpanel.offset_left, cpanel.offset_bottom - cpanel.offset_top)
+		var panel_rect := Rect2(cpanel.position, cpanel.size)
+		if panel_rect.position.y < 0.0 or panel_rect.end.y > 640.0:
+			push_error("FAIL [F107]: LampMenu panel overflows 960x640 at %s: %s" % [h107, str(panel_rect)])
+			sv_lamp.queue_free()
+			_cleanup(mv)
+			return false
+		if rvbox.get_child_count() != 8:
+			push_error("FAIL [F107]: Expected 8 rows at %s lamp, got %d" % [h107, rvbox.get_child_count()])
+			sv_lamp.queue_free()
+			_cleanup(mv)
+			return false
+		var chrome_min := 28.0 + 4.0 + 28.0 + 18.0 + 4.0 + 30.0
+		var scroll_h_avail := panel_rect.size.y - chrome_min
+		var rows_min_h := rvbox.get_combined_minimum_size().y
+		if rows_min_h > scroll_h_avail + 0.5:
+			push_error("FAIL [F107]: At %s lamp, rows height %.1f exceeds scroll viewport %.1f (panel_h=%.1f)" % [
+				h107, rows_min_h, scroll_h_avail, panel_rect.size.y
+			])
+			sv_lamp.queue_free()
+			_cleanup(mv)
+			return false
+		# Also verify live Rect2 of every Go button lies inside ScrollContainer visible rect
+		var srect := scroll_c.get_global_rect()
+		if srect.size.y > 0.0:
+			for row_n in rvbox.get_children():
+				var go_b := row_n.find_child("LampGo_*", false, false) as Button
+				if go_b == null:
+					for rc in row_n.get_children():
+						if rc is Button:
+							go_b = rc as Button
+							break
+				if go_b == null:
+					push_error("FAIL [F107]: Missing Go button in row at %s" % h107)
+					sv_lamp.queue_free()
+					_cleanup(mv)
+					return false
+				var brect := go_b.get_global_rect()
+				if brect.size.y > 0.0 and (brect.position.y < srect.position.y - 0.5 or brect.end.y > srect.end.y + 0.5):
+					push_error("FAIL [F107]: Go button %s at %s clipped outside Scroll rect %s vs %s" % [go_b.name, h107, str(brect), str(srect)])
+					sv_lamp.queue_free()
+					_cleanup(mv)
+					return false
+
+	# Oversize list falsifier: 20 rows clamps CenterPanel inside 640 px (<= 592 px) keeping ScrollContainer usable
+	var rvbox_ov := lm_ctrl.get_node("CenterPanel/Margin/RootVBox/Scroll/RowsVBox") as VBoxContainer
+	for ov_i in range(12):
+		var extra_btn := Button.new()
+		extra_btn.custom_minimum_size = Vector2(0, 30)
+		rvbox_ov.add_child(extra_btn)
+	lm_ctrl._update_panel_height()
+	var cpanel_ov := lm_ctrl.get_node("CenterPanel") as PanelContainer
+	var ov_h: float = cpanel_ov.offset_bottom - cpanel_ov.offset_top
+	if ov_h > 592.5:
+		push_error("FAIL [F107]: 20-row LampMenu exceeded 640-48=592 clamp: %.1f" % ov_h)
+		sv_lamp.queue_free()
+		_cleanup(mv)
+		return false
+	sv_lamp.queue_free()
 
 	_cleanup(mv)
 	return true

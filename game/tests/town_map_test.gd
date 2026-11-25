@@ -284,24 +284,45 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 
-	if hub.rest_button == null or not hub.rest_button.disabled or not hub.rest_button.tooltip_text.contains("Phase 4–7"):
-		push_error("FAIL: Rest button should be disabled with Phase 4–7 tooltip")
+	if hub.rest_button == null or not hub.rest_button.disabled or hub.rest_button.tooltip_text != "Not open yet.":
+		push_error("FAIL [F101]: Rest button should be disabled with 'Not open yet.' tooltip, got '%s'" % (hub.rest_button.tooltip_text if hub.rest_button != null else "<null>"))
 		hub.queue_free()
 		city_store.close()
 		site_store.close()
 		_cleanup()
 		return false
 
-	if hub.pc_box_button == null or not hub.pc_box_button.disabled or not hub.pc_box_button.tooltip_text.contains("Phase 4–7"):
-		push_error("FAIL: PC Box button should be disabled with Phase 4–7 tooltip")
+	if hub.pc_box_button == null or not hub.pc_box_button.disabled or hub.pc_box_button.tooltip_text != "Not open yet.":
+		push_error("FAIL [F101]: PC Box button should be disabled with 'Not open yet.' tooltip, got '%s'" % (hub.pc_box_button.tooltip_text if hub.pc_box_button != null else "<null>"))
 		hub.queue_free()
 		city_store.close()
 		site_store.close()
 		_cleanup()
 		return false
 
-	if hub.garden_button == null or not hub.garden_button.disabled or not hub.garden_button.tooltip_text.contains("Phase 4–7"):
-		push_error("FAIL: Garden button should be disabled with Phase 4–7 tooltip")
+	if hub.garden_button == null or not hub.garden_button.disabled or hub.garden_button.tooltip_text != "Not open yet.":
+		push_error("FAIL [F101]: Garden button should be disabled with 'Not open yet.' tooltip, got '%s'" % (hub.garden_button.tooltip_text if hub.garden_button != null else "<null>"))
+		hub.queue_free()
+		city_store.close()
+		site_store.close()
+		_cleanup()
+		return false
+
+	if hub._resolve_place_name("city:washington-dc") != "Washington DC":
+		push_error("FAIL [F101]: HomeHub _resolve_place_name('city:washington-dc') returned '%s'" % hub._resolve_place_name("city:washington-dc"))
+		hub.queue_free()
+		city_store.close()
+		site_store.close()
+		_cleanup()
+		return false
+	# Verify live status_label resolves starter DC to "Starter City: Washington DC" (no internal id)
+	DB.insert_distort_entry("city:washington-dc", 1700000001, "starter")
+	var hub_dc = hub_scene.instantiate()
+	add_child(hub_dc)
+	var dc_status := str(hub_dc.status_label.text) if hub_dc.status_label != null else ""
+	hub_dc.queue_free()
+	if not dc_status.contains("Starter City: Washington DC") or dc_status.contains("city:"):
+		push_error("FAIL [F101]: HomeHub status_label should show 'Starter City: Washington DC', got '%s'" % dc_status)
 		hub.queue_free()
 		city_store.close()
 		site_store.close()
