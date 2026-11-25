@@ -192,5 +192,58 @@ func run_test() -> bool:
 		_cleanup(mv)
 		return false
 
+	# 7. Decision 81 (F90): All 9/9 DC Waypost lamps block walking north from arrival (bump!) while still opening LampMenu
+	var lamp_areas := [
+		"camp:washington-dc",
+		"hood:washington-dc:national-mall",
+		"hood:washington-dc:tidal-basin",
+		"hood:washington-dc:dupont-circle",
+		"hood:washington-dc:capitol-hill",
+		"hood:washington-dc:union-station",
+		"hood:washington-dc:georgetown",
+		"hood:washington-dc:woodley-park",
+		"hood:washington-dc:lincoln-memorial",
+	]
+	var bumped_count := 0
+	for laid in lamp_areas:
+		var lcomp: Dictionary = mv._caricature_compiled_by_area[laid]
+		var larr: Vector2i = lcomp["arrival"]
+		var lpos: Vector2i = lcomp["lamp"]
+		mv.place_player_in_area(laid, larr, "N", false)
+		var g_before := walker.grid_pos
+		if mv.get_walker_grid().is_local_tile_walkable(laid, lpos.x, lpos.y):
+			push_error("FAIL [F90]: Lamp post tile %s in %s must be solid" % [str(lpos), laid])
+			_cleanup(mv)
+			return false
+		if not mv.get_walker_grid().is_local_tile_walkable(laid, lpos.x, lpos.y - 1):
+			push_error("FAIL [F90]: Lamp lantern row %s in %s must remain walkable behind lamp" % [str(Vector2i(lpos.x, lpos.y - 1)), laid])
+			_cleanup(mv)
+			return false
+		walker.step_simulation(1.0 / 60.0, Vector2i(0, -1), false)
+		if walker._state != PlayerWalker.State.BUMPING or walker.grid_pos != g_before:
+			push_error("FAIL [F90]: Stepping north from %s arrival %s did not bump (state=%d pos=%s)" % [laid, str(larr), walker._state, str(walker.grid_pos)])
+			_cleanup(mv)
+			return false
+		for _bf in range(32):
+			walker.step_simulation(1.0 / 60.0, Vector2i.ZERO, false)
+		if walker.grid_pos != g_before:
+			push_error("FAIL [F90]: Player moved onto lamp in %s!" % laid)
+			_cleanup(mv)
+			return false
+		# Interacting while facing the solid lamp post still opens the lamp menu
+		if mv._lamp_menu != null:
+			mv._lamp_menu.visible = false
+		if not mv.trigger_interact_for_walker() or mv._lamp_menu == null or not mv._lamp_menu.visible:
+			push_error("FAIL [F90]: Facing lamp in %s did not open LampMenu" % laid)
+			_cleanup(mv)
+			return false
+		mv._lamp_menu.visible = false
+		mv._sync_modal_input_lock()
+		bumped_count += 1
+	if bumped_count != 9:
+		push_error("FAIL [F90]: Expected 9/9 lamps bumped, got %d" % bumped_count)
+		_cleanup(mv)
+		return false
+
 	_cleanup(mv)
 	return true

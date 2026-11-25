@@ -137,6 +137,36 @@ func run_test() -> bool:
 			return false
 	dlg.close()
 
+	# 3b. Decision 81 (F91): Eli (camp_runner_eli) stands off the Waypost board at (36, 26); talking to him shows his own lines
+	var eli_dict := {}
+	for pe_v in camp_comp.get("people", []):
+		if pe_v is Dictionary and str((pe_v as Dictionary).get("id", "")) == "camp_runner_eli":
+			eli_dict = pe_v
+			break
+	if eli_dict.is_empty() or Vector2i(int(eli_dict["x"]), int(eli_dict["y"])) != Vector2i(36, 26):
+		push_error("FAIL [F91]: Expected camp_runner_eli at (36, 26), got %s" % str(eli_dict))
+		_cleanup([mv, main_node])
+		return false
+	var eli_nb := _find_standable_neighbor(grid, "camp:washington-dc", Vector2i(36, 26))
+	if eli_nb.is_empty():
+		push_error("FAIL [F91]: No standable neighbor next to Eli at (36, 26)")
+		_cleanup([mv, main_node])
+		return false
+	mv.place_player_in_area("camp:washington-dc", eli_nb["stand"], eli_nb["facing"])
+	if not mv.trigger_interact_for_walker():
+		push_error("FAIL [F91]: Talking to Eli returned false")
+		_cleanup([mv, main_node])
+		return false
+	if mv._waypost_board != null and mv._waypost_board.visible:
+		push_error("FAIL [F91]: Talking to Eli opened WaypostBoard instead of his dialogue!")
+		_cleanup([mv, main_node])
+		return false
+	if not dlg.is_open() or dlg.current_speaker() != "Eli" or dlg.current_text() != "Ran the Q Street footpath this morning. Overgrown past the bend, watch the grass.":
+		push_error("FAIL [F91]: Eli dialogue wrong: speaker='%s' text='%s'" % [dlg.current_speaker(), dlg.current_text()])
+		_cleanup([mv, main_node])
+		return false
+	dlg.close()
+
 	# 4. Outdoor hidden item (including newly moved F82 camp Super Potion at [53, 16]!) collected once & persisted
 	mv.place_player_in_area("camp:washington-dc", Vector2i(53, 16), "N")
 	if not mv.trigger_interact_for_walker():

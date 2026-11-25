@@ -134,9 +134,13 @@ func run_test() -> bool:
 	# 4. Known straight corridor gives exact max_walk
 	# -------------------------------------------------------------
 	var g_corr := _blank_32_grid("T")
-	# Lamp at [15, 5], arrival at [15, 6]; 1-wide grass corridor from y=6 down to y=21 (15 steps south)
+	# Lamp at [15, 5] (post solid '#', lantern [15, 4] walkable behind it — Decision 81 F90);
+	# arrival at [15, 6]; side bypass [16, 4..6] reaches lantern; 1-wide corridor from y=6 down to y=21 (15 steps south)
 	g_corr[4][15] = "T"
-	g_corr[5][15] = "." # lamp tile must be walkable before lamp sign is placed
+	g_corr[5][15] = "." # lamp tile must be walkable before lamp stamp is placed
+	g_corr[4][16] = "."
+	g_corr[5][16] = "."
+	g_corr[6][16] = "."
 	for y in range(6, 22):
 		g_corr[y][15] = "."
 	var c_corr := CaricatureMap.compile(camp_area, _make_camp_map(g_corr, [15, 5]))
@@ -144,11 +148,11 @@ func run_test() -> bool:
 		_cleanup()
 		push_error("caricature_check_test: corridor grid compile failed: %s" % str(c_corr["errors"]))
 		return false
-	# waypost_lamp (1x2, mask 2 overhang / mask 0 walkable) occupies (15, 4) and (15, 5), plus y=6..21 -> 18 walkable tiles
+	# waypost_lamp (1x2, mask 2 overhang at (15,4), solid post at (15,5)) + bypass (16,4..6) + y=6..21 -> 20 walkable tiles
 	var m_corr := CaricatureCheck.measure(c_corr, camp_area)
-	if int(m_corr["walkable"]) != 18 or int(m_corr["reached"]) != 18 or int(m_corr["unreached"]) != 0 or int(m_corr["trapped"]) != 0 or int(m_corr["max_walk"]) != 15:
+	if int(m_corr["walkable"]) != 20 or int(m_corr["reached"]) != 20 or int(m_corr["unreached"]) != 0 or int(m_corr["trapped"]) != 0 or int(m_corr["max_walk"]) != 15:
 		_cleanup()
-		push_error("caricature_check_test: corridor expected walkable=18 reached=18 max_walk=15, got %s" % str(m_corr))
+		push_error("caricature_check_test: corridor expected walkable=20 reached=20 max_walk=15, got %s" % str(m_corr))
 		return false
 
 	# -------------------------------------------------------------
@@ -1091,6 +1095,26 @@ func run_test() -> bool:
 	if (m_p15_ok["failed_rules"] as Array).has("P15") or int(m_p15_ok.get("unreachable_interactables", -1)) != 0:
 		_cleanup()
 		push_error("caricature_check_test: expected reachable hidden item to pass P15, got %s" % str(m_p15_ok))
+		return false
+
+	# P14 stamp-overlap falsifier (Decision 81 / F91): person on a stamp tile fails P14; off stamp passes; hidden item stays exempt
+	var p14_stamp_fail := rg_map.duplicate(true)
+	var p14_st_objs: Array = (p14_stamp_fail.get("objects", []) as Array).duplicate(true)
+	p14_st_objs.append({"stamp": "waypost_board", "at": [10, 10]})
+	p14_stamp_fail["objects"] = p14_st_objs
+	p14_stamp_fail["people"] = [{"id": "test_eli", "name": "Eli", "at": [11, 11], "facing": "W", "sprite": "young_man", "role": "talk", "lines": ["Hello."]}]
+	var m_p14_st_fail := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_stamp_fail), rg_area)
+	if not (m_p14_st_fail["failed_rules"] as Array).has("P14") or int(m_p14_st_fail.get("tile_overlaps", 0)) < 1:
+		_cleanup()
+		push_error("caricature_check_test: expected person on waypost_board stamp tile to fail P14, got %s" % str(m_p14_st_fail))
+		return false
+	var p14_stamp_ok := p14_stamp_fail.duplicate(true)
+	p14_stamp_ok["people"] = [{"id": "test_eli", "name": "Eli", "at": [12, 12], "facing": "W", "sprite": "young_man", "role": "talk", "lines": ["Hello."]}]
+	p14_stamp_ok["hidden_items"] = [{"at": [10, 10], "item": "Potion", "note": "exempt on stamp overhang"}]
+	var m_p14_st_ok := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_stamp_ok), rg_area)
+	if (m_p14_st_ok["failed_rules"] as Array).has("P14") or int(m_p14_st_ok.get("tile_overlaps", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected person off stamp + hidden item on stamp overhang to pass P14, got %s" % str(m_p14_st_ok))
 		return false
 
 	_cleanup()

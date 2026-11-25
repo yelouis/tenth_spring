@@ -176,7 +176,7 @@ const STAMP_TABLE: Dictionary = {
 	95: {"id": "standing_block_16x14_b", "kind": "block", "path": "buildings/standing_block_16x14_b.png", "w": 16, "h": 14, "base_rows": 14, "door": [7, 13], "door_cols": [7, 8]},
 	96: {"id": "standing_block_23x14_a", "kind": "block", "path": "buildings/standing_block_23x14_a.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
 	97: {"id": "standing_block_23x14_b", "kind": "block", "path": "buildings/standing_block_23x14_b.png", "w": 23, "h": 14, "base_rows": 14, "door": [11, 13], "door_cols": [11]},
-	98: {"id": "waypost_lamp", "kind": "prop", "path": "props/waypost_lamp.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "+"]},
+	98: {"id": "waypost_lamp", "kind": "prop", "path": "props/waypost_lamp.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "#"]},
 	99: {"id": "waypost_board", "kind": "prop", "path": "props/waypost_board.png", "w": 2, "h": 2, "base_rows": 1, "door": null, "tiles": ["++", "##"]},
 	100: {"id": "tree_cherry", "kind": "prop", "path": "props/tree_cherry.png", "w": 1, "h": 2, "base_rows": 1, "door": null, "tiles": ["+", "#"]},
 	101: {"id": "dc_capitol", "kind": "landmark", "path": "landmarks/dc_capitol.png", "w": 21, "h": 13, "base_rows": 3, "door": [10, 12], "tiles": [".....................", ".....................", "..........+..........", "..........++.........", ".........+++.........", ".........++++........", "........+++++........", "........+++++........", ".+......+++++......+.", "+++++++++++++++++++++", "#####################", "#####################", "#####################"]},

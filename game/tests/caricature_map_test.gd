@@ -12,7 +12,7 @@ const FIXTURE_ROSTER := "res://tests/fixtures/neighbourhoods_fixture.json"
 const FIXTURE_MAP := "res://tests/fixtures/caricature_fixture_map.json"
 
 # Pinned SHA-256 across the four compiled 32x32 cell tile buffers of caricature_fixture_map.json
-const PINNED_FIXTURE_SHA256 := "2d4e09a0ddf75a2cb623fe67748dd5afbe5b29a3dc86e3761bc2521fe56bad5d"
+const PINNED_FIXTURE_SHA256 := "6efd7369d7832e93813f540915a8803a9680547b9cd3842400413a7f529cc221"
 
 func _cleanup() -> void:
 	Neighbourhoods.set_config_path_for_tests("")
@@ -287,7 +287,7 @@ func run_test() -> bool:
 	var lamp_top_bytes := _tile_bytes_in_cell(cr_6_6["tiles"], 30, 51 - 32)
 	var lamp_bytes := _tile_bytes_in_cell(cr_6_6["tiles"], 30, 52 - 32)
 	var pond_sign_bytes := _tile_bytes_in_cell(cr_6_6["tiles"], 13, 43 - 32)
-	if lamp_top_bytes != [TileSynth2.TILE_STAMP, 98, TileSynth2.STAMP_FLAG_OVERHANG] or lamp_bytes != [TileSynth2.TILE_STAMP, 98, 0] or pond_sign_bytes != [TileSynth2.TILE_SIGN, 0, 0]:
+	if lamp_top_bytes != [TileSynth2.TILE_STAMP, 98, TileSynth2.STAMP_FLAG_OVERHANG] or lamp_bytes != [TileSynth2.TILE_STAMP, 98, TileSynth2.STAMP_FLAG_SOLID] or pond_sign_bytes != [TileSynth2.TILE_SIGN, 0, 0]:
 		_cleanup()
 		push_error("caricature_map_test: cell (6,6) lamp/sign bytes mismatch: top=%s lamp=%s pond=%s" % [str(lamp_top_bytes), str(lamp_bytes), str(pond_sign_bytes)])
 		return false

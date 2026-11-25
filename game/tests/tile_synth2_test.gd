@@ -1686,7 +1686,15 @@ func run_test() -> bool:
 			_cleanup()
 			return false
 		var recomputed: Array[String] = TileSynth2.compute_stamp_tiles_from_image(img, s_w, s_h, s_base)
-		if recomputed != lm_tiles_arr:
+		if sid == 98:
+			# Decision 81 (F90): waypost_lamp has a thin solid post (tiles = ["+", "#"], same as tree_cherry)
+			# so players bump into it instead of walking through it; S1 (y.6) still enforces >= 5% drawn.
+			if lm_tiles_arr != ["+", "#"]:
+				push_error("(y.5) waypost_lamp (98) must have tiles ['+', '#'] (Decision 81 F90), got %s" % str(lm_tiles_arr))
+				store.close()
+				_cleanup()
+				return false
+		elif recomputed != lm_tiles_arr:
 			push_error("(y.5) Landmark stamp %d (%s) recomputed tiles map did not match STAMP_TABLE" % [sid, s_path])
 			store.close()
 			_cleanup()

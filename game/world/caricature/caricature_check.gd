@@ -1164,9 +1164,9 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		if use_route_rules and (cliff_runs_1 > 0 or cliff_runs_2_3 > cliff_2_3_max):
 			failed_rules.append("P13f")
 
-	# P14 (Decision 77 + Decision 80): On every map, no two of a person, street Pokemon, sign, or visible item ball
-	# may share a tile, none of them may stand on any tile covered by a fixture (hidden items exempt),
-	# and no person or street Pokemon may stand on a door tile or the tile directly south of a door.
+	# P14 (Decision 77 + Decision 80 + Decision 81 / F91): On every map, no two of a person, street Pokemon, sign,
+	# or visible item ball may share a tile, none of them may stand on any tile covered by a fixture or a stamp
+	# (hidden items exempt), and no person or street Pokemon may stand on a door tile or the tile directly south of a door.
 	var fixture_cover := PackedByteArray()
 	fixture_cover.resize(total)
 	fixture_cover.fill(0)
@@ -1179,6 +1179,40 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		for yy_p14 in range(maxi(0, fy0_p14), mini(h, fy0_p14 + fh_p14)):
 			for xx_p14 in range(maxi(0, fx0_p14), mini(w, fx0_p14 + fw_p14)):
 				fixture_cover[yy_p14 * w + xx_p14] = 1
+	var stamp_cover := PackedByteArray()
+	stamp_cover.resize(total)
+	stamp_cover.fill(0)
+	var orig_p14: Vector2i = compiled.get("origin", Vector2i.ZERO)
+	var rows_p14: int = int(compiled.get("rows", 1))
+	var base_gx_p14: int = orig_p14.x * 32
+	var base_gy_p14: int = (-(orig_p14.y + rows_p14 - 1) - 1) * 32
+	for stv_p14 in (compiled.get("stamps", []) as Array):
+		if not (stv_p14 is Dictionary):
+			continue
+		var st_p14: Dictionary = stv_p14
+		var sid_p14: int = int(st_p14.get("stamp_id", 0))
+		var sdef_p14: Dictionary = TileSynth2.get_stamp_def(sid_p14)
+		var skind_p14 := str(sdef_p14.get("kind", ""))
+		var sx0_p14: int = int(st_p14.get("anchor_gx", 0)) - base_gx_p14
+		var sy0_p14: int = int(st_p14.get("anchor_gy", 0)) - base_gy_p14
+		var sw_p14: int = int(st_p14.get("w", 1))
+		var sh_p14: int = int(st_p14.get("h", 1))
+		var tiles_p14: Array = sdef_p14.get("tiles", [])
+		for ty_s in range(sh_p14):
+			var ly_s := sy0_p14 + ty_s
+			if ly_s < 0 or ly_s >= h:
+				continue
+			var rstr_s := str(tiles_p14[ty_s]) if ty_s < tiles_p14.size() else ""
+			for tx_s in range(sw_p14):
+				var lx_s := sx0_p14 + tx_s
+				if lx_s < 0 or lx_s >= w:
+					continue
+				if skind_p14 == "landmark" or skind_p14 == "prop":
+					var ch_s := rstr_s[tx_s] if tx_s < rstr_s.length() else "."
+					if ch_s == "#" or ch_s == "+":
+						stamp_cover[ly_s * w + lx_s] = 1
+				else:
+					stamp_cover[ly_s * w + lx_s] = 1
 	var door_cover: Dictionary = {}
 	for dv_p14 in doors_arr:
 		var dd_p14: Dictionary = dv_p14
@@ -1211,9 +1245,11 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 	for pt_v in visible_occ.keys():
 		var pt_o: Vector2i = pt_v
 		var cnt_o: int = int(visible_occ[pt_v])
-		var on_fx: bool = (pt_o.x >= 0 and pt_o.x < w and pt_o.y >= 0 and pt_o.y < h and fixture_cover[pt_o.y * w + pt_o.x] == 1)
+		var in_bounds_o: bool = (pt_o.x >= 0 and pt_o.x < w and pt_o.y >= 0 and pt_o.y < h)
+		var on_fx: bool = in_bounds_o and fixture_cover[pt_o.y * w + pt_o.x] == 1
+		var on_stamp: bool = in_bounds_o and stamp_cover[pt_o.y * w + pt_o.x] == 1
 		var on_door: bool = person_or_pkm.has(pt_o) and door_cover.has(pt_o)
-		if cnt_o > 1 or on_fx or on_door:
+		if cnt_o > 1 or on_fx or on_stamp or on_door:
 			tile_overlaps += 1
 	if tile_overlaps > 0:
 		failed_rules.append("P14")
