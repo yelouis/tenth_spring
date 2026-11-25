@@ -24,11 +24,34 @@ const ERR_INTERIOR_VIEW_NEEDS_INTERIOR: String = "[FAIL] --interior-view needs -
 const ERR_INTERIOR_FALLBACK_NEEDS_INTERIOR: String = "[FAIL] --interior-fallback needs --interior"
 const ERR_TILE_NEEDS_AREA: String = "[FAIL] --tile needs --area"
 const ERR_INVALID_TILE: String = "[FAIL] invalid --tile %s"
+const ERR_WALK_BENCH_NEEDS_DEMO: String = "[FAIL] --walk-bench needs --demo"
+const ERR_WALK_SHOT_NEEDS_DEMO: String = "[FAIL] --walk-shot needs --demo"
+const ERR_UNSUPPORTED_WALK_SHOT: String = "[FAIL] unsupported walk-shot %s"
 
 const SUPPORTED_ZOOMS: Array = [0.0625, 0.25, 0.5, 1, 2, 3]
 const SUPPORTED_FOCUSES: Array = ["most_visited", "most_buildings", "far_buildings", "waypost", "landmark", "area"]
 const SUPPORTED_SCREENS: Array = ["map", "town_map", "board", "city"]
 const SUPPORTED_INTERIOR_VIEWS: Array = ["whole", "compare", "door"]
+const SUPPORTED_WALK_SHOTS: Array = [
+	"day", "dusk", "night", "seam_route", "house_interior",
+	"dialogue_sign", "dialogue_person",
+	"brendan_step", "brendan_run", "may_step", "may_run",
+	"wall_bump", "ledge_hop", "landing_dust"
+]
+const WALK_BENCH_MAX_P95_MS: float = 16.7
+const WALK_BENCH_MAX_TRANSITION_MS: float = 33.4
+
+static func evaluate_walk_bench_budget(walk_p95_ms: float, seam_max_ms: float, door_enter_max_ms: float, door_exit_max_ms: float) -> Dictionary:
+	var fails: Array[String] = []
+	if walk_p95_ms > WALK_BENCH_MAX_P95_MS:
+		fails.append("WALK_FRAME_P95_MS=%.2f>%.1f" % [walk_p95_ms, WALK_BENCH_MAX_P95_MS])
+	if seam_max_ms > WALK_BENCH_MAX_TRANSITION_MS:
+		fails.append("SEAM_MAX_FRAME_MS=%.2f>%.1f" % [seam_max_ms, WALK_BENCH_MAX_TRANSITION_MS])
+	if door_enter_max_ms > WALK_BENCH_MAX_TRANSITION_MS:
+		fails.append("DOOR_ENTER_MAX_FRAME_MS=%.2f>%.1f" % [door_enter_max_ms, WALK_BENCH_MAX_TRANSITION_MS])
+	if door_exit_max_ms > WALK_BENCH_MAX_TRANSITION_MS:
+		fails.append("DOOR_EXIT_MAX_FRAME_MS=%.2f>%.1f" % [door_exit_max_ms, WALK_BENCH_MAX_TRANSITION_MS])
+	return {"ok": fails.is_empty(), "fails": fails}
 
 static func parse_args(user_args: Array, is_headless: bool, repo_root_override: String = "") -> Dictionary:
 	var screenshot_path := ""
@@ -57,6 +80,11 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	var tile_val := Vector2i(-1, -1)
 	var has_demo := false
 	var has_screenshot := false
+	var is_walk_bench := false
+	var walk_shot_str := ""
+	var has_walk_shot := false
+	var time_minutes_val := -1
+	var sprite_index_val := -1
 
 	var repo_root := repo_root_override
 	if repo_root.is_empty():
@@ -163,6 +191,36 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		elif arg == "--tile":
 			has_tile = true
 			tile_str = ""
+		elif arg == "--walk-bench":
+			is_walk_bench = true
+		elif arg.begins_with("--walk-shot="):
+			has_walk_shot = true
+			walk_shot_str = arg.trim_prefix("--walk-shot=").strip_edges()
+		elif arg == "--walk-shot" and i + 1 < user_args.size():
+			has_walk_shot = true
+			walk_shot_str = str(user_args[i + 1]).strip_edges()
+			i += 1
+		elif arg == "--walk-shot":
+			has_walk_shot = true
+			walk_shot_str = ""
+		elif arg.begins_with("--time="):
+			var tm_s := arg.trim_prefix("--time=").strip_edges()
+			if tm_s.is_valid_int():
+				time_minutes_val = tm_s.to_int()
+		elif arg == "--time" and i + 1 < user_args.size():
+			var tm_s := str(user_args[i + 1]).strip_edges()
+			if tm_s.is_valid_int():
+				time_minutes_val = tm_s.to_int()
+			i += 1
+		elif arg.begins_with("--sprite="):
+			var sp_s := arg.trim_prefix("--sprite=").strip_edges()
+			if sp_s.is_valid_int():
+				sprite_index_val = clampi(sp_s.to_int(), 0, 1)
+		elif arg == "--sprite" and i + 1 < user_args.size():
+			var sp_s := str(user_args[i + 1]).strip_edges()
+			if sp_s.is_valid_int():
+				sprite_index_val = clampi(sp_s.to_int(), 0, 1)
+			i += 1
 		i += 1
 
 	# Refusal 0: --area, --screen=city, and --interior are demo-only (standing constraint 22, §4.3, §10.12, §11.3 D)
@@ -207,8 +265,42 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 		if floor_val < 0 or floor_val >= ifloors.size():
 			return {"ok": false, "error": ERR_UNKNOWN_FLOOR % (floor_str if has_floor else str(floor_val)), "exit_code": 2}
 
+	if is_walk_bench:
+		if not has_demo:
+			return {"ok": false, "error": ERR_WALK_BENCH_NEEDS_DEMO, "exit_code": 2}
+		if is_headless:
+			return {"ok": false, "error": ERR_HEADLESS, "exit_code": 2}
+		var bench_zoom := 2.0
+		if not zoom_str.is_empty():
+			var valid_bz := false
+			if zoom_str.is_valid_float():
+				var bz_val := zoom_str.to_float()
+				for sz in [0.5, 1.0, 2.0]:
+					if is_equal_approx(bz_val, float(sz)):
+						bench_zoom = bz_val
+						valid_bz = true
+						break
+			if not valid_bz:
+				return {"ok": false, "error": ERR_UNSUPPORTED_ZOOM % zoom_str, "exit_code": 2}
+		return {
+			"ok": true,
+			"is_screenshot": false,
+			"is_walk_bench": true,
+			"zoom": bench_zoom,
+			"timeout": timeout_val,
+			"no_rom": no_rom,
+			"time_minutes": time_minutes_val,
+			"sprite_index": sprite_index_val,
+		}
+
+	if has_walk_shot:
+		if not has_demo:
+			return {"ok": false, "error": ERR_WALK_SHOT_NEEDS_DEMO, "exit_code": 2}
+		if walk_shot_str.is_empty() or not (walk_shot_str in SUPPORTED_WALK_SHOTS):
+			return {"ok": false, "error": ERR_UNSUPPORTED_WALK_SHOT % walk_shot_str, "exit_code": 2}
+
 	if not has_screenshot:
-		return {"ok": true, "is_screenshot": false, "area": area_str, "interior": interior_str, "floor": floor_val, "interior_view": interior_view_val, "interior_fallback": interior_fallback, "no_rom": no_rom, "has_tile": has_tile, "tile": tile_val}
+		return {"ok": true, "is_screenshot": false, "is_walk_bench": false, "walk_shot": walk_shot_str, "time_minutes": time_minutes_val, "sprite_index": sprite_index_val, "area": area_str, "interior": interior_str, "floor": floor_val, "interior_view": interior_view_val, "interior_fallback": interior_fallback, "no_rom": no_rom, "has_tile": has_tile, "tile": tile_val}
 
 	# Refusal 1: Headless refusal (§7.4 rule 2)
 	if is_headless:
@@ -265,6 +357,10 @@ static func parse_args(user_args: Array, is_headless: bool, repo_root_override: 
 	return {
 		"ok": true,
 		"is_screenshot": true,
+		"is_walk_bench": false,
+		"walk_shot": walk_shot_str,
+		"time_minutes": time_minutes_val,
+		"sprite_index": sprite_index_val,
 		"screenshot_path": abs_path,
 		"zoom": zoom_val,
 		"frames": frames_val,

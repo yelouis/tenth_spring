@@ -94,6 +94,13 @@ func get_last_toast_text() -> String:
 func get_world_clock() -> WorldClock:
 	return _world_clock
 
+func set_walk_zoom(zoom_val: float) -> void:
+	_zoom_step = zoom_val
+	if _camera != null:
+		_camera.zoom = Vector2(_zoom_step, _zoom_step)
+		if _player_walker != null:
+			_camera.position = _player_walker.get_camera_target()
+
 func _get_db():
 	if _db_override != null:
 		return _db_override

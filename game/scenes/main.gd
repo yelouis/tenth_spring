@@ -9,8 +9,38 @@ const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const InteriorView := preload("res://world/interior/interior_view.gd")
 const WorldClock := preload("res://world/world_clock.gd")
+const PlayerWalker := preload("res://world/player_walker.gd")
 
 var _warm_map_view: Node = null
+
+# Demo-only Item 74 --walk-bench & --walk-shot harness state (standing constraint 22)
+var _wb_active: bool = false
+var _wb_phase: String = ""
+var _wb_mv: Node = null
+var _wb_iv: InteriorView = null
+var _wb_plan: Dictionary = {}
+var _wb_step_idx: int = 0
+var _wb_warmup_frames: int = 0
+var _wb_zoom: float = 2.0
+var _wb_walk_deltas: Array[float] = []
+var _wb_seam_max_ms: float = 0.0
+var _wb_seam_watch_frames: int = 0
+var _wb_door_enter_max_ms: float = 0.0
+var _wb_door_exit_max_ms: float = 0.0
+var _wb_door_watch_frames: int = 0
+var _wb_indoor_steps_north: int = 0
+var _wb_indoor_returning: bool = false
+var _wb_timeout_sec: float = 120.0
+var _wb_elapsed_sec: float = 0.0
+
+var _ws_active: bool = false
+var _ws_mv: Node = null
+var _ws_iv: InteriorView = null
+var _ws_path: String = ""
+var _ws_zoom: float = 2.0
+var _ws_frames_left: int = 10
+var _ws_timeout_sec: float = 120.0
+var _ws_elapsed_sec: float = 0.0
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST:
@@ -40,6 +70,14 @@ func _ready() -> void:
 	DB.configure_paths(profile.db_path, profile.db_tmp_path)
 	DB.init_db()
 	RevealEngine.apply(DB)
+
+	if bool(s_cfg.get("is_walk_bench", false)):
+		_start_walk_bench(s_cfg)
+		return
+
+	if s_cfg.get("is_screenshot", false) and not str(s_cfg.get("walk_shot", "")).is_empty():
+		_start_walk_shot(s_cfg)
+		return
 
 	if s_cfg.get("is_screenshot", false):
 		var interior_id := str(s_cfg.get("interior", ""))
@@ -413,3 +451,357 @@ func open_pairing_screen() -> void:
 		cl.add_child(pairing_node)
 		if pairing_node.has_method("refresh_code"):
 			pairing_node.refresh_code()
+
+func _process(delta: float) -> void:
+	if _wb_active:
+		_tick_walk_bench(delta)
+	elif _ws_active:
+		_tick_walk_shot(delta)
+
+func _ensure_dc_demo_areas(areas: Array[String]) -> void:
+	NeighbourhoodProgress.ensure_camp(DB, "city:washington-dc")
+	for aid in areas:
+		NeighbourhoodProgress.demo_force_open(DB, aid)
+
+func _start_walk_bench(s_cfg: Dictionary) -> void:
+	_wb_zoom = float(s_cfg.get("zoom", 2.0))
+	_wb_timeout_sec = float(s_cfg.get("timeout", 120))
+	_wb_elapsed_sec = 0.0
+	var no_rom := bool(s_cfg.get("no_rom", false))
+	var t_min := int(s_cfg.get("time_minutes", -1))
+	if t_min < 0:
+		t_min = 1380 # 23:00 night: stress-test both Option C fog AND night Flash shader
+	_ensure_dc_demo_areas(["hood:washington-dc:dupont-circle", "hood:washington-dc:georgetown"])
+	var mv = open_map_view(no_rom)
+	if mv == null or not mv.load_place("city:washington-dc", false):
+		printerr("[FAIL] --walk-bench could not load city:washington-dc")
+		get_tree().quit(1)
+		return
+	mv.enable_walk_mode("hood:washington-dc:dupont-circle", Vector2i(-1, -1), "S")
+	mv.set_walk_zoom(_wb_zoom)
+	mv.set_time_of_day_override(float(t_min))
+	var sp_idx := int(s_cfg.get("sprite_index", -1))
+	var walker: PlayerWalker = mv.get_player_walker()
+	if walker == null:
+		printerr("[FAIL] --walk-bench missing PlayerWalker")
+		get_tree().quit(1)
+		return
+	if sp_idx >= 0:
+		walker.set_sprite_index(sp_idx)
+	walker.live_input_enabled = false
+	walker.set_process(false)
+
+	_wb_plan = mv.find_walk_bench_plan("hood:washington-dc:dupont-circle", "route:washington-dc:q-street#1", 40, 40)
+	if not bool(_wb_plan.get("ok", false)):
+		printerr("[FAIL] --walk-bench could not build 40+seam+40+door plan: %s" % str(_wb_plan))
+		get_tree().quit(1)
+		return
+
+	mv.place_player_in_area(str(_wb_plan["start_area"]), _wb_plan["start_local"] as Vector2i, "W", false)
+	mv.refresh_time_of_day_and_hud()
+	_wb_mv = mv
+	_wb_step_idx = 0
+	_wb_warmup_frames = 0
+	_wb_walk_deltas.clear()
+	_wb_seam_max_ms = 0.0
+	_wb_seam_watch_frames = 0
+	_wb_door_enter_max_ms = 0.0
+	_wb_door_exit_max_ms = 0.0
+	_wb_door_watch_frames = 0
+	_wb_phase = "warmup"
+	_wb_active = true
+
+func _tick_walk_bench(delta: float) -> void:
+	_wb_elapsed_sec += delta
+	if _wb_elapsed_sec > _wb_timeout_sec:
+		printerr("[FAIL] --walk-bench timed out in phase %s after %.1fs" % [_wb_phase, _wb_elapsed_sec])
+		get_tree().quit(3)
+		return
+	var frame_ms := delta * 1000.0
+
+	if _wb_phase == "warmup":
+		if _wb_mv.pending_cell_count() > 0:
+			return
+		_wb_warmup_frames += 1
+		if _wb_warmup_frames >= 20:
+			var vp_px := get_viewport_rect().size
+			var scr_scale := DisplayServer.screen_get_scale()
+			var log_tile_px := 32.0 * _wb_zoom
+			var phys_tile_px := log_tile_px * scr_scale
+			var view_w := floori(vp_px.x / log_tile_px)
+			var view_h := floori(vp_px.y / log_tile_px)
+			print("VIEWPORT_PX: %dx%d" % [int(vp_px.x), int(vp_px.y)])
+			print("CONTENT_SCALE_FACTOR: %.2f" % scr_scale)
+			print("LOGICAL_TILE_PX: %.1f" % log_tile_px)
+			print("PHYSICAL_TILE_PX: %.1f" % phys_tile_px)
+			print("VIEW_TILES %dx%d" % [view_w, view_h])
+			_wb_phase = "walk_route"
+		return
+
+	if _wb_phase == "walk_route":
+		var walker: PlayerWalker = _wb_mv.get_player_walker()
+		var steps_arr: Array = _wb_plan.get("step_dirs", [])
+		var seam_idx := int(_wb_plan.get("seam_step_index", 40))
+		_wb_walk_deltas.append(frame_ms)
+		if _wb_seam_watch_frames > 0:
+			_wb_seam_max_ms = maxf(_wb_seam_max_ms, frame_ms)
+			_wb_seam_watch_frames -= 1
+		if _wb_step_idx >= steps_arr.size():
+			if _wb_seam_watch_frames <= 0:
+				_wb_mv.place_player_in_area(str(_wb_plan["door_area"]), _wb_plan["door_step_local"] as Vector2i, "N", false)
+				_wb_warmup_frames = 0
+				_wb_phase = "door_prep"
+			return
+		var cur_dir: Vector2i = steps_arr[_wb_step_idx] as Vector2i
+		var use_run: bool = (_wb_step_idx >= 20 and _wb_step_idx < seam_idx) or (_wb_step_idx >= seam_idx + 21)
+		var prev_pos := walker.grid_pos
+		if _wb_step_idx == seam_idx:
+			_wb_seam_max_ms = maxf(_wb_seam_max_ms, frame_ms)
+		var sim_t0 := Time.get_ticks_usec()
+		walker.step_simulation(delta, cur_dir, use_run)
+		var sim_ms := float(Time.get_ticks_usec() - sim_t0) / 1000.0
+		if walker.grid_pos != prev_pos:
+			if _wb_step_idx == seam_idx:
+				_wb_seam_max_ms = maxf(_wb_seam_max_ms, maxf(frame_ms, sim_ms))
+				_wb_seam_watch_frames = 3
+			_wb_step_idx += 1
+		return
+
+	if _wb_phase == "door_prep":
+		if _wb_mv.pending_cell_count() > 0:
+			return
+		_wb_warmup_frames += 1
+		if _wb_warmup_frames >= 12:
+			_wb_phase = "door_enter"
+		return
+
+	if _wb_phase == "door_enter":
+		var walker: PlayerWalker = _wb_mv.get_player_walker()
+		var t0 := Time.get_ticks_usec()
+		walker.step_simulation(1.0 / 60.0, Vector2i(0, -1), false)
+		var enter_cpu_ms := float(Time.get_ticks_usec() - t0) / 1000.0
+		_wb_door_enter_max_ms = maxf(_wb_door_enter_max_ms, maxf(frame_ms, enter_cpu_ms))
+		_wb_iv = get_node_or_null("InteriorView") as InteriorView
+		if _wb_iv == null:
+			printerr("[FAIL] --walk-bench door step did not open InteriorView")
+			get_tree().quit(1)
+			return
+		_wb_iv.set_walk_zoom(_wb_zoom)
+		var iv_walker: PlayerWalker = _wb_iv.get_player_walker()
+		if iv_walker != null:
+			iv_walker.live_input_enabled = false
+			iv_walker.set_process(false)
+		_wb_door_watch_frames = 3
+		_wb_indoor_steps_north = 0
+		_wb_indoor_returning = false
+		_wb_phase = "door_enter_watch"
+		return
+
+	if _wb_phase == "door_enter_watch":
+		_wb_door_enter_max_ms = maxf(_wb_door_enter_max_ms, frame_ms)
+		_wb_door_watch_frames -= 1
+		if _wb_door_watch_frames <= 0:
+			_wb_phase = "interior_walk"
+		return
+
+	if _wb_phase == "interior_walk":
+		if _wb_iv == null or not is_instance_valid(_wb_iv):
+			_wb_phase = "door_exit_watch"
+			_wb_door_watch_frames = 3
+			return
+		var iv_walker: PlayerWalker = _wb_iv.get_player_walker()
+		if not _wb_indoor_returning:
+			if _wb_indoor_steps_north >= 2:
+				_wb_indoor_returning = true
+				return
+			var prev_p := iv_walker.grid_pos
+			iv_walker.step_simulation(delta, Vector2i(0, -1), false)
+			if iv_walker.grid_pos != prev_p:
+				_wb_indoor_steps_north += 1
+			elif iv_walker.is_bumping():
+				_wb_indoor_returning = true
+		else:
+			if _wb_indoor_steps_north <= 0:
+				_wb_phase = "door_exit"
+				return
+			var prev_p2 := iv_walker.grid_pos
+			iv_walker.step_simulation(delta, Vector2i(0, 1), false)
+			if iv_walker.grid_pos != prev_p2:
+				_wb_indoor_steps_north -= 1
+		return
+
+	if _wb_phase == "door_exit":
+		if _wb_iv != null and is_instance_valid(_wb_iv):
+			var iv_walker: PlayerWalker = _wb_iv.get_player_walker()
+			iv_walker.place_at(iv_walker.grid_pos, "S")
+			var t0 := Time.get_ticks_usec()
+			iv_walker.step_simulation(1.0 / 60.0, Vector2i(0, 1), false)
+			var exit_cpu_ms := float(Time.get_ticks_usec() - t0) / 1000.0
+			_wb_door_exit_max_ms = maxf(_wb_door_exit_max_ms, maxf(frame_ms, exit_cpu_ms))
+		_wb_iv = null
+		_wb_door_watch_frames = 4
+		_wb_phase = "door_exit_watch"
+		return
+
+	if _wb_phase == "door_exit_watch":
+		_wb_door_exit_max_ms = maxf(_wb_door_exit_max_ms, frame_ms)
+		_wb_door_watch_frames -= 1
+		if _wb_door_watch_frames <= 0:
+			_finish_walk_bench()
+		return
+
+func _finish_walk_bench() -> void:
+	_wb_active = false
+	var sorted := _wb_walk_deltas.duplicate()
+	sorted.sort()
+	var walk_p95 := 0.0
+	if not sorted.is_empty():
+		var idx := clampi(int(ceil(float(sorted.size()) * 0.95)) - 1, 0, sorted.size() - 1)
+		walk_p95 = float(sorted[idx])
+	var refresh_rate := DisplayServer.screen_get_refresh_rate()
+	if refresh_rate <= 0.0:
+		refresh_rate = 60.0
+	var vsync_ms := 1000.0 / refresh_rate
+	print("VSYNC_MS: %.2f" % vsync_ms)
+	print("WALK_FRAME_P95_MS: %.2f" % walk_p95)
+	print("SEAM_MAX_FRAME_MS: %.2f" % _wb_seam_max_ms)
+	print("DOOR_ENTER_MAX_FRAME_MS: %.2f" % _wb_door_enter_max_ms)
+	print("DOOR_EXIT_MAX_FRAME_MS: %.2f" % _wb_door_exit_max_ms)
+	var eval: Dictionary = ScreenshotConfig.evaluate_walk_bench_budget(walk_p95, _wb_seam_max_ms, _wb_door_enter_max_ms, _wb_door_exit_max_ms)
+	if bool(eval.get("ok", false)):
+		print("WALK_BENCH_RESULT: PASS")
+		get_tree().quit(0)
+	else:
+		print("WALK_BENCH_RESULT: FAIL %s" % ", ".join(PackedStringArray(eval.get("fails", []))))
+		get_tree().quit(1)
+
+func _start_walk_shot(s_cfg: Dictionary) -> void:
+	var scenario := str(s_cfg.get("walk_shot", ""))
+	_ws_path = str(s_cfg.get("screenshot_path", ""))
+	_ws_zoom = float(s_cfg.get("zoom", 2.0))
+	_ws_frames_left = maxi(4, int(s_cfg.get("frames", 10)))
+	_ws_timeout_sec = float(s_cfg.get("timeout", 120))
+	_ws_elapsed_sec = 0.0
+	var no_rom := bool(s_cfg.get("no_rom", false))
+	var t_min := int(s_cfg.get("time_minutes", -1))
+	var sp_idx := int(s_cfg.get("sprite_index", -1))
+
+	_ensure_dc_demo_areas(["hood:washington-dc:dupont-circle", "hood:washington-dc:georgetown", "hood:washington-dc:national-mall"])
+	var mv = open_map_view(no_rom)
+	if mv == null or not mv.load_place("city:washington-dc", false):
+		printerr("[FAIL] --walk-shot could not load city:washington-dc")
+		get_tree().quit(1)
+		return
+
+	var default_time := 720
+	if scenario == "dusk":
+		default_time = 1200
+	elif scenario == "night":
+		default_time = 1380
+	if t_min < 0:
+		t_min = default_time
+	if sp_idx < 0:
+		sp_idx = 1 if (scenario == "may_step" or scenario == "may_run") else 0
+
+	mv.enable_walk_mode("camp:washington-dc", Vector2i(31, 26), "S")
+	mv.set_walk_zoom(_ws_zoom)
+	mv.get_world_clock().set_minutes(t_min)
+	mv.get_world_clock().set_running(false)
+	mv.set_time_of_day_override(float(t_min))
+	var walker: PlayerWalker = mv.get_player_walker()
+	walker.set_sprite_index(sp_idx)
+	walker.live_input_enabled = false
+	walker.set_process(false)
+
+	_ws_mv = mv
+	_ws_iv = null
+
+	match scenario:
+		"day", "dusk", "night":
+			# 5 tiles east of Dupont Circle lamp [64, 73] so both 4.5-tile Flash circle & 3.5-tile lamp pool show at zoom 2 & 1
+			mv.place_player_in_area("hood:washington-dc:dupont-circle", Vector2i(69, 74), "W", false)
+		"seam_route":
+			# Stepping west across Dupont Circle's W opening onto Q Street #1
+			mv.place_player_in_area("hood:washington-dc:dupont-circle", Vector2i(0, 47), "W", false)
+			walker.step_simulation(8.0 / 60.0, Vector2i(-1, 0), false)
+		"house_interior":
+			mv.place_player_in_area("hood:washington-dc:dupont-circle", Vector2i(40, 52), "N", false)
+			var ret_info := {"place_id": "city:washington-dc", "return_area_id": "hood:washington-dc:dupont-circle", "return_x": 40, "return_y": 52}
+			var iv := enter_interior_from_map(mv, "dc:dc-brownstone-w", ret_info)
+			if iv == null:
+				printerr("[FAIL] --walk-shot=house_interior failed to open dc:dc-brownstone-w")
+				get_tree().quit(1)
+				return
+			iv.set_walk_zoom(_ws_zoom)
+			var iv_walker: PlayerWalker = iv.get_player_walker()
+			iv_walker.set_sprite_index(sp_idx)
+			iv_walker.live_input_enabled = false
+			iv_walker.set_process(false)
+			iv_walker.step_simulation(1.0 / 60.0, Vector2i(0, -1), false)
+			iv_walker.step_simulation(15.0 / 60.0, Vector2i.ZERO, false)
+			iv_walker.step_simulation(1.0 / 60.0, Vector2i(0, -1), false)
+			iv_walker.step_simulation(15.0 / 60.0, Vector2i.ZERO, false)
+			iv.set_walk_zoom(_ws_zoom)
+			_ws_iv = iv
+		"dialogue_sign":
+			mv.place_player_in_area("route:washington-dc:q-street#1", Vector2i(155, 14), "N", false)
+			mv.trigger_interact_for_walker()
+		"dialogue_person":
+			mv.place_player_in_area("camp:washington-dc", Vector2i(30, 26), "W", false)
+			mv.trigger_interact_for_walker()
+		"brendan_step", "may_step":
+			mv.place_player_in_area("hood:washington-dc:dupont-circle", Vector2i(64, 75), "S", false)
+			walker.step_simulation(1.0 / 60.0, Vector2i(0, 1), false)
+			walker.step_simulation(3.0 / 60.0, Vector2i.ZERO, false)
+		"brendan_run", "may_run":
+			mv.place_player_in_area("hood:washington-dc:dupont-circle", Vector2i(64, 75), "S", false)
+			walker.step_simulation(1.0 / 60.0, Vector2i(0, 1), true)
+			walker.step_simulation(1.5 / 60.0, Vector2i.ZERO, true)
+		"wall_bump":
+			mv.place_player_in_area("hood:washington-dc:dupont-circle", Vector2i(41, 52), "N", false)
+			walker.step_simulation(1.0 / 60.0, Vector2i(0, -1), false)
+			walker.step_simulation(7.0 / 60.0, Vector2i.ZERO, false)
+		"ledge_hop":
+			mv.place_player_in_area("hood:washington-dc:national-mall", Vector2i(119, 23), "S", false)
+			walker.step_simulation(1.0 / 60.0, Vector2i(0, 1), false)
+			walker.step_simulation(11.0 / 60.0, Vector2i.ZERO, false)
+		"landing_dust":
+			mv.place_player_in_area("hood:washington-dc:national-mall", Vector2i(119, 23), "S", false)
+			walker.step_simulation(1.0 / 60.0, Vector2i(0, 1), false)
+			walker.step_simulation(31.0 / 60.0, Vector2i.ZERO, false)
+			walker.step_simulation(8.0 / 60.0, Vector2i.ZERO, false)
+
+	if _ws_iv == null and _ws_mv != null:
+		if _ws_mv._camera != null and walker != null:
+			_ws_mv._camera.position = walker.get_camera_target()
+		_ws_mv.refresh_time_of_day_and_hud()
+	_ws_active = true
+
+func _tick_walk_shot(delta: float) -> void:
+	_ws_elapsed_sec += delta
+	if _ws_elapsed_sec > _ws_timeout_sec:
+		printerr("[FAIL] --walk-shot timed out after %.1fs" % _ws_elapsed_sec)
+		get_tree().quit(3)
+		return
+	if _ws_iv == null and _ws_mv != null:
+		if _ws_mv.pending_cell_count() > 0:
+			return
+	_ws_frames_left -= 1
+	if _ws_frames_left > 0:
+		return
+	_ws_active = false
+	var img: Image = get_viewport().get_texture().get_image()
+	if img == null or img.is_empty():
+		printerr("[FAIL] --walk-shot viewport image empty")
+		get_tree().quit(1)
+		return
+	var err := img.save_png(_ws_path)
+	if err != OK:
+		printerr("[FAIL] --walk-shot save_png failed: %d" % err)
+		get_tree().quit(1)
+		return
+	var vp_px := get_viewport_rect().size
+	var tile_px := 32.0 * _ws_zoom
+	print("SCREENSHOT_SAVED %s" % _ws_path.get_file())
+	print("VIEW_TILES %dx%d" % [floori(vp_px.x / tile_px), floori(vp_px.y / tile_px)])
+	get_tree().quit(0)

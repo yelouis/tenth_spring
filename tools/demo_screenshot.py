@@ -16,8 +16,9 @@ def parse_args():
     )
     parser.add_argument(
         "--out-dir",
-        required=True,
-        help="Directory to save screenshots (must be outside repository tree)."
+        required=False,
+        default=None,
+        help="Directory to save screenshots (must be outside repository tree; optional when --walk-bench is set)."
     )
     parser.add_argument(
         "--zoom",
@@ -113,6 +114,30 @@ def parse_args():
         default="1280x720",
         help="Window resolution WxH (default: 1280x720)."
     )
+    parser.add_argument(
+        "--walk-bench",
+        action="store_true",
+        help="Run demo-only windowed walking benchmark (40 tiles + seam + 40 tiles + door enter/exit)."
+    )
+    parser.add_argument(
+        "--walk-shot",
+        type=str,
+        default=None,
+        help="Capture a demo-only walking scenario screenshot (e.g., day, dusk, night, seam_route, wall_bump, ledge_hop, landing_dust)."
+    )
+    parser.add_argument(
+        "--time",
+        type=int,
+        default=None,
+        help="Optional minute of day (0-1439) for --walk-shot or --walk-bench."
+    )
+    parser.add_argument(
+        "--sprite",
+        type=int,
+        choices=[0, 1],
+        default=None,
+        help="Optional player sprite index (0=Brendan, 1=May) for --walk-shot or --walk-bench."
+    )
     return parser.parse_args()
 
 def main():
@@ -120,23 +145,25 @@ def main():
     args = parse_args()
 
     # 1. Enforce Repo Isolation Rule: out-dir must be outside repository tree (exit 2)
-    out_dir = os.path.abspath(args.out_dir)
-    real_out = os.path.realpath(out_dir)
     real_repo = os.path.realpath(repo_root)
-
-    try:
-        common = os.path.commonpath([real_out, real_repo])
-    except ValueError:
-        common = ""
-
-    if common == real_repo:
-        print(
-            f"[FAIL] screenshot path must be outside the repository: {out_dir}",
-            file=sys.stderr
-        )
+    real_out = None
+    if not args.walk_bench and not args.out_dir:
+        print("[FAIL] --out-dir is required unless --walk-bench is set", file=sys.stderr)
         sys.exit(2)
-
-    os.makedirs(real_out, exist_ok=True)
+    if args.out_dir:
+        out_dir = os.path.abspath(args.out_dir)
+        real_out = os.path.realpath(out_dir)
+        try:
+            common = os.path.commonpath([real_out, real_repo])
+        except ValueError:
+            common = ""
+        if common == real_repo:
+            print(
+                f"[FAIL] screenshot path must be outside the repository: {out_dir}",
+                file=sys.stderr
+            )
+            sys.exit(2)
+        os.makedirs(real_out, exist_ok=True)
 
     # 2. Memory Guard check: ensure execution runs under memguard demo_screenshot step
     if not os.environ.get("TENTH_SPRING_MEMGUARD_HELD"):
@@ -157,11 +184,48 @@ def main():
 
     godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
+    if args.walk_bench:
+        zooms = args.zooms if args.zooms else ["2"]
+        for z in zooms:
+            godot_cmd = [
+                sys.executable,
+                "-I",
+                godot_wrapper,
+                "--memguard-step",
+                "demo_screenshot",
+                "--windowed",
+                "--resolution",
+                args.resolution,
+                "--",
+                "--demo",
+                "--walk-bench",
+                f"--zoom={z}",
+            ]
+            if args.timeout is not None:
+                godot_cmd.append(f"--timeout={args.timeout}")
+            if args.demo_dir:
+                godot_cmd.append(f"--demo-dir={args.demo_dir}")
+            if args.no_rom:
+                godot_cmd.append("--no-rom")
+            if args.time is not None:
+                godot_cmd.append(f"--time={args.time}")
+            if args.sprite is not None:
+                godot_cmd.append(f"--sprite={args.sprite}")
+            print(f"Running walk benchmark at zoom {z}: {' '.join(godot_cmd)}")
+            res = subprocess.run(godot_cmd, cwd=repo_root)
+            if res.returncode != 0:
+                print(f"[FAIL] Godot walk benchmark failed with code {res.returncode}", file=sys.stderr)
+                sys.exit(res.returncode)
+        print("[DEMO WALK BENCH OK] All requested walk benchmarks passed.")
+        sys.exit(0)
+
     zooms = args.zooms if args.zooms else ["1"]
 
     for z in zooms:
         if args.filename:
             out_png = os.path.join(real_out, args.filename)
+        elif args.walk_shot:
+            out_png = os.path.join(real_out, f"shot_walk_{args.walk_shot}_z{z}.png")
         elif args.interior:
             slug = args.interior.replace(":", "_").replace("/", "_")
             fl = args.floor if args.floor is not None else 0
@@ -227,6 +291,12 @@ def main():
             godot_cmd.append(f"--focus={args.focus}")
         if args.screen:
             godot_cmd.append(f"--screen={args.screen}")
+        if args.walk_shot:
+            godot_cmd.append(f"--walk-shot={args.walk_shot}")
+        if args.time is not None:
+            godot_cmd.append(f"--time={args.time}")
+        if args.sprite is not None:
+            godot_cmd.append(f"--sprite={args.sprite}")
         print(f"Running screenshot capture at zoom {z}: {' '.join(godot_cmd)}")
         res = subprocess.run(godot_cmd, cwd=repo_root)
         if res.returncode != 0:

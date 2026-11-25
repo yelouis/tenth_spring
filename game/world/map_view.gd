@@ -20,6 +20,8 @@ const PeopleSprites := preload("res://world/people_sprites.gd")
 const PlayerWalker := preload("res://world/player_walker.gd")
 const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
 const MapConstants := preload("res://world/map_constants.gd")
+const SpawnDirector := preload("res://encounters/spawn_director.gd")
+const TimeOfDayShader := preload("res://world/shaders/time_of_day.gdshader")
 
 signal door_entered(interior_id: String, return_info: Dictionary)
 
@@ -209,6 +211,16 @@ var _banner_panel: PanelContainer = null
 var _banner_label: Label = null
 var _banner_timer: float = 0.0
 var _last_banner_text: String = ""
+var _time_of_day_layer: CanvasLayer = null
+var _time_of_day_rect: ColorRect = null
+var _walk_hud_panel: PanelContainer = null
+var _walk_hud_label: Label = null
+var _all_lamp_world_tiles: Array[Vector2] = []
+var _time_of_day_override_min: float = -1.0
+var _cached_neighbourhood_states: Dictionary = {}
+var _neighbourhood_states_dirty: bool = true
+var _cached_states_db_path: String = ""
+var _cached_states_rev: int = -1
 var _focused_area_id: String = ""
 var _focused_area_tiles: Vector2i = Vector2i.ZERO
 var _focused_city_cells: Vector2i = Vector2i.ZERO
@@ -373,8 +385,10 @@ func _ready() -> void:
 		_distortion_field_rect.visible = false
 		_distortion_field_layer.add_child(_distortion_field_rect)
 
-	var attr_ui := get_node_or_null("AttributionUI")
+	var attr_ui := get_node_or_null("AttributionUI") as CanvasLayer
 	if attr_ui != null:
+		if attr_ui.layer < 10:
+			attr_ui.layer = 10
 		_distortion_field_chip = attr_ui.get_node_or_null("DistortionFieldChip") as Label
 		if _distortion_field_chip == null:
 			_distortion_field_chip = Label.new()
@@ -383,6 +397,8 @@ func _ready() -> void:
 			_distortion_field_chip.visible = false
 			attr_ui.add_child(_distortion_field_chip)
 		_init_walk_banners(attr_ui)
+		_init_walk_hud(attr_ui)
+	_init_time_of_day_overlay()
 
 	set_map_fetcher(_map_fetcher)
 	_check_demo_mode()
@@ -880,6 +896,208 @@ func _init_walk_banners(attr_ui: Node) -> void:
 		_toast_panel.visible = false
 		attr_ui.add_child(_toast_panel)
 
+func _init_walk_hud(attr_ui: Node) -> void:
+	_walk_hud_panel = attr_ui.get_node_or_null("WalkHudPanel") as PanelContainer
+	if _walk_hud_panel == null:
+		_walk_hud_panel = PanelContainer.new()
+		_walk_hud_panel.name = "WalkHudPanel"
+		_walk_hud_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_walk_hud_panel.anchor_left = 0.0
+		_walk_hud_panel.anchor_right = 0.0
+		_walk_hud_panel.anchor_top = 0.0
+		_walk_hud_panel.anchor_bottom = 0.0
+		_walk_hud_panel.offset_left = 10.0
+		_walk_hud_panel.offset_top = 10.0
+		_walk_hud_panel.offset_right = 430.0
+		_walk_hud_panel.offset_bottom = 42.0
+		var hstyle := StyleBoxFlat.new()
+		hstyle.bg_color = Color(0.08, 0.10, 0.16, 0.86)
+		hstyle.border_width_left = 1
+		hstyle.border_width_top = 1
+		hstyle.border_width_right = 1
+		hstyle.border_width_bottom = 1
+		hstyle.border_color = Color(0.70, 0.76, 0.86, 0.75)
+		hstyle.corner_radius_top_left = 5
+		hstyle.corner_radius_top_right = 5
+		hstyle.corner_radius_bottom_left = 5
+		hstyle.corner_radius_bottom_right = 5
+		hstyle.content_margin_left = 10.0
+		hstyle.content_margin_right = 10.0
+		hstyle.content_margin_top = 4.0
+		hstyle.content_margin_bottom = 4.0
+		_walk_hud_panel.add_theme_stylebox_override("panel", hstyle)
+		_walk_hud_label = Label.new()
+		_walk_hud_label.name = "WalkHudLabel"
+		_walk_hud_label.add_theme_font_size_override("font_size", 13)
+		_walk_hud_label.add_theme_color_override("font_color", Color(0.96, 0.97, 0.99, 1.0))
+		_walk_hud_panel.add_child(_walk_hud_label)
+		_walk_hud_panel.visible = false
+		attr_ui.add_child(_walk_hud_panel)
+
+func _init_time_of_day_overlay() -> void:
+	_time_of_day_layer = get_node_or_null("TimeOfDayLayer") as CanvasLayer
+	if _time_of_day_layer == null:
+		_time_of_day_layer = CanvasLayer.new()
+		_time_of_day_layer.name = "TimeOfDayLayer"
+		_time_of_day_layer.layer = 5
+		add_child(_time_of_day_layer)
+	_time_of_day_rect = _time_of_day_layer.get_node_or_null("TimeOfDayRect") as ColorRect
+	if _time_of_day_rect == null:
+		_time_of_day_rect = ColorRect.new()
+		_time_of_day_rect.name = "TimeOfDayRect"
+		_time_of_day_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_time_of_day_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_time_of_day_rect.color = Color(1.0, 1.0, 1.0, 1.0)
+		var mat := ShaderMaterial.new()
+		mat.shader = TimeOfDayShader
+		_time_of_day_rect.material = mat
+		_time_of_day_rect.visible = false
+		_time_of_day_layer.add_child(_time_of_day_rect)
+
+static func _smoothstep(edge0: float, edge1: float, x: float) -> float:
+	if is_equal_approx(edge0, edge1):
+		return 0.0 if x < edge0 else 1.0
+	var t := clampf((x - edge0) / (edge1 - edge0), 0.0, 1.0)
+	return t * t * (3.0 - 2.0 * t)
+
+static func screen_uv_to_world_tile(uv: Vector2, cam_center_tiles: Vector2, viewport_size_px: Vector2, zoom_val: float) -> Vector2:
+	var z := maxf(zoom_val, 0.0001)
+	var view_size_tiles := viewport_size_px / (float(TILE_SIZE_PX) * z)
+	return cam_center_tiles + (uv - Vector2(0.5, 0.5)) * view_size_tiles
+
+static func evaluate_time_of_day_at_world_tile(world_tile: Vector2, minute_of_day: float, player_world_tile: Vector2, has_player: bool = true, lamp_world_tiles: Array = []) -> Color:
+	var m := fposmod(minute_of_day, 1440.0)
+	var t_n_to_dawn := _smoothstep(285.0, 315.0, m)
+	var t_dawn_to_day := _smoothstep(405.0, 435.0, m)
+	var t_day_to_dusk := _smoothstep(1125.0, 1155.0, m)
+	var t_dusk_to_n := _smoothstep(1245.0, 1275.0, m)
+
+	var w_dawn := t_n_to_dawn * (1.0 - t_dawn_to_day)
+	var w_dusk := t_day_to_dusk * (1.0 - t_dusk_to_n)
+	var w_night := (1.0 - t_n_to_dawn) + t_dusk_to_n
+
+	if w_dawn + w_dusk + w_night <= 0.0001:
+		return Color(0.0, 0.0, 0.0, 0.0)
+
+	var dark_factor := 1.0
+	if has_player:
+		var d_player := world_tile.distance_to(player_world_tile)
+		dark_factor = _smoothstep(4.0, 5.0, d_player)
+
+	var lamp_reduction := 0.0
+	var lim := mini(16, lamp_world_tiles.size())
+	for i in range(lim):
+		var l_v = lamp_world_tiles[i]
+		if l_v is Vector2:
+			var d_lamp := world_tile.distance_to(l_v as Vector2)
+			var lit := 1.0 - _smoothstep(1.0, 3.5, d_lamp)
+			lamp_reduction = maxf(lamp_reduction, lit)
+
+	var effective_dark := dark_factor * (1.0 - 0.85 * lamp_reduction)
+	var a_dawn := w_dawn * 0.14
+	var a_dusk := w_dusk * 0.24
+	var a_night := w_night * 0.62 * effective_dark
+	var a_lamp := w_night * 0.12 * lamp_reduction
+	var a_out := clampf(a_dawn + a_dusk + a_night + a_lamp, 0.0, 1.0)
+	if a_out <= 0.0001:
+		return Color(0.0, 0.0, 0.0, 0.0)
+	var r_out := ((245.0 / 255.0) * a_dawn + (220.0 / 255.0) * a_dusk + (22.0 / 255.0) * a_night + (255.0 / 255.0) * a_lamp) / a_out
+	var g_out := ((195.0 / 255.0) * a_dawn + (145.0 / 255.0) * a_dusk + (30.0 / 255.0) * a_night + (224.0 / 255.0) * a_lamp) / a_out
+	var b_out := ((165.0 / 255.0) * a_dawn + (120.0 / 255.0) * a_dusk + (62.0 / 255.0) * a_night + (150.0 / 255.0) * a_lamp) / a_out
+	return Color(r_out, g_out, b_out, a_out)
+
+func set_time_of_day_override(minute: float) -> void:
+	_time_of_day_override_min = minute
+	refresh_time_of_day_and_hud()
+
+func invalidate_neighbourhood_state_cache() -> void:
+	_neighbourhood_states_dirty = true
+
+func _get_cached_neighbourhood_states() -> Dictionary:
+	var db = _get_db()
+	if db == null or not db.is_open():
+		return {}
+	var cur_path := str(db.DB_PATH) if ("DB_PATH" in db) else ""
+	var cur_rev := int(db.neighbourhood_state_revision) if ("neighbourhood_state_revision" in db) else -1
+	if _neighbourhood_states_dirty or cur_path != _cached_states_db_path or cur_rev != _cached_states_rev or _cached_neighbourhood_states.is_empty():
+		_cached_neighbourhood_states = {"__loaded__": -1}
+		for ns_var in db.get_neighbourhood_states(_active_place_id):
+			if ns_var is Dictionary:
+				var ns_d: Dictionary = ns_var
+				_cached_neighbourhood_states[str(ns_d.get("area_id", ""))] = int(ns_d.get("state", 0))
+		_cached_states_db_path = cur_path
+		_cached_states_rev = cur_rev
+		_neighbourhood_states_dirty = false
+	return _cached_neighbourhood_states
+
+func get_walk_hud_text() -> String:
+	if _walk_hud_label != null:
+		return _walk_hud_label.text
+	return ""
+
+func _band_display_name(band: String) -> String:
+	match band:
+		"dawn":
+			return "Dawn"
+		"day":
+			return "Day"
+		"dusk":
+			return "Dusk"
+		"night":
+			return "Night"
+		_:
+			return band.capitalize()
+
+func refresh_time_of_day_and_hud() -> void:
+	var show_tod: bool = _walk_mode_active or _time_of_day_override_min >= 0.0
+	if _time_of_day_rect != null:
+		_time_of_day_rect.visible = show_tod
+		if show_tod and _time_of_day_rect.material is ShaderMaterial:
+			var sm := _time_of_day_rect.material as ShaderMaterial
+			var cur_min: float = _time_of_day_override_min if _time_of_day_override_min >= 0.0 else float(_world_clock.minute_of_day())
+			var vp_px := get_viewport_rect().size
+			if vp_px.x <= 1.0 or vp_px.y <= 1.0:
+				vp_px = Vector2(960.0, 640.0)
+			var z := _camera.zoom.x if (_camera != null and _camera.zoom.x > 0.0001) else 2.0
+			var cam_center_t := (_camera.position / float(TILE_SIZE_PX)) if _camera != null else Vector2.ZERO
+			var view_size_t := vp_px / (float(TILE_SIZE_PX) * z)
+			var has_p := 1.0 if (_walk_mode_active and _player_walker != null) else 0.0
+			var p_tile := (_player_walker.get_camera_target() / float(TILE_SIZE_PX)) if (_walk_mode_active and _player_walker != null) else cam_center_t
+			sm.set_shader_parameter("minute_of_day", cur_min)
+			sm.set_shader_parameter("cam_center_tiles", cam_center_t)
+			sm.set_shader_parameter("view_size_tiles", view_size_t)
+			sm.set_shader_parameter("player_world_tiles", p_tile)
+			sm.set_shader_parameter("has_player", has_p)
+			var near_lamps: Array[Vector2] = []
+			for lt in _all_lamp_world_tiles:
+				if lt.distance_to(cam_center_t) <= 48.0 and near_lamps.size() < 16:
+					near_lamps.append(lt)
+			sm.set_shader_parameter("lamp_count", near_lamps.size())
+			var padded_lamps: Array[Vector2] = []
+			padded_lamps.resize(16)
+			for i in range(16):
+				padded_lamps[i] = near_lamps[i] if i < near_lamps.size() else Vector2(-999999.0, -999999.0)
+			sm.set_shader_parameter("lamp_world_tiles", padded_lamps)
+
+	if _walk_hud_panel != null and _walk_hud_label != null:
+		_walk_hud_panel.visible = _walk_mode_active
+		if _walk_mode_active:
+			var disp_min: int = posmod(int(round(_time_of_day_override_min)) if _time_of_day_override_min >= 0.0 else _world_clock.minute_of_day(), WorldClock.MINUTES_PER_DAY)
+			var clock_str := "%02d:%02d" % [int(disp_min / 60), disp_min % 60]
+			var band_str := WorldClock.time_band_for_minute(disp_min)
+			var area_title := _area_name(_current_walk_area_id)
+			var hud_line := "%s · %s · %s" % [clock_str, _band_display_name(band_str), area_title]
+			if _area_kind(_current_walk_area_id) != "camp" and not _current_walk_area_id.is_empty():
+				var db = _get_db()
+				var starter_pid := _active_place_id
+				if db != null and db.is_open():
+					var sp_meta: String = db.get_db_meta("starter_place", "")
+					if not sp_meta.is_empty():
+						starter_pid = sp_meta
+				var band_vec: Vector2i = SpawnDirector.compute_area_level_band(_current_walk_area_id, starter_pid, false, band_str, 0)
+				hud_line += " · Wild Lv. %d–%d" % [band_vec.x, band_vec.y]
+			_walk_hud_label.text = hud_line
+
 func show_toast(msg: String, duration: float = 4.0) -> void:
 	_last_toast_text = msg
 	_toast_timer = maxf(0.5, duration)
@@ -1023,8 +1241,11 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 
 	_walk_mode_active = true
 	_camera_follows_player = true
+	invalidate_neighbourhood_state_cache()
 	_set_zoom_step(2.0) # Emerald 15x10 screen at 960x640 (Decision 79 / F81)
-	return place_player_in_area(target_aid, local_tile, facing_str)
+	var placed := place_player_in_area(target_aid, local_tile, facing_str)
+	refresh_time_of_day_and_hud()
+	return placed
 
 func disable_walk_mode() -> void:
 	_walk_mode_active = false
@@ -1033,6 +1254,143 @@ func disable_walk_mode() -> void:
 	if _player_walker != null:
 		_player_walker.visible = false
 		_player_walker.input_enabled = false
+	refresh_time_of_day_and_hud()
+
+func set_walk_zoom(zoom_val: float) -> void:
+	_set_zoom_step(zoom_val)
+	refresh_time_of_day_and_hud()
+
+func find_walk_bench_plan(hood_area_id: String = "hood:washington-dc:dupont-circle", route_leg_id: String = "route:washington-dc:q-street#1", hood_steps: int = 40, route_steps: int = 40) -> Dictionary:
+	if _walker_grid == null or not _caricature_compiled_by_area.has(hood_area_id) or not _caricature_compiled_by_area.has(route_leg_id):
+		return {"ok": false, "error": "missing areas"}
+	var hood_comp: Dictionary = _caricature_compiled_by_area[hood_area_id]
+	var seam_from_g := Vector2i.ZERO
+	var found_seam := false
+	var seam_dir := Vector2i(-1, 0)
+	for op_v in hood_comp.get("openings", []):
+		if op_v is Dictionary and str((op_v as Dictionary).get("side", "")) == "W":
+			var ot: Array = (op_v as Dictionary).get("outer_tiles", [])
+			if not ot.is_empty():
+				seam_from_g = ot[int(ot.size() / 2)] as Vector2i
+				found_seam = true
+				break
+	if not found_seam:
+		return {"ok": false, "error": "no W opening in hood"}
+	var seam_eval: Dictionary = _walker_grid.evaluate_step(seam_from_g.x, seam_from_g.y, seam_dir)
+	if str(seam_eval.get("action", "")) != "step" or str(seam_eval.get("to_area", "")) != route_leg_id:
+		return {"ok": false, "error": "W opening does not cross to route leg: %s" % str(seam_eval)}
+	var seam_to_g: Vector2i = seam_eval.get("to", seam_from_g + seam_dir)
+
+	var dirs_4: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
+	# BFS inside hood_area_id backward from seam_from_g so every forward step is a clean 1-tile step
+	var h_parent: Dictionary = {seam_from_g: Vector2i(0, 0)}
+	var h_dist: Dictionary = {seam_from_g: 0}
+	var h_queue: Array[Vector2i] = [seam_from_g]
+	var h_head := 0
+	var start_g := seam_from_g
+	var best_h_dist := 0
+	while h_head < h_queue.size():
+		var cur: Vector2i = h_queue[h_head]
+		h_head += 1
+		var cd := int(h_dist[cur])
+		if cd >= hood_steps:
+			start_g = cur
+			best_h_dist = cd
+			break
+		if cd > best_h_dist:
+			best_h_dist = cd
+			start_g = cur
+		for d in dirs_4:
+			var prev_cand := cur - d
+			if h_dist.has(prev_cand):
+				continue
+			if _walker_grid.area_at_global(prev_cand.x, prev_cand.y) != hood_area_id:
+				continue
+			var ev: Dictionary = _walker_grid.evaluate_step(prev_cand.x, prev_cand.y, d)
+			if str(ev.get("action", "")) == "step" and (ev.get("to", Vector2i.ZERO) as Vector2i) == cur and str(ev.get("to_area", "")) == hood_area_id:
+				h_dist[prev_cand] = cd + 1
+				h_parent[prev_cand] = d
+				h_queue.append(prev_cand)
+
+	var step_dirs: Array[Vector2i] = []
+	var walk_cur := start_g
+	while walk_cur != seam_from_g:
+		var sd: Vector2i = h_parent[walk_cur]
+		step_dirs.append(sd)
+		walk_cur += sd
+	var seam_step_idx := step_dirs.size()
+	step_dirs.append(seam_dir)
+
+	# BFS inside route_leg_id forward from seam_to_g for route_steps tiles
+	var r_prev: Dictionary = {seam_to_g: seam_to_g}
+	var r_pdir: Dictionary = {}
+	var r_dist: Dictionary = {seam_to_g: 0}
+	var r_queue: Array[Vector2i] = [seam_to_g]
+	var r_head := 0
+	var end_g := seam_to_g
+	var best_r_dist := 0
+	while r_head < r_queue.size():
+		var cur_r: Vector2i = r_queue[r_head]
+		r_head += 1
+		var cdr := int(r_dist[cur_r])
+		if cdr >= route_steps:
+			end_g = cur_r
+			best_r_dist = cdr
+			break
+		if cdr > best_r_dist:
+			best_r_dist = cdr
+			end_g = cur_r
+		for d in dirs_4:
+			var ev_r: Dictionary = _walker_grid.evaluate_step(cur_r.x, cur_r.y, d)
+			if str(ev_r.get("action", "")) != "step" or str(ev_r.get("to_area", "")) != route_leg_id:
+				continue
+			var nxt: Vector2i = ev_r.get("to", cur_r + d)
+			if r_dist.has(nxt):
+				continue
+			r_dist[nxt] = cdr + 1
+			r_prev[nxt] = cur_r
+			r_pdir[nxt] = d
+			r_queue.append(nxt)
+
+	var route_dirs_rev: Array[Vector2i] = []
+	var trace_r := end_g
+	while trace_r != seam_to_g:
+		route_dirs_rev.append(r_pdir[trace_r] as Vector2i)
+		trace_r = r_prev[trace_r] as Vector2i
+	route_dirs_rev.reverse()
+	for rd in route_dirs_rev:
+		step_dirs.append(rd)
+
+	# Find an enterable door in hood_area_id
+	var door_step_local := Vector2i(-1, -1)
+	var door_iid := ""
+	for d_v in hood_comp.get("doors", []):
+		if d_v is Dictionary:
+			var dd: Dictionary = d_v
+			var iid := str(dd.get("interior", ""))
+			if iid.is_empty():
+				continue
+			var dl := Vector2i(int(dd.get("x", -1)), int(dd.get("y", -1)) + 1)
+			var dg := CaricatureWalkerGrid.local_to_global(hood_comp, dl.x, dl.y)
+			var dev: Dictionary = _walker_grid.evaluate_step(dg.x, dg.y, Vector2i(0, -1))
+			if str(dev.get("action", "")) == "door":
+				door_step_local = dl
+				door_iid = iid
+				break
+
+	var start_local := CaricatureWalkerGrid.global_to_local(hood_comp, start_g.x, start_g.y)
+	return {
+		"ok": best_h_dist >= hood_steps and best_r_dist >= route_steps and not door_iid.is_empty(),
+		"start_area": hood_area_id,
+		"start_local": start_local,
+		"step_dirs": step_dirs,
+		"seam_step_index": seam_step_idx,
+		"hood_steps": best_h_dist,
+		"route_steps": best_r_dist,
+		"door_area": hood_area_id,
+		"door_step_local": door_step_local,
+		"door_interior_id": door_iid,
+	}
 
 func place_player_in_area(area_id: String, local_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "S", preserve_route_state: bool = false) -> bool:
 	if _player_walker == null or not _caricature_compiled_by_area.has(area_id):
@@ -1055,6 +1413,7 @@ func place_player_in_area(area_id: String, local_tile: Vector2i = Vector2i(-1, -
 	if _camera != null:
 		_camera.position = _player_walker.get_camera_target()
 	_update_return_home_visibility()
+	refresh_time_of_day_and_hud()
 	persist_player_session()
 	return true
 
@@ -1091,6 +1450,7 @@ func _on_walker_door_stepped(door_info: Dictionary) -> void:
 func resume_from_interior(return_info: Dictionary) -> void:
 	visible = true
 	process_mode = Node.PROCESS_MODE_INHERIT
+	invalidate_neighbourhood_state_cache()
 	var db = _get_db()
 	_world_clock.load_from_db(db)
 	_world_clock.set_running(not _screenshot_mode)
@@ -1156,6 +1516,7 @@ func _on_walker_step_completed(tile: Vector2i, info: Dictionary) -> void:
 					prev_state = int(prev_row.get("state", 0))
 				var wr := NeighbourhoodProgress.walk_route(db, route_id, _route_origin_area_id)
 				if bool(wr.get("ok", false)):
+					invalidate_neighbourhood_state_cache()
 					_fog_dirty = true
 					_sync_fog_field()
 					_update_frustum_culling()
@@ -1360,6 +1721,14 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 		_caricature_cells = new_cells
 		_caricature_compiled_by_area = new_compiled
 		_caricature_camp_id = camp_id
+		_all_lamp_world_tiles.clear()
+		for l_aid in new_compiled.keys():
+			var l_comp: Dictionary = new_compiled[l_aid]
+			var l_pos: Vector2i = l_comp.get("lamp", Vector2i(-1, -1))
+			if l_pos.x >= 0 and l_pos.y >= 0:
+				var l_g := CaricatureWalkerGrid.local_to_global(l_comp, l_pos.x, l_pos.y)
+				_all_lamp_world_tiles.append(Vector2(float(l_g.x) + 0.5, float(l_g.y) - 0.25))
+		invalidate_neighbourhood_state_cache()
 		_landmarks_by_cell = new_lms_by_cell
 		_landmark_names = new_lm_names
 		_active_waypost_cell = camp_origin
@@ -1617,6 +1986,7 @@ func travel_to_area_via_waypost(area_id: String, from_board: bool = false) -> bo
 		_world_clock.advance_minutes(cost)
 	if not place_player_in_area(area_id, Vector2i(-1, -1), "S", false):
 		return false
+	invalidate_neighbourhood_state_cache()
 	_fog_dirty = true
 	_sync_fog_field()
 	_update_frustum_culling()
@@ -1646,6 +2016,7 @@ func _on_lamp_distort_home_requested() -> void:
 	try_return_home()
 
 func _on_board_state_changed(_place_id: String) -> void:
+	invalidate_neighbourhood_state_cache()
 	_fog_dirty = true
 	_sync_fog_field()
 	_update_frustum_culling()
@@ -2158,6 +2529,7 @@ func _process(delta: float) -> void:
 	_drain_worker_results()
 	_blit_pending_cells()
 	_update_fog_overlay_rect()
+	refresh_time_of_day_and_hud()
 	_lookup_mutex.lock()
 	var lookup_res: Variant = _pending_lookup_result
 	_pending_lookup_result = null
@@ -2396,11 +2768,7 @@ func _update_frustum_culling() -> void:
 	var caricature_states_by_area: Dictionary = {}
 	if db_open:
 		if _is_caricature_place:
-			caricature_states_by_area["__loaded__"] = -1
-			for ns_var in db.get_neighbourhood_states(_active_place_id):
-				if ns_var is Dictionary:
-					var ns_d: Dictionary = ns_var
-					caricature_states_by_area[str(ns_d.get("area_id", ""))] = int(ns_d.get("state", 0))
+			caricature_states_by_area = _get_cached_neighbourhood_states()
 		else:
 			var q_sql := "SELECT cell_x, cell_y, reveal_state FROM map_cell WHERE cell_x >= ? AND cell_x <= ? AND cell_y >= ? AND cell_y <= ? AND reveal_state > 0;"
 			var rows: Array = db.query_rows(q_sql, [min_cx, max_cx, min_cy, max_cy])
@@ -2975,11 +3343,7 @@ func _sync_fog_field(caricature_states_by_area: Dictionary = {}) -> void:
 	var db_open: bool = (db != null and db.is_open())
 	var states_map: Dictionary = caricature_states_by_area
 	if _is_caricature_place and states_map.is_empty() and db_open:
-		states_map = {"__loaded__": -1}
-		for ns_var in db.get_neighbourhood_states(_active_place_id):
-			if ns_var is Dictionary:
-				var ns_d: Dictionary = ns_var
-				states_map[str(ns_d.get("area_id", ""))] = int(ns_d.get("state", 0))
+		states_map = _get_cached_neighbourhood_states()
 
 	var sig_parts := PackedStringArray()
 	sig_parts.append("%d,%d,%d" % [_fog_grid_origin.x, _fog_grid_origin.y, 1 if _is_caricature_place else 0])

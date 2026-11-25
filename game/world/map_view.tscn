@@ -37,6 +37,7 @@ color = Color(1, 1, 1, 1)
 [node name="MapCamera" type="Camera2D" parent="."]
 
 [node name="AttributionUI" type="CanvasLayer" parent="."]
+layer = 10
 
 [node name="AttributionLabel" type="Label" parent="AttributionUI"]
 anchors_preset = 3

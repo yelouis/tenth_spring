@@ -20,6 +20,7 @@ var _db: Object = null
 var _in_transaction: bool = false
 var last_error: String = ""
 var _active_bak_path: String = ""
+var neighbourhood_state_revision: int = 0
 
 const MIGRATIONS: Array = [
 	{
@@ -100,6 +101,7 @@ func init_db() -> void:
 	print("storage: SQLite extension")
 
 	_run_migrations(MIGRATIONS)
+	neighbourhood_state_revision += 1
 
 	if legacy_pending or _has_unimported_legacy_bak():
 		_run_legacy_import()
@@ -679,9 +681,12 @@ func upsert_neighbourhood_state(area_id: String, place_id: String, state: int, o
 	last_error = ""
 	var entered_val: Variant = ts if state >= 2 else null
 	var finished_val: Variant = ts if state >= 3 else null
-	return _q("INSERT INTO neighbourhood_state (area_id, place_id, state, opened_at, opened_by, entered_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(area_id) DO UPDATE SET state = MAX(neighbourhood_state.state, excluded.state), entered_at = COALESCE(neighbourhood_state.entered_at, excluded.entered_at), finished_at = COALESCE(neighbourhood_state.finished_at, excluded.finished_at);", [
+	var ok := _q("INSERT INTO neighbourhood_state (area_id, place_id, state, opened_at, opened_by, entered_at, finished_at) VALUES (?, ?, ?, ?, ?, ?, ?) ON CONFLICT(area_id) DO UPDATE SET state = MAX(neighbourhood_state.state, excluded.state), entered_at = COALESCE(neighbourhood_state.entered_at, excluded.entered_at), finished_at = COALESCE(neighbourhood_state.finished_at, excluded.finished_at);", [
 		area_id, place_id, state, ts, opened_by, entered_val, finished_val
 	])
+	if ok:
+		neighbourhood_state_revision += 1
+	return ok
 
 func _apply_migration_6() -> bool:
 	return _q("UPDATE world_clock SET game_epoch_minutes = 480 WHERE id = 1 AND game_epoch_minutes = 0 AND last_wall_sync = 0;")

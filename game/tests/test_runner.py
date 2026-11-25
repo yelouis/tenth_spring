@@ -166,6 +166,7 @@ def main():
 		"sync_ingest_isolation_test",
 		"sync_session_test",
 		"tile_synth2_test",
+		"time_of_day_test",
 		"town_map_test",
 		"walkability_parity_test",
 		"world_clock_test"
