@@ -3,10 +3,14 @@ extends Control
 # home_hub.gd — Safehouse Home Hub Scene Controller (Item 20 / plan §5)
 # Contract: docs/implementation_plan_famous_places.md §5, docs/agent_execution_guide.md §7.4
 
+const PlayerSprites := preload("res://world/player_sprites.gd")
+
 signal distort_requested()
 signal pairing_requested()
+signal character_changed(sprite_index: int)
 
 @onready var distort_button: Button = $UI/Panel/VBox/DistortButton
+@onready var character_button: Button = $UI/Panel/VBox/CharacterButton
 @onready var rest_button: Button = $UI/Panel/VBox/RestButton
 @onready var pc_box_button: Button = $UI/Panel/VBox/PCBoxButton
 @onready var garden_button: Button = $UI/Panel/VBox/GardenButton
@@ -16,6 +20,8 @@ signal pairing_requested()
 func _ready() -> void:
 	if distort_button != null:
 		distort_button.pressed.connect(_on_distort_pressed)
+	if character_button != null:
+		character_button.pressed.connect(_on_character_pressed)
 	if pair_button != null:
 		pair_button.pressed.connect(_on_pair_pressed)
 
@@ -30,7 +36,32 @@ func _ready() -> void:
 		garden_button.disabled = true
 		garden_button.tooltip_text = "Garden — coming in Phase 4–7"
 
+	_refresh_character_button()
 	_update_hub_status()
+
+func _refresh_character_button() -> void:
+	if character_button == null:
+		return
+	var db_inst = _get_db()
+	var idx := 0
+	if db_inst != null and db_inst.is_open() and db_inst.has_method("get_player_sprite_index"):
+		idx = int(db_inst.get_player_sprite_index())
+	character_button.text = "Character: %s" % PlayerSprites.display_name_for_index(idx)
+
+func toggle_character_sprite() -> int:
+	var db_inst = _get_db()
+	var cur := 0
+	if db_inst != null and db_inst.is_open() and db_inst.has_method("get_player_sprite_index"):
+		cur = int(db_inst.get_player_sprite_index())
+	var next_idx := 1 - clampi(cur, 0, 1)
+	if db_inst != null and db_inst.is_open() and db_inst.has_method("set_player_sprite_index"):
+		db_inst.set_player_sprite_index(next_idx)
+	_refresh_character_button()
+	character_changed.emit(next_idx)
+	return next_idx
+
+func _on_character_pressed() -> void:
+	toggle_character_sprite()
 
 func _update_hub_status() -> void:
 	if status_label == null:

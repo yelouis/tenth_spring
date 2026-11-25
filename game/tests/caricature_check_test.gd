@@ -1029,6 +1029,49 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected visible item ball on bench to fail P14, got %s" % str(m_p14_bb))
 		return false
 
+	# Decision 80 P14 doorway rule falsifiers: person or street_pokemon on door or doorstep (y+1) fails P14
+	var p14_door_map := p14_base.duplicate(true)
+	var p14_objs: Array = (p14_door_map.get("objects", []) as Array).duplicate(true)
+	p14_objs.append({"stamp": "standing_house_s_door1", "at": [10, 10]})
+	p14_door_map["objects"] = p14_objs
+	var c_p14_door_clean := CaricatureMap.compile(rg_area, p14_door_map)
+	var door_pos: Vector2i = Vector2i(int(c_p14_door_clean["doors"][0]["x"]), int(c_p14_door_clean["doors"][0]["y"]))
+	var p14_person_step := p14_door_map.duplicate(true)
+	p14_person_step["people"][0]["at"] = [door_pos.x, door_pos.y + 1]
+	var m_p14_ps2 := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_person_step), rg_area)
+	if not (m_p14_ps2["failed_rules"] as Array).has("P14"):
+		_cleanup()
+		push_error("caricature_check_test: expected person on doorstep (y+1) to fail P14, got %s" % str(m_p14_ps2))
+		return false
+	var p14_pkm_door := p14_door_map.duplicate(true)
+	p14_pkm_door["street_pokemon"][0]["at"] = [door_pos.x, door_pos.y]
+	var m_p14_pd := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p14_pkm_door), rg_area)
+	if not (m_p14_pd["failed_rules"] as Array).has("P14"):
+		_cleanup()
+		push_error("caricature_check_test: expected street_pokemon on door tile to fail P14, got %s" % str(m_p14_pd))
+		return false
+
+	# Decision 80 F85 P16 falsifier: street_pokemon in a long 1-tile alley (> 6 steps around) fails P16; moved outside alley passes P16
+	var p16_map := p14_base.duplicate(true)
+	var p16_rows: Array = (p16_map["rows"] as Array).duplicate()
+	# Build two 9-tile-long tree walls on rows 22 & 24 (x=10..18) leaving a 1-tile alley on row 23 (walk-around >= 10 steps)
+	p16_rows[22] = str(p16_rows[22]).substr(0, 10) + "TTTTTTTTT" + str(p16_rows[22]).substr(19)
+	p16_rows[24] = str(p16_rows[24]).substr(0, 10) + "TTTTTTTTT" + str(p16_rows[24]).substr(19)
+	p16_map["rows"] = p16_rows
+	p16_map["street_pokemon"] = [{"dex": 84, "at": [14, 23], "zone": "residential"}]
+	var m_p16_fail := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p16_map), rg_area)
+	if not (m_p16_fail["failed_rules"] as Array).has("P16") or int(m_p16_fail.get("pkm_alley_violations", 0)) != 1:
+		_cleanup()
+		push_error("caricature_check_test: expected alley street_pokemon to fail P16, got %s" % str(m_p16_fail))
+		return false
+	var p16_pass_map := p16_map.duplicate(true)
+	p16_pass_map["street_pokemon"] = [{"dex": 84, "at": [14, 26], "zone": "residential"}]
+	var m_p16_ok := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p16_pass_map), rg_area)
+	if (m_p16_ok["failed_rules"] as Array).has("P16") or int(m_p16_ok.get("pkm_alley_violations", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected open street_pokemon to pass P16, got %s" % str(m_p16_ok))
+		return false
+
 	_cleanup()
 	return true
 

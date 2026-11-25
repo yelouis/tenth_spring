@@ -58,6 +58,10 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 	var out_fx_json_path := abs_dir.path_join("tiles/emerald_outdoor_fx_v1.json")
 	var ppl_png_path := abs_dir.path_join("tiles/emerald_people_v1.png")
 	var ppl_json_path := abs_dir.path_join("tiles/emerald_people_v1.json")
+	var pl_png_path := abs_dir.path_join("tiles/emerald_player_v1.png")
+	var pl_json_path := abs_dir.path_join("tiles/emerald_player_v1.json")
+	var fe_png_path := abs_dir.path_join("tiles/emerald_field_effects_v1.png")
+	var fe_json_path := abs_dir.path_join("tiles/emerald_field_effects_v1.json")
 
 	var need_import := (
 		not FileAccess.file_exists(png_path)
@@ -67,12 +71,18 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 		or not FileAccess.file_exists(out_fx_json_path)
 		or not FileAccess.file_exists(ppl_png_path)
 		or not FileAccess.file_exists(ppl_json_path)
+		or not FileAccess.file_exists(pl_png_path)
+		or not FileAccess.file_exists(pl_json_path)
+		or not FileAccess.file_exists(fe_png_path)
+		or not FileAccess.file_exists(fe_json_path)
 	)
 	if not need_import:
 		var cached_main: Variant = JSON.parse_string(FileAccess.get_file_as_string(json_path)) if FileAccess.file_exists(json_path) else null
 		var cached_iparsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(indoor_json_path))
 		var cached_fx: Variant = JSON.parse_string(FileAccess.get_file_as_string(out_fx_json_path))
 		var cached_ppl: Variant = JSON.parse_string(FileAccess.get_file_as_string(ppl_json_path))
+		var cached_pl: Variant = JSON.parse_string(FileAccess.get_file_as_string(pl_json_path))
+		var cached_fe: Variant = JSON.parse_string(FileAccess.get_file_as_string(fe_json_path))
 		var expected_sha := FileAccess.get_file_as_string("res://config/emerald_tile_map.json").sha256_text()
 		if (
 			not (cached_main is Dictionary)
@@ -86,6 +96,10 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 			or str((cached_fx as Dictionary).get("cfg_sha256", "")) != expected_sha
 			or not (cached_ppl is Dictionary)
 			or str((cached_ppl as Dictionary).get("cfg_sha256", "")) != expected_sha
+			or not (cached_pl is Dictionary)
+			or str((cached_pl as Dictionary).get("cfg_sha256", "")) != expected_sha
+			or not (cached_fe is Dictionary)
+			or str((cached_fe as Dictionary).get("cfg_sha256", "")) != expected_sha
 		):
 			need_import = true
 	if need_import:
@@ -117,6 +131,8 @@ static func tile_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
 		["indoor", indoor_png_path, indoor_json_path],
 		["outdoor_fx", out_fx_png_path, out_fx_json_path],
 		["people", ppl_png_path, ppl_json_path],
+		["player", pl_png_path, pl_json_path],
+		["field_effects", fe_png_path, fe_json_path],
 	]
 	for pair_v in extras:
 		var prefix := str(pair_v[0])
@@ -160,6 +176,24 @@ static func people_sprite_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Varian
 	if not d.has("people_texture") or not d.has("people_json"):
 		return null
 	return {"texture": d["people_texture"], "json": d["people_json"]}
+
+static func player_sprite_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
+	var base: Variant = tile_atlas(cache_dir)
+	if not (base is Dictionary):
+		return null
+	var d: Dictionary = base
+	if not d.has("player_texture") or not d.has("player_json"):
+		return null
+	return {"texture": d["player_texture"], "json": d["player_json"]}
+
+static func field_effects_atlas(cache_dir: String = DEFAULT_CACHE_DIR) -> Variant:
+	var base: Variant = tile_atlas(cache_dir)
+	if not (base is Dictionary):
+		return null
+	var d: Dictionary = base
+	if not d.has("field_effects_texture") or not d.has("field_effects_json"):
+		return null
+	return {"texture": d["field_effects_texture"], "json": d["field_effects_json"]}
 
 static func clear_memory_cache() -> void:
 	_json_cache_by_dir.clear()

@@ -322,3 +322,29 @@ static func render_object_over_metatile_32(
 	var img16 := render_metatile_16(primary, null, base_metatile)
 	_blit_object_on_16(img16, rom, frame_offset, palette_offset)
 	return scale_2x_nearest(img16)
+
+
+static func render_field_effect_16x8_32(
+	rom: Variant,
+	frame_offset: int,
+	palette_offset: int = 0,
+	mono_shadow: bool = false
+) -> Image:
+	var img16 := Image.create(16, 8, false, Image.FORMAT_RGBA8)
+	img16.fill(Color(0, 0, 0, 0))
+	if rom == null:
+		return scale_2x_nearest(img16)
+	var frame_bytes: PackedByteArray = rom.read_bytes(frame_offset, 64)
+	if frame_bytes.size() < 64:
+		return scale_2x_nearest(img16)
+	var pal: Array[Color] = []
+	if mono_shadow:
+		for c_idx in range(16):
+			pal.append(Color8(0, 0, 0, 0) if c_idx == 0 else Color8(16, 20, 32, 128))
+	else:
+		pal = _read_palette(rom, palette_offset)
+		if pal.size() < 16:
+			return scale_2x_nearest(img16)
+	for tx in range(2):
+		_blit_4bpp_tile(img16, frame_bytes, tx * 32, pal, tx * 8, 0, false, false, true)
+	return scale_2x_nearest(img16)

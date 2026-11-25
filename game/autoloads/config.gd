@@ -3,6 +3,10 @@ extends Node
 var walk_speed_mph: float = 15.0
 var bicycle_speed_multiplier: float = 2.0
 var wall_seconds_per_game_minute: float = 2.0
+var player_walk_frames_per_tile: int = 16
+var player_run_frames_per_tile: int = 8
+var player_ledge_hop_frames: int = 32
+var player_turn_frames: int = 8
 var tile_meters: float = 8.0
 var visit_radius_meters: float = 75.0
 var visit_dwell_seconds: int = 120
@@ -53,6 +57,10 @@ func load_tuning_config(path: String) -> void:
 		walk_speed_mph = json.get("walkSpeedMph", walk_speed_mph)
 		bicycle_speed_multiplier = json.get("bicycleSpeedMultiplier", bicycle_speed_multiplier)
 		wall_seconds_per_game_minute = json.get("wallSecondsPerGameMinute", wall_seconds_per_game_minute)
+		player_walk_frames_per_tile = int(json.get("playerWalkFramesPerTile", player_walk_frames_per_tile))
+		player_run_frames_per_tile = int(json.get("playerRunFramesPerTile", player_run_frames_per_tile))
+		player_ledge_hop_frames = int(json.get("playerLedgeHopFrames", player_ledge_hop_frames))
+		player_turn_frames = int(json.get("playerTurnFrames", player_turn_frames))
 		tile_meters = json.get("tileMeters", tile_meters)
 		visit_radius_meters = json.get("visitRadiusMeters", visit_radius_meters)
 		visit_dwell_seconds = json.get("visitDwellSeconds", visit_dwell_seconds)

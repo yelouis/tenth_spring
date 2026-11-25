@@ -167,6 +167,14 @@ static func build_emerald_atlas(
 	if not bool(people_res.get("ok", false)):
 		return people_res
 
+	var player_res := _build_player_atlas_files(rom, cfg, tiles_dir, cfg_sha)
+	if not bool(player_res.get("ok", false)):
+		return player_res
+
+	var fldeff_res := _build_field_effects_atlas_files(rom, cfg, tiles_dir, cfg_sha)
+	if not bool(fldeff_res.get("ok", false)):
+		return fldeff_res
+
 	return {
 		"ok": true,
 		"png": out_png,
@@ -177,6 +185,10 @@ static func build_emerald_atlas(
 		"outdoor_fx_json": str(outdoor_fx_res.get("json", "")),
 		"people_png": str(people_res.get("png", "")),
 		"people_json": str(people_res.get("json", "")),
+		"player_png": str(player_res.get("png", "")),
+		"player_json": str(player_res.get("json", "")),
+		"field_effects_png": str(fldeff_res.get("png", "")),
+		"field_effects_json": str(fldeff_res.get("json", "")),
 		"tiles_written": tiles_written,
 		"indoor_tiles_written": int(indoor_res.get("written", 0)),
 	}
@@ -543,3 +555,136 @@ static func _build_people_atlas_files(
 	if not bool(wres.get("ok", false)):
 		return wres
 	return {"ok": true, "png": out_png, "json": out_json, "written": people_meta.size()}
+
+
+static func _build_player_atlas_files(
+	rom: Variant,
+	cfg: Dictionary,
+	tiles_dir: String,
+	cfg_sha256: String
+) -> Dictionary:
+	var pl_cfg: Dictionary = cfg.get("player_sprites", {})
+	var out_png := tiles_dir.path_join("emerald_player_v1.png")
+	var out_json := tiles_dir.path_join("emerald_player_v1.json")
+	var keys := pl_cfg.keys()
+	keys.sort()
+	if keys.is_empty():
+		var img0 := Image.create(32, 64, false, Image.FORMAT_RGBA8)
+		img0.save_png(out_png)
+		var w0 := _write_json_doc(out_json, {"format": "emerald_player_v1", "cfg_sha256": cfg_sha256, "sprite_w": 32, "sprite_h": 64, "players": {}})
+		if not bool(w0.get("ok", false)):
+			return w0
+		return {"ok": true, "png": out_png, "json": out_json, "written": 0}
+
+	# 24 slots per character: walk (12: S/N/W/E x stand/step_l/step_r) + run (12: S/N/W/E x stand/step_l/step_r)
+	var atlas := Image.create(24 * 32, keys.size() * 64, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0, 0, 0, 0))
+	var players_meta: Dictionary = {}
+	# Emerald 9-frame order: 0=S_stand, 1=N_stand, 2=W_stand, 3=S_stepL, 4=S_stepR, 5=N_stepL, 6=N_stepR, 7=W_stepL, 8=W_stepR
+	var dir_pose_specs := [
+		["S", "stand", 0, false],
+		["S", "step_l", 3, false],
+		["S", "step_r", 4, false],
+		["N", "stand", 1, false],
+		["N", "step_l", 5, false],
+		["N", "step_r", 6, false],
+		["W", "stand", 2, false],
+		["W", "step_l", 7, false],
+		["W", "step_r", 8, false],
+		["E", "stand", 2, true],
+		["E", "step_l", 7, true],
+		["E", "step_r", 8, true],
+	]
+
+	for i in range(keys.size()):
+		var k := str(keys[i])
+		var spec: Dictionary = pl_cfg[keys[i]]
+		var pal_off := int(spec.get("palette_offset", 0))
+		var walk_offs: Array = spec.get("walk_offsets", [])
+		var run_offs: Array = spec.get("run_offsets", [])
+		if pal_off <= 0 or walk_offs.size() < 9 or run_offs.size() < 9:
+			continue
+		var char_meta := {
+			"sprite_index": int(spec.get("sprite_index", i)),
+			"walk": {},
+			"run": {},
+		}
+		var dst_y := i * 64
+		for mode_idx in range(2):
+			var mode_name := "walk" if mode_idx == 0 else "run"
+			var offs: Array = walk_offs if mode_idx == 0 else run_offs
+			var mode_dict: Dictionary = char_meta[mode_name]
+			for s_idx in range(dir_pose_specs.size()):
+				var dp: Array = dir_pose_specs[s_idx]
+				var d_name: String = str(dp[0])
+				var p_name: String = str(dp[1])
+				var f_idx: int = int(dp[2])
+				var hflip: bool = bool(dp[3])
+				var img := Gen3TilesRef.render_person_transparent_32(rom, int(offs[f_idx]), pal_off, hflip)
+				var dst_x := (mode_idx * 12 + s_idx) * 32
+				atlas.blit_rect(img, Rect2i(0, 0, 32, 64), Vector2i(dst_x, dst_y))
+				if not mode_dict.has(d_name):
+					mode_dict[d_name] = {}
+				(mode_dict[d_name] as Dictionary)[p_name] = [dst_x, dst_y, 32, 64]
+		players_meta[k] = char_meta
+
+	var err := atlas.save_png(out_png)
+	if err != OK:
+		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_png, err]}
+	var wres := _write_json_doc(out_json, {"format": "emerald_player_v1", "cfg_sha256": cfg_sha256, "sprite_w": 32, "sprite_h": 64, "players": players_meta})
+	if not bool(wres.get("ok", false)):
+		return wres
+	return {"ok": true, "png": out_png, "json": out_json, "written": players_meta.size()}
+
+
+static func _build_field_effects_atlas_files(
+	rom: Variant,
+	cfg: Dictionary,
+	tiles_dir: String,
+	cfg_sha256: String
+) -> Dictionary:
+	var fe_cfg: Dictionary = cfg.get("field_effects", {})
+	var out_png := tiles_dir.path_join("emerald_field_effects_v1.png")
+	var out_json := tiles_dir.path_join("emerald_field_effects_v1.json")
+	var keys := fe_cfg.keys()
+	keys.sort()
+	var total_slots := 0
+	for k in keys:
+		var spec: Dictionary = fe_cfg[k]
+		total_slots += (spec.get("frame_offsets", []) as Array).size()
+	if total_slots <= 0:
+		var img0 := Image.create(32, 16, false, Image.FORMAT_RGBA8)
+		img0.save_png(out_png)
+		var w0 := _write_json_doc(out_json, {"format": "emerald_field_effects_v1", "cfg_sha256": cfg_sha256, "effects": {}})
+		if not bool(w0.get("ok", false)):
+			return w0
+		return {"ok": true, "png": out_png, "json": out_json, "written": 0}
+
+	var atlas := Image.create(total_slots * 32, 16, false, Image.FORMAT_RGBA8)
+	atlas.fill(Color(0, 0, 0, 0))
+	var effects_meta: Dictionary = {}
+	var slot_idx := 0
+	for k in keys:
+		var name_s := str(k)
+		var spec: Dictionary = fe_cfg[k]
+		var mono := bool(spec.get("mono_shadow", false))
+		var pal_off := int(spec.get("palette_offset", 0))
+		var offs: Array = spec.get("frame_offsets", [])
+		var frame_rects: Array = []
+		for f_off_v in offs:
+			var img := Gen3TilesRef.render_field_effect_16x8_32(rom, int(f_off_v), pal_off, mono)
+			var dst_x := slot_idx * 32
+			atlas.blit_rect(img, Rect2i(0, 0, 32, 16), Vector2i(dst_x, 0))
+			frame_rects.append([dst_x, 0, 32, 16])
+			slot_idx += 1
+		effects_meta[name_s] = {
+			"frames": frame_rects,
+			"frame_duration_frames": int(spec.get("frame_duration_frames", 8)),
+		}
+	var err := atlas.save_png(out_png)
+	if err != OK:
+		return {"ok": false, "error": "Failed to save %s (err=%d)" % [out_png, err]}
+	var wres := _write_json_doc(out_json, {"format": "emerald_field_effects_v1", "cfg_sha256": cfg_sha256, "effects": effects_meta})
+	if not bool(wres.get("ok", false)):
+		return wres
+	return {"ok": true, "png": out_png, "json": out_json, "written": slot_idx}

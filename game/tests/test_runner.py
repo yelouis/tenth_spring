@@ -147,6 +147,7 @@ def main():
 		"neighbourhoods_test",
 		"pairing_codes_test",
 		"pc_identity_test",
+		"player_walker_test",
 		"profile_paths_test",
 		"qr_code_test",
 		"real_save_untouched",
@@ -161,6 +162,7 @@ def main():
 		"sync_session_test",
 		"tile_synth2_test",
 		"town_map_test",
+		"walkability_parity_test",
 		"world_clock_test"
 	]
 

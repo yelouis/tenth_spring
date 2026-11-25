@@ -1164,8 +1164,9 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		if use_route_rules and (cliff_runs_1 > 0 or cliff_runs_2_3 > cliff_2_3_max):
 			failed_rules.append("P13f")
 
-	# P14 (Decision 77): On every map, no two of a person, street Pokemon, sign, or visible item ball
-	# may share a tile, and none of them may stand on any tile covered by a fixture (hidden items exempt).
+	# P14 (Decision 77 + Decision 80): On every map, no two of a person, street Pokemon, sign, or visible item ball
+	# may share a tile, none of them may stand on any tile covered by a fixture (hidden items exempt),
+	# and no person or street Pokemon may stand on a door tile or the tile directly south of a door.
 	var fixture_cover := PackedByteArray()
 	fixture_cover.resize(total)
 	fixture_cover.fill(0)
@@ -1178,15 +1179,25 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		for yy_p14 in range(maxi(0, fy0_p14), mini(h, fy0_p14 + fh_p14)):
 			for xx_p14 in range(maxi(0, fx0_p14), mini(w, fx0_p14 + fw_p14)):
 				fixture_cover[yy_p14 * w + xx_p14] = 1
+	var door_cover: Dictionary = {}
+	for dv_p14 in doors_arr:
+		var dd_p14: Dictionary = dv_p14
+		var ddx: int = int(dd_p14.get("x", 0))
+		var ddy: int = int(dd_p14.get("y", 0))
+		door_cover[Vector2i(ddx, ddy)] = true
+		door_cover[Vector2i(ddx, ddy + 1)] = true
 	var visible_occ: Dictionary = {}
+	var person_or_pkm: Dictionary = {}
 	for pv_p14 in (compiled.get("people", []) as Array):
 		var pd_p14: Dictionary = pv_p14
 		var pt_p14 := Vector2i(int(pd_p14["x"]), int(pd_p14["y"]))
 		visible_occ[pt_p14] = int(visible_occ.get(pt_p14, 0)) + 1
+		person_or_pkm[pt_p14] = true
 	for kv_p14 in (compiled.get("street_pokemon", []) as Array):
 		var kd_p14: Dictionary = kv_p14
 		var pt_p14 := Vector2i(int(kd_p14["x"]), int(kd_p14["y"]))
 		visible_occ[pt_p14] = int(visible_occ.get(pt_p14, 0)) + 1
+		person_or_pkm[pt_p14] = true
 	for sv_p14 in signs_arr:
 		var sd_p14: Dictionary = sv_p14
 		var pt_p14 := Vector2i(int(sd_p14["x"]), int(sd_p14["y"]))
@@ -1201,10 +1212,81 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		var pt_o: Vector2i = pt_v
 		var cnt_o: int = int(visible_occ[pt_v])
 		var on_fx: bool = (pt_o.x >= 0 and pt_o.x < w and pt_o.y >= 0 and pt_o.y < h and fixture_cover[pt_o.y * w + pt_o.x] == 1)
-		if cnt_o > 1 or on_fx:
+		var on_door: bool = person_or_pkm.has(pt_o) and door_cover.has(pt_o)
+		if cnt_o > 1 or on_fx or on_door:
 			tile_overlaps += 1
 	if tile_overlaps > 0:
 		failed_rules.append("P14")
+
+	# P16 (Decision 80 / F85): Every street Pokemon must be easy to walk around (<= 6 steps between any pair
+	# of its standable 4-neighbors, with k/r/o solid, all people & street Pokemon solid, and balls collected).
+	var p16_violations := 0
+	var p16_max_detour := 0
+	var pkm_arr_p16: Array = compiled.get("street_pokemon", [])
+	if not pkm_arr_p16.is_empty():
+		var p16_stand := PackedByteArray()
+		p16_stand.resize(total)
+		p16_stand.fill(0)
+		var solid_mask_p16: PackedByteArray = compiled.get("solid_mask", PackedByteArray())
+		for i_p16 in range(total):
+			if base_flags[i_p16] == 1 and cls_buf[i_p16] != TileSynth2.TILE_DOOR:
+				p16_stand[i_p16] = 1
+		# Ensure all people (even if on a protected door) and all street_pokemon are solid for P16
+		for pv_p16 in (compiled.get("people", []) as Array):
+			var ppx: int = int(pv_p16["x"])
+			var ppy: int = int(pv_p16["y"])
+			if ppx >= 0 and ppx < w and ppy >= 0 and ppy < h:
+				p16_stand[ppy * w + ppx] = 0
+		for kv_p16 in pkm_arr_p16:
+			var kpx: int = int(kv_p16["x"])
+			var kpy: int = int(kv_p16["y"])
+			if kpx >= 0 and kpx < w and kpy >= 0 and kpy < h:
+				p16_stand[kpy * w + kpx] = 0
+		var p16_graph := _build_directed_graph(w, h, cls_buf, var_buf, mask_buf, opening_mask, p16_stand)
+		var p16_fwd: Dictionary = p16_graph["fwd"]
+		for kv_p16 in pkm_arr_p16:
+			var sx: int = int(kv_p16["x"])
+			var sy: int = int(kv_p16["y"])
+			var nbs: Array[int] = []
+			for d_p16 in DIRS:
+				var nx: int = sx + d_p16.x
+				var ny: int = sy + d_p16.y
+				if nx >= 0 and nx < w and ny >= 0 and ny < h:
+					var nidx: int = ny * w + nx
+					if p16_stand[nidx] == 1:
+						nbs.append(nidx)
+			var bad_this := false
+			for src_idx in nbs:
+				# Bounded BFS up to depth 6 (plus detect if > 6 / unreachable)
+				var dmap: Dictionary = {src_idx: 0}
+				var bq: Array[int] = [src_idx]
+				var bh := 0
+				while bh < bq.size():
+					var u_p16: int = bq[bh]
+					bh += 1
+					var du_p16: int = int(dmap[u_p16])
+					if du_p16 >= 6:
+						continue
+					for v_p16 in (p16_fwd.get(u_p16, PackedInt32Array()) as PackedInt32Array):
+						if not dmap.has(v_p16):
+							dmap[v_p16] = du_p16 + 1
+							bq.append(v_p16)
+				for dst_idx in nbs:
+					if dst_idx == src_idx:
+						continue
+					if not dmap.has(dst_idx):
+						bad_this = true
+						p16_max_detour = -1 if p16_max_detour < 0 else maxi(p16_max_detour, 7)
+					else:
+						var dd: int = int(dmap[dst_idx])
+						if p16_max_detour >= 0:
+							p16_max_detour = maxi(p16_max_detour, dd)
+						if dd > 6:
+							bad_this = true
+			if bad_this:
+				p16_violations += 1
+	if p16_violations > 0:
+		failed_rules.append("P16")
 
 	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
 	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
@@ -1251,6 +1333,8 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"cliff_2_3_max": cliff_2_3_max,
 		"tree_clumps_1_3": tree_clumps_1_3,
 		"tile_overlaps": tile_overlaps,
+		"pkm_alley_violations": p16_violations,
+		"pkm_max_detour": p16_max_detour,
 		"rendered_water": rendered_water,
 		"water_baseline": water_baseline,
 	}

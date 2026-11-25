@@ -1180,6 +1180,9 @@ static func compile(area: Dictionary, map: Dictionary, world_seed: int = MapCons
 		var pp := Vector2i(pe["x"], pe["y"])
 		if not protected_doors.has(pp):
 			solid_mask[pp.y * w + pp.x] = 1
+	for sp in street_pokemon_out:
+		var spp := Vector2i(sp["x"], sp["y"])
+		solid_mask[spp.y * w + spp.x] = 1
 
 	return {
 		"ok": true,

@@ -15,6 +15,8 @@ const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 const OutdoorFixtures := preload("res://world/caricature/outdoor_fixtures.gd")
 const PeopleSprites := preload("res://world/people_sprites.gd")
+const PlayerWalker := preload("res://world/player_walker.gd")
+const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
 
 const CELL_SIZE_PX := 1024.0
 const TILE_SIZE_PX := 32
@@ -26,6 +28,7 @@ const MAX_STORE_CELLS := 256
 const SYNTH_BUDGET_USEC := 8000 # 8 ms budget per frame
 
 const ZOOM_STEPS: Array = [0.0625, 0.25, 0.5, 1.0, 2.0]
+const WALK_ZOOM_STEPS: Array = [0.5, 1.0, 2.0]
 
 # Palette colors for overview texture (§5.3)
 const MAP_COLORS := {
@@ -172,6 +175,11 @@ var _forced_caricature_place_id: String = ""
 var _caricature_cells: Dictionary = {} # Vector2i -> {compiled: Dictionary, area: Dictionary}
 var _caricature_compiled_by_area: Dictionary = {} # area_id -> compiled Dictionary
 var _caricature_camp_id: String = ""
+var _walk_mode_active: bool = false
+var _camera_follows_player: bool = false
+var _player_walker: PlayerWalker = null
+var _walker_grid: CaricatureWalkerGrid = null
+var _current_walk_area_id: String = ""
 var _focused_area_id: String = ""
 var _focused_area_tiles: Vector2i = Vector2i.ZERO
 var _focused_city_cells: Vector2i = Vector2i.ZERO
@@ -691,8 +699,123 @@ func focus_on_cell(cx: int, cy: int) -> void:
 	_focused_area_id = ""
 	_focused_area_tiles = Vector2i.ZERO
 	_focused_city_cells = Vector2i.ZERO
+	_camera_follows_player = false
 	if _camera != null:
 		_camera.position = Vector2((cx + 0.5) * CELL_SIZE_PX, (-cy - 0.5) * CELL_SIZE_PX)
+	_update_return_home_visibility()
+
+func set_force_no_rom(enabled: bool) -> void:
+	var changed := (_force_no_rom != enabled)
+	_force_no_rom = enabled
+	if _player_walker != null:
+		_player_walker.set_force_no_rom(enabled)
+	if changed and is_inside_tree():
+		_init_tile_sets()
+
+func is_walk_mode_active() -> bool:
+	return _walk_mode_active
+
+func get_player_walker() -> PlayerWalker:
+	return _player_walker
+
+func get_walker_grid() -> CaricatureWalkerGrid:
+	return _walker_grid
+
+func get_current_walk_area_id() -> String:
+	return _current_walk_area_id
+
+func _rebuild_walker_grid() -> void:
+	var collected := {}
+	var db = _get_db()
+	if db != null and db.is_open() and db.has_method("get_collected_items_in_area"):
+		for aid_v in _caricature_compiled_by_area.keys():
+			var aid := str(aid_v)
+			for row_v in db.get_collected_items_in_area(aid):
+				if row_v is Dictionary and str((row_v as Dictionary).get("kind", "")) == "ball":
+					collected[str((row_v as Dictionary).get("item_key", ""))] = true
+	_walker_grid = CaricatureWalkerGrid.new()
+	_walker_grid.setup(
+		_caricature_compiled_by_area,
+		_caricature_cells,
+		Callable(self, "_caricature_reveal_state"),
+		collected
+	)
+
+func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "S") -> bool:
+	if not _is_caricature_place:
+		return false
+	if _walker_grid == null:
+		_rebuild_walker_grid()
+	var target_aid := area_id if not area_id.is_empty() else _caricature_camp_id
+	if target_aid.is_empty() or not _caricature_compiled_by_area.has(target_aid):
+		return false
+
+	if _player_walker == null:
+		_player_walker = PlayerWalker.new()
+		_player_walker.name = "PlayerWalker"
+		_player_walker.set_force_no_rom(_force_no_rom)
+		_player_walker.set_step_evaluator(Callable(self, "_evaluate_walker_step"))
+		_player_walker.step_completed.connect(_on_walker_step_completed)
+		if _stamp_base_layer != null:
+			_stamp_base_layer.add_child(_player_walker)
+		else:
+			add_child(_player_walker)
+
+	var db = _get_db()
+	var sidx := 0
+	if db != null and db.is_open() and db.has_method("get_player_sprite_index"):
+		sidx = int(db.get_player_sprite_index())
+	_player_walker.set_sprite_index(sidx)
+	_player_walker.set_force_no_rom(_force_no_rom)
+	_player_walker.visible = true
+	_player_walker.input_enabled = true
+
+	_walk_mode_active = true
+	_camera_follows_player = true
+	_set_zoom_step(2.0) # Emerald 15x10 screen at 960x640 (Decision 79 / F81)
+	return place_player_in_area(target_aid, local_tile, facing_str)
+
+func disable_walk_mode() -> void:
+	_walk_mode_active = false
+	_camera_follows_player = false
+	if _player_walker != null:
+		_player_walker.visible = false
+		_player_walker.input_enabled = false
+
+func place_player_in_area(area_id: String, local_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "S") -> bool:
+	if _player_walker == null or not _caricature_compiled_by_area.has(area_id):
+		return false
+	var comp: Dictionary = _caricature_compiled_by_area[area_id]
+	var lpos := local_tile
+	if lpos.x < 0 or lpos.y < 0:
+		lpos = comp.get("arrival", Vector2i(16, 16))
+	var gpos := CaricatureWalkerGrid.local_to_global(comp, lpos.x, lpos.y)
+	_current_walk_area_id = area_id
+	_focused_area_id = area_id
+	_camera_follows_player = true
+	_player_walker.place_at(gpos, facing_str)
+	if _camera != null:
+		_camera.position = _player_walker.get_camera_target()
+	_update_return_home_visibility()
+	return true
+
+func _evaluate_walker_step(from_tile: Vector2i, dir: Vector2i) -> Dictionary:
+	if _walker_grid == null:
+		return {"action": "blocked", "reason": "none", "tile": from_tile + dir, "area_id": _current_walk_area_id}
+	return _walker_grid.evaluate_step(from_tile.x, from_tile.y, dir)
+
+func _on_walker_step_completed(tile: Vector2i, info: Dictionary) -> void:
+	var to_aid := str(info.get("to_area", ""))
+	if not to_aid.is_empty():
+		_current_walk_area_id = to_aid
+		_focused_area_id = to_aid
+	elif _walker_grid != null:
+		var detected := _walker_grid.area_at_global(tile.x, tile.y)
+		if not detected.is_empty():
+			_current_walk_area_id = detected
+			_focused_area_id = detected
+	if _camera_follows_player and _camera != null and _player_walker != null:
+		_camera.position = _player_walker.get_camera_target()
 	_update_return_home_visibility()
 
 func force_caricature_area(area_id: String) -> void:
@@ -720,6 +843,8 @@ func focus_on_area(area_id: String, whole: bool = false) -> void:
 	_focused_area_id = area_id
 	_focused_area_tiles = Vector2i(cols * 32, rows * 32)
 	_focused_city_cells = Vector2i.ZERO
+	if whole or _screenshot_mode:
+		_camera_follows_player = false
 	if _camera != null:
 		if _has_screenshot_tile:
 			var tgx: int = origin.x * 32 + _screenshot_tile.x
@@ -893,13 +1018,18 @@ func load_place(place_id: String, center_waypost: bool = true) -> bool:
 		_has_active_waypost = true
 		_synth_cache.clear()
 		_clear_rendered_layers()
-		_set_zoom_step(_current_zoom_step)
-		if center_waypost and not camp_id.is_empty():
-			focus_on_area(camp_id, false)
+		_rebuild_walker_grid()
+		if not _screenshot_mode and center_waypost and not camp_id.is_empty():
+			enable_walk_mode(camp_id)
+		else:
+			_set_zoom_step(_current_zoom_step)
+			if center_waypost and not camp_id.is_empty():
+				focus_on_area(camp_id, false)
 		_update_return_home_visibility()
 		return true
 
 	if _is_caricature_place:
+		disable_walk_mode()
 		_is_caricature_place = false
 		_excluded_store_place_id = ""
 		_caricature_cells.clear()
@@ -1242,7 +1372,11 @@ func _focus_landmark() -> void:
 
 func _process(delta: float) -> void:
 	var t0 := Time.get_ticks_usec()
-	_handle_keyboard_pan(delta)
+	if _walk_mode_active and _player_walker != null:
+		if _camera_follows_player and _camera != null:
+			_camera.position = _player_walker.get_camera_target()
+	else:
+		_handle_keyboard_pan(delta)
 	_update_frustum_culling()
 	_drain_worker_results()
 	_blit_pending_cells()
@@ -1392,11 +1526,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		var mb := event as InputEventMouseButton
 		if mb.button_index == MOUSE_BUTTON_LEFT or mb.button_index == MOUSE_BUTTON_MIDDLE:
-			if mb.pressed:
-				_is_dragging = true
-				_drag_start_pos = mb.position
-			else:
-				_is_dragging = false
+			if not (_walk_mode_active and _camera_follows_player):
+				if mb.pressed:
+					_is_dragging = true
+					_drag_start_pos = mb.position
+				else:
+					_is_dragging = false
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_UP and mb.pressed:
 			_step_zoom(1)
 		elif mb.button_index == MOUSE_BUTTON_WHEEL_DOWN and mb.pressed:
@@ -1404,7 +1539,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	elif event is InputEventMouseMotion and _is_dragging:
 		var mm := event as InputEventMouseMotion
-		if _camera != null:
+		if _camera != null and not (_walk_mode_active and _camera_follows_player):
 			_camera.position -= mm.relative / _camera.zoom.x
 
 	elif event is InputEventKey:
@@ -1413,13 +1548,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			print_p95_frame_time()
 
 func _step_zoom(direction: int) -> void:
-	var curr_idx := 3
-	for i in range(ZOOM_STEPS.size()):
-		if is_equal_approx(_current_zoom_step, float(ZOOM_STEPS[i])):
+	var steps: Array = WALK_ZOOM_STEPS if _walk_mode_active else ZOOM_STEPS
+	var curr_idx := steps.size() - 1
+	for i in range(steps.size()):
+		if is_equal_approx(_current_zoom_step, float(steps[i])):
 			curr_idx = i
 			break
-	var next_idx: int = clampi(curr_idx + direction, 0, ZOOM_STEPS.size() - 1)
-	_set_zoom_step(float(ZOOM_STEPS[next_idx]))
+	var next_idx: int = clampi(curr_idx + direction, 0, steps.size() - 1)
+	_set_zoom_step(float(steps[next_idx]))
 
 func _is_overview_zoom(zoom_val: float = _current_zoom_step) -> bool:
 	var min_tile_zoom := 0.25 if _is_caricature_place else 0.5
@@ -2563,6 +2699,7 @@ func count_visible_doors() -> int:
 
 func setup_city_screenshot(path: String, frames: int, place_id: String) -> void:
 	_screenshot_mode = true
+	disable_walk_mode()
 	_screenshot_path = path
 	_screenshot_target_frames = frames
 	_screenshot_focus = "city"
@@ -2580,6 +2717,7 @@ func setup_city_screenshot(path: String, frames: int, place_id: String) -> void:
 
 func setup_screenshot(path: String, zoom_step: float, frames: int, focus: String = "most_visited") -> void:
 	_screenshot_mode = true
+	disable_walk_mode()
 	_screenshot_path = path
 	_screenshot_zoom = zoom_step
 	_screenshot_target_frames = frames
