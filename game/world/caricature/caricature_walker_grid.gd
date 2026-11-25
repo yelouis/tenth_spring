@@ -177,6 +177,12 @@ func _build_seam_index() -> void:
 			if not rep_ab.is_empty():
 				_seam_list.append(rep_ab)
 				_seam_list.append(rep_ba)
+	# Precompute route ends_steps once at city load so stepping onto a route seam never runs BFS on a walking frame
+	for r_var2 in routes:
+		if r_var2 is Dictionary:
+			var rid2 := str((r_var2 as Dictionary).get("id", ""))
+			if not rid2.is_empty():
+				get_route_total_ends_steps(rid2)
 
 func get_seam_link_count() -> int:
 	return _seam_link_count

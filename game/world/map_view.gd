@@ -22,6 +22,7 @@ const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_
 const MapConstants := preload("res://world/map_constants.gd")
 const SpawnDirector := preload("res://encounters/spawn_director.gd")
 const TimeOfDayShader := preload("res://world/shaders/time_of_day.gdshader")
+const InteriorTiles := preload("res://world/interior/interior_tiles.gd")
 
 signal door_entered(interior_id: String, return_info: Dictionary)
 
@@ -1242,6 +1243,9 @@ func enable_walk_mode(area_id: String = "", local_tile: Vector2i = Vector2i(-1, 
 	_walk_mode_active = true
 	_camera_follows_player = true
 	invalidate_neighbourhood_state_cache()
+	# Pre-warm static indoor atlas & TileSet once at walk start so first door entry (incl. --no-rom) stays <= 16.7 ms
+	var ibundle: Dictionary = InteriorTiles.resolve_atlas_bundle(AssetDB.DEFAULT_CACHE_DIR, _force_no_rom)
+	InteriorTiles.resolve_tileset(ibundle.get("texture", null) as Texture2D, int(ibundle.get("cols", InteriorTiles.CLASS_COUNT)), int(ibundle.get("rows", 1)))
 	_set_zoom_step(2.0) # Emerald 15x10 screen at 960x640 (Decision 79 / F81)
 	var placed := place_player_in_area(target_aid, local_tile, facing_str)
 	refresh_time_of_day_and_hud()
