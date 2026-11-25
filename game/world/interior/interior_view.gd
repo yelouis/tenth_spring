@@ -55,6 +55,7 @@ var _toast_panel: PanelContainer = null
 var _toast_label: Label = null
 var _toast_timer: float = 0.0
 var _last_toast_text: String = ""
+var _dialogue_box: Control = null
 
 var _backdrop: ColorRect = null
 var _tile_layer: TileMapLayer = null
@@ -296,6 +297,7 @@ func _clear_scene() -> void:
 	_title_label = null
 	_toast_panel = null
 	_toast_label = null
+	_dialogue_box = null
 	_player_walker = null
 	_gate_sprites.clear()
 	_item_sprites_by_pos.clear()
@@ -881,17 +883,78 @@ func _on_interior_step_completed(tile: Vector2i, info: Dictionary) -> void:
 
 	persist_indoor_session()
 
-func trigger_interact_for_walker() -> void:
-	if _player_walker == null:
-		return
-	_on_interior_interact_pressed(_player_walker.facing_tile(), _player_walker.grid_pos, _player_walker.facing)
+func get_dialogue_box() -> Control:
+	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
+		var dlg_scene := load("res://scenes/dialogue_box.tscn") as PackedScene
+		if dlg_scene == null:
+			return null
+		_dialogue_box = dlg_scene.instantiate() as Control
+		_dialogue_box.name = "DialogueBox"
+		if _hud_canvas != null:
+			_hud_canvas.add_child(_dialogue_box)
+		else:
+			add_child(_dialogue_box)
+		if _dialogue_box.has_signal("closed"):
+			_dialogue_box.connect("closed", Callable(self, "_on_interior_dialogue_closed"))
+	return _dialogue_box
 
-func _on_interior_interact_pressed(facing_tile: Vector2i, _standing_tile: Vector2i, _facing_dir: String) -> void:
+func open_dialogue(lines: Array, speaker: String = "") -> Control:
+	var dlg := get_dialogue_box()
+	if dlg == null:
+		return null
+	if dlg.has_method("open_lines"):
+		dlg.open_lines(lines, speaker)
+	if _player_walker != null:
+		_player_walker.input_enabled = false
+	return dlg
+
+func _on_interior_dialogue_closed() -> void:
+	if _player_walker != null:
+		_player_walker.input_enabled = _walk_mode
+
+static func _opposite_facing(dir_str: String) -> String:
+	match dir_str.strip_edges().to_upper():
+		"N":
+			return "S"
+		"S":
+			return "N"
+		"E":
+			return "W"
+		"W":
+			return "E"
+		_:
+			return "S"
+
+static func _indoor_role_line(role: String, npc_name: String) -> String:
+	match role.strip_edges().to_lower():
+		"warden":
+			return "The watch holds here. Keep your bearings when the quiet settles in."
+		"scholar":
+			return "Every ledger we salvaged tells the same story — people left in the middle of an ordinary afternoon."
+		"healer":
+			return "Rest when you reach the Waypost camp. Long walks in the Distortion wear a team down."
+		"merchant", "shop", "quartermaster":
+			return "We trade what the city left behind and keep the lamps trimmed for nightfall."
+		_:
+			return "Glad to see another traveler indoors. The streets outside stay quiet after dusk."
+
+func trigger_interact_for_walker() -> bool:
+	if _player_walker == null:
+		return false
+	return _dispatch_interior_interact(_player_walker.facing_tile(), _player_walker.grid_pos, _player_walker.facing)
+
+func _on_interior_interact_pressed(facing_tile: Vector2i, standing_tile: Vector2i, facing_dir: String) -> void:
+	_dispatch_interior_interact(facing_tile, standing_tile, facing_dir)
+
+func _dispatch_interior_interact(facing_tile: Vector2i, _standing_tile: Vector2i, facing_dir: String) -> bool:
+	if _dialogue_box != null and is_instance_valid(_dialogue_box) and _dialogue_box.visible:
+		return false
 	var floors: Array = _compiled.get("floors", [])
 	if _floor_index < 0 or _floor_index >= floors.size():
-		return
+		return false
 	var fd: Dictionary = floors[_floor_index]
-	# Switches (6 across DC famous interiors)
+
+	# 1. Switches (6 across DC famous interiors)
 	for sw_v in (fd.get("switches", []) as Array):
 		if not (sw_v is Dictionary):
 			continue
@@ -913,7 +976,51 @@ func _on_interior_interact_pressed(facing_tile: Vector2i, _standing_tile: Vector
 			_rebuild_block_mask()
 			show_toast("A distant latch clicks open.")
 			switch_toggled.emit(str(sw.get("id", "")), opened_list)
-			return
+			return true
+
+	# 2. Indoor Signs (100 signs across DC interiors)
+	for sg_v in (fd.get("signs", []) as Array):
+		if not (sg_v is Dictionary):
+			continue
+		var sg: Dictionary = sg_v
+		var sg_at: Variant = InteriorMap._parse_vec2i(sg.get("at", null))
+		if sg_at is Vector2i and (sg_at as Vector2i) == facing_tile:
+			open_dialogue([str(sg.get("text", ""))])
+			return true
+
+	# 3. Indoor NPCs (25 NPCs across DC interiors; turns toward player)
+	if _npc_entries_by_pos.has(facing_tile):
+		var entry: Dictionary = _npc_entries_by_pos[facing_tile]
+		var npc: Dictionary = entry.get("npc", {})
+		var nsp = entry.get("sprite", null)
+		var opp := _opposite_facing(facing_dir)
+		npc["facing"] = opp
+		if nsp != null and is_instance_valid(nsp):
+			(nsp as Sprite2D).texture = _get_npc_texture(
+				str(npc.get("role", "talk")),
+				str(npc.get("sprite", "")),
+				opp,
+				_force_fallback,
+				_cache_dir
+			)
+		var nlines: Array = npc.get("lines", []) if npc.get("lines") is Array else []
+		var nname := str(npc.get("name", "Resident"))
+		if nlines.is_empty():
+			nlines = [_indoor_role_line(str(npc.get("role", "talk")), nname)]
+		open_dialogue(nlines, nname)
+		return true
+
+	# 4. Indoor Items (50 items across DC interiors; persisted in collected_item & removed immediately)
+	if _item_defs_by_pos.has(facing_tile):
+		var it_d: Dictionary = _item_defs_by_pos[facing_tile]
+		var interior_id := str(_compiled.get("id", ""))
+		var floor_id := str(fd.get("floor_id", str(_floor_index)))
+		var ikey := indoor_item_key(interior_id, floor_id, it_d)
+		if not ikey.is_empty() and not _collected_item_keys.has(ikey):
+			mark_indoor_item_collected(facing_tile)
+			open_dialogue(["Found %s!" % str(it_d.get("name", "Item"))])
+			return true
+	return false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not _walk_mode or _screenshot_active or _camera == null:

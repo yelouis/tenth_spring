@@ -1288,6 +1288,74 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 	if p16_violations > 0:
 		failed_rules.append("P16")
 
+	# P15 (Decision 79 fix b / F82): Every visible '!' item ball, hidden item, sign, person, and street Pokemon
+	# must be reachable to face from a reached tile (using dist where k/r/o are passable like unreached;
+	# hidden items may also be stood on directly).
+	var p15_violations := 0
+	for y_b in range(h):
+		for x_b in range(w):
+			if cls_buf[y_b * w + x_b] == TileSynth2.TILE_ITEM_BALL:
+				var ok_b := false
+				for d_b in DIRS:
+					var nxb := x_b + d_b.x
+					var nyb := y_b + d_b.y
+					if nxb >= 0 and nxb < w and nyb >= 0 and nyb < h and dist[nyb * w + nxb] >= 0:
+						ok_b = true
+						break
+				if not ok_b:
+					p15_violations += 1
+	for hi_v in (compiled.get("hidden_items", []) as Array):
+		var hix: int = int(hi_v["x"])
+		var hiy: int = int(hi_v["y"])
+		var ok_hi := (hix >= 0 and hix < w and hiy >= 0 and hiy < h and dist[hiy * w + hix] >= 0)
+		if not ok_hi:
+			for d_hi in DIRS:
+				var nxhi := hix + d_hi.x
+				var nyhi := hiy + d_hi.y
+				if nxhi >= 0 and nxhi < w and nyhi >= 0 and nyhi < h and dist[nyhi * w + nxhi] >= 0:
+					ok_hi = true
+					break
+		if not ok_hi:
+			p15_violations += 1
+	for sg_v in (compiled.get("signs", []) as Array):
+		var sgx: int = int(sg_v["x"])
+		var sgy: int = int(sg_v["y"])
+		var ok_sg := false
+		for d_sg in DIRS:
+			var nxsg := sgx + d_sg.x
+			var nysg := sgy + d_sg.y
+			if nxsg >= 0 and nxsg < w and nysg >= 0 and nysg < h and dist[nysg * w + nxsg] >= 0:
+				ok_sg = true
+				break
+		if not ok_sg:
+			p15_violations += 1
+	for pe_v in (compiled.get("people", []) as Array):
+		var pex: int = int(pe_v["x"])
+		var pey: int = int(pe_v["y"])
+		var ok_pe := false
+		for d_pe in DIRS:
+			var nxpe := pex + d_pe.x
+			var nype := pey + d_pe.y
+			if nxpe >= 0 and nxpe < w and nype >= 0 and nype < h and dist[nype * w + nxpe] >= 0:
+				ok_pe = true
+				break
+		if not ok_pe:
+			p15_violations += 1
+	for sp_v in (compiled.get("street_pokemon", []) as Array):
+		var spx: int = int(sp_v["x"])
+		var spy: int = int(sp_v["y"])
+		var ok_sp := false
+		for d_sp in DIRS:
+			var nxsp := spx + d_sp.x
+			var nysp := spy + d_sp.y
+			if nxsp >= 0 and nxsp < w and nysp >= 0 and nysp < h and dist[nysp * w + nxsp] >= 0:
+				ok_sp = true
+				break
+		if not ok_sp:
+			p15_violations += 1
+	if p15_violations > 0:
+		failed_rules.append("P15")
+
 	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
 	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
 		failed_rules.append("WATER")
@@ -1333,6 +1401,7 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"cliff_2_3_max": cliff_2_3_max,
 		"tree_clumps_1_3": tree_clumps_1_3,
 		"tile_overlaps": tile_overlaps,
+		"unreachable_interactables": p15_violations,
 		"pkm_alley_violations": p16_violations,
 		"pkm_max_detour": p16_max_detour,
 		"rendered_water": rendered_water,

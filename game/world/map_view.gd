@@ -19,6 +19,7 @@ const OutdoorFixtures := preload("res://world/caricature/outdoor_fixtures.gd")
 const PeopleSprites := preload("res://world/people_sprites.gd")
 const PlayerWalker := preload("res://world/player_walker.gd")
 const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
+const MapConstants := preload("res://world/map_constants.gd")
 
 signal door_entered(interior_id: String, return_info: Dictionary)
 
@@ -165,6 +166,15 @@ var _board_button: Button = null
 var _back_to_camp_button: Button = null
 var _waypost_board: Control = null
 var _lamp_menu: Control = null
+var _dialogue_box: Control = null
+var _collected_hidden_keys: Dictionary = {} # "hidden:<area_id>:<lx>:<ly>" -> true
+var _person_facing_overrides: Dictionary = {} # Vector2i global -> "N"|"S"|"E"|"W"
+var _person_sprites_by_global: Dictionary = {} # Vector2i global -> Array[Dictionary]
+
+const OUTDOOR_BALL_ITEM_POOL: Array[String] = [
+	"Potion", "Super Potion", "Poké Ball", "Great Ball",
+	"Antidote", "Escape Rope", "Repel", "Revive",
+]
 var _distortion_field_layer: Node2D = null
 var _distortion_field_rect: ColorRect = null
 var _distortion_field_chip: Label = null
@@ -947,13 +957,19 @@ func persist_player_session() -> void:
 
 func _rebuild_walker_grid() -> void:
 	var collected := {}
+	_collected_hidden_keys.clear()
 	var db = _get_db()
 	if db != null and db.is_open() and db.has_method("get_collected_items_in_area"):
 		for aid_v in _caricature_compiled_by_area.keys():
 			var aid := str(aid_v)
 			for row_v in db.get_collected_items_in_area(aid):
-				if row_v is Dictionary and str((row_v as Dictionary).get("kind", "")) == "ball":
-					collected[str((row_v as Dictionary).get("item_key", ""))] = true
+				if row_v is Dictionary:
+					var rk := str((row_v as Dictionary).get("kind", ""))
+					var rkey := str((row_v as Dictionary).get("item_key", ""))
+					if rk == "ball":
+						collected[rkey] = true
+					elif rk == "hidden":
+						_collected_hidden_keys[rkey] = true
 	_walker_grid = CaricatureWalkerGrid.new()
 	_walker_grid.setup(
 		_caricature_compiled_by_area,
@@ -1461,7 +1477,60 @@ func _sync_modal_input_lock() -> void:
 		modal_open = true
 	if _lamp_menu != null and is_instance_valid(_lamp_menu) and _lamp_menu.visible:
 		modal_open = true
+	if _dialogue_box != null and is_instance_valid(_dialogue_box) and _dialogue_box.visible:
+		modal_open = true
 	_player_walker.input_enabled = _walk_mode_active and not modal_open
+
+func get_dialogue_box() -> Control:
+	if _dialogue_box == null or not is_instance_valid(_dialogue_box):
+		var dlg_scene := load("res://scenes/dialogue_box.tscn") as PackedScene
+		if dlg_scene == null:
+			return null
+		_dialogue_box = dlg_scene.instantiate() as Control
+		_dialogue_box.name = "DialogueBox"
+		var attr_ui := get_node_or_null("AttributionUI")
+		if attr_ui != null:
+			attr_ui.add_child(_dialogue_box)
+		else:
+			add_child(_dialogue_box)
+		if _dialogue_box.has_signal("closed"):
+			_dialogue_box.connect("closed", Callable(self, "_on_modal_overlay_closed"))
+	return _dialogue_box
+
+func open_dialogue(lines: Array, speaker: String = "", extra_line: String = "", extra_color: Color = Color.WHITE) -> Control:
+	var dlg := get_dialogue_box()
+	if dlg == null:
+		return null
+	if dlg.has_method("open_lines"):
+		dlg.open_lines(lines, speaker, extra_line, extra_color)
+	_sync_modal_input_lock()
+	return dlg
+
+static func opposite_facing(dir_str: String) -> String:
+	match dir_str.strip_edges().to_upper():
+		"N":
+			return "S"
+		"S":
+			return "N"
+		"E":
+			return "W"
+		"W":
+			return "E"
+		_:
+			return "S"
+
+static func hidden_item_key(area_id: String, lx: int, ly: int) -> String:
+	return "hidden:%s:%d:%d" % [area_id, lx, ly]
+
+static func resolve_outdoor_ball_item_name(area_id: String, lx: int, ly: int) -> String:
+	var raw := "%s|%d|%d|%d" % [area_id, lx, ly, MapConstants.MAP_SEED]
+	var h: int = abs(raw.hash())
+	return OUTDOOR_BALL_ITEM_POOL[h % OUTDOOR_BALL_ITEM_POOL.size()]
+
+func trigger_interact_for_walker() -> bool:
+	if _player_walker == null or not _walk_mode_active:
+		return false
+	return _dispatch_walker_interact(_player_walker.facing_tile(), _player_walker.grid_pos, _player_walker.facing)
 
 func open_board() -> Control:
 	if not _is_caricature_place or _active_place_id.is_empty():
@@ -1638,23 +1707,204 @@ func _is_tile_on_waypost_board(area_id: String, local_tile: Vector2i) -> bool:
 			return true
 	return false
 
-func _on_walker_interact_pressed(facing_tile: Vector2i, _standing_tile: Vector2i, _facing_dir: String) -> void:
-	if not _walk_mode_active or _walker_grid == null:
-		return
-	var aid := _walker_grid.area_at_global(facing_tile.x, facing_tile.y)
+func _is_route_end_sign(area_id: String, sign_text: String, local_tile: Vector2i) -> Dictionary:
+	if _area_kind(area_id) != "route":
+		return {}
+	var rid := _area_route_id(area_id)
+	var r_dict: Dictionary = Neighbourhoods.route(rid)
+	if r_dict.is_empty():
+		return {}
+	var r_name := str(r_dict.get("name", ""))
+	var matched := (not r_name.is_empty() and sign_text.strip_edges() == r_name)
+	if not matched and _caricature_compiled_by_area.has(area_id):
+		var comp: Dictionary = _caricature_compiled_by_area[area_id]
+		for op_v in comp.get("openings", []):
+			if op_v is Dictionary:
+				for ot_v in (op_v as Dictionary).get("outer_tiles", []):
+					if ot_v is Vector2i:
+						var ol := CaricatureWalkerGrid.global_to_local(comp, (ot_v as Vector2i).x, (ot_v as Vector2i).y)
+						if absi(ol.x - local_tile.x) + absi(ol.y - local_tile.y) <= 6:
+							matched = true
+							break
+			if matched:
+				break
+	if not matched:
+		return {}
+	var cost_min := NeighbourhoodProgress.route_walk_minutes(rid, false)
+	var rem_day := _world_clock.daylight_minutes_left()
+	return WorldClock.format_route_sign_daylight(r_name, cost_min, rem_day)
+
+func _turn_outdoor_person(global_tile: Vector2i, person_dict: Dictionary, new_facing: String) -> void:
+	_person_facing_overrides[global_tile] = new_facing
+	person_dict["facing"] = new_facing
+	if _person_sprites_by_global.has(global_tile):
+		var ptex := PeopleSprites.resolve_texture(
+			str(person_dict.get("sprite", "")),
+			new_facing,
+			str(person_dict.get("role", "talk")),
+			_force_no_rom
+		)
+		for entry_v in (_person_sprites_by_global[global_tile] as Array):
+			if entry_v is Dictionary:
+				var sp = (entry_v as Dictionary).get("sprite", null)
+				if sp != null and is_instance_valid(sp):
+					(sp as Sprite2D).texture = ptex
+
+func _erase_collected_ball_visual(global_tile: Vector2i) -> void:
+	var cell := CaricatureWalkerGrid.global_tile_to_cell(global_tile.x, global_tile.y)
+	var tx := posmod(global_tile.x, 32)
+	var ty := posmod(global_tile.y, 32)
+	var repl_coord := get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
+	if _synth_cache.has(cell):
+		var item: Dictionary = _synth_cache.get_item(cell)
+		var buf: PackedByteArray = item.get("buf", PackedByteArray())
+		var tidx := (ty * 32 + tx) * 3
+		if tidx + 2 < buf.size():
+			var nb := _sign_pavement_neighbor(buf, tx, ty)
+			if nb.x >= 0:
+				repl_coord = get_atlas_coords(nb.x, 0, nb.y)
+				buf[tidx] = nb.x
+				buf[tidx + 1] = 0
+				buf[tidx + 2] = nb.y
+			else:
+				buf[tidx] = TileSynth2.TILE_GRASS
+				buf[tidx + 1] = 0
+				buf[tidx + 2] = 0
+	if _world_cleared != null and _world_cleared.get_cell_source_id(global_tile) != -1:
+		_world_cleared.set_cell(global_tile, 0, repl_coord)
+	if _world_known != null and _world_known.get_cell_source_id(global_tile) != -1:
+		_world_known.set_cell(global_tile, 0, repl_coord)
+
+func _try_collect_hidden_item_at(global_tile: Vector2i) -> bool:
+	if _walker_grid == null:
+		return false
+	var aid := _walker_grid.area_at_global(global_tile.x, global_tile.y)
 	if aid.is_empty() or not _caricature_compiled_by_area.has(aid):
-		return
+		return false
 	var comp: Dictionary = _caricature_compiled_by_area[aid]
-	var f_local := CaricatureWalkerGrid.global_to_local(comp, facing_tile.x, facing_tile.y)
-	# 1. Waypost Notice Board (Camp only)
-	if _area_kind(aid) == "camp" and _is_tile_on_waypost_board(aid, f_local):
-		open_board()
-		return
-	# 2. Waypost Lamp (Camp + all 8 neighbourhoods)
-	var lamp_pos: Vector2i = comp.get("lamp", Vector2i(-1, -1))
-	if lamp_pos.x >= 0 and (f_local == lamp_pos or f_local == Vector2i(lamp_pos.x, lamp_pos.y - 1)):
-		open_lamp_menu()
-		return
+	var lpos := CaricatureWalkerGrid.global_to_local(comp, global_tile.x, global_tile.y)
+	for hi_v in comp.get("hidden_items", []):
+		if not (hi_v is Dictionary):
+			continue
+		var hi: Dictionary = hi_v
+		if int(hi.get("x", -1)) == lpos.x and int(hi.get("y", -1)) == lpos.y:
+			var hkey := hidden_item_key(aid, lpos.x, lpos.y)
+			var db = _get_db()
+			var already := _collected_hidden_keys.has(hkey)
+			if not already and db != null and db.is_open() and db.has_method("is_item_collected"):
+				already = bool(db.is_item_collected(hkey))
+			if already:
+				return false
+			_collected_hidden_keys[hkey] = true
+			var iname := str(hi.get("item", "Item"))
+			var inote := str(hi.get("note", ""))
+			if db != null and db.is_open() and db.has_method("mark_item_collected"):
+				db.mark_item_collected(hkey, aid, "hidden", iname)
+			var msg := ("Found a hidden %s! — %s" % [iname, inote]) if not inote.is_empty() else ("Found a hidden %s!" % iname)
+			open_dialogue([msg])
+			return true
+	return false
+
+func _on_walker_interact_pressed(facing_tile: Vector2i, standing_tile: Vector2i, facing_dir: String) -> void:
+	_dispatch_walker_interact(facing_tile, standing_tile, facing_dir)
+
+func _dispatch_walker_interact(facing_tile: Vector2i, standing_tile: Vector2i, facing_dir: String) -> bool:
+	if not _walk_mode_active or _walker_grid == null:
+		return false
+	if _dialogue_box != null and is_instance_valid(_dialogue_box) and _dialogue_box.visible:
+		return false
+	var aid := _walker_grid.area_at_global(facing_tile.x, facing_tile.y)
+	if not aid.is_empty() and _caricature_compiled_by_area.has(aid):
+		var comp: Dictionary = _caricature_compiled_by_area[aid]
+		var f_local := CaricatureWalkerGrid.global_to_local(comp, facing_tile.x, facing_tile.y)
+		var w := int(comp.get("w", 0))
+		var h := int(comp.get("h", 0))
+
+		# 1. Waypost Notice Board (Camp only)
+		if _area_kind(aid) == "camp" and _is_tile_on_waypost_board(aid, f_local):
+			open_board()
+			return true
+		# 2. Waypost Lamp (Camp + all 8 neighbourhoods)
+		var lamp_pos: Vector2i = comp.get("lamp", Vector2i(-1, -1))
+		if lamp_pos.x >= 0 and (f_local == lamp_pos or f_local == Vector2i(lamp_pos.x, lamp_pos.y - 1)):
+			open_lamp_menu()
+			return true
+		# 3. Outdoor Sign (281 signs; route end signs append daylight-colored walk time)
+		for sg_v in comp.get("signs", []):
+			if sg_v is Dictionary and int((sg_v as Dictionary).get("x", -1)) == f_local.x and int((sg_v as Dictionary).get("y", -1)) == f_local.y:
+				var stext := str((sg_v as Dictionary).get("text", ""))
+				var route_dl := _is_route_end_sign(aid, stext, f_local)
+				if not route_dl.is_empty():
+					open_dialogue([stext], "", str(route_dl["text"]), route_dl["color"] as Color)
+				else:
+					open_dialogue([stext])
+				return true
+		# 4. Outdoor Person (63 people; turns to face player and pages lines[])
+		for pe_v in comp.get("people", []):
+			if pe_v is Dictionary and int((pe_v as Dictionary).get("x", -1)) == f_local.x and int((pe_v as Dictionary).get("y", -1)) == f_local.y:
+				var pe: Dictionary = pe_v
+				_turn_outdoor_person(facing_tile, pe, opposite_facing(facing_dir))
+				var plines: Array = pe.get("lines", []) if pe.get("lines") is Array else []
+				if plines.is_empty():
+					plines = ["Stay safe out past the Waypost."]
+				open_dialogue(plines, str(pe.get("name", "Survivor")))
+				return true
+		# 5. Visible '!' Item Ball (136 balls; persisted in collected_item & removed immediately)
+		if f_local.x >= 0 and f_local.x < w and f_local.y >= 0 and f_local.y < h:
+			var cls_buf: PackedByteArray = comp["class"]
+			var f_cls: int = cls_buf[f_local.y * w + f_local.x]
+			if f_cls == TileSynth2.TILE_ITEM_BALL and not _walker_grid.is_ball_collected(aid, f_local.x, f_local.y):
+				var bkey := CaricatureWalkerGrid.ball_item_key(aid, f_local.x, f_local.y)
+				var bname := resolve_outdoor_ball_item_name(aid, f_local.x, f_local.y)
+				var db = _get_db()
+				if db != null and db.is_open() and db.has_method("mark_item_collected"):
+					db.mark_item_collected(bkey, aid, "ball", bname)
+				_walker_grid.mark_ball_collected(aid, f_local.x, f_local.y)
+				_erase_collected_ball_visual(facing_tile)
+				open_dialogue(["Found %s!" % bname])
+				return true
+		# 6. Street Pokemon (155 outdoor; 1 line via AssetDB.display_name)
+		for sp_v in comp.get("street_pokemon", []):
+			if sp_v is Dictionary and int((sp_v as Dictionary).get("x", -1)) == f_local.x and int((sp_v as Dictionary).get("y", -1)) == f_local.y:
+				var dex := int((sp_v as Dictionary).get("dex", 0))
+				var cdir := "user://__no_rom__" if _force_no_rom else AssetDB.DEFAULT_CACHE_DIR
+				var sname := AssetDB.display_name("species", dex, cdir)
+				open_dialogue(["A wild %s watches you quietly." % sname])
+				return true
+		# 7. Hidden Item at facing tile (219 outdoor)
+		if _try_collect_hidden_item_at(facing_tile):
+			return true
+		# 8. HM / Water / Ordinary Door hints (plan §(d), §(g))
+		if f_local.x >= 0 and f_local.x < w and f_local.y >= 0 and f_local.y < h:
+			var cls_buf2: PackedByteArray = comp["class"]
+			var f_cls2: int = cls_buf2[f_local.y * w + f_local.x]
+			if f_cls2 == TileSynth2.TILE_WATER:
+				open_dialogue(["Deep water — you'll need the River Oar to cross (later phase)."])
+				return true
+			if f_cls2 == TileSynth2.TILE_CUT_TREE:
+				open_dialogue(["Tangled brush blocks the path (needs a Cut tool — later phase)."])
+				return true
+			if f_cls2 == TileSynth2.TILE_SMASH_ROCK:
+				open_dialogue(["Cracked stone blocks the path (needs a Rock Smash tool — later phase)."])
+				return true
+			if f_cls2 == TileSynth2.TILE_BOULDER:
+				open_dialogue(["A heavy boulder blocks the way (needs Lift Gloves — Phase 7)."])
+				return true
+			if f_cls2 == TileSynth2.TILE_DOOR:
+				var is_enterable := false
+				for d_v in comp.get("doors", []):
+					if d_v is Dictionary and int((d_v as Dictionary).get("x", -1)) == f_local.x and int((d_v as Dictionary).get("y", -1)) == f_local.y:
+						if not str((d_v as Dictionary).get("interior", "")).is_empty():
+							is_enterable = true
+						break
+				if not is_enterable:
+					open_dialogue(["Door locked — doorway searching arrives in Phase 7."])
+					return true
+
+	# 9. Hidden Item at standing tile
+	if _try_collect_hidden_item_at(standing_tile):
+		return true
+	return false
 
 func _focus_most_buildings() -> void:
 	if _camera == null:
@@ -2400,6 +2650,13 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 					var cls: int = tile_buf[idx]
 					var st := _screen_tile(cx, cy, tx, ty)
 					var base_coord := get_tile_atlas_coords(tile_buf, under_buf, idx)
+					if cls == TileSynth2.TILE_ITEM_BALL and _is_caricature_place and _walker_grid != null:
+						var b_aid := _walker_grid.area_at_global(st.x, st.y)
+						if not b_aid.is_empty() and _caricature_compiled_by_area.has(b_aid):
+							var b_loc := CaricatureWalkerGrid.global_to_local(_caricature_compiled_by_area[b_aid], st.x, st.y)
+							if _walker_grid.is_ball_collected(b_aid, b_loc.x, b_loc.y):
+								var nb_b := _sign_pavement_neighbor(tile_buf, tx, ty)
+								base_coord = get_atlas_coords(nb_b.x, 0, nb_b.y) if nb_b.x >= 0 else get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
 					if not _force_no_rom and cls == TileSynth2.TILE_SIGN:
 						var nb := _sign_pavement_neighbor(tile_buf, tx, ty)
 						if nb.x >= 0:
@@ -3081,8 +3338,17 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 	# Outdoor overworld people (1x2 tiles = 32x64 -> overhang top half + feet base half)
 	for pv in people:
 		var p: Dictionary = pv
-		var ptex := PeopleSprites.resolve_texture(str(p.get("sprite", "")), str(p.get("facing", "S")), str(p.get("role", "talk")), _force_no_rom)
-		_add_sliced_sprite_to_layers(cx, cell_r0, int(p.get("anchor_gx", 0)), int(p.get("anchor_gy", 0)), 1, 2, 1, ptex, 32, 1.0, known_mat, created)
+		var pgx := int(p.get("anchor_gx", 0))
+		var pgy := int(p.get("anchor_gy", 0))
+		var p_foot := Vector2i(pgx, pgy + 1)
+		var p_face := str(_person_facing_overrides.get(p_foot, str(p.get("facing", "S"))))
+		var ptex := PeopleSprites.resolve_texture(str(p.get("sprite", "")), p_face, str(p.get("role", "talk")), _force_no_rom)
+		var before_cnt := created.size()
+		_add_sliced_sprite_to_layers(cx, cell_r0, pgx, pgy, 1, 2, 1, ptex, 32, 1.0, known_mat, created)
+		if not _person_sprites_by_global.has(p_foot):
+			_person_sprites_by_global[p_foot] = []
+		for ci in range(before_cnt, created.size()):
+			(_person_sprites_by_global[p_foot] as Array).append({"sprite": created[ci], "person": p})
 
 	# BW /a/0/0/7 street Pokemon box icons at full 2x2 tiles (32x32 icon scaled 2x -> 64x64 px,
 	# 1 icon px per Emerald px), standing on their tile and depth-sorted with people; omitted under --no-rom

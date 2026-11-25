@@ -1072,6 +1072,27 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected open street_pokemon to pass P16, got %s" % str(m_p16_ok))
 		return false
 
+	# P15 falsifier (Decision 79 fix b / F82): hidden item walled inside solid trees fails P15; moving to reachable tile passes
+	var p15_rows: Array = (rg_map["rows"] as Array).duplicate()
+	for py in range(4, 9):
+		var pr: String = str(p15_rows[py])
+		p15_rows[py] = pr.substr(0, 4) + "TTTTT" + pr.substr(9)
+	var p15_fail_map := rg_map.duplicate(true)
+	p15_fail_map["rows"] = p15_rows
+	p15_fail_map["hidden_items"] = [{"at": [6, 6], "item": "Super Potion", "note": "walled"}]
+	var m_p15_fail := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p15_fail_map), rg_area)
+	if not (m_p15_fail["failed_rules"] as Array).has("P15") or int(m_p15_fail.get("unreachable_interactables", 0)) < 1:
+		_cleanup()
+		push_error("caricature_check_test: expected walled hidden item to fail P15, got %s" % str(m_p15_fail))
+		return false
+	var p15_pass_map := p15_fail_map.duplicate(true)
+	p15_pass_map["hidden_items"] = [{"at": [10, 10], "item": "Super Potion", "note": "open"}]
+	var m_p15_ok := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p15_pass_map), rg_area)
+	if (m_p15_ok["failed_rules"] as Array).has("P15") or int(m_p15_ok.get("unreachable_interactables", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected reachable hidden item to pass P15, got %s" % str(m_p15_ok))
+		return false
+
 	_cleanup()
 	return true
 

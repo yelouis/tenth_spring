@@ -142,6 +142,7 @@ def main():
 		"frame_codec_test",
 		"grid_test",
 		"idempotent_sync_test",
+		"interactions_test",
 		"interior_dc_test",
 		"interior_doors_walk_test",
 		"interior_map_test",
