@@ -231,6 +231,7 @@ var _focused_area_tiles: Vector2i = Vector2i.ZERO
 var _focused_city_cells: Vector2i = Vector2i.ZERO
 var _screenshot_area_id: String = ""
 var _force_no_rom: bool = false
+var _data_cache_dir: String = AssetDB.DEFAULT_CACHE_DIR
 var _has_screenshot_tile: bool = false
 var _screenshot_tile: Vector2i = Vector2i(-1, -1)
 
@@ -811,6 +812,10 @@ func focus_on_cell(cx: int, cy: int) -> void:
 	if _camera != null:
 		_camera.position = _cell_to_render_px_center(cx, cy)
 	_update_return_home_visibility()
+
+func set_data_cache_dir(dir_path: String) -> void:
+	var s := dir_path.strip_edges()
+	_data_cache_dir = AssetDB.DEFAULT_CACHE_DIR if s.is_empty() else s
 
 func set_force_no_rom(enabled: bool) -> void:
 	var changed := (_force_no_rom != enabled)
@@ -2337,12 +2342,11 @@ func _dispatch_walker_interact(facing_tile: Vector2i, standing_tile: Vector2i, f
 				_erase_collected_ball_visual(facing_tile)
 				open_dialogue(["Found %s!" % bname])
 				return true
-		# 6. Street Pokemon (155 outdoor; 1 line via AssetDB.display_name)
+		# 6. Street Pokemon (155 outdoor; 1 line via AssetDB.display_name from PokéAPI data pack)
 		for sp_v in comp.get("street_pokemon", []):
 			if sp_v is Dictionary and int((sp_v as Dictionary).get("x", -1)) == f_local.x and int((sp_v as Dictionary).get("y", -1)) == f_local.y:
 				var dex := int((sp_v as Dictionary).get("dex", 0))
-				var cdir := "user://__no_rom__" if _force_no_rom else AssetDB.DEFAULT_CACHE_DIR
-				var sname := AssetDB.display_name("species", dex, cdir)
+				var sname := AssetDB.display_name("species", dex, _data_cache_dir)
 				open_dialogue(["A wild %s watches you quietly." % sname])
 				return true
 		# 7. Hidden Item at facing tile (219 outdoor)

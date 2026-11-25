@@ -34,6 +34,20 @@ static func load_json_res(res_path: String) -> Dictionary:
 	var parsed: Variant = JSON.parse_string(raw)
 	return parsed if parsed is Dictionary else {}
 
+static func resolve_raw_base_url(meta: Dictionary, path_key: String) -> String:
+	var explicit := str(meta.get("raw_base_url", "")).strip_edges()
+	if explicit != "":
+		return explicit
+	var repo := str(meta.get("repository", "")).strip_edges().trim_suffix("/")
+	var commit := str(meta.get("commit", "")).strip_edges()
+	var sub_path := str(meta.get(path_key, "")).strip_edges().trim_prefix("/").trim_suffix("/")
+	if repo.begins_with("https://github.com/") and commit != "":
+		var slug := repo.substr("https://github.com/".length())
+		if sub_path != "":
+			return "https://raw.githubusercontent.com/%s/%s/%s" % [slug, commit, sub_path]
+		return "https://raw.githubusercontent.com/%s/%s" % [slug, commit]
+	return ""
+
 static func get_consent_summary() -> Dictionary:
 	var sources := load_json_res(DATA_SOURCES_PATH)
 	var dp_man := load_json_res(DATA_PACK_MANIFEST_PATH)
@@ -42,7 +56,7 @@ static func get_consent_summary() -> Dictionary:
 	var spr_bytes := int(fs_man.get("total_bytes", 0))
 	var total_bytes := csv_bytes + spr_bytes
 	var size_mib := snappedf(float(total_bytes) / (1024.0 * 1024.0), 0.1)
-	var dp_info: Dictionary = sources.get("data_pack", {})
+	var dp_info: Dictionary = sources.get("pokeapi", sources.get("data_pack", {}))
 	var fs_info: Dictionary = sources.get("fan_sprites", {})
 	return {
 		"csv_bytes": csv_bytes,
@@ -53,10 +67,10 @@ static func get_consent_summary() -> Dictionary:
 		"confirm_button": "Download (%.1f MiB)" % size_mib,
 		"cancel_button": "Not now (use placeholders)",
 		"pokeapi_commit": str(dp_info.get("commit", "")),
-		"pokeapi_license": str(dp_info.get("license", "")),
+		"pokeapi_license": str(dp_info.get("license", dp_info.get("licence", ""))),
 		"pokeapi_attribution": str(dp_info.get("attribution", "")),
 		"sprites_commit": str(fs_info.get("commit", "")),
-		"fan_sprites_license": str(fs_info.get("license", "")),
+		"fan_sprites_license": str(fs_info.get("license", fs_info.get("licence", ""))),
 		"fan_sprites_attribution": str(fs_info.get("attribution", "")),
 	}
 
@@ -149,8 +163,8 @@ static func verify_and_stage_data_pack(
 	if sources.is_empty() or manifest.is_empty():
 		return {"ok": false, "error": "Missing data_sources.json or data_pack_manifest.json"}
 
-	var dp_meta: Dictionary = sources.get("data_pack", {})
-	var raw_base_url := str(dp_meta.get("raw_base_url", ""))
+	var dp_meta: Dictionary = sources.get("pokeapi", sources.get("data_pack", {}))
+	var raw_base_url := resolve_raw_base_url(dp_meta, "csv_path")
 	var files_manifest: Dictionary = manifest.get("files", {})
 	if files_manifest.is_empty():
 		return {"ok": false, "error": "Empty files map in data_pack_manifest.json"}

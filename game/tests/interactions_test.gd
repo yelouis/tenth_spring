@@ -12,6 +12,8 @@ const InteriorView := preload("res://world/interior/interior_view.gd")
 
 const TEST_DB_PATH: String = "user://test/interactions_test.db"
 const TEST_TMP_PATH: String = "user://test/interactions_test.db.tmp"
+const TEST_NAMES_CACHE_DIR: String = "user://test/interactions_names_cache"
+const TEST_NAMES_EMPTY_DIR: String = "user://test/interactions_names_empty"
 
 func _cleanup(nodes: Array = []) -> void:
 	for n in nodes:
@@ -23,6 +25,10 @@ func _cleanup(nodes: Array = []) -> void:
 	for p in [TEST_DB_PATH, TEST_DB_PATH + "-wal", TEST_DB_PATH + "-shm", TEST_TMP_PATH]:
 		if FileAccess.file_exists(p):
 			DirAccess.remove_absolute(p)
+	var names_json := ProjectSettings.globalize_path(TEST_NAMES_CACHE_DIR + "/text/en/species.json")
+	if FileAccess.file_exists(names_json):
+		DirAccess.remove_absolute(names_json)
+	AssetDB.clear_memory_cache()
 	DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)
 
 func _find_standable_neighbor(grid: CaricatureWalkerGrid, area_id: String, target: Vector2i) -> Dictionary:
@@ -229,19 +235,46 @@ func run_test() -> bool:
 		_cleanup([mv, main_node])
 		return false
 
-	# 6. Street Pokemon returns 1 line containing AssetDB.display_name("species", dex)
-	var sp0: Dictionary = (nm_comp.get("street_pokemon", []) as Array)[0]
-	var sp0_pos := Vector2i(int(sp0["x"]), int(sp0["y"]))
-	var sp0_dex := int(sp0["dex"])
-	var sp0_nb := _find_standable_neighbor(grid, "hood:washington-dc:national-mall", sp0_pos)
-	mv.place_player_in_area("hood:washington-dc:national-mall", sp0_nb["stand"], sp0_nb["facing"])
+	# 6. Street Pokemon (Item 79 / F97): check real species name from a test names file in user://test
+	#    mapping dex 10 -> "Testmon", plus fallback "#010" when data cache has no names file.
+	var sp10 := {}
+	for sp_v in nm_comp.get("street_pokemon", []):
+		if sp_v is Dictionary and int((sp_v as Dictionary).get("dex", 0)) == 10:
+			sp10 = sp_v
+			break
+	if sp10.is_empty():
+		push_error("FAIL [F97]: No dex 10 street Pokemon found on National Mall")
+		_cleanup([mv, main_node])
+		return false
+	var sp10_pos := Vector2i(int(sp10["x"]), int(sp10["y"]))
+	var sp10_nb := _find_standable_neighbor(grid, "hood:washington-dc:national-mall", sp10_pos)
+	var test_en_dir := ProjectSettings.globalize_path(TEST_NAMES_CACHE_DIR + "/text/en")
+	DirAccess.make_dir_recursive_absolute(test_en_dir)
+	var nf := FileAccess.open(test_en_dir.path_join("species.json"), FileAccess.WRITE)
+	if nf == null:
+		push_error("FAIL [F97]: Could not write test species.json")
+		_cleanup([mv, main_node])
+		return false
+	nf.store_string("{\"10\": \"Testmon\"}\n")
+	nf.close()
+	AssetDB.clear_memory_cache()
+	mv.set_data_cache_dir(TEST_NAMES_CACHE_DIR)
+	mv.place_player_in_area("hood:washington-dc:national-mall", sp10_nb["stand"], sp10_nb["facing"])
 	mv.trigger_interact_for_walker()
-	var exp_sp_name := AssetDB.display_name("species", sp0_dex, "user://__no_rom__")
-	if dlg.current_text() != ("A wild %s watches you quietly." % exp_sp_name):
-		push_error("FAIL: Street Pokemon line wrong: expected 'A wild %s watches you quietly.', got '%s'" % [exp_sp_name, dlg.current_text()])
+	if dlg.current_text() != "A wild Testmon watches you quietly.":
+		push_error("FAIL [F97]: Street Pokemon line with test names file wrong: expected 'A wild Testmon watches you quietly.', got '%s'" % dlg.current_text())
 		_cleanup([mv, main_node])
 		return false
 	dlg.close()
+	# Fallback check when data pack is absent
+	mv.set_data_cache_dir(TEST_NAMES_EMPTY_DIR)
+	mv.trigger_interact_for_walker()
+	if dlg.current_text() != "A wild #010 watches you quietly.":
+		push_error("FAIL [F97]: Street Pokemon fallback line wrong: expected 'A wild #010 watches you quietly.', got '%s'" % dlg.current_text())
+		_cleanup([mv, main_node])
+		return false
+	dlg.close()
+	mv.set_data_cache_dir(AssetDB.DEFAULT_CACHE_DIR)
 
 	# 7. Water / HM / ordinary-door hint test (camp has water pond & ordinary door)
 	var found_water_hint := false

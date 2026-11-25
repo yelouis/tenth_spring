@@ -430,7 +430,16 @@ func _test_manifests_guardrails_and_asset_db() -> bool:
 			push_error("normalize_image_to_96x96 failed for %s" % str(dims))
 			return false
 
-	# 4. SHA-256 mismatch falsifier on DataPackImporter
+	# 4. SHA-256 / size mismatch falsifier on DataPackImporter (and pinned raw_base_url resolution)
+	var sources_doc := DataPackImporterRef.load_json_res(DataPackImporterRef.DATA_SOURCES_PATH)
+	var pokeapi_url := DataPackImporterRef.resolve_raw_base_url(sources_doc.get("pokeapi", {}), "csv_path")
+	var fan_url := DataPackImporterRef.resolve_raw_base_url(sources_doc.get("fan_sprites", {}), "sprite_path")
+	if pokeapi_url != "https://raw.githubusercontent.com/PokeAPI/pokeapi/5cbeb3f3eb55a9b86da52c4869336f9d61fdd6d7/data/v2/csv":
+		push_error("Unexpected PokeAPI raw_base_url: %s" % pokeapi_url)
+		return false
+	if fan_url != "https://raw.githubusercontent.com/PokeAPI/sprites/1b3b7c0a538dd2226ae08d0d2f8955125075bbd4/sprites/pokemon/versions/generation-v/black-white":
+		push_error("Unexpected fan sprites raw_base_url: %s" % fan_url)
+		return false
 	var corrupt_staging := ProjectSettings.globalize_path(TEST_ROOT + "/corrupt_staging")
 	DataPackImporterRef._remove_dir_recursive(corrupt_staging)
 	var fake_transport := {
@@ -443,8 +452,8 @@ func _test_manifests_guardrails_and_asset_db() -> bool:
 	}
 	var fake_fetcher := MapFetcherRef.new(TEST_ROOT + "/fake_map", fake_transport)
 	var bad_dp := DataPackImporterRef.verify_and_stage_data_pack(corrupt_staging, "", fake_fetcher)
-	if bool(bad_dp.get("ok", false)) or str(bad_dp.get("failed_file", "")) != "ability_names.csv":
-		push_error("Expected corrupted ability_names.csv to be rejected")
+	if bool(bad_dp.get("ok", false)) or str(bad_dp.get("failed_file", "")) != "ability_names.csv" or str(bad_dp.get("error", "")).begins_with("Failed to fetch"):
+		push_error("Expected corrupted ability_names.csv to be rejected on size/SHA-256, got: %s" % str(bad_dp))
 		return false
 
 	# 5. AssetDB degraded mode on empty cache

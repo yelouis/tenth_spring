@@ -89,7 +89,7 @@ static func verify_and_stage_fan_sprites(
 		return {"ok": false, "error": "Missing data_sources.json or fan_sprite_manifest.json"}
 
 	var fs_meta: Dictionary = sources.get("fan_sprites", {})
-	var raw_base_url := str(fs_meta.get("raw_base_url", ""))
+	var raw_base_url := DataPackImporterRef.resolve_raw_base_url(fs_meta, "sprite_path")
 	var files_by_variant: Dictionary = manifest.get("files", {})
 	if files_by_variant.is_empty():
 		return {"ok": false, "error": "Empty files map in fan_sprite_manifest.json"}
