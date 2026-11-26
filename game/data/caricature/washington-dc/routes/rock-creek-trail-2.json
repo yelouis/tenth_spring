@@ -104,7 +104,7 @@
     {
       "dex": 263,
       "at": [
-        11,
+        12,
         14
       ],
       "zone": "wilds"
@@ -147,7 +147,7 @@
         13,
         46
       ],
-      "text": "Upper Rock Creek \u2014 mossy boulders along the east bank."
+      "text": "Upper Rock Creek — mossy boulders along the east bank."
     }
   ],
   "hidden_items": [

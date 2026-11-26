@@ -11,8 +11,8 @@
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT!===TT,T..TTTTTTT..TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT..TTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTT..TTTTTTTTTTTTTTTTT====#,,...TTTTTTT..TTTTTTTTTTTTTTTTTTTTTTTTT.TTTTTTTTTTTTTTTTT..TTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTT.,,TT.TTTT,,TTT.TT......T...#====#....,T.TTTT.,,TT.TTTT,,TTT.TTT,.......T,,.TTTT.T,.T.TTTT.,,TT.TTTTTTTTTTTTTTT",
-    "TTTTTTTTTTTTT,,...,,,,,,...,,,,,,........,...#====#...,,,,,,...,,,,,,...,,,,,,...,,.......,,,,,,...,,,,,,...,,,,,,..TTTTTTTTTTTT",
-    "TTTTTTTTTTTTT..,,,,,,............,,........,,#====#,,,,,,....,,,,,...,,,.,,...,,,,,......,,,.........,...,.,,,,...,,!TTTTTTTTTTT",
+    "TTTTTTTTTTTTT,,...,,,,,,...,,,,,,........,...#====#...,,,,,,...,,,,,,...,,,,,,...,,.......,,,,,,...,,,,,,...,,,,,,.!TTTTTTTTTTTT",
+    "TTTTTTTTTTTTT..,,,,,,............,,........,,#====#,,,,,,....,,,,,...,,,.,,...,,,,,......,,,.........,...,.,,,,...,,,TTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTT,,TTT.........TT.......TT,,#====#,,.,,TTT.,#====#...TT,,.TTTT.T,,.......,,.........TTT.TTcccTTTT.TTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTT***TTT.........TTT......TT,,#====#,,...TT.,,#====#,,TTT..TTTTTTT........T...........TTTTTTcccTTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTT***TTT.........TTT......T.,,#====#,,T..TTT,,#====#,,TTT..TTTTTTT........T...........TTTTTT...TTTTTTT.TTTTTTTTTT",
@@ -1124,161 +1124,161 @@
         63,
         75
       ],
-      "text": "Dupont Waypost Square \u2014 fountain ring & eight radiating avenues."
+      "text": "Dupont Waypost Square — fountain ring & eight radiating avenues."
     },
     {
       "at": [
         43,
         62
       ],
-      "text": "West Ring Road \u2014 Q Street leads west across Rock Creek to Georgetown."
+      "text": "West Ring Road — Q Street leads west across Rock Creek to Georgetown."
     },
     {
       "at": [
         84,
         62
       ],
-      "text": "East Ring Road \u2014 Massachusetts Avenue leads east to Union Station."
+      "text": "East Ring Road — Massachusetts Avenue leads east to Union Station."
     },
     {
       "at": [
         64,
         44
       ],
-      "text": "North Connecticut Spoke \u2014 boulevard north to Taft Bridge and Woodley Park."
+      "text": "North Connecticut Spoke — boulevard north to Taft Bridge and Woodley Park."
     },
     {
       "at": [
         64,
         83
       ],
-      "text": "South Connecticut Spoke \u2014 stone walkway facing lower Embassy Row."
+      "text": "South Connecticut Spoke — stone walkway facing lower Embassy Row."
     },
     {
       "at": [
         42,
         52
       ],
-      "text": "West Circle Row \u2014 brownstone stoops swept neat by the circle keeper."
+      "text": "West Circle Row — brownstone stoops swept neat by the circle keeper."
     },
     {
       "at": [
         83,
         52
       ],
-      "text": "Embassy Bookshop Corner \u2014 brass plaques polished beside the steps."
+      "text": "Embassy Bookshop Corner — brass plaques polished beside the steps."
     },
     {
       "at": [
         48,
         80
       ],
-      "text": "Dupont Fountain House \u2014 quiet chess parlor facing the south ring."
+      "text": "Dupont Fountain House — quiet chess parlor facing the south ring."
     },
     {
       "at": [
         76,
         80
       ],
-      "text": "Embassy Courier Post \u2014 chalk route board hanging by the door."
+      "text": "Embassy Courier Post — chalk route board hanging by the door."
     },
     {
       "at": [
         58,
         59
       ],
-      "text": "Dupont Fountain Lawn \u2014 grass trimmed close so the mist stays outside the ring."
+      "text": "Dupont Fountain Lawn — grass trimmed close so the mist stays outside the ring."
     },
     {
       "at": [
         49,
         47
       ],
-      "text": "NW Embassy Terrace \u2014 New Hampshire Avenue descending from the circle."
+      "text": "NW Embassy Terrace — New Hampshire Avenue descending from the circle."
     },
     {
       "at": [
         77,
         47
       ],
-      "text": "NE Embassy Terrace \u2014 Rhode Island Avenue lined with brick facades."
+      "text": "NE Embassy Terrace — Rhode Island Avenue lined with brick facades."
     },
     {
       "at": [
-        14,
-        10
+        15,
+        9
       ],
-      "text": "Connecticut Avenue North \u2014 road north toward Taft Bridge and Woodley Park."
+      "text": "Connecticut Avenue North — road north toward Taft Bridge and Woodley Park."
     },
     {
       "at": [
         32,
-        10
+        8
       ],
-      "text": "Q Street West \u2014 rowhouse boulevard descending toward Georgetown."
+      "text": "Q Street West — rowhouse boulevard descending toward Georgetown."
     },
     {
       "at": [
         50,
         12
       ],
-      "text": "Massachusetts Avenue East \u2014 Embassy Row leading toward Union Station."
+      "text": "Massachusetts Avenue East — Embassy Row leading toward Union Station."
     },
     {
       "at": [
         60,
         10
       ],
-      "text": "NW Diagonal Spoke \u2014 New Hampshire Avenue bordered by old brick gardens."
+      "text": "NW Diagonal Spoke — New Hampshire Avenue bordered by old brick gardens."
     },
     {
       "at": [
         72,
         10
       ],
-      "text": "NE Diagonal Spoke \u2014 Rhode Island Avenue lined with tall elms."
+      "text": "NE Diagonal Spoke — Rhode Island Avenue lined with tall elms."
     },
     {
       "at": [
         82,
         8
       ],
-      "text": "SW Embassy Gardens \u2014 iron gates overgrown with creeping ivy."
+      "text": "SW Embassy Gardens — iron gates overgrown with creeping ivy."
     },
     {
       "at": [
         90,
         12
       ],
-      "text": "SE Embassy Row \u2014 limestone stoops facing the quiet lower park."
+      "text": "SE Embassy Row — limestone stoops facing the quiet lower park."
     },
     {
       "at": [
         106,
-        10
+        9
       ],
-      "text": "North Terrace Walk \u2014 stepped garden path behind upper brownstones."
+      "text": "North Terrace Walk — stepped garden path behind upper brownstones."
     },
     {
       "at": [
         10,
         22
       ],
-      "text": "South Park Rim \u2014 overgrown hedge bordering the Distortion mist."
+      "text": "South Park Rim — overgrown hedge bordering the Distortion mist."
     },
     {
       "at": [
         26,
         22
       ],
-      "text": "East Courtyard Alley \u2014 weathered carriage stone behind the embassies."
+      "text": "East Courtyard Alley — weathered carriage stone behind the embassies."
     },
     {
       "at": [
         18,
         18
       ],
-      "text": "West Spoke Overlook \u2014 brick garden steps above the Q Street descent."
+      "text": "West Spoke Overlook — brick garden steps above the Q Street descent."
     }
   ],
   "hidden_items": [

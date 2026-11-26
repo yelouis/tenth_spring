@@ -95,7 +95,7 @@
     "TTTTTTTTT.....===...................===.............---.---...====..---...................===...............TTT.===.....TTTTTTTT",
     "TTTTTTTTT.....===...................===.......................====........................===................T..===.....TTTTTTTT",
     "TTTTTTTTT..T..===.....---....TTTT...===.......................====........................===.........T.TTTT....===.TT.TTTTTTTTT",
-    "TTTTTTTTT..TTT===............TTTTT..===....---..TTTT....T.TT..====..TTTT..T..---......T...===.........TT........===.TTTTTTTTTTTT",
+    "TTTTTTTTT..TTT===............TTTTT..===....---...TTT....T.TT..====..TTTT..T..---......T...===.........TT........===.TTTTTTTTTTTT",
     "TTTTTTTTT...TT===...vvvvvvvvvTTTTT..===.........TTT......TTT..====..TTT...T............T..===.........TT........===..TTTTTTTTTTT",
     "TTTTTTTTT..TTT===............FFFF...===.......................====........................===...................===....TTTTTTTTT",
     "TTTTTTTTT..T..===...................===FFFFFFFFFFFFF.......TTT====..TTT...................===...................===.....TTTTTTTT",
@@ -859,14 +859,14 @@
       "kind": "em_planter_box",
       "at": [
         49,
-        92
+        91
       ]
     },
     {
       "kind": "em_planter_box",
       "at": [
         74,
-        92
+        90
       ]
     }
   ],
@@ -882,7 +882,7 @@
       "sprite": "gentleman",
       "role": "elder",
       "lines": [
-        "Set all three rail-yard signal levers in order \u2014 north siding, mid track, then east switch.",
+        "Set all three rail-yard signal levers in order — north siding, mid track, then east switch.",
         "Once the iron arms click together, the Last Departure bell still rings."
       ]
     },
@@ -1033,91 +1033,91 @@
         62,
         53
       ],
-      "text": "Union Station \u2014 vaulted concourse silent beneath the stone arches."
+      "text": "Union Station — vaulted concourse silent beneath the stone arches."
     },
     {
       "at": [
         63,
         63
       ],
-      "text": "Columbus Circle \u2014 curved stone forecourt and dry fountain basin."
+      "text": "Columbus Circle — curved stone forecourt and dry fountain basin."
     },
     {
       "at": [
         43,
         52
       ],
-      "text": "West Ticket Annex \u2014 yellowed departure boards still hung on brass hooks."
+      "text": "West Ticket Annex — yellowed departure boards still hung on brass hooks."
     },
     {
       "at": [
         82,
         52
       ],
-      "text": "Express Parcel Room \u2014 hand trucks parked neat beside the dock."
+      "text": "Express Parcel Room — hand trucks parked neat beside the dock."
     },
     {
       "at": [
         46,
         64
       ],
-      "text": "West Postal Arcade \u2014 sandstone pillars flanking Columbus Circle."
+      "text": "West Postal Arcade — sandstone pillars flanking Columbus Circle."
     },
     {
       "at": [
         80,
         64
       ],
-      "text": "East Express Arcade \u2014 brass mail chutes bolted against the fog."
+      "text": "East Express Arcade — brass mail chutes bolted against the fog."
     },
     {
       "at": [
         45,
         77
       ],
-      "text": "H Street Row \u2014 trainmen's bunkhouse and counter room facing the circle."
+      "text": "H Street Row — trainmen's bunkhouse and counter room facing the circle."
     },
     {
       "at": [
         78,
         77
       ],
-      "text": "Track Atlas Office \u2014 iron-bound rail timetables kept dry inside."
+      "text": "Track Atlas Office — iron-bound rail timetables kept dry inside."
     },
     {
       "at": [
         50,
         91
       ],
-      "text": "Switchman's Row \u2014 brick cottages south of Columbus Plaza."
+      "text": "Switchman's Row — brick cottages south of Columbus Plaza."
     },
     {
       "at": [
         74,
         91
       ],
-      "text": "Railhead Supply Post \u2014 lantern oil and spare switches stored inside."
+      "text": "Railhead Supply Post — lantern oil and spare switches stored inside."
     },
     {
       "at": [
         63,
         70
       ],
-      "text": "F Street Crossing \u2014 avenue south toward Upper Senate Park."
+      "text": "F Street Crossing — avenue south toward Upper Senate Park."
     },
     {
       "at": [
         63,
         84
       ],
-      "text": "South Concourse Walk \u2014 brick rowhouse avenue linking F and E Streets."
+      "text": "South Concourse Walk — brick rowhouse avenue linking F and E Streets."
     },
     {
       "at": [
         38,
         63
       ],
-      "text": "Massachusetts Avenue Gate \u2014 road west along Embassy Row to Dupont Circle."
+      "text": "Massachusetts Avenue Gate — road west along Embassy Row to Dupont Circle."
     },
     {
       "at": [
@@ -1131,91 +1131,91 @@
         42,
         13
       ],
-      "text": "Signal Lever I (North Siding) \u2014 rusted iron switch arm set for Track 1."
+      "text": "Signal Lever I (North Siding) — rusted iron switch arm set for Track 1."
     },
     {
       "at": [
         64,
         23
       ],
-      "text": "Signal Lever II (Mid Siding) \u2014 brass indicator plate marked Last Departure."
+      "text": "Signal Lever II (Mid Siding) — brass indicator plate marked Last Departure."
     },
     {
       "at": [
         86,
         33
       ],
-      "text": "Signal Lever III (South Siding) \u2014 heavy counterweighted throw linking to the concourse."
+      "text": "Signal Lever III (South Siding) — heavy counterweighted throw linking to the concourse."
     },
     {
       "at": [
         10,
         10
       ],
-      "text": "Upper Senate Gate \u2014 avenue south toward Capitol Hill."
+      "text": "Upper Senate Gate — avenue south toward Capitol Hill."
     },
     {
       "at": [
         26,
         10
       ],
-      "text": "Massachusetts Avenue West \u2014 grand road toward Mount Vernon Square."
+      "text": "Massachusetts Avenue West — grand road toward Mount Vernon Square."
     },
     {
       "at": [
         18,
         6
       ],
-      "text": "North Railhead Steps \u2014 granite stair overlooking all three freight sidings."
+      "text": "North Railhead Steps — granite stair overlooking all three freight sidings."
     },
     {
       "at": [
         38,
         10
       ],
-      "text": "West Freight Yard \u2014 iron switch boxes half-buried in clover."
+      "text": "West Freight Yard — iron switch boxes half-buried in clover."
     },
     {
       "at": [
         54,
         10
       ],
-      "text": "East Signal Gantry \u2014 steel truss rusted silent over Track 3."
+      "text": "East Signal Gantry — steel truss rusted silent over Track 3."
     },
     {
       "at": [
         66,
         10
       ],
-      "text": "Lower H Street \u2014 brick freight houses bordering the south fog."
+      "text": "Lower H Street — brick freight houses bordering the south fog."
     },
     {
       "at": [
         78,
         10
       ],
-      "text": "South Concourse Alley \u2014 cobblestones ringing the lower rail quarter."
+      "text": "South Concourse Alley — cobblestones ringing the lower rail quarter."
     },
     {
       "at": [
         94,
         10
       ],
-      "text": "North Coal Trestle \u2014 mossy masonry framing the yard siding."
+      "text": "North Coal Trestle — mossy masonry framing the yard siding."
     },
     {
       "at": [
         108,
         12
       ],
-      "text": "East Baggage Spur \u2014 iron buffer stop rusted at the end of Track 2."
+      "text": "East Baggage Spur — iron buffer stop rusted at the end of Track 2."
     },
     {
       "at": [
         20,
         16
       ],
-      "text": "West Switch Tower \u2014 weathered brick shed beside the north siding."
+      "text": "West Switch Tower — weathered brick shed beside the north siding."
     }
   ],
   "hidden_items": [

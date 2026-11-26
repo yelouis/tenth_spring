@@ -45,8 +45,8 @@
     "TTTTTTTTT..TTTTFTT,,TTTT,F#########----..........,,,,,,,,,.....-----..............----,,,,,,,,,,,..........----....TTTTTTT,TT,,,TTTTT,,-r###########^..TTTTTTTTT",
     "TTTTTTTTT..TTTTFTT,.TTTT,k----~~#####---..TTT...,,,,,,,,,,.---.-----...........-------,,,,,,,,,,,,,,,.....-----......TTTT,,TTT,,TTTTT,,,^####.######^.TTTTTTTTTT",
     "TTTTTTTT...TTTTFTT,,TTTT,F~~~~~~~~~~###-.......,,,,,,,,,,,......------...........----,,,,,,,,,,,,,,,,,,...----...........,,,TT,,,TTTT,,,^###########^.TTTTTTTTTT",
-    "TTTTTTTTT..TTTTFTT,,TTTT,F~~~~~~~~~~~##--......,,,,,,,,,,,.......------..##.......---,,,,,,,,,,,,,,,,,,,.-----..........,,,TTT,,TTTTTTT,^###########^.TTTTTTTTTT",
-    "TTTTTTTTT...TTTFTT,,,,,,,F~~~~~~~~~~~~##-......,,,TTT,,,,,........------.##.......--,,,,,,,,,,TTT,,,,,,,.----...........,,,TTT,,TTT,TTT,^^^^^^^^^^^^^.T.TTTTTTTT",
+    "TTTTTTTTT..TTTTFTT,,TTTT,F~~~~~~~~~~~##--......,,,,,,,,,,,.......------...........---,,,,,,,,,,,,,,,,,,,.-----..........,,,TTT,,TTTTTTT,^###########^.TTTTTTTTTT",
+    "TTTTTTTTT...TTTFTT,,,,,,,F~~~~~~~~~~~~##-......,,,TTT,,,,,........------..........--,,,,,,,,,,TTT,,,,,,,.----...........,,,TTT,,TTT,TTT,^^^^^^^^^^^^^.T.TTTTTTTT",
     "TTTTTTTTT......FFFFFFFFFFF~~~~~~~~~~~##---.....,,,,,,,,,,,.........-------........--,,,,,,,,,,,,,,,,,,,T-----...........,,,,,,,,,,,,,,,,,,,,,,,.........TTTTTTTT",
     "TTTTTTTTT...........###~~~~~~~~~~~~~###----....,,,,,,,,,,,...........-----........--,,,,,,,,,,,,,,,,,,,T----......ccc...,,,,,,,,,,,,,,,,,,,,............TTTTTTTT",
     "TTTTTTTTTT.TT.TTTT....#####~~~~~#####..-----.....,,,,,,,,,.---.......-------...-----,,,,,,,,,,,,,,,,,,.T----......ccc....,,,TT,,,TTTT,,,...TTTT...TT.TTTTTTTTTTT",
@@ -889,7 +889,7 @@
       "kind": "standin_bench",
       "at": [
         14,
-        118
+        116
       ]
     },
     {
@@ -903,7 +903,7 @@
       "kind": "standin_bench",
       "at": [
         21,
-        68
+        67
       ]
     },
     {
@@ -933,7 +933,7 @@
       "sprite": "gentleman",
       "role": "elder",
       "lines": [
-        "Walk the Library gallery rounds with me after dusk \u2014 each reading room still keeps its order.",
+        "Walk the Library gallery rounds with me after dusk — each reading room still keeps its order.",
         "Capitol dome on the west, Library dome on the east, and four fanning walks down to the brick rows."
       ]
     },
@@ -1078,203 +1078,203 @@
         44,
         25
       ],
-      "text": "United States Capitol \u2014 marble steps silent under the white dome."
+      "text": "United States Capitol — marble steps silent under the white dome."
     },
     {
       "at": [
         98,
         26
       ],
-      "text": "Library of Congress \u2014 bronze doors open for Marcus Bell's night rounds."
+      "text": "Library of Congress — bronze doors open for Marcus Bell's night rounds."
     },
     {
       "at": [
         71,
         46
       ],
-      "text": "Capitol Forecourt \u2014 four fanning avenues descending into the brick rowhouses."
+      "text": "Capitol Forecourt — four fanning avenues descending into the brick rowhouses."
     },
     {
       "at": [
         64,
         22
       ],
-      "text": "Constitution Terrace \u2014 stone walk linking the Capitol and Library."
+      "text": "Constitution Terrace — stone walk linking the Capitol and Library."
     },
     {
       "at": [
         80,
         22
       ],
-      "text": "Capitol Bookbinder \u2014 stitched folios shelved dry behind brick walls."
+      "text": "Capitol Bookbinder — stitched folios shelved dry behind brick walls."
     },
     {
       "at": [
         60,
         36
       ],
-      "text": "Seward Tea Parlor \u2014 shuttered bay window overlooking the fanning plaza."
+      "text": "Seward Tea Parlor — shuttered bay window overlooking the fanning plaza."
     },
     {
       "at": [
         76,
         36
       ],
-      "text": "East Capitol Watch \u2014 brass bell hung beside the terrace stair."
+      "text": "East Capitol Watch — brass bell hung beside the terrace stair."
     },
     {
       "at": [
         42,
         58
       ],
-      "text": "Pennsylvania Row \u2014 brick rowhouses facing the west Capitol lawn."
+      "text": "Pennsylvania Row — brick rowhouses facing the west Capitol lawn."
     },
     {
       "at": [
         58,
         59
       ],
-      "text": "Hillside Apothecary \u2014 mortar and brass scales kept behind the counter."
+      "text": "Hillside Apothecary — mortar and brass scales kept behind the counter."
     },
     {
       "at": [
         85,
         59
       ],
-      "text": "Capitol Clock Repair \u2014 pendulum chimes faint beneath the porch."
+      "text": "Capitol Clock Repair — pendulum chimes faint beneath the porch."
     },
     {
       "at": [
         96,
         58
       ],
-      "text": "East Alley Garden \u2014 walled courtyard facing the Library wing."
+      "text": "East Alley Garden — walled courtyard facing the Library wing."
     },
     {
       "at": [
         71,
         30
       ],
-      "text": "Terrace Reflecting Pool \u2014 rainwater mirroring both white domes."
+      "text": "Terrace Reflecting Pool — rainwater mirroring both white domes."
     },
     {
       "at": [
         36,
         29
       ],
-      "text": "West Capitol Steps \u2014 descending toward Pennsylvania Avenue and the Mall."
+      "text": "West Capitol Steps — descending toward Pennsylvania Avenue and the Mall."
     },
     {
       "at": [
-        12,
-        10
+        15,
+        9
       ],
-      "text": "Upper Senate Park Gate \u2014 avenue north toward Union Station."
+      "text": "Upper Senate Park Gate — avenue north toward Union Station."
     },
     {
       "at": [
         26,
-        10
+        9
       ],
-      "text": "Pennsylvania Avenue Gate \u2014 broad road west toward the National Mall."
+      "text": "Pennsylvania Avenue Gate — broad road west toward the National Mall."
     },
     {
       "at": [
         38,
         10
       ],
-      "text": "Supreme Court Steps \u2014 marble portico rising east of the Library."
+      "text": "Supreme Court Steps — marble portico rising east of the Library."
     },
     {
       "at": [
         54,
         10
       ],
-      "text": "West Capitol Pond \u2014 quiet lily basin beside the fanning walks."
+      "text": "West Capitol Pond — quiet lily basin beside the fanning walks."
     },
     {
       "at": [
         46,
         6
       ],
-      "text": "Seward Square South \u2014 brick rowhouse crossroad beneath tall elms."
+      "text": "Seward Square South — brick rowhouse crossroad beneath tall elms."
     },
     {
       "at": [
-        66,
-        10
+        67,
+        8
       ],
-      "text": "East Capitol Street \u2014 double row of Victorian bays stretching east."
+      "text": "East Capitol Street — double row of Victorian bays stretching east."
     },
     {
       "at": [
         80,
         12
       ],
-      "text": "Independence Avenue Row \u2014 iron fences bordering the south Capitol blocks."
+      "text": "Independence Avenue Row — iron fences bordering the south Capitol blocks."
     },
     {
       "at": [
         94,
         10
       ],
-      "text": "South Rowhouse Court \u2014 mossy cobblestones behind the carriage houses."
+      "text": "South Rowhouse Court — mossy cobblestones behind the carriage houses."
     },
     {
       "at": [
         106,
         10
       ],
-      "text": "Lower Hill Alley \u2014 shuttered brick basements swept clear of rubble."
+      "text": "Lower Hill Alley — shuttered brick basements swept clear of rubble."
     },
     {
       "at": [
         120,
         12
       ],
-      "text": "Marion Park Garden \u2014 wrought-iron gate facing the lower avenues."
+      "text": "Marion Park Garden — wrought-iron gate facing the lower avenues."
     },
     {
       "at": [
         136,
         12
       ],
-      "text": "North Terrace Gate \u2014 stone steps climbing back toward the Senate park."
+      "text": "North Terrace Gate — stone steps climbing back toward the Senate park."
     },
     {
       "at": [
         126,
         6
       ],
-      "text": "Southwest Fanning Walk \u2014 diagonal gravel path framing the west lawn."
+      "text": "Southwest Fanning Walk — diagonal gravel path framing the west lawn."
     },
     {
       "at": [
-        146,
-        10
+        145,
+        12
       ],
-      "text": "Southeast Fanning Walk \u2014 diagonal path descending toward East Capitol."
+      "text": "Southeast Fanning Walk — diagonal path descending toward East Capitol."
     },
     {
       "at": [
         10,
         22
       ],
-      "text": "Capitol Boundary Stone \u2014 carved mile marker half-covered in ivy."
+      "text": "Capitol Boundary Stone — carved mile marker half-covered in ivy."
     },
     {
       "at": [
         18,
         18
       ],
-      "text": "East Garden Steps \u2014 brick walk descending behind the Supreme Court."
+      "text": "East Garden Steps — brick walk descending behind the Supreme Court."
     },
     {
       "at": [
         32,
         22
       ],
-      "text": "Library North Annex \u2014 carved stone lintels facing the Senate lawns."
+      "text": "Library North Annex — carved stone lintels facing the Senate lawns."
     }
   ],
   "hidden_items": [

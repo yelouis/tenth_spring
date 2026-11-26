@@ -11,8 +11,8 @@
     "~~~~~~~~~~::,,----..TTTTTTT...TTTTTT..TTTTTT...TTTTTTT..TTTTTTT..TTTTTTTTTTTTTTTTTTTTTTTT...TTTTTTT..TTTTTTT..TTTTTTT...TTTTTTTTTTTTTTTTTTTTTTTT..TTTTTTTTTTTTTT",
     "~~~~~~~~~~::,.----..TTTTTTT..TTTTTTT...TTTTTT..TTTTTT...TTTTTTT..TTT.TTTTTTTTTTTT...TTTT.T..TTTTTT...TTTTTTT..TTTTTTT..TTTTTTTTTTTTTTTT..TTTTTT...TTTTTTTTTTTTTT",
     "~~~~~~~~~~::.,----,,TT.TTTT,,TTT.TTT,,TTTT.TT,,.TTTT.T,,T.TTT..,,,.,,...,,,,,,...,.,,,,...,,.TTTT.T,,T.TTTT.,,TT.TTTT,,TTT.TTT,,TTTT.TT,,.TTTT.T,,T.TTTTTTTTTTTT",
-    "~~~~~~~~~~::,,----,,,,,,,,,,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,.TTTTTTTTT",
-    "~~~~~~~~~~::..----,,,,,,,,,,TTTTT,,,,,,,,,,,,,,,,,.,,TTTTT..,,,###########################,,,...,,,,.,...,,,,,,...,,,,.,...,,,,,!...,,,,,,...,***,....,TTTTTTTTT",
+    "~~~~~~~~~~::,,----,,,,,,,,,,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,,,,,...,,!,,,...,,,,,,...,,,,,,.TTTTTTTTT",
+    "~~~~~~~~~~::..----,,,,,,,,,,TTTTT,,,,,,,,,,,,,,,,,.,,TTTTT..,,,###########################,,,...,,,,.,...,,,,,,...,,,,.,...,,,,,,...,,,,,,...,***,....,TTTTTTTTT",
     "~~~~~~~~~~::..----,,TTTT,TT,TTTTTTTT,,T,TTTT,,,TT,TTTTTTTTTTT,,###########################,,TT.TTTT,,TTT.TTT,,TTTT.TT,,.TTTT.T,,T.TTTT.,,TT.TT***,TTT.TTTTTTTTTT",
     "~~~~~~~~~~::,.----!,TTTTTTT,TTTTTTTT,,,TTTTTT,,TTTTTTTTTTTTTT,.###########################..TTTTTT...TTTTTTT..TTTTTTT..TTTTTTT...TTTTTT..TTTTTT...TTTTTTTTTTTTTT",
     "~~~~~~~~~~::,,----,,TTTTTTT,,TTTTTTT,,TTTTTTT,,,TTTT,TTTTTTTT,,###########################...TTTT.T..TTTTTT...TTTTTTT..TTTTTTT..TTTTTTT...TTTTTT..TTTTTTTTTTTTTT",
@@ -41,17 +41,17 @@
     "~~~~~~~~~~~~~~~~~~~~~::.........===...,,,,,,,,,,,,,,.............---.###############.---....................................,,.....,,,,,....===....ccc.....TTTTT",
     "~~~~~~~~~~~~~~~~~~~~~::.........===...,,,,,,,,,,,,,,...........T.---.###~~~~~~~~~###.---..........................-----------...............===....ccc.....TTTTT",
     "~~~~~~~~~~~~~~~~~~~~~::TTTT..T..===...TTTT,TT,,,TTT,.............---T###~~~~~~~~~###T---.......................-----------------............===...T.TTTT..TTTTTT",
-    "~~~~~~~~~~~~~~~~~~~~::.TTT...T..===...TTTTTTT,,TTTT,.---.........---.###~~~~~~~~~###.---....................-----------------------......T..===....TTTTTT.TTTTTT",
-    "~~~~~~~~~~~~~~~~~~~~::!TTTT..T..==!...TTTTTTT,,TTT,,........---T.---.###~~~~~~~~~###.---.---..---....TTT..---------------------------....T..===...TTTTTTT.TTTTTT",
+    "~~~~~~~~~~~~~~~~~~~~::!TTT...T..===...TTTTTTT,,TTTT,.---.........---.###~~~~~~~~~###.---....................-----------------------......T..===....TTTTTT.TTTTTT",
+    "~~~~~~~~~~~~~~~~~~~~::.TTTT..T..==!...TTTTTTT,,TTT,,........---T.---.###~~~~~~~~~###.---.---..---....TTT..---------------------------....T..===...TTTTTTT.TTTTTT",
     "~~~~~~~~~~~~~~~~~~~~::TTTTT.....===...TTTTTT,,,TTTT,.............---T###~~~~~~~~~###T---.................---------:::::::::-----------....F.===...TTTTTTT.TTTTTT",
     "~~~~~~~~~~~~~~~~~~~~::TTTTT..T..===....TTTTTT,,TTTTT.............---.###~~~~~~~~~###.---................------:::::~~~~~~~:::::--------...F.===...TTTTTTTTTTTTTT",
     "~~~~~~~~~~~~~~~~~~~::..TTT***T..===...TTTTTTT,,,TTTT......T....T.---.###~~~~~~~~~###.---...............-----:::~~~~~~~~~~~~~~~:::-------..F.===...T.TTTT.TTTTTTT",
-    "~~~~~~~~~~~~~~~~~~~::.TTTT***T..===...TTT.TTT..TTTT,..---TTT.....---T###~~~~~~~~~###T---..........,TT.-----::~~~~~~~~~~~~~~~~~~~::-------.F.===..........TTTTTTT",
+    "~~~~~~~~~~~~~~~~~~~::.TTTT***T..===...TTT.TTT..TTTT,..---.TT.....---T###~~~~~~~~~###T---..........,TT.-----::~~~~~~~~~~~~~~~~~~~::-------.F.===..........TTTTTTT",
     "~~~~~~~~~~~~~~~~~~~::...........===...............,,......T......---.###~~~~~~~~~###.---..........,TT-----::~~~~~~~~~~~~~~~~~~~~~::-------..===..........TTTTTTT",
     "~~~~~~~~~~~~~~~~~~::............===.......................T....T.---.###~~~~~~~~~###.---.---..---.,,.----:~~~~~~~~~#####~~~~~~~~~~~:--------===-----------------",
     "~~~~~~~~~~~~~~~~~~::.TT.TTT..T..===.........T..T.TTT......T......---T##-~~~~~~~~~###T---..........,,----::~~~~~~~#########~~~~~~~~~::-------===-----------------",
     "~~~~~~~~~~~~~~~~~~::TTTTTTT..T..===.........T...TTTT......T......---.--#~~~~~~~~~###.---..........,,----:~~~~~~~###*****###~~~~~~~~~:-------===-----------------",
-    "~~~~~~~~~~~~~~~~~~#:TTTTTccc.T..===.........T..TTTT...---T----.T.---.###~~~~~~~~~###.---..........,,----:~~~~~~~###*****###~~~~~~~~~:-------===-----------------",
+    "~~~~~~~~~~~~~~~~~~#:TTTTTccc.T..===.........T..TTTT...---.----.T.---.###~~~~~~~~~###.---..........,,----:~~~~~~~###*****###~~~~~~~~~:-------===-----------------",
     "~~~~~~~~~~~~~~~~~~::.TTTTccc.T..===..-----..T..TTTTT.............---T##-~~~~~~~~~###T---..........,,---::~~~~~~~###*****###~~~~~~~~~::-----.===..........TTTTTTT",
     "~~~~~~~~~~~~~~~~~~::TTTTTTT.....===.......,,,,,TTTTT.............---.###~~~~~~~~~###.---..........,,----:~~~~~~~~#########~~~~~~~~~~:------.===.....,,...TTTTTTT",
     "~~~~~~~~~~~~~~~~~~::TTTTTTT..T..===......,,,T,,TTTTT...........T.---.###~~~~~~~~~###.---.---..---.,,----:~~~~~~~~~~#####~~~~~~~~~~~~:------.===...TT,TTTTTTTTTTT",
@@ -864,7 +864,7 @@
       "role": "elder",
       "lines": [
         "Three fair battles wait in the stone undercroft beneath the marble chamber.",
-        "Walk the whole length of the Reflecting Pool first \u2014 the calm water steadies your team."
+        "Walk the whole length of the Reflecting Pool first — the calm water steadies your team."
       ]
     },
     {
@@ -1000,91 +1000,91 @@
         76,
         20
       ],
-      "text": "Lincoln Memorial \u2014 white marble columns overlooking the Reflecting Pool."
+      "text": "Lincoln Memorial — white marble columns overlooking the Reflecting Pool."
     },
     {
       "at": [
         76,
         29
       ],
-      "text": "Lincoln Plaza Waypost \u2014 grand marble stair at the head of the pool."
+      "text": "Lincoln Plaza Waypost — grand marble stair at the head of the pool."
     },
     {
       "at": [
         56,
         22
       ],
-      "text": "West Basin Watch \u2014 granite balcony overlooking the Potomac bend."
+      "text": "West Basin Watch — granite balcony overlooking the Potomac bend."
     },
     {
       "at": [
         63,
         20
       ],
-      "text": "West Terrace Guide House \u2014 carved stone maps of Memorial Bridge."
+      "text": "West Terrace Guide House — carved stone maps of Memorial Bridge."
     },
     {
       "at": [
         56,
         30
       ],
-      "text": "Bridgehead Lamp Shed \u2014 brass lanterns lined up for dusk patrol."
+      "text": "Bridgehead Lamp Shed — brass lanterns lined up for dusk patrol."
     },
     {
       "at": [
         64,
         41
       ],
-      "text": "Reflecting Pool Aid Post \u2014 fresh bandages and cool spring water inside."
+      "text": "Reflecting Pool Aid Post — fresh bandages and cool spring water inside."
     },
     {
       "at": [
         89,
         22
       ],
-      "text": "Colonnade Records Room \u2014 marble ledgers stacked beside the hearth."
+      "text": "Colonnade Records Room — marble ledgers stacked beside the hearth."
     },
     {
       "at": [
         103,
         26
       ],
-      "text": "Pool Pumphouse Office \u2014 sluice valves keeping the long pool clear."
+      "text": "Pool Pumphouse Office — sluice valves keeping the long pool clear."
     },
     {
       "at": [
         120,
         27
       ],
-      "text": "Marble Mason's Workshop \u2014 chisels and lime mortar kept dry inside."
+      "text": "Marble Mason's Workshop — chisels and lime mortar kept dry inside."
     },
     {
       "at": [
         131,
         25
       ],
-      "text": "Riverbend Provision Room \u2014 supplies for trainers bound for the undercroft."
+      "text": "Riverbend Provision Room — supplies for trainers bound for the undercroft."
     },
     {
       "at": [
         87,
         41
       ],
-      "text": "South Lawn Study \u2014 quiet window overlooking the oval pond east."
+      "text": "South Lawn Study — quiet window overlooking the oval pond east."
     },
     {
       "at": [
         110,
         18
       ],
-      "text": "Foggy Bottom Terrace \u2014 brick townhouses stepping down toward the park."
+      "text": "Foggy Bottom Terrace — brick townhouses stepping down toward the park."
     },
     {
       "at": [
         63,
-        51
+        50
       ],
-      "text": "West Pool Promenade \u2014 elm walk stretching south along the Reflecting Pool."
+      "text": "West Pool Promenade — elm walk stretching south along the Reflecting Pool."
     },
     {
       "at": [
@@ -1098,98 +1098,98 @@
         12,
         8
       ],
-      "text": "Potomac Riverfront Gate \u2014 river road north toward Georgetown."
+      "text": "Potomac Riverfront Gate — river road north toward Georgetown."
     },
     {
       "at": [
-        26,
-        10
+        27,
+        7
       ],
-      "text": "Constitution Gardens Gate \u2014 calm lake trail east toward the National Mall."
+      "text": "Constitution Gardens Gate — calm lake trail east toward the National Mall."
     },
     {
       "at": [
         38,
-        10
+        9
       ],
-      "text": "West Potomac Park Gate \u2014 lakeside walk south toward the Tidal Basin."
+      "text": "West Potomac Park Gate — lakeside walk south toward the Tidal Basin."
     },
     {
       "at": [
-        50,
-        10
+        51,
+        9
       ],
-      "text": "Memorial Bridge Head \u2014 stone abutment reaching west over the Potomac."
+      "text": "Memorial Bridge Head — stone abutment reaching west over the Potomac."
     },
     {
       "at": [
         62,
         12
       ],
-      "text": "Oval Pond Footbridge \u2014 wooden crossing to the quiet willow island."
+      "text": "Oval Pond Footbridge — wooden crossing to the quiet willow island."
     },
     {
       "at": [
         73,
         11
       ],
-      "text": "Willow Island Bench \u2014 sheltered lookout surrounded by calm pond water."
+      "text": "Willow Island Bench — sheltered lookout surrounded by calm pond water."
     },
     {
       "at": [
         82,
         8
       ],
-      "text": "Reflecting Pool South \u2014 granite steps mirroring Lincoln's distant columns."
+      "text": "Reflecting Pool South — granite steps mirroring Lincoln's distant columns."
     },
     {
       "at": [
         90,
         12
       ],
-      "text": "West Pool Promenade \u2014 elm walk running the whole length of the pool."
+      "text": "West Pool Promenade — elm walk running the whole length of the pool."
     },
     {
       "at": [
         100,
         10
       ],
-      "text": "East Pool Promenade \u2014 stone rim parallel to the long blue water."
+      "text": "East Pool Promenade — stone rim parallel to the long blue water."
     },
     {
       "at": [
         108,
         6
       ],
-      "text": "Potomac Bank Walk \u2014 river reeds swaying beside the low stone wall."
+      "text": "Potomac Bank Walk — river reeds swaying beside the low stone wall."
     },
     {
       "at": [
         118,
         10
       ],
-      "text": "South Lawn Terrace \u2014 brick park lodges facing the lower avenues."
+      "text": "South Lawn Terrace — brick park lodges facing the lower avenues."
     },
     {
       "at": [
         136,
         12
       ],
-      "text": "Lower Elm Grove \u2014 quiet shaded glade south of the oval pond."
+      "text": "Lower Elm Grove — quiet shaded glade south of the oval pond."
     },
     {
       "at": [
-        146,
-        10
+        147,
+        8
       ],
-      "text": "West River Overlook \u2014 weathered railing above the Potomac current."
+      "text": "West River Overlook — weathered railing above the Potomac current."
     },
     {
       "at": [
         12,
         22
       ],
-      "text": "North Foggy Bottom Steps \u2014 brick stair leading behind the colonnade."
+      "text": "North Foggy Bottom Steps — brick stair leading behind the colonnade."
     }
   ],
   "hidden_items": [

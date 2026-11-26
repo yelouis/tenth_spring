@@ -1117,6 +1117,50 @@ func run_test() -> bool:
 		push_error("caricature_check_test: expected person off stamp + hidden item on stamp overhang to pass P14, got %s" % str(m_p14_st_ok))
 		return false
 
+	# -------------------------------------------------------------
+	# Decision 82 (Item 82): P17 (tree canopy overlap) & P18 (prop/landmark on tree ground) falsifiers
+	# -------------------------------------------------------------
+	var p17_fail := rg_map.duplicate(true)
+	var p17_rows: Array = (p17_fail["rows"] as Array).duplicate()
+	var r15: String = str(p17_rows[15])
+	p17_rows[15] = r15.substr(0, 14) + "T" + r15.substr(15)
+	p17_fail["rows"] = p17_rows
+	p17_fail["street_pokemon"] = [{"dex": 35, "at": [14, 14], "zone": "parkland"}]
+	var res_p17_fail := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p17_fail), rg_area)
+	if not (res_p17_fail["failed_rules"] as Array).has("P17") or int(res_p17_fail.get("tree_canopy_overlaps", 0)) < 1:
+		_cleanup()
+		push_error("caricature_check_test: expected street Pokemon north of tree trunk to fail P17, got %s" % str(res_p17_fail))
+		return false
+	var p17_ok := rg_map.duplicate(true)
+	p17_ok["street_pokemon"] = [{"dex": 35, "at": [14, 14], "zone": "parkland"}]
+	var res_p17_ok := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p17_ok), rg_area)
+	if (res_p17_ok["failed_rules"] as Array).has("P17") or int(res_p17_ok.get("tree_canopy_overlaps", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected street Pokemon without south tree to pass P17, got %s" % str(res_p17_ok))
+		return false
+
+	# P18 (F104): prop/landmark stamp tile sitting on 'T' in map ground must fail P18
+	var p18_fail := rg_map.duplicate(true)
+	var p18_rows: Array = (p18_fail["rows"] as Array).duplicate()
+	var r10: String = str(p18_rows[10])
+	p18_rows[10] = r10.substr(0, 10) + "T" + r10.substr(11)
+	p18_fail["rows"] = p18_rows
+	var p18_objs: Array = (p18_fail.get("objects", []) as Array).duplicate(true)
+	p18_objs.append({"stamp": "waypost_board", "at": [10, 10]})
+	p18_fail["objects"] = p18_objs
+	var res_p18_fail := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p18_fail), rg_area)
+	if not (res_p18_fail["failed_rules"] as Array).has("P18") or int(res_p18_fail.get("prop_on_tree_ground", 0)) < 1:
+		_cleanup()
+		push_error("caricature_check_test: expected waypost_board on 'T' ground to fail P18, got %s" % str(res_p18_fail))
+		return false
+	var p18_ok := rg_map.duplicate(true)
+	p18_ok["objects"] = p18_objs.duplicate(true)
+	var res_p18_ok := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p18_ok), rg_area)
+	if (res_p18_ok["failed_rules"] as Array).has("P18") or int(res_p18_ok.get("prop_on_tree_ground", -1)) != 0:
+		_cleanup()
+		push_error("caricature_check_test: expected waypost_board on grass to pass P18, got %s" % str(res_p18_ok))
+		return false
+
 	_cleanup()
 	return true
 

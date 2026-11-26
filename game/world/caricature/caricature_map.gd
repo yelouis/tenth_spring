@@ -1445,7 +1445,7 @@ static func cell_result(compiled: Dictionary, cell: Vector2i, area: Dictionary) 
 	var preserve_road := bool(compiled.get("has_town_rules", false)) or str(compiled.get("kind", "")) == "route"
 
 	var output := TileSynth2.finalize_cell_output(
-		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road, true
+		cell.x, cell.y, grid_class, grid_variant, grid_mask, world_seed, road_v1_thresh, preserve_road, true, true
 	)
 
 	# Gather every compiled stamp whose box touches this cell (§3.8 step 4, tile_synth2.gd:1664)

@@ -1392,6 +1392,100 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 	if p15_violations > 0:
 		failed_rules.append("P15")
 
+	# P17 (Decision 82 / Item 82 / F103): No person, street Pokemon, sign, visible item ball,
+	# fixture, lamp, or drawn stamp footprint tile may sit directly north of a tree trunk (y + 1 == TILE_TREE),
+	# where the tree's canopy overhang (TreeTop layer) draws over it.
+	var p17_violations := 0
+	var p17_signs := 0
+	var p17_balls := 0
+	var p17_fixtures := 0
+	var p17_pokemon := 0
+	var p17_people := 0
+	var p17_lamps := 0
+	var p17_stamps := 0
+	var gnd_cls_p17: PackedByteArray = compiled.get("ground_class", PackedByteArray())
+	for sg_p17 in signs_arr:
+		var sgx17: int = int((sg_p17 as Dictionary)["x"])
+		var sgy17: int = int((sg_p17 as Dictionary)["y"])
+		if sgy17 + 1 < h and cls_buf[(sgy17 + 1) * w + sgx17] == TileSynth2.TILE_TREE:
+			p17_signs += 1
+	for y17 in range(h - 1):
+		for x17 in range(w):
+			if cls_buf[y17 * w + x17] == TileSynth2.TILE_ITEM_BALL and cls_buf[(y17 + 1) * w + x17] == TileSynth2.TILE_TREE:
+				p17_balls += 1
+	for fx_p17 in (compiled.get("fixtures", []) as Array):
+		var fxd17: Dictionary = fx_p17
+		var fx017: int = int(fxd17["x"])
+		var fy017: int = int(fxd17["y"])
+		var fw17: int = maxi(1, int(fxd17.get("w", 1)))
+		var fh17: int = maxi(1, int(fxd17.get("h", 1)))
+		var fbr17: int = mini(fh17, maxi(1, int(fxd17.get("base_rows", 1))))
+		var fx_hit17 := false
+		for fdy17 in range(fh17 - fbr17, fh17):
+			for fdx17 in range(fw17):
+				var lx17: int = fx017 + fdx17
+				var ly17: int = fy017 + fdy17
+				if lx17 < 0 or lx17 >= w or ly17 < 0 or ly17 + 1 >= h:
+					continue
+				var sidx17: int = (ly17 + 1) * w + lx17
+				var on_stamp17: bool = (cls_buf[ly17 * w + lx17] == TileSynth2.TILE_STAMP or cls_buf[ly17 * w + lx17] == TileSynth2.TILE_DOOR)
+				if cls_buf[sidx17] == TileSynth2.TILE_TREE or (on_stamp17 and gnd_cls_p17.size() == total and gnd_cls_p17[sidx17] == TileSynth2.TILE_TREE):
+					fx_hit17 = true
+					break
+			if fx_hit17:
+				break
+		if fx_hit17:
+			p17_fixtures += 1
+	for pk_p17 in (compiled.get("street_pokemon", []) as Array):
+		var pkx17: int = int((pk_p17 as Dictionary)["x"])
+		var pky17: int = int((pk_p17 as Dictionary)["y"])
+		if pky17 + 1 < h and cls_buf[(pky17 + 1) * w + pkx17] == TileSynth2.TILE_TREE:
+			p17_pokemon += 1
+	for pe_p17 in (compiled.get("people", []) as Array):
+		var pex17: int = int((pe_p17 as Dictionary)["x"])
+		var pey17: int = int((pe_p17 as Dictionary)["y"])
+		if pey17 + 1 < h and cls_buf[(pey17 + 1) * w + pex17] == TileSynth2.TILE_TREE:
+			p17_people += 1
+	var lamp_p17: Vector2i = compiled.get("lamp", Vector2i(-1, -1))
+	if lamp_p17.x >= 0 and lamp_p17.y + 1 < h and cls_buf[(lamp_p17.y + 1) * w + lamp_p17.x] == TileSynth2.TILE_TREE:
+		p17_lamps += 1
+
+	# Also check P17 for drawn stamp footprint tiles AND P18 (Decision 82 / Item 82 / F104):
+	# no landmark or prop drawn tile may sit on a tree ('T') in the map's own ground.
+	var p18_violations := 0
+	for st_p17 in (compiled.get("stamps", []) as Array):
+		var sd17: Dictionary = st_p17
+		var sid17: int = int(sd17.get("stamp_id", 0))
+		var sdef17: Dictionary = TileSynth2.get_stamp_def(sid17)
+		var skind17 := str(sdef17.get("kind", ""))
+		var sx017: int = int(sd17["anchor_gx"]) - base_gx_p14
+		var sy017: int = int(sd17["anchor_gy"]) - base_gy_p14
+		var sw17: int = int(sd17.get("w", 1))
+		var sh17: int = int(sd17.get("h", 1))
+		var tiles_p17: Array = sdef17.get("tiles", [])
+		for ty17 in range(sh17):
+			var rstr17 := str(tiles_p17[ty17]) if ty17 < tiles_p17.size() else ""
+			for tx17 in range(sw17):
+				var lx17: int = sx017 + tx17
+				var ly17: int = sy017 + ty17
+				if lx17 < 0 or lx17 >= w or ly17 < 0 or ly17 >= h:
+					continue
+				var drawn17 := true
+				if skind17 == "landmark" or skind17 == "prop":
+					var ch17 := rstr17[tx17] if tx17 < rstr17.length() else "."
+					drawn17 = (ch17 == "#" or ch17 == "+")
+				if not drawn17:
+					continue
+				if (skind17 == "landmark" or skind17 == "prop") and gnd_cls_p17.size() == total and gnd_cls_p17[ly17 * w + lx17] == TileSynth2.TILE_TREE:
+					p18_violations += 1
+				if ly17 + 1 < h and cls_buf[(ly17 + 1) * w + lx17] == TileSynth2.TILE_TREE:
+					p17_stamps += 1
+	p17_violations = p17_signs + p17_balls + p17_fixtures + p17_pokemon + p17_people + p17_lamps + p17_stamps
+	if p17_violations > 0:
+		failed_rules.append("P17")
+	if p18_violations > 0:
+		failed_rules.append("P18")
+
 	var water_baseline: int = int(DC_WATER_BASELINE.get(aid, -1))
 	if water_baseline > 0 and float(rendered_water) + 0.000001 < MIN_WATER_ANCHOR_SHARE * float(water_baseline):
 		failed_rules.append("WATER")
@@ -1440,6 +1534,17 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 		"unreachable_interactables": p15_violations,
 		"pkm_alley_violations": p16_violations,
 		"pkm_max_detour": p16_max_detour,
+		"tree_canopy_overlaps": p17_violations,
+		"p17_breakdown": {
+			"signs": p17_signs,
+			"balls": p17_balls,
+			"fixtures": p17_fixtures,
+			"pokemon": p17_pokemon,
+			"people": p17_people,
+			"lamps": p17_lamps,
+			"stamps": p17_stamps,
+		},
+		"prop_on_tree_ground": p18_violations,
 		"rendered_water": rendered_water,
 		"water_baseline": water_baseline,
 	}

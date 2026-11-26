@@ -11,8 +11,8 @@
     "TTTTTTTTTTTTTTTTTT!-TTTTTTTT.........%%~~~~~::....TTTT!.TTTTTTT..TTTTTTTTTTTTTTTTT.TTTTTT.!.TTTTTTT..TTTTTTT..TTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTT---TTTTT..........%%~~~~~~:....TTTT...TTTTTTT..TTTTTTTTTTTTTTTT...TTTTTT..T.TTTT...TT.TTTT..TTT.TTTTTTTTTTTTTT",
     "TTTTTTTTT.........---..............%%~~~~~~:.....TTT.T..T.TTTTTT.--.TTTT..TTT.TTT..TTTT.T.............!...........TTTTTTTTTTTTTT",
-    "TTTTTTTTT..........--.............::~~~~~~%:..............TTTTTTTT......,.,,,,,......................................TTTTTTTTTTT",
-    "TTTTTTTTT..........---..........:::~~~~~~%%.....,,,,,,....TTTTTTTT...,,,,,,,,,,,...........#####################....!TTTTTTTTTTT",
+    "TTTTTTTTT..........--.............::~~~~~~%:..............TTTTTTTT......,.,,,,,.....................................!TTTTTTTTTTT",
+    "TTTTTTTTT..........---..........:::~~~~~~%%.....,,,,,,....TTTTTTTT...,,,,,,,,,,,...........#####################.....TTTTTTTTTTT",
     "TTTTTTTTT...........--.........::~~~~~~~%%,,,,,,,,TTTT,,TTTTTTTTTTTTT,TT,,,TTTT,T..T.***...#####################...TTTTTTTTTTTTT",
     "TTTTTTTTT...........--........::~~~~~~~%%,,,,,,,,TTTT,,,TTTTTTTTTTTT....,,TTTTTTT...T***...#####################..TTTTTTTTTTTTTT",
     "TTTTTTTTT...........---.....:::~~~~~~~:%,,,,<,,,,TTTTT,,TTTTTT,,,TT,....,,TTTTTTT..TTTT.T..#####################..TTTTTTTTTTTTTT",
@@ -72,7 +72,7 @@
     "TTTTTTTT..TT....,,,,,T,,,,,::::~~~~~~~~~::::,,,,,,,,,T,.####..----..####..,,,,,,,,,%%%%~~~~~~~~~%%%%,,,,,,,...F.TTTTTTTTTTTTTTTT",
     "TTTTTTTTT.TT....,,.,,T.,,,,::::~~~~~~~~~:::***,....,TT..####..----..####...,,,,,..%%%%~~~~~~~~~~~%%%%,,,,,,...F.TTTTTTTTTTTTTTTT",
     "TTTTTTTTT.TT....,,,,,T.,,,,::::~~~~~~~~~:::***..,,..TT........----...F......,,TT,..%%%%~~~~~~~~~%%%%..,,,,....F.TTTTTTTTTTTTTTTT",
-    "TTTTTTTTT.TTT----TTTTT,,,,TTT::::~~~~~:::::...,,TTT.TT........----...F.......,TTT,.%%%%%~~~~~~~%%%%%,,........F.TTTTTTTTTTTTTTTT",
+    "TTTTTTTTT.TT.----TTTTT,,,,TTT::::~~~~~:::::...,,TTT.TT........----...F.......,TTT,.%%%%%~~~~~~~%%%%%,,........F.TTTTTTTTTTTTTTTT",
     "TTTTTTTTT.TTTTTT..F.,,,,,,,,,:::::::::::::,,,,,,TTTTT.........----...F....,,,,,TTTT.%%%%%%%%%%%%%%%,,,,,,,,,,,F..TTTTTTTTTTTTTTT",
     "TTTTTTT...TTTTTT..F.,,,,,,,,,,,,:::::::,,,,,,,,,,,,TT.........----...F....,,,,,,,TT,,,%%%%%%%%%%%,,,,,,,,,,,,,F..TTTTTTTTTTTTTTT",
     "TTTTTTT...TTTTTT..F.,,,,,,,,,,,,,,,,..,,,,,,,,,,,,,,,,........----...F...,,,,,,,,,,,,,,,,,.%,,,,,,,,,,,,,,,,,,F..TTTTTTTTTTTTTTT",
@@ -95,7 +95,7 @@
     "TTTTTTTT....................................................#======#TT..................................................TTTTTTTT",
     "TTTTTTTT.......-..........T.................................#======#...............................................TT...TTTTTTTT",
     "TTTTTTTTT.^^^^^r^^^^^TT.TTF.................................#======#..................................T.TT........TTTT.TTTTTTTTT",
-    "TTTTTTTTT.^:::::::::^TTTTTF.................................#======#...................................TTT..---..TTTTTTTTTTTTTTT",
+    "TTTTTTTTT.^:::::::::^TTTTTF.................................#======#...................................TTT..---...TTTTTTTTTTTTTT",
     "TTTTTTTTT.^:::::::::^^TTTTF.................................#======#...................................TTT......TTTTTTTTTTTTTTTT",
     "TTTTTTTTT.^:::::::::^.....T..........---...---...---........#======#....---............#..........---...........TTTTTTTTTTTTTTTT",
     "TTTTTTTTT.^:....::::^.......................................#======#..........................................TTTTTTTTTTTTTTTTTT",
@@ -856,7 +856,7 @@
       "kind": "em_streetlamp",
       "at": [
         70,
-        83
+        82
       ]
     },
     {
@@ -1054,7 +1054,7 @@
       "sprite": "hiker",
       "role": "elder",
       "lines": [
-        "All four paddock gates have stood wide open since the city quieted \u2014 the animals wandered off and wild Pokemon moved in.",
+        "All four paddock gates have stood wide open since the city quieted — the animals wandered off and wild Pokemon moved in.",
         "Show me three Pokemon caught inside the old paddocks and I'll share the last keeper's ball."
       ]
     },
@@ -1178,7 +1178,7 @@
       "dex": 198,
       "at": [
         68,
-        102
+        101
       ],
       "zone": "wilds"
     },
@@ -1205,91 +1205,91 @@
         63,
         82
       ],
-      "text": "National Zoo Gate \u2014 stone arch opening north into the four empty paddocks."
+      "text": "National Zoo Gate — stone arch opening north into the four empty paddocks."
     },
     {
       "at": [
         63,
         106
       ],
-      "text": "Woodley Park Square \u2014 Waypost lantern on Connecticut Avenue."
+      "text": "Woodley Park Square — Waypost lantern on Connecticut Avenue."
     },
     {
       "at": [
         51,
         86
       ],
-      "text": "Zoo Attendant House \u2014 admission tickets yellowed inside the glass booth."
+      "text": "Zoo Attendant House — admission tickets yellowed inside the glass booth."
     },
     {
       "at": [
         74,
         88
       ],
-      "text": "Head Zookeeper's Lodge \u2014 paddock keys hanging unused beside the door."
+      "text": "Head Zookeeper's Lodge — paddock keys hanging unused beside the door."
     },
     {
       "at": [
         31,
         98
       ],
-      "text": "Old Paddock Feed Room \u2014 oat bins swept clean and stacked dry."
+      "text": "Old Paddock Feed Room — oat bins swept clean and stacked dry."
     },
     {
       "at": [
         38,
         96
       ],
-      "text": "Creekside Clinic Annex \u2014 field notes on Rock Creek wildlife."
+      "text": "Creekside Clinic Annex — field notes on Rock Creek wildlife."
     },
     {
       "at": [
         45,
         96
       ],
-      "text": "Rock Creek Trail Cabin \u2014 muddy boots lined neatly on the porch."
+      "text": "Rock Creek Trail Cabin — muddy boots lined neatly on the porch."
     },
     {
       "at": [
         74,
         96
       ],
-      "text": "North Trail Bunkhouse \u2014 ranger lanterns hung by the entrance."
+      "text": "North Trail Bunkhouse — ranger lanterns hung by the entrance."
     },
     {
       "at": [
         83,
         98
       ],
-      "text": "Park Carpenter's Cottage \u2014 fresh cedar planks for repairing paddock fences."
+      "text": "Park Carpenter's Cottage — fresh cedar planks for repairing paddock fences."
     },
     {
       "at": [
         94,
         98
       ],
-      "text": "Aviary Banding Office \u2014 bird logs stamped with the Great Aviary crest."
+      "text": "Aviary Banding Office — bird logs stamped with the Great Aviary crest."
     },
     {
       "at": [
         36,
         110
       ],
-      "text": "Calvert Street Row \u2014 Victorian brick porches overlooking the south road."
+      "text": "Calvert Street Row — Victorian brick porches overlooking the south road."
     },
     {
       "at": [
         80,
         110
       ],
-      "text": "Connecticut Avenue South \u2014 descending toward Taft Bridge and Dupont Circle."
+      "text": "Connecticut Avenue South — descending toward Taft Bridge and Dupont Circle."
     },
     {
       "at": [
         63,
         94
       ],
-      "text": "Zoo Promenade \u2014 broad brick walk linking Woodley Park village to the Zoo Gate."
+      "text": "Zoo Promenade — broad brick walk linking Woodley Park village to the Zoo Gate."
     },
     {
       "at": [
@@ -1303,91 +1303,91 @@
         22,
         12
       ],
-      "text": "Great Aviary \u2014 iron mesh dome rising above the northeast ridge."
+      "text": "Great Aviary — iron mesh dome rising above the northeast ridge."
     },
     {
       "at": [
         30,
         8
       ],
-      "text": "Old Animal Hospital \u2014 dark shuttered clinic west across Rock Creek Bridge."
+      "text": "Old Animal Hospital — dark shuttered clinic west across Rock Creek Bridge."
     },
     {
       "at": [
         48,
         10
       ],
-      "text": "Rock Creek Bridge \u2014 steel deck crossing the winding diagonal creek."
+      "text": "Rock Creek Bridge — steel deck crossing the winding diagonal creek."
     },
     {
       "at": [
         66,
-        10
+        9
       ],
-      "text": "Northwest Paddock Gate \u2014 iron latch unhooked, fence rails open to the grass."
+      "text": "Northwest Paddock Gate — iron latch unhooked, fence rails open to the grass."
     },
     {
       "at": [
         82,
         10
       ],
-      "text": "Northeast Paddock Gate \u2014 open pasture surrounding the watering pond."
+      "text": "Northeast Paddock Gate — open pasture surrounding the watering pond."
     },
     {
       "at": [
         95,
         11
       ],
-      "text": "Southwest Paddock Gate \u2014 wide grass enclosure beneath overhanging oaks."
+      "text": "Southwest Paddock Gate — wide grass enclosure beneath overhanging oaks."
     },
     {
       "at": [
         108,
         12
       ],
-      "text": "Southeast Paddock Gate \u2014 twin watering hole glittering beside the open gate."
+      "text": "Southeast Paddock Gate — twin watering hole glittering beside the open gate."
     },
     {
       "at": [
         8,
         26
       ],
-      "text": "Central Zoo Spine \u2014 gravel hill climbing from the Zoo Gate toward the Aviary."
+      "text": "Central Zoo Spine — gravel hill climbing from the Zoo Gate toward the Aviary."
     },
     {
       "at": [
         12,
         18
       ],
-      "text": "Rock Creek Trail Gate \u2014 wooded footpath south toward Georgetown."
+      "text": "Rock Creek Trail Gate — wooded footpath south toward Georgetown."
     },
     {
       "at": [
         18,
         24
       ],
-      "text": "Connecticut Avenue Gate \u2014 road south over Taft Bridge to Dupont Circle."
+      "text": "Connecticut Avenue Gate — road south over Taft Bridge to Dupont Circle."
     },
     {
       "at": [
         30,
         26
       ],
-      "text": "North Creek Ravine \u2014 mossy boulders tumbling down to the stream."
+      "text": "North Creek Ravine — mossy boulders tumbling down to the stream."
     },
     {
       "at": [
         40,
         24
       ],
-      "text": "East Aviary Steps \u2014 stone stair climbing toward the hilltop dome."
+      "text": "East Aviary Steps — stone stair climbing toward the hilltop dome."
     },
     {
       "at": [
         34,
         18
       ],
-      "text": "West Paddock Overlook \u2014 wooden viewing deck facing the quiet watering hole."
+      "text": "West Paddock Overlook — wooden viewing deck facing the quiet watering hole."
     }
   ],
   "hidden_items": [

@@ -11,8 +11,8 @@
     "TTTTTTTTTTTTTTTTTT!.TTTTTTTTTTTTTT.............TTTTTTT..TTTT...........T...........TTTTTTTTTTTTTTTT..TTT...........TT...TTTTTT..TTTTTTTTTTTTTTTTT.TTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTT..TTTTTTTTTTTTTT.............TTTTTT...TTTT...........T...........TTTTTTTTTTTTTTT...TTT...........TT..TTTTTTT...TTTTTTTTTTTTTT...TTTTTTTTTTTTTT",
     "TTTTTTTTTTTT.TTTT-,TTTTTTTT,TTTT.T...........,,.TTTT.T.,T.TT...........T...........TTTT.TTTTTTTTT.T,,T.T...........TT,,TTTTTTT,,TTTTTTTTTTTTTT.T,,T.TTTTTTTTTTTT",
-    "TTTTTTTTTTT,,,,...TTTTTTTT.,,,,,,............,,,,,,...,,,,,,...........T...........,,,,.TTTTTTTT...,,,,,.............,,TTTTTTTT,,,.........,,...,,,,,,..TTTTTTTT",
-    "TTTTTTTTTT-,...,,TTTTTTTTTT,,,...,...........,,,...,***,,..............T...........,...TTTTTTTTTT,,,.,.............,,,.TTTTTTTT-,............,,,,,,...!,TTTTTTTT",
+    "TTTTTTTTTTT,,,,...TTTTTTTT.,,,,,,............,,,,,,...,,,,,,...........T...........,,,,.TTTTTTTT...,,,,,.............,,TTTTTTTT,,,.........,,...,,,,,,!.TTTTTTTT",
+    "TTTTTTTTTT-,...,,TTTTTTTTTT,,,...,...........,,,...,***,,..............T...........,...TTTTTTTTTT,,,.,.............,,,.TTTTTTTT-,............,,,,,,....,TTTTTTTT",
     "TTTTTTTTTT,TTT.TTTTTTTTTTTT,,.TTTT...........,,TT.TT***,TTT............T...........-.TTTTTTTTTTTTTT,,TTT...........TT,,TTTTTTTT-T...........TTTT,,TTT.TTTTTTTTTT",
     "TTTTTTTTTT.TTTTTTTTTTTTTTTT..TTTTT.............TTTTTT...TTTT...........T...........-TTTTTTTTTTTTTT...TTT...........TT..TTTTTTTT-.T.........TTTT..***.TTTTTTTTTTT",
     "TTTTTTTTT..TTTTTTTTTTTTTTTT..TTTTT..............TTTTTT..TTTT...........T...........-TTTTTTTTTTTTTTT..TTT...........TT..TTTTTTTT-TT.........TTTTT.***TTTTTTTTTTTT",
@@ -25,8 +25,8 @@
     "TTTTTTTTT,,,,#==========================================================================!=====================!===================================#,,T.TTTTTTTTT",
     "TTTTTTTTT,,,,#====================================================================================================================================#,,.TTTTTTTTTT",
     "TTTTTTTT.,.,.#===#####################################===#####################################===#####!###############!#######===##############===#..TTTTTTTTTTT",
-    "TTTTTTTTT,,,.#===#,,,...,,,,,,...,,,,,,...,..........#===#...................................#===#......vvvvvvvTTTTTT........#===#..........TT#===#..TTTTTTTTTTT",
-    "TTTTTTTTT....#===#...................................#===#................!............,,,TTT#===#............####TTTvvvvvv..#===#........!.TT#===#..TTTTTTTTTTT",
+    "TTTTTTTTT,,,.#===#,,,...,,,,,,...,,,,,,...,..........#===#...................................#===#......vvvvvvvTTTTTT........#===#........!.TT#===#..TTTTTTTTTTT",
+    "TTTTTTTTT....#===#...................................#===#................!............,,,TTT#===#............####TTTvvvvvv..#===#..........TT#===#..TTTTTTTTTTT",
     "TTTTTTTTT....#===#.,,TTTT.T..T.TTTT...TTTTTTT,,TTT...#===#...TT................T...TT.TTTTTTT#===#............####.T.........#===#..TTT..TTTTT#===#..TTTTTTTTTTT",
     "TTTTTTTTT....#==!#,,TTTT,TT,,,TTTT.T..T.TTTT,,,TT,T,,#===#..TTT.................T.!T.TTTT,,..#!==#...*****....####....*****..#===#..TT...TT...#===#...TTTTTTTTTT",
     "TTTTTTTTT....#===#,,,,,,,,,,,,,.......,,,,,,,,,,,,,,,#===#...........................,,,,,,..#===#...*****....####....*****..#===#....ccc.....#===#......TTTTTTT",
@@ -47,13 +47,13 @@
     "TTTTTTTT.....#===#,,TTTTTTT..######..........---TTT..---...--######################...---...-#===#..................---......#==#################=#..TTTTTTTTTTT",
     "TTTTTTT.TTTT.#===#..TT,TTTT..######...............TTTTkTTTTT.######################..........#===#...........................#===##############===#..TTTTTTTTTTT",
     "TTTTT....TTT.#===#..........T######..................---=#...................................#===#...........................#===##############===#.....TTTTTTTT",
-    "TTTTT........#===#..........T######.............T..T.---=#..T..T..T........T..T.##..T........#===#.T..T..T..T.....T..T..T..T.#===###T##########===#.....TTTTTTTT",
-    "-------------------.........T######..........--......#===#......................##......--...#==...............--............#===#......--....#===#.....TTTTTTTT",
+    "TTTTT........#===#..........T######.............T..T.---=#..T..T..T........T........T........#===#.......T..T.....T..T..T..T.#===###T##########===#.....TTTTTTTT",
+    "-------------------.........T######..........--......#===#..............................--...#==...............--............#===#......--....#===#.....TTTTTTTT",
     "----------------------------F######--....--------------.....-....-........----------.....-....--.........--------------------------------------===#....TTTTTTTTT",
     "----------------------------F######--....--------------.....-....-........----------.....-....--.........--------------------------------------===#....TTTTTTTTT",
     "----------------------------F#######-------------------.....-....-........----------.....-....--.........--------------------------------------===#.....TTTTTTTT",
     "TTTTTT......T#===#...TTT.###F##########......--......#=..................................-....==...............--............#===#,,....--....#===#....TTTTTTTTT",
-    "TTTTTT......T#===#......#############........--.T..T.#===#-.T.---..........T..T..T..T-----.--#==........-T,,T..--.T..T,,T,,T.#===#,,T...--....#===#....TT.TTTTTT",
+    "TTTTTT......T#===#......#############........--.T..T.#===#-.T.---..........T..T..T...-----.--#==........-T,,T..--.T..T,,T,,T.#===#,,T...--....#===#....TT.TTTTTT",
     "TTTTTTTT....T#===#.F..###############....#...--.....,#===#..............................--...#==..........,,,,,--...,,,,,,,,,#===#,,,...--....#===#**..TT.TTTTTT",
     "TTTTTTT.T....#===#.F..###############....#...--.....,#===#..........-----...............--...#===#---.....,,,,,--,,,,,,,,,,,,#===#,,,...--....#===#**..T...TTTTT",
     "TTTTTTT......#===#.F.###**###########....##..--....,,#===#.............--...............--...#===#........,,,,,--,,,,,,,,,,,,#===#,,,,..--....#===#........TTTTT",
@@ -499,7 +499,7 @@
     {
       "stamp": "tree_cherry",
       "at": [
-        127,
+        124,
         39
       ]
     },
@@ -779,7 +779,7 @@
       "kind": "standin_bench",
       "at": [
         38,
-        61
+        64
       ]
     },
     {
@@ -835,14 +835,14 @@
       "kind": "standin_bench",
       "at": [
         97,
-        44
+        45
       ]
     },
     {
       "kind": "standin_bench",
       "at": [
         99,
-        44
+        45
       ]
     },
     {
@@ -914,7 +914,7 @@
       "sprite": "woman_1",
       "role": "elder",
       "lines": [
-        "Wind howls straight up the Monument shaft \u2014 climb to the top lookout if you have the nerve.",
+        "Wind howls straight up the Monument shaft — climb to the top lookout if you have the nerve.",
         "Stand at the base and look east: the whole green Mall lawn runs unbroken between the museums."
       ]
     },
@@ -943,7 +943,7 @@
       "sprite": "gentleman",
       "role": "talk",
       "lines": [
-        "Air and Space still holds its suspended flyer under the glass roof \u2014 go on inside."
+        "Air and Space still holds its suspended flyer under the glass roof — go on inside."
       ]
     }
   ],
@@ -1059,217 +1059,217 @@
         34,
         59
       ],
-      "text": "Washington Monument \u2014 marble obelisk rising on the west Mall knoll."
+      "text": "Washington Monument — marble obelisk rising on the west Mall knoll."
     },
     {
       "at": [
         71,
         36
       ],
-      "text": "Smithsonian Castle \u2014 red sandstone towers overlooking the central lawn."
+      "text": "Smithsonian Castle — red sandstone towers overlooking the central lawn."
     },
     {
       "at": [
         134,
         41
       ],
-      "text": "National Air and Space Museum \u2014 hangar doors open to the flight gallery."
+      "text": "National Air and Space Museum — hangar doors open to the flight gallery."
     },
     {
       "at": [
         78,
         52
       ],
-      "text": "National Mall Waypost \u2014 long elm-lined lawn between twin museum rows."
+      "text": "National Mall Waypost — long elm-lined lawn between twin museum rows."
     },
     {
       "at": [
         46,
         37
       ],
-      "text": "Mall Ranger Station \u2014 trail maps for Monument Grounds and Tidal Basin."
+      "text": "Mall Ranger Station — trail maps for Monument Grounds and Tidal Basin."
     },
     {
       "at": [
         56,
         34
       ],
-      "text": "Conservatory Tool Shed \u2014 pruning shears oiled for the Mall elms."
+      "text": "Conservatory Tool Shed — pruning shears oiled for the Mall elms."
     },
     {
       "at": [
         85,
         36
       ],
-      "text": "Mall Reading Room \u2014 glass pavilion facing the Sculpture Garden."
+      "text": "Mall Reading Room — glass pavilion facing the Sculpture Garden."
     },
     {
       "at": [
         104,
         39
       ],
-      "text": "Sculpture Garden Pond \u2014 stone bridge spanning the lily water."
+      "text": "Sculpture Garden Pond — stone bridge spanning the lily water."
     },
     {
       "at": [
         104,
         29
       ],
-      "text": "Sculpture Garden North \u2014 bronze figures mirrored in the quiet basin."
+      "text": "Sculpture Garden North — bronze figures mirrored in the quiet basin."
     },
     {
       "at": [
         120,
         36
       ],
-      "text": "Surveyor's Workshop \u2014 brass theodolites pointed toward the obelisk."
+      "text": "Surveyor's Workshop — brass theodolites pointed toward the obelisk."
     },
     {
       "at": [
         125,
         42
       ],
-      "text": "Flight Signal Annex \u2014 weather vanes ticking above the east portico."
+      "text": "Flight Signal Annex — weather vanes ticking above the east portico."
     },
     {
       "at": [
         68,
         54
       ],
-      "text": "Castle Gatehouse \u2014 gravel walk opening onto the long central lawn."
+      "text": "Castle Gatehouse — gravel walk opening onto the long central lawn."
     },
     {
       "at": [
         35,
         48
       ],
-      "text": "Monument Knoll Steps \u2014 fifty empty flagpoles ringing the marble rise."
+      "text": "Monument Knoll Steps — fifty empty flagpoles ringing the marble rise."
     },
     {
       "at": [
         12,
-        10
+        8
       ],
-      "text": "Monument Grounds Gate \u2014 wooded path south toward the Tidal Basin."
+      "text": "Monument Grounds Gate — wooded path south toward the Tidal Basin."
     },
     {
       "at": [
         28,
         12
       ],
-      "text": "Constitution Gardens Gate \u2014 calm lake trail west toward Lincoln Memorial."
+      "text": "Constitution Gardens Gate — calm lake trail west toward Lincoln Memorial."
     },
     {
       "at": [
         46,
         12
       ],
-      "text": "Pennsylvania Avenue Gate \u2014 grand avenue east toward Capitol Hill."
+      "text": "Pennsylvania Avenue Gate — grand avenue east toward Capitol Hill."
     },
     {
       "at": [
         54,
         8
       ],
-      "text": "Central Mall Lawn \u2014 long west-east greensward framed by neat elm rows."
+      "text": "Central Mall Lawn — long west-east greensward framed by neat elm rows."
     },
     {
       "at": [
         84,
         10
       ],
-      "text": "North Elm Walk \u2014 gravel promenade beneath twin rows of American elms."
+      "text": "North Elm Walk — gravel promenade beneath twin rows of American elms."
     },
     {
       "at": [
         100,
         10
       ],
-      "text": "South Elm Walk \u2014 wooden benches facing the central green."
+      "text": "South Elm Walk — wooden benches facing the central green."
     },
     {
       "at": [
         118,
         10
       ],
-      "text": "Natural History Steps \u2014 limestone columns along Constitution Avenue."
+      "text": "Natural History Steps — limestone columns along Constitution Avenue."
     },
     {
       "at": [
         126,
         6
       ],
-      "text": "National Gallery Portico \u2014 silent dome facing the east Mall lawn."
+      "text": "National Gallery Portico — silent dome facing the east Mall lawn."
     },
     {
       "at": [
         140,
-        10
+        9
       ],
-      "text": "American History Wing \u2014 sandstone facade along the northwest row."
+      "text": "American History Wing — sandstone facade along the northwest row."
     },
     {
       "at": [
         10,
         22
       ],
-      "text": "Independence Avenue Walk \u2014 southern museum row under flowering trees."
+      "text": "Independence Avenue Walk — southern museum row under flowering trees."
     },
     {
       "at": [
         24,
-        24
+        22
       ],
-      "text": "Hirshhorn Terrace \u2014 sunken concrete garden along the south promenade."
+      "text": "Hirshhorn Terrace — sunken concrete garden along the south promenade."
     },
     {
       "at": [
         18,
         18
       ],
-      "text": "East Mall Vista \u2014 clear sightline from the obelisk to Capitol Hill."
+      "text": "East Mall Vista — clear sightline from the obelisk to Capitol Hill."
     },
     {
       "at": [
         40,
-        24
+        23
       ],
-      "text": "West Lawn Crosswalk \u2014 stone path cutting north-south across the grass."
+      "text": "West Lawn Crosswalk — stone path cutting north-south across the grass."
     },
     {
       "at": [
         34,
         18
       ],
-      "text": "Mid-Mall Crosswalk \u2014 flower beds bright between the elm rows."
+      "text": "Mid-Mall Crosswalk — flower beds bright between the elm rows."
     },
     {
       "at": [
         52,
         24
       ],
-      "text": "East Elm Crosswalk \u2014 weathered bronze plaques marking the museum mile."
+      "text": "East Elm Crosswalk — weathered bronze plaques marking the museum mile."
     },
     {
       "at": [
         68,
         18
       ],
-      "text": "West Monument Meadow \u2014 grassy knoll curving down toward Constitution Gardens."
+      "text": "West Monument Meadow — grassy knoll curving down toward Constitution Gardens."
     },
     {
       "at": [
         58,
         16
       ],
-      "text": "South Museum Courtyard \u2014 sandstone arches framing the quiet gallery walk."
+      "text": "South Museum Courtyard — sandstone arches framing the quiet gallery walk."
     },
     {
       "at": [
         64,
         26
       ],
-      "text": "Constitution Terrace \u2014 broad avenue fronting the north Smithsonian domes."
+      "text": "Constitution Terrace — broad avenue fronting the north Smithsonian domes."
     }
   ],
   "hidden_items": [

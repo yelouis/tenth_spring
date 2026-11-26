@@ -2239,7 +2239,7 @@ func _erase_collected_ball_visual(global_tile: Vector2i) -> void:
 		var buf: PackedByteArray = item.get("buf", PackedByteArray())
 		var tidx := (ty * 32 + tx) * 3
 		if tidx + 2 < buf.size():
-			var nb := _sign_pavement_neighbor(buf, tx, ty)
+			var nb := _paving_under_tile(cell.x, cell.y, tx, ty, buf)
 			if nb.x >= 0:
 				repl_coord = get_atlas_coords(nb.x, 0, nb.y)
 				buf[tidx] = nb.x
@@ -3109,23 +3109,65 @@ func _blit_cell_to_overview_chunk(cx: int, cy: int, cell_img: Image) -> void:
 	chunk_img_ref.blit_rect(cell_img, Rect2i(0, 0, 32, 32), Vector2i(dst_x, dst_y))
 	_dirty_overview_chunks[chunk_key] = true
 
+func _effective_class_in_compiled(comp: Dictionary, lx: int, ly: int, resolve_objects: bool = true) -> int:
+	var w := int(comp.get("w", 0))
+	var h := int(comp.get("h", 0))
+	if lx < 0 or lx >= w or ly < 0 or ly >= h:
+		return TileSynth2.TILE_VOID
+	var cls_buf: PackedByteArray = comp["class"]
+	var c: int = cls_buf[ly * w + lx]
+	if resolve_objects and (c == TileSynth2.TILE_ITEM_BALL or c == TileSynth2.TILE_SIGN):
+		var nc := _effective_class_in_compiled(comp, lx, ly - 1, false)
+		var ec := _effective_class_in_compiled(comp, lx + 1, ly, false)
+		var sc := _effective_class_in_compiled(comp, lx, ly + 1, false)
+		var wc := _effective_class_in_compiled(comp, lx - 1, ly, false)
+		var pcls := TileSynth2.resolve_paving_class_from_neighbors(nc, ec, sc, wc)
+		return pcls if pcls >= 0 else TileSynth2.TILE_GRASS
+	return c
+
+func _paving_under_tile(cx: int, cy: int, tx: int, ty: int, tile_buf: PackedByteArray) -> Vector2i:
+	# Decision 82 (Item 82 / F106): Treat the ball or sign tile as the surrounding paving class
+	# and compute its OWN 4-bit edge mask with TileSynth2's exact mask family (never copy a neighbor's mask).
+	var n_cls := TileSynth2.TILE_VOID
+	var e_cls := TileSynth2.TILE_VOID
+	var s_cls := TileSynth2.TILE_VOID
+	var w_cls := TileSynth2.TILE_VOID
+	var used_compiled := false
+	if _is_caricature_place and _walker_grid != null:
+		var gst := _global_screen_tile(cx, cy, tx, ty)
+		var aid := _walker_grid.area_at_global(gst.x, gst.y)
+		if not aid.is_empty() and _caricature_compiled_by_area.has(aid):
+			var comp: Dictionary = _caricature_compiled_by_area[aid]
+			var loc := CaricatureWalkerGrid.global_to_local(comp, gst.x, gst.y)
+			n_cls = _effective_class_in_compiled(comp, loc.x, loc.y - 1, true)
+			e_cls = _effective_class_in_compiled(comp, loc.x + 1, loc.y, true)
+			s_cls = _effective_class_in_compiled(comp, loc.x, loc.y + 1, true)
+			w_cls = _effective_class_in_compiled(comp, loc.x - 1, loc.y, true)
+			used_compiled = true
+	if not used_compiled:
+		if ty > 0:
+			n_cls = int(tile_buf[((ty - 1) * 32 + tx) * 3])
+		if tx < 31:
+			e_cls = int(tile_buf[(ty * 32 + (tx + 1)) * 3])
+		if ty < 31:
+			s_cls = int(tile_buf[((ty + 1) * 32 + tx) * 3])
+		if tx > 0:
+			w_cls = int(tile_buf[(ty * 32 + (tx - 1)) * 3])
+	var pave_cls := TileSynth2.resolve_paving_class_from_neighbors(n_cls, e_cls, s_cls, w_cls)
+	if pave_cls < 0:
+		return Vector2i(-1, 0)
+	var own_mask := TileSynth2.compute_paving_mask_from_neighbors(pave_cls, n_cls, e_cls, s_cls, w_cls)
+	return Vector2i(pave_cls, own_mask)
+
 func _sign_pavement_neighbor(tile_buf: PackedByteArray, tx: int, ty: int) -> Vector2i:
-	var best := Vector2i(-1, 0)
-	var hits := 0
-	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		var nx: int = tx + d.x
-		var ny: int = ty + d.y
-		if nx < 0 or nx >= 32 or ny < 0 or ny >= 32:
-			continue
-		var nidx := (ny * 32 + nx) * 3
-		if nidx + 2 >= tile_buf.size():
-			continue
-		var ncls: int = tile_buf[nidx]
-		if ncls == TileSynth2.TILE_PLAZA or ncls == TileSynth2.TILE_PATH or ncls == TileSynth2.TILE_ROAD or ncls == TileSynth2.TILE_SAND:
-			hits += 1
-			if best.x < 0 or ncls == TileSynth2.TILE_PLAZA or ncls == TileSynth2.TILE_ROAD:
-				best = Vector2i(ncls, int(tile_buf[nidx + 2]))
-	return best if hits >= 2 else Vector2i(-1, 0)
+	var n_cls := int(tile_buf[((ty - 1) * 32 + tx) * 3]) if ty > 0 else TileSynth2.TILE_VOID
+	var e_cls := int(tile_buf[(ty * 32 + (tx + 1)) * 3]) if tx < 31 else TileSynth2.TILE_VOID
+	var s_cls := int(tile_buf[((ty + 1) * 32 + tx) * 3]) if ty < 31 else TileSynth2.TILE_VOID
+	var w_cls := int(tile_buf[(ty * 32 + (tx - 1)) * 3]) if tx > 0 else TileSynth2.TILE_VOID
+	var pave_cls := TileSynth2.resolve_paving_class_from_neighbors(n_cls, e_cls, s_cls, w_cls)
+	if pave_cls < 0:
+		return Vector2i(-1, 0)
+	return Vector2i(pave_cls, TileSynth2.compute_paving_mask_from_neighbors(pave_cls, n_cls, e_cls, s_cls, w_cls))
 
 
 func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
@@ -3159,10 +3201,10 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 						if not b_aid.is_empty() and _caricature_compiled_by_area.has(b_aid):
 							var b_loc := CaricatureWalkerGrid.global_to_local(_caricature_compiled_by_area[b_aid], gst.x, gst.y)
 							if _walker_grid.is_ball_collected(b_aid, b_loc.x, b_loc.y):
-								var nb_b := _sign_pavement_neighbor(tile_buf, tx, ty)
+								var nb_b := _paving_under_tile(cx, cy, tx, ty, tile_buf)
 								base_coord = get_atlas_coords(nb_b.x, 0, nb_b.y) if nb_b.x >= 0 else get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
 					if not _force_no_rom and cls == TileSynth2.TILE_SIGN:
-						var nb := _sign_pavement_neighbor(tile_buf, tx, ty)
+						var nb := _paving_under_tile(cx, cy, tx, ty, tile_buf)
 						if nb.x >= 0:
 							base_coord = get_atlas_coords(nb.x, 0, nb.y)
 					var top_st := st + Vector2i(0, -1)
@@ -3931,7 +3973,7 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 			for tx in 32:
 				var tidx := (ty * 32 + tx) * 3
 				if int(tile_buf[tidx]) == TileSynth2.TILE_SIGN:
-					var nb := _sign_pavement_neighbor(tile_buf, tx, ty)
+					var nb := _paving_under_tile(cx, cy, tx, ty, tile_buf)
 					if nb.x >= 0:
 						if sign_res == null:
 							sign_res = OutdoorFixtures.resolve_texture("em_wood_sign", false)

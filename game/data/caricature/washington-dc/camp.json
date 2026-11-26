@@ -26,7 +26,7 @@
     "TTTTTTTTT-F---.......TT--T...........T---TT........FFF..TTTTTTTT",
     "TTTTTTTTT-F---.......TT--T............---.*..........F.*TTTTTTTT",
     "TTTTTTTTT-----.........--.............---............FTTTTTTTTTT",
-    "TTTTTTTTT-----.........--.............---.............TTTTTTTTTT",
+    "TTTTTTTTT-----.........--.............---..............*.TTTTTTT",
     "TTTTTTTTT....-------------.----------.-----------.....TTTTTTTTTT",
     "TTTTTTTTT....-------------.----------.-----------.....TTTTTTTTTT",
     "TTTTTTTTT..*..................---..*..TTT.....*.......T.TTTTTTTT",
@@ -51,7 +51,7 @@
     "TTTTTTTTTT...........TTTT..F..---...F..TTT--...........TTTTTTTTT",
     "TTTTTTTTTT...*...*...TTTT..F..---...F..TTT--.......FFF.TTTTTTTTT",
     "TTTTTTTTTT................*...---.....!...--.*.........TTTTTTTTT",
-    "TTTTTTTTTT..---------------------...T.....--...........TTTTTTTTT",
+    "TTTTTTTT*...---------------------...T.....--...........TTTTTTTTT",
     "TTTTTTTTTT..---------------------.........------------.TTTTTTTTT",
     "TTTTTTTTTT..--.ccc--ccc.--....---.........------------.TTTTTTTTT",
     "TTTTTTTTTT..--.ccc--ccc.--....---........*........*....TTTTTTTTT",
@@ -61,10 +61,10 @@
     "TTTTTTTTTT..--.ccc--ccc.--....----------.-~~~~~~~-.---.TTTTTTTTT",
     "TTTTTTTTTT.*--.ccc--ccc.--.*..---.......*.~~~~~~~-.---.TTTTTTTTT",
     "TTTTTTTTT...---------------------...........~~~~~-----.TTTTTTTTT",
-    "TTTTTTTTT...------------------#####.*....-------------.TTTTTTTTT",
-    "TTTTTTTTT..T.................######......-----------.!*TTTTTTTTT",
+    "TTTTTTTTT...------------------#####.*....------------!.TTTTTTTTT",
+    "TTTTTTTTT..T.................######......-----------.-*TTTTTTTTT",
     "TTTTTTTTT......*........*...*######......T....*......T.TTTTTTTTT",
-    "TTTTTTTTT.......TTTTTT.TTTTT.######....................TTTTTTTTT",
+    "TTTTTTTTT.......TTTTTT.TTTT..######....................TTTTTTTTT",
     "TTTTTTTTTTTTT.TTTTTTTT.TTTTTT.---.TTTT..T.TTT..TTTT.TTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTT.---.TTTT.TTTTTT.TTTTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTTTTTTTTTTTTTTTTTTT.---.TTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
@@ -534,8 +534,8 @@
     {
       "kind": "em_iron_fence_h",
       "at": [
-        28,
-        53
+        27,
+        52
       ]
     },
     {
@@ -569,8 +569,8 @@
     {
       "kind": "em_wood_sign",
       "at": [
-        28,
-        54
+        26,
+        52
       ]
     }
   ],
@@ -692,7 +692,7 @@
       "name": "Little Rose",
       "at": [
         40,
-        34
+        33
       ],
       "facing": "N",
       "sprite": "child_girl",
@@ -807,133 +807,133 @@
         35,
         27
       ],
-      "text": "Waypost Central Square \u2014 infirmary north, market west, gate south."
+      "text": "Waypost Central Square — infirmary north, market west, gate south."
     },
     {
       "at": [
         29,
         17
       ],
-      "text": "Waypost Infirmary \u2014 clean cots and boiled water inside."
+      "text": "Waypost Infirmary — clean cots and boiled water inside."
     },
     {
       "at": [
         22,
         17
       ],
-      "text": "North Lane \u2014 family cottages and spare sleeping lofts."
+      "text": "North Lane — family cottages and spare sleeping lofts."
     },
     {
       "at": [
         13,
         10
       ],
-      "text": "West Clearing \u2014 firewood stacked neatly under canvas."
+      "text": "West Clearing — firewood stacked neatly under canvas."
     },
     {
       "at": [
         24,
         10
       ],
-      "text": "Infirmary Well \u2014 spare rainwater cask checked each morning."
+      "text": "Infirmary Well — spare rainwater cask checked each morning."
     },
     {
       "at": [
         48,
         10
       ],
-      "text": "North Pines \u2014 owl boxes hung on the tall oaks behind the row."
+      "text": "North Pines — owl boxes hung on the tall oaks behind the row."
     },
     {
       "at": [
         51,
         17
       ],
-      "text": "Northeast Green \u2014 leave muddy tools under the eaves."
+      "text": "Northeast Green — leave muddy tools under the eaves."
     },
     {
       "at": [
         44,
         24
       ],
-      "text": "Carpenter's Yard \u2014 fresh-planed cedar boards drying in the breeze."
+      "text": "Carpenter's Yard — fresh-planed cedar boards drying in the breeze."
     },
     {
       "at": [
         10,
         26
       ],
-      "text": "West Bazaar \u2014 morning trade until midday bell."
+      "text": "West Bazaar — morning trade until midday bell."
     },
     {
       "at": [
         17,
         36
       ],
-      "text": "Trading Post \u2014 dry rations and twine swapped inside."
+      "text": "Trading Post — dry rations and twine swapped inside."
     },
     {
       "at": [
         12,
         43
       ],
-      "text": "Southwest Row \u2014 stacked salvage timber from old roofs."
+      "text": "Southwest Row — stacked salvage timber from old roofs."
     },
     {
       "at": [
         33,
         39
       ],
-      "text": "Central Walk \u2014 garden beds west, pond east, south gate ahead."
+      "text": "Central Walk — garden beds west, pond east, south gate ahead."
     },
     {
       "at": [
         19,
         41
       ],
-      "text": "Community Garden \u2014 turn soil gently around new shoots."
+      "text": "Community Garden — turn soil gently around new shoots."
     },
     {
       "at": [
         26,
         46
       ],
-      "text": "South Garden Gate \u2014 keep tool handles oiled and hung in the shed."
+      "text": "South Garden Gate — keep tool handles oiled and hung in the shed."
     },
     {
       "at": [
         14,
         51
       ],
-      "text": "South Garden Bed \u2014 frost cloth rolled in the wooden bin."
+      "text": "South Garden Bed — frost cloth rolled in the wooden bin."
     },
     {
       "at": [
         40,
-        18
+        17
       ],
-      "text": "Route Log \u2014 Q Street bridge timbers still sound; watch west mist."
+      "text": "Route Log — Q Street bridge timbers still sound; watch west mist."
     },
     {
       "at": [
         51,
         34
       ],
-      "text": "Lamplighter Workshop \u2014 spare brass chimneys and wick oil."
+      "text": "Lamplighter Workshop — spare brass chimneys and wick oil."
     },
     {
       "at": [
         52,
         50
       ],
-      "text": "East Spring Pond \u2014 cool spring water fed from the northern ridge."
+      "text": "East Spring Pond — cool spring water fed from the northern ridge."
     },
     {
       "at": [
         29,
         54
       ],
-      "text": "South Gate \u2014 check out with the watch before crossing the trees."
+      "text": "South Gate — check out with the watch before crossing the trees."
     }
   ],
   "hidden_items": [

@@ -1031,7 +1031,7 @@
       "sprite": "hiker",
       "role": "talk",
       "lines": [
-        "Every cherry tree around the basin bloomed together this spring \u2014 the Tenth Bloom.",
+        "Every cherry tree around the basin bloomed together this spring — the Tenth Bloom.",
         "Jefferson's dome still reflects clean across the round water at sunrise."
       ]
     },
@@ -1190,91 +1190,91 @@
         63,
         34
       ],
-      "text": "Jefferson Memorial \u2014 white marble rotunda gazing south across the Tidal Basin."
+      "text": "Jefferson Memorial — white marble rotunda gazing south across the Tidal Basin."
     },
     {
       "at": [
         36,
         19
       ],
-      "text": "Cherry Grove Arborist \u2014 pruning logs for the Tenth Bloom kept inside."
+      "text": "Cherry Grove Arborist — pruning logs for the Tenth Bloom kept inside."
     },
     {
       "at": [
         54,
         22
       ],
-      "text": "West Jefferson Terrace \u2014 pink petals resting on the marble balustrade."
+      "text": "West Jefferson Terrace — pink petals resting on the marble balustrade."
     },
     {
       "at": [
         76,
         21
       ],
-      "text": "East Jefferson Terrace \u2014 clear sightline south to the basin rim."
+      "text": "East Jefferson Terrace — clear sightline south to the basin rim."
     },
     {
       "at": [
         88,
         19
       ],
-      "text": "Basin Weather Office \u2014 tide charts and wind gauges pinned on the wall."
+      "text": "Basin Weather Office — tide charts and wind gauges pinned on the wall."
     },
     {
       "at": [
         100,
         50
       ],
-      "text": "Basin Paddle Boathouse \u2014 cedar skiffs moored along the east inlet dock."
+      "text": "Basin Paddle Boathouse — cedar skiffs moored along the east inlet dock."
     },
     {
       "at": [
         100,
         69
       ],
-      "text": "Skiff Carpenter's Shed \u2014 fresh pitch and oars stacked neatly inside."
+      "text": "Skiff Carpenter's Shed — fresh pitch and oars stacked neatly inside."
     },
     {
       "at": [
         100,
         86
       ],
-      "text": "East Quay Steps \u2014 timber slips descending to the south landing."
+      "text": "East Quay Steps — timber slips descending to the south landing."
     },
     {
       "at": [
         63,
         96
       ],
-      "text": "South Basin Square \u2014 Waypost lantern facing the cherry blossom rim."
+      "text": "South Basin Square — Waypost lantern facing the cherry blossom rim."
     },
     {
       "at": [
         46,
         94
       ],
-      "text": "South Basin Cottages \u2014 quiet lane overlooking the west inlet bridge."
+      "text": "South Basin Cottages — quiet lane overlooking the west inlet bridge."
     },
     {
       "at": [
         83,
         96
       ],
-      "text": "Orchard Seed Room \u2014 cherry grafts dried beside the hearth."
+      "text": "Orchard Seed Room — cherry grafts dried beside the hearth."
     },
     {
       "at": [
         63,
         14
       ],
-      "text": "Monument Grounds Approach \u2014 avenue north toward the Washington Monument."
+      "text": "Monument Grounds Approach — avenue north toward the Washington Monument."
     },
     {
       "at": [
         36,
         33
       ],
-      "text": "West Cherry Overlook \u2014 gnarled Yoshino boughs leaning over the basin rim."
+      "text": "West Cherry Overlook — gnarled Yoshino boughs leaning over the basin rim."
     },
     {
       "at": [
@@ -1288,70 +1288,70 @@
         12,
         12
       ],
-      "text": "West Potomac Park Gate \u2014 calm river trail west toward Lincoln Memorial."
+      "text": "West Potomac Park Gate — calm river trail west toward Lincoln Memorial."
     },
     {
       "at": [
         26,
-        10
+        9
       ],
-      "text": "Monument Grounds North \u2014 wooded walk rising toward the National Mall."
+      "text": "Monument Grounds North — wooded walk rising toward the National Mall."
     },
     {
       "at": [
         38,
-        10
+        9
       ],
-      "text": "West Inlet Footbridge \u2014 wooden planks spanning the Potomac channel."
+      "text": "West Inlet Footbridge — wooden planks spanning the Potomac channel."
     },
     {
       "at": [
         54,
         10
       ],
-      "text": "East Inlet Footbridge \u2014 stone pilings facing the channel mouth."
+      "text": "East Inlet Footbridge — stone pilings facing the channel mouth."
     },
     {
       "at": [
         46,
         6
       ],
-      "text": "West Cherry Promenade \u2014 pink petals drifted deep along the water's edge."
+      "text": "West Cherry Promenade — pink petals drifted deep along the water's edge."
     },
     {
       "at": [
-        66,
-        10
+        67,
+        8
       ],
-      "text": "South Orchard Trail \u2014 quiet lane behind the village gardens."
+      "text": "South Orchard Trail — quiet lane behind the village gardens."
     },
     {
       "at": [
         78,
         10
       ],
-      "text": "Northwest Blossom Grove \u2014 gnarled cherry boughs arching over the bend."
+      "text": "Northwest Blossom Grove — gnarled cherry boughs arching over the bend."
     },
     {
       "at": [
-        94,
-        10
+        96,
+        9
       ],
-      "text": "Southeast Channel Overlook \u2014 tidal current pulling gently toward the river."
+      "text": "Southeast Channel Overlook — tidal current pulling gently toward the river."
     },
     {
       "at": [
         108,
         12
       ],
-      "text": "West Channel Bank \u2014 mossy stone wall holding back the high tide."
+      "text": "West Channel Bank — mossy stone wall holding back the high tide."
     },
     {
       "at": [
         10,
-        22
+        19
       ],
-      "text": "Southwest Cherry Glade \u2014 fallen petals carpeting the quiet trail."
+      "text": "Southwest Cherry Glade — fallen petals carpeting the quiet trail."
     }
   ],
   "hidden_items": [

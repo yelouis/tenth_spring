@@ -3282,10 +3282,26 @@ static func synthesize_cell(cx: int, cy: int, area: Dictionary, world_seed: int 
 	}
 
 ## Finalize 32x32 cell output buffer (variants & 4-neighbour masks) from 40x40 work grids (§4.1 step 10, dc_trial §3.8)
-static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, grid_variant: PackedByteArray, grid_mask: PackedByteArray, world_seed: int, road_v1_thresh: float, preserve_road_variant: bool = false, preserve_tree_variant: bool = false) -> PackedByteArray:
+static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, grid_variant: PackedByteArray, grid_mask: PackedByteArray, world_seed: int, road_v1_thresh: float, preserve_road_variant: bool = false, preserve_tree_variant: bool = false, paving_under_objects: bool = false) -> PackedByteArray:
 	var output := PackedByteArray()
 	output.resize(OUTPUT_BUFFER_SIZE)
 	var out_idx := 0
+	var eff_class: PackedByteArray = grid_class
+	if paving_under_objects:
+		eff_class = grid_class.duplicate()
+		for er in range(1, WORK_SIZE - 1):
+			for ec in range(1, WORK_SIZE - 1):
+				var eidx := er * WORK_SIZE + ec
+				var egc: int = grid_class[eidx]
+				if egc == TILE_ITEM_BALL or egc == TILE_SIGN:
+					var ep := resolve_paving_class_from_neighbors(
+						grid_class[(er - 1) * WORK_SIZE + ec],
+						grid_class[er * WORK_SIZE + (ec + 1)],
+						grid_class[(er + 1) * WORK_SIZE + ec],
+						grid_class[er * WORK_SIZE + (ec - 1)]
+					)
+					if ep >= 0:
+						eff_class[eidx] = ep
 
 	for r in range(WORK_CELL_START, WORK_CELL_END):
 		for c in range(WORK_CELL_START, WORK_CELL_END):
@@ -3362,16 +3378,16 @@ static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, 
 				var family: Array = _get_mask_family(cls)
 				if not family.is_empty():
 					# Bit 0 = North (r - 1, c)
-					if grid_class[(r - 1) * WORK_SIZE + c] in family:
+					if eff_class[(r - 1) * WORK_SIZE + c] in family:
 						mask |= 1
 					# Bit 1 = East (r, c + 1)
-					if grid_class[r * WORK_SIZE + (c + 1)] in family:
+					if eff_class[r * WORK_SIZE + (c + 1)] in family:
 						mask |= 2
 					# Bit 2 = South (r + 1, c)
-					if grid_class[(r + 1) * WORK_SIZE + c] in family:
+					if eff_class[(r + 1) * WORK_SIZE + c] in family:
 						mask |= 4
 					# Bit 3 = West (r, c - 1)
-					if grid_class[r * WORK_SIZE + (c - 1)] in family:
+					if eff_class[r * WORK_SIZE + (c - 1)] in family:
 						mask |= 8
 
 			output[out_idx] = cls
@@ -3408,3 +3424,39 @@ static func _get_mask_family(cls: int) -> Array:
 			return [TILE_CLIFF, TILE_STAIRS]
 		_:
 			return []
+
+static func is_paving_class(cls: int) -> bool:
+	return cls == TILE_PLAZA or cls == TILE_PATH or cls == TILE_ROAD or cls == TILE_SAND
+
+static func resolve_paving_class_from_neighbors(n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> int:
+	var counts: Dictionary = {}
+	var hits := 0
+	for nc in [n_cls, e_cls, s_cls, w_cls]:
+		if is_paving_class(nc):
+			hits += 1
+			counts[nc] = int(counts.get(nc, 0)) + 1
+	if hits < 2:
+		return -1
+	var best_cls := -1
+	var best_cnt := 0
+	for cand in [TILE_PLAZA, TILE_ROAD, TILE_PATH, TILE_SAND]:
+		var c := int(counts.get(cand, 0))
+		if c > best_cnt:
+			best_cnt = c
+			best_cls = cand
+	return best_cls
+
+static func compute_paving_mask_from_neighbors(pave_cls: int, n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> int:
+	var family: Array = _get_mask_family(pave_cls)
+	if family.is_empty():
+		return 0
+	var mask := 0
+	if n_cls in family:
+		mask |= 1
+	if e_cls in family:
+		mask |= 2
+	if s_cls in family:
+		mask |= 4
+	if w_cls in family:
+		mask |= 8
+	return mask

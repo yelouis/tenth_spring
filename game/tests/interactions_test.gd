@@ -7,6 +7,7 @@ const MainScript := preload("res://scenes/main.gd")
 const Neighbourhoods := preload("res://world/neighbourhoods.gd")
 const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
+const CaricatureMap := preload("res://world/caricature/caricature_map.gd")
 const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
 const InteriorMap := preload("res://world/interior/interior_map.gd")
@@ -551,5 +552,117 @@ func run_test() -> bool:
 		_cleanup([mv2, main2])
 		return false
 
-	_cleanup([mv2, main2])
+	# 13. Item 82 / F106: Collected ball at National Mall (16, 26) & ALL 136 outdoor balls + 281 signs
+	#     must compute their OWN edge mask (no grass edge toward same-paving neighbors) right after pickup
+	#     AND after reload, AND adjacent road/path tiles must connect seamlessly to paving balls & signs!
+	var nm_comp106: Dictionary = mv2._caricature_compiled_by_area["hood:washington-dc:national-mall"]
+	var g16_26 := CaricatureWalkerGrid.local_to_global(nm_comp106, 16, 26)
+	var cell16_26 := CaricatureWalkerGrid.global_tile_to_cell(g16_26.x, g16_26.y)
+	mv2.place_player_in_area("hood:washington-dc:national-mall", Vector2i(16, 27), "N")
+	mv2._render_cell(cell16_26.x, cell16_26.y)
+	if not mv2.trigger_interact_for_walker():
+		push_error("FAIL [F106]: Could not collect National Mall ball at (16, 26)")
+		_cleanup([mv2, main2])
+		return false
+	mv2.get_dialogue_box().close()
+	var exp_road_15: Vector2i = mv2.get_atlas_coords(TileSynth2.TILE_ROAD, 0, 15)
+	var rst16_26: Vector2i = mv2._global_to_render_tile(g16_26)
+	var got_pickup_coord: Vector2i = mv2._world_cleared.get_cell_atlas_coords(rst16_26)
+	if got_pickup_coord != exp_road_15:
+		push_error("FAIL [F106]: Right after pickup at (16, 26) expected TILE_ROAD mask=15 (%s), got %s" % [str(exp_road_15), str(got_pickup_coord)])
+		_cleanup([mv2, main2])
+		return false
+	# Reload MapViewer and confirm _blit_cell also draws TILE_ROAD mask=15!
+	remove_child(mv2)
+	mv2.free()
+	main2.free()
+	var main3: Node2D = MainScript.new()
+	var mv3: Node = main3.distort_to_place("city:washington-dc", true, self)
+	mv3.get_player_walker().live_input_enabled = false
+	mv3.place_player_in_area("hood:washington-dc:national-mall", Vector2i(16, 27), "N")
+	mv3._render_cell(cell16_26.x, cell16_26.y)
+	var got_relaunch_coord: Vector2i = mv3._world_cleared.get_cell_atlas_coords(mv3._global_to_render_tile(g16_26))
+	if got_relaunch_coord != exp_road_15:
+		push_error("FAIL [F106]: After relaunch at (16, 26) expected TILE_ROAD mask=15 (%s), got %s" % [str(exp_road_15), str(got_relaunch_coord)])
+		_cleanup([mv3, main3])
+		return false
+
+	# Verify ALL 136 outdoor balls (collected) and ALL 281 signs across ALL 21 DC areas!
+	var checked_balls_106 := 0
+	var checked_signs_106 := 0
+	for aid_v106 in mv3._caricature_compiled_by_area.keys():
+		var aid106 := str(aid_v106)
+		var comp106: Dictionary = mv3._caricature_compiled_by_area[aid_v106]
+		var area106: Dictionary = Neighbourhoods.area(aid106)
+		var w106 := int(comp106["w"])
+		var h106 := int(comp106["h"])
+		var cls106: PackedByteArray = comp106["class"]
+		var cell_buf_cache: Dictionary = {}
+		for ly106 in range(h106):
+			for lx106 in range(w106):
+				var tcls106: int = cls106[ly106 * w106 + lx106]
+				if tcls106 != TileSynth2.TILE_ITEM_BALL and tcls106 != TileSynth2.TILE_SIGN:
+					continue
+				if tcls106 == TileSynth2.TILE_ITEM_BALL:
+					checked_balls_106 += 1
+				else:
+					checked_signs_106 += 1
+				var gpos106 := CaricatureWalkerGrid.local_to_global(comp106, lx106, ly106)
+				var cpos106 := CaricatureWalkerGrid.global_tile_to_cell(gpos106.x, gpos106.y)
+				if not cell_buf_cache.has(cpos106):
+					cell_buf_cache[cpos106] = CaricatureMap.cell_result(comp106, cpos106, area106)["tiles"]
+				var tbuf106: PackedByteArray = cell_buf_cache[cpos106]
+				var tx106 := posmod(gpos106.x, 32)
+				var ty106 := posmod(gpos106.y, 32)
+				var res106: Vector2i = mv3._paving_under_tile(cpos106.x, cpos106.y, tx106, ty106, tbuf106)
+				if res106.x < 0:
+					continue
+				var pave_cls := res106.x
+				var own_mask := res106.y
+				var fam := TileSynth2._get_mask_family(pave_cls)
+				var dir_specs := [
+					[Vector2i(0, -1), 1, 4],
+					[Vector2i(1, 0), 2, 8],
+					[Vector2i(0, 1), 4, 1],
+					[Vector2i(-1, 0), 8, 2],
+				]
+				for ds in dir_specs:
+					var dv: Vector2i = ds[0]
+					var my_bit: int = int(ds[1])
+					var nb_bit: int = int(ds[2])
+					var nlx := lx106 + dv.x
+					var nly := ly106 + dv.y
+					if nlx < 0 or nlx >= w106 or nly < 0 or nly >= h106:
+						continue
+					var n_eff: int = mv3._effective_class_in_compiled(comp106, nlx, nly, true)
+					# 1. Own tile must NOT have a grass edge (bit 0) toward a same-family neighbor
+					if not fam.is_empty() and (n_eff in fam) and (own_mask & my_bit) == 0:
+						push_error("FAIL [F106]: %s (%d,%d) cls=%d pave=%d mask=%d missing bit %d toward neighbor cls=%d" % [
+							aid106, lx106, ly106, tcls106, pave_cls, own_mask, my_bit, n_eff
+						])
+						_cleanup([mv3, main3])
+						return false
+					# 2. Synthesized cardinal neighbor (ROAD/PATH) must NOT have a grass edge toward this paving ball/sign
+					var n_raw: int = cls106[nly * w106 + nlx]
+					if n_raw == TileSynth2.TILE_ROAD or n_raw == TileSynth2.TILE_PATH:
+						var nfam := TileSynth2._get_mask_family(n_raw)
+						if pave_cls in nfam:
+							var ngp := CaricatureWalkerGrid.local_to_global(comp106, nlx, nly)
+							var ncell := CaricatureWalkerGrid.global_tile_to_cell(ngp.x, ngp.y)
+							if not cell_buf_cache.has(ncell):
+								cell_buf_cache[ncell] = CaricatureMap.cell_result(comp106, ncell, area106)["tiles"]
+							var nbuf: PackedByteArray = cell_buf_cache[ncell]
+							var nmask: int = nbuf[(posmod(ngp.y, 32) * 32 + posmod(ngp.x, 32)) * 3 + 2]
+							if (nmask & nb_bit) == 0:
+								push_error("FAIL [F106]: Neighbor (%d,%d) of %s (%d,%d) has grass edge (mask=%d missing bit %d) toward paving class %d" % [
+									nlx, nly, aid106, lx106, ly106, nmask, nb_bit, pave_cls
+								])
+								_cleanup([mv3, main3])
+								return false
+	if checked_balls_106 != 136 or checked_signs_106 != 281:
+		push_error("FAIL [F106]: Expected 136 balls and 281 signs checked, got %d balls and %d signs" % [checked_balls_106, checked_signs_106])
+		_cleanup([mv3, main3])
+		return false
+
+	_cleanup([mv3, main3])
 	return true
