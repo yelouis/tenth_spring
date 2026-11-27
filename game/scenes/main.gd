@@ -53,9 +53,44 @@ func _notification(what: int) -> void:
 				if clk != null and clk.has_method("save_to_db"):
 					clk.save_to_db()
 
+static func compute_window_scale_for_rect(usable_rect: Rect2i) -> int:
+	var kx := int(floor(float(usable_rect.size.x) / 960.0))
+	var ky := int(floor(float(usable_rect.size.y - 48) / 640.0))
+	return maxi(1, mini(kx, ky))
+
+static func compute_centered_window_rect(usable_rect: Rect2i) -> Rect2i:
+	var k := compute_window_scale_for_rect(usable_rect)
+	var w := 960 * k
+	var h := 640 * k
+	var px := usable_rect.position.x + int((usable_rect.size.x - w) / 2)
+	var py := usable_rect.position.y + int((usable_rect.size.y - h) / 2)
+	return Rect2i(px, py, w, h)
+
+static func _cmdline_has_window_override() -> bool:
+	for arr in [OS.get_cmdline_args(), OS.get_cmdline_user_args()]:
+		for a in arr:
+			var sa := String(a)
+			if sa == "--resolution" or sa.begins_with("--resolution=") or sa == "--fullscreen" or sa == "-f" or sa == "--maximized" or sa == "-m":
+				return true
+	return false
+
+func _apply_startup_integer_window_size(is_headless: bool) -> void:
+	if is_headless or DisplayServer.get_name() == "headless" or _cmdline_has_window_override():
+		return
+	if DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED:
+		return
+	var scr := DisplayServer.window_get_current_screen()
+	var r := DisplayServer.screen_get_usable_rect(scr)
+	if r.size.x <= 0 or r.size.y <= 0:
+		return
+	var target := compute_centered_window_rect(r)
+	DisplayServer.window_set_size(target.size)
+	DisplayServer.window_set_position(target.position)
+
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
 	var is_headless := DisplayServer.get_name() == "headless" or "--headless" in OS.get_cmdline_args()
+	_apply_startup_integer_window_size(is_headless)
 	var s_cfg: Dictionary = ScreenshotConfig.parse_args(user_args, is_headless)
 	if not s_cfg.get("ok", false):
 		printerr(s_cfg.get("error", "Invalid arguments"))
@@ -860,13 +895,35 @@ func _tick_walk_shot(delta: float) -> void:
 		printerr("[FAIL] --walk-shot viewport image empty")
 		get_tree().quit(1)
 		return
-	var err := img.save_png(_ws_path)
+	var win_sz: Vector2i = DisplayServer.window_get_size()
+	var xform: Transform2D = get_viewport().get_screen_transform()
+	var clear_col: Color = RenderingServer.get_default_clear_color()
+	var out_img: Image = img
+	if DisplayServer.get_name() != "headless" and win_sz.x > 0 and win_sz.y > 0 and (win_sz.x != img.get_width() or win_sz.y != img.get_height()):
+		var sx := maxi(1, int(round(xform.x.x)))
+		var sy := maxi(1, int(round(xform.y.y)))
+		var scaled := img.duplicate() as Image
+		if sx != 1 or sy != 1:
+			scaled.resize(img.get_width() * sx, img.get_height() * sy, Image.INTERPOLATE_NEAREST)
+		out_img = Image.create(win_sz.x, win_sz.y, false, scaled.get_format())
+		out_img.fill(clear_col)
+		var ox := int(round(xform.origin.x))
+		var oy := int(round(xform.origin.y))
+		out_img.blit_rect(scaled, Rect2i(0, 0, scaled.get_width(), scaled.get_height()), Vector2i(ox, oy))
+	var out_dir := _ws_path.get_base_dir()
+	if not out_dir.is_empty():
+		DirAccess.make_dir_recursive_absolute(out_dir)
+	var err := out_img.save_png(_ws_path)
 	if err != OK:
 		printerr("[FAIL] --walk-shot save_png failed: %d" % err)
 		get_tree().quit(1)
 		return
 	var vp_px := get_viewport_rect().size
 	var tile_px := 32.0 * _ws_zoom
+	print("WINDOW_PX %dx%d" % [win_sz.x, win_sz.y])
+	print("VIEWPORT_PX %dx%d" % [int(vp_px.x), int(vp_px.y)])
+	print("SCREEN_XFORM %s" % str(xform))
+	print("CLEAR_COLOR %s" % str(clear_col))
 	print("SCREENSHOT_SAVED %s" % _ws_path.get_file())
 	print("VIEW_TILES %dx%d" % [floori(vp_px.x / tile_px), floori(vp_px.y / tile_px)])
 	get_tree().quit(0)

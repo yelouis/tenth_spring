@@ -23,9 +23,28 @@ var _ringed_set: Dictionary = {} # place_id -> true
 @onready var info_label: Label = $Footer/InfoLabel
 
 func _ready() -> void:
+	_sync_to_viewport()
+	var vp := get_viewport()
+	if vp != null and not vp.size_changed.is_connected(_on_viewport_size_changed):
+		vp.size_changed.connect(_on_viewport_size_changed)
 	if back_button != null:
 		back_button.pressed.connect(_on_back_pressed)
 	load_places_from_config()
+
+func _sync_to_viewport() -> void:
+	var vp_size := get_viewport_rect().size
+	if vp_size.x > 0.0 and vp_size.y > 0.0 and not (get_parent() is Control):
+		anchor_left = 0.0
+		anchor_top = 0.0
+		anchor_right = 0.0
+		anchor_bottom = 0.0
+		position = Vector2.ZERO
+		size = vp_size
+
+func _on_viewport_size_changed() -> void:
+	_sync_to_viewport()
+	if not _places.is_empty():
+		refresh_markers()
 
 func load_places_from_config(config_path: String = "") -> void:
 	_places = RevealEngine.load_places(config_path)
@@ -63,7 +82,7 @@ func refresh_markers() -> void:
 			child.queue_free()
 	_markers.clear()
 
-	var map_rect := Rect2(60, 70, size.x - 120, size.y - 140) if size.x > 200 else Rect2(60, 70, 904, 628)
+	var map_rect := Rect2(60, 70, size.x - 120, size.y - 140) if size.x > 200 else Rect2(60, 70, 840, 500)
 
 	for p in _places:
 		var pid: String = str(p.get("id", ""))

@@ -162,6 +162,7 @@ def main():
 		"resume_validation_test",
 		"reveal_engine_test",
 		"rom_importer_test",
+		"screen_scaling_test",
 		"screenshot_args_test",
 		"seamless_routes_test",
 		"slice3_encounters_test",
