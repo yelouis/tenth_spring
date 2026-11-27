@@ -112,7 +112,7 @@ def parse_args():
         "--resolution",
         type=str,
         default="1280x720",
-        help="Window resolution WxH (default: 1280x720)."
+        help="Window/capture resolution WxH (default: 1280x720; --screenshot captures at WxH, --walk-shot keeps the scaled 960x640 view inside WxH)."
     )
     parser.add_argument(
         "--walk-bench",

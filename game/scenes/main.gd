@@ -58,44 +58,113 @@ static func compute_window_scale_for_rect(usable_rect: Rect2i) -> int:
 	var ky := int(floor(float(usable_rect.size.y - 48) / 640.0))
 	return maxi(1, mini(kx, ky))
 
-static func compute_centered_window_rect(usable_rect: Rect2i) -> Rect2i:
-	var k := compute_window_scale_for_rect(usable_rect)
-	var w := 960 * k
-	var h := 640 * k
+static func compute_centered_window_rect_for_scale(usable_rect: Rect2i, k: int) -> Rect2i:
+	var scale_k := maxi(1, k)
+	var w := 960 * scale_k
+	var h := 640 * scale_k
 	var px := usable_rect.position.x + int((usable_rect.size.x - w) / 2)
 	var py := usable_rect.position.y + int((usable_rect.size.y - h) / 2)
 	return Rect2i(px, py, w, h)
 
-static func _cmdline_has_window_override() -> bool:
-	for arr in [OS.get_cmdline_args(), OS.get_cmdline_user_args()]:
-		for a in arr:
-			var sa := String(a)
-			if sa == "--resolution" or sa.begins_with("--resolution=") or sa == "--fullscreen" or sa == "-f" or sa == "--maximized" or sa == "-m":
-				return true
-	return false
+static func compute_centered_window_rect(usable_rect: Rect2i) -> Rect2i:
+	return compute_centered_window_rect_for_scale(usable_rect, compute_window_scale_for_rect(usable_rect))
 
-func _apply_startup_integer_window_size(is_headless: bool) -> void:
-	if is_headless or DisplayServer.get_name() == "headless" or _cmdline_has_window_override():
-		return
-	if DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED:
-		return
-	var scr := DisplayServer.window_get_current_screen()
-	var r := DisplayServer.screen_get_usable_rect(scr)
-	if r.size.x <= 0 or r.size.y <= 0:
-		return
-	var target := compute_centered_window_rect(r)
-	DisplayServer.window_set_size(target.size)
-	DisplayServer.window_set_position(target.position)
+static func _parse_window_scale_arg(user_args: PackedStringArray) -> Dictionary:
+	var present := false
+	var raw := ""
+	var i := 0
+	while i < user_args.size():
+		var a := String(user_args[i]).strip_edges()
+		if a.begins_with("--window-scale="):
+			present = true
+			raw = a.trim_prefix("--window-scale=").strip_edges()
+		elif a == "--window-scale":
+			present = true
+			if i + 1 < user_args.size():
+				raw = String(user_args[i + 1]).strip_edges()
+				i += 1
+			else:
+				raw = ""
+		i += 1
+	if not present:
+		return {"present": false, "ok": true, "value": 0, "raw": ""}
+	if raw.is_empty() or not raw.is_valid_int():
+		return {"present": true, "ok": false, "value": -1, "raw": raw}
+	var val := raw.to_int()
+	if val < 0 or val > 8:
+		return {"present": true, "ok": false, "value": -1, "raw": raw}
+	return {"present": true, "ok": true, "value": val, "raw": raw}
+
+## Pure startup window-sizing decision (Item 88 / F112).
+## Returns:
+##   -1  -> invalid --window-scale argument (caller prints error and quits with code 2)
+##    0  -> leave window alone (headless, non-windowed mode, or custom engine --resolution)
+##  1..8 -> integer scale factor k to resize window to 960k x 640k centered in usable rect
+static func startup_window_scale(
+	start_size: Vector2i,
+	mode: int,
+	headless: bool,
+	usable: Rect2i,
+	user_args: PackedStringArray
+) -> int:
+	var parsed := _parse_window_scale_arg(user_args)
+	if not bool(parsed["ok"]):
+		return -1
+	if headless:
+		return 0
+	if mode != DisplayServer.WINDOW_MODE_WINDOWED:
+		return 0
+	if usable.size.x <= 0 or usable.size.y <= 0:
+		return 0
+	var max_k := compute_window_scale_for_rect(usable)
+	var req_k := int(parsed["value"])
+	if bool(parsed["present"]) and req_k > 0:
+		return mini(req_k, max_k)
+	# Default / --window-scale=0 (auto): only auto-size when starting at the project's 960x640 size
+	if start_size != Vector2i(960, 640):
+		return 0
+	return max_k
+
+func _apply_startup_integer_window_size(is_headless: bool, user_args: PackedStringArray) -> Dictionary:
+	var eff_headless := is_headless or DisplayServer.get_name() == "headless"
+	var start_size := Vector2i(960, 640) if eff_headless else DisplayServer.window_get_size()
+	var mode := DisplayServer.WINDOW_MODE_WINDOWED if eff_headless else DisplayServer.window_get_mode()
+	var usable := Rect2i()
+	if not eff_headless:
+		var scr := DisplayServer.window_get_current_screen()
+		usable = DisplayServer.screen_get_usable_rect(scr)
+	var k := startup_window_scale(start_size, mode, eff_headless, usable, user_args)
+	if k < 0:
+		printerr("[FAIL] --window-scale must be an integer 0..8")
+		get_tree().quit(2)
+		return {"ok": false, "start_size": start_size}
+	if k > 0:
+		var parsed := _parse_window_scale_arg(user_args)
+		var req_k := int(parsed["value"])
+		if bool(parsed["present"]) and req_k > 0 and k < req_k:
+			print("NOTE: --window-scale=%d clamped to %d for usable screen %dx%d" % [req_k, k, usable.size.x, usable.size.y])
+		var target := compute_centered_window_rect_for_scale(usable, k)
+		DisplayServer.window_set_size(target.size)
+		DisplayServer.window_set_position(target.position)
+	return {"ok": true, "start_size": start_size}
 
 func _ready() -> void:
 	var user_args := OS.get_cmdline_user_args()
 	var is_headless := DisplayServer.get_name() == "headless" or "--headless" in OS.get_cmdline_args()
-	_apply_startup_integer_window_size(is_headless)
+	var win_res := _apply_startup_integer_window_size(is_headless, user_args)
+	if not bool(win_res.get("ok", false)):
+		return
+	var start_size: Vector2i = win_res.get("start_size", Vector2i(960, 640))
 	var s_cfg: Dictionary = ScreenshotConfig.parse_args(user_args, is_headless)
 	if not s_cfg.get("ok", false):
 		printerr(s_cfg.get("error", "Invalid arguments"))
 		get_tree().quit(s_cfg.get("exit_code", 1))
 		return
+
+	# Item 88 (F112): --screenshot captures (not --walk-shot) keep their requested WxH window size
+	if s_cfg.get("is_screenshot", false) and str(s_cfg.get("walk_shot", "")).is_empty():
+		if start_size != Vector2i(960, 640):
+			get_tree().root.content_scale_mode = Window.CONTENT_SCALE_MODE_DISABLED
 
 	var profile: Dictionary = ProfilePaths.resolve_from_cmdline()
 	if not profile.get("ok", false):

@@ -104,7 +104,7 @@ func run_test() -> bool:
 	if not clear_col.is_equal_approx(Color(0.0, 0.0, 0.0, 1.0)):
 		failures.append("default_clear_color=%s, expected #000000 black bars" % str(clear_col))
 
-	# 2. Startup window-sizing helper checks (Decision 83)
+	# 2. Startup window-sizing helper checks (Decision 83 + Item 88 / F112)
 	var m_inst: Node = MainScript.new()
 	if not m_inst.has_method("compute_window_scale_for_rect"):
 		failures.append("MainScript missing compute_window_scale_for_rect(usable_rect)")
@@ -121,6 +121,43 @@ func run_test() -> bool:
 			failures.append("3840x2135 usable rect scale=%d, expected 3 (2880x1920)" % k_4k)
 		if k_small != 1:
 			failures.append("800x600 usable rect scale=%d, expected 1" % k_small)
+
+	if not m_inst.has_method("startup_window_scale"):
+		failures.append("MainScript missing startup_window_scale(start_size, mode, headless, usable, user_args)")
+	else:
+		var usable_2560 := Rect2i(0, 25, 2560, 1415)
+		var win_mode := DisplayServer.WINDOW_MODE_WINDOWED
+		var fs_mode := DisplayServer.WINDOW_MODE_FULLSCREEN
+		var s_auto: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, false, usable_2560, PackedStringArray()))
+		var s_custom: int = int(m_inst.call("startup_window_scale", Vector2i(1152, 648), win_mode, false, usable_2560, PackedStringArray()))
+		var s_k1: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, false, usable_2560, PackedStringArray(["--window-scale=1"])))
+		var s_k3_clamped: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, false, usable_2560, PackedStringArray(["--window-scale=3"])))
+		var s_k0: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, false, usable_2560, PackedStringArray(["--window-scale=0"])))
+		var s_k9_bad: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, false, usable_2560, PackedStringArray(["--window-scale=9"])))
+		var s_abc_bad: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, false, usable_2560, PackedStringArray(["--window-scale=abc"])))
+		var s_headless: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), win_mode, true, usable_2560, PackedStringArray()))
+		var s_fullscreen: int = int(m_inst.call("startup_window_scale", Vector2i(960, 640), fs_mode, false, usable_2560, PackedStringArray()))
+		if s_auto != 2:
+			failures.append("startup_window_scale(960x640, windowed, [])=%d, expected 2" % s_auto)
+		if s_custom != 0:
+			failures.append("startup_window_scale(1152x648, windowed, [])=%d, expected 0 (keep --resolution)" % s_custom)
+		if s_k1 != 1:
+			failures.append("startup_window_scale(--window-scale=1)=%d, expected 1" % s_k1)
+		if s_k3_clamped != 2:
+			failures.append("startup_window_scale(--window-scale=3 on 2560x1415)=%d, expected 2 (clamped)" % s_k3_clamped)
+		if s_k0 != 2:
+			failures.append("startup_window_scale(--window-scale=0)=%d, expected 2 (auto)" % s_k0)
+		if s_k9_bad != -1:
+			failures.append("startup_window_scale(--window-scale=9)=%d, expected -1 (rejected)" % s_k9_bad)
+		if s_abc_bad != -1:
+			failures.append("startup_window_scale(--window-scale=abc)=%d, expected -1 (rejected)" % s_abc_bad)
+		if s_headless != 0:
+			failures.append("startup_window_scale(headless)=%d, expected 0" % s_headless)
+		if s_fullscreen != 0:
+			failures.append("startup_window_scale(fullscreen)=%d, expected 0" % s_fullscreen)
+		var rect_k1: Rect2i = m_inst.call("compute_centered_window_rect_for_scale", usable_2560, 1)
+		if rect_k1.size != Vector2i(960, 640):
+			failures.append("compute_centered_window_rect_for_scale(k=1).size=%s, expected (960, 640)" % str(rect_k1.size))
 	m_inst.free()
 
 	# Setup DC test state for camera & UI checks
