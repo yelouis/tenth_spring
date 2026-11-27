@@ -91,13 +91,11 @@
         {
           "id": "npc_us_hector",
           "name": "Hector",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "hiker",
-          "role": "talk"
+          "role": "talk",
+          "text": ["I kept the old siding diagrams pinned on the corkboard so nobody trips over the switch frogs outside.", "Steel rails hum before a storm rolls across the railyard — Electric Pokémon love it out there."]
         }
       ],
       "items": [],

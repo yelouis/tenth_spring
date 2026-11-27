@@ -67,7 +67,7 @@
         {"fixture": "em_potted_plant_1x2", "at": [19, 10]}
       ],
       "npcs": [
-        {"id": "npc_marcus_bell", "name": "Marcus Bell", "at": [7, 7], "role": "scholar"}
+        {"id": "npc_marcus_bell", "name": "Marcus Bell", "at": [7, 7], "role": "scholar", "text": ["Take the northeast stairs up to Dr. Calder's stacks when you're ready to see what she left behind.", "The cipher vault stays sealed until you trip the floor latch tucked in the southwest aisle."]}
       ],
       "items": [
         {"id": "dc_loc_1f_wise", "at": [18, 10], "name": "Wise Glasses"}

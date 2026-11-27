@@ -91,13 +91,11 @@
         {
           "id": "npc_camp_mara_reid",
           "name": "Mara Reid",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "town_woman",
-          "role": "talk"
+          "role": "talk",
+          "text": ["Help yourself to a bowl off the stove before you head out — cold trails eat your strength fast.", "We chalk every scout's name inside the cupboard when they make it back before dark."]
         }
       ],
       "items": [],

@@ -91,13 +91,11 @@
         {
           "id": "npc_lm_mei",
           "name": "Mei",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "healer",
-          "role": "healer"
+          "role": "healer",
+          "text": ["We set up this post by the pool for anyone making the walk up the marble steps.", "Check your pack before you descend beneath the Memorial — it's a long walk back to the Waypost."]
         }
       ],
       "items": [],

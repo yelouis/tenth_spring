@@ -92,13 +92,11 @@
         {
           "id": "npc_tb_hana",
           "name": "Hana",
-          "at": [
-            7,
-            4
-          ],
+          "at": [7, 4],
           "facing": "W",
           "sprite": "young_woman",
-          "role": "talk"
+          "role": "talk",
+          "text": ["I prune the dead branches off the Tidal Basin cherries every March so the blossoms hold strong.", "Even ten springs after the collapse, those trees never once missed their week to bloom."]
         }
       ],
       "items": [],

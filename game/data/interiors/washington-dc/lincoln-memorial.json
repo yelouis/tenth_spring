@@ -51,7 +51,7 @@
         {"fixture": "em_potted_plant_1x2", "at": [17, 9]}
       ],
       "npcs": [
-        {"id": "npc_memorial_warden", "name": "Chamber Envoy", "at": [6, 7], "role": "warden"}
+        {"id": "npc_memorial_warden", "name": "Chamber Envoy", "at": [6, 7], "role": "warden", "text": ["Stairs along the north wall lead down into the pillared undercroft beneath this chamber.", "A switch waits in the far southwest corner down there, if you're ready to open the lower gate."]}
       ],
       "items": [
         {"id": "dc_lincoln_1f_kings", "at": [1, 9], "name": "King's Rock"}

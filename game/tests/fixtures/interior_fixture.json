@@ -38,7 +38,7 @@
         {"stamp": "int_push_boulder", "at": [9, 5], "clearable": true}
       ],
       "npcs": [
-        {"id": "npc_keeper", "name": "Caretaker", "at": [6, 4], "role": "talk"}
+        {"id": "npc_keeper", "name": "Caretaker", "at": [6, 4], "role": "talk", "text": ["Keep the watchtower lantern trimmed before dusk."]}
       ],
       "items": [],
       "signs": [

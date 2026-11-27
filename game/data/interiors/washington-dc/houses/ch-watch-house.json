@@ -91,13 +91,11 @@
         {
           "id": "npc_ch_owen",
           "name": "Owen",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "lamplighter",
-          "role": "lamplighter"
+          "role": "lamplighter",
+          "text": ["We chalk every lamp round on the board by the door so nobody doubles back through the fog.", "East Capitol stays calm at noon, but the alleys toward the train yards turn chilly by evening."]
         }
       ],
       "items": [],

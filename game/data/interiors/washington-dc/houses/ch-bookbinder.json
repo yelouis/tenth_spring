@@ -85,13 +85,11 @@
         {
           "id": "npc_ch_clara",
           "name": "Clara",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "elder_woman",
-          "role": "elder"
+          "role": "elder",
+          "text": ["I still mend the bindings people bring over from the Capitol blocks — paper lasts longer than glass.", "Half the ledgers stop on the exact same October afternoon, mid-column and neat as ever."]
         }
       ],
       "items": [],

@@ -91,13 +91,11 @@
         {
           "id": "npc_wp_dr_patel",
           "name": "Dr. Patel",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "healer",
-          "role": "healer"
+          "role": "healer",
+          "text": ["We moved the clean cots here across the lane, since the Old Animal Hospital went quiet and haunted.", "Its quarantine lever in the southwest ward still opens the gate to the keystone pedestal inside."]
         }
       ],
       "items": [],

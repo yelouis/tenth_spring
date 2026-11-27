@@ -85,13 +85,11 @@
         {
           "id": "npc_lm_darius",
           "name": "Darius",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "elder_man",
-          "role": "elder"
+          "role": "elder",
+          "text": ["Three brass lanterns burn on this table every evening for travelers coming up from the river.", "The water along the west basin goes mirror-flat right before dusk; that's your cue to head indoors."]
         }
       ],
       "items": [],

@@ -396,7 +396,7 @@ static func _can_return_to_exit(floors: Array, block_masks: Array, link_map: Arr
 
 static func check(compiled: Dictionary) -> Dictionary:
 	var rule_errors: Dictionary = (compiled.get("rule_errors", {}) as Dictionary).duplicate(true)
-	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"]:
+	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9"]:
 		if not rule_errors.has(r_id):
 			rule_errors[r_id] = []
 
@@ -596,8 +596,34 @@ static func check(compiled: Dictionary) -> Dictionary:
 					fid_i8, it_idx, str(it_d.get("at", []))
 				])
 
+	# -------------------------------------------------------------
+	# I9: Every indoor person on every floor must have a non-empty "text" array (Item 86 / F111)
+	# -------------------------------------------------------------
+	for f_idx in range(floors.size()):
+		var fd_i9: Dictionary = floors[f_idx]
+		var fid_i9 := str(fd_i9.get("floor_id", str(f_idx)))
+		var npcs_i9: Array = fd_i9.get("npcs", []) as Array
+		for npc_idx in range(npcs_i9.size()):
+			var npc_v: Variant = npcs_i9[npc_idx]
+			if not (npc_v is Dictionary):
+				(rule_errors["I9"] as Array).append("floor %s npc[%d] is not a dictionary" % [fid_i9, npc_idx])
+				continue
+			var npc_d: Dictionary = npc_v
+			var txt_v: Variant = npc_d.get("text", null)
+			var valid_txt := false
+			if txt_v is Array and not (txt_v as Array).is_empty():
+				valid_txt = true
+				for lv in (txt_v as Array):
+					if typeof(lv) != TYPE_STRING or str(lv).strip_edges().is_empty():
+						valid_txt = false
+						break
+			if not valid_txt:
+				(rule_errors["I9"] as Array).append("floor %s npc '%s' at %s missing non-empty 'text' array" % [
+					fid_i9, str(npc_d.get("name", npc_d.get("id", str(npc_idx)))), str(npc_d.get("at", []))
+				])
+
 	var failed_rules: Array[String] = []
-	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"]:
+	for r_id in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9"]:
 		if not (rule_errors[r_id] as Array).is_empty():
 			failed_rules.append(r_id)
 

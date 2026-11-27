@@ -99,13 +99,11 @@
         {
           "id": "npc_tb_graham",
           "name": "Graham",
-          "at": [
-            5,
-            4
-          ],
+          "at": [5, 4],
           "facing": "W",
           "sprite": "sailor",
-          "role": "talk"
+          "role": "talk",
+          "text": ["Twelve cedar oars racked dry along the wall, though nobody rows past the inlet bridge anymore.", "Watch the shoreline sand outside — travelers drop useful gear near the piers when the mist rolls in."]
         }
       ],
       "items": [],

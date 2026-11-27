@@ -15,11 +15,11 @@ const CACHE_EMPTY := "user://test/interior_dc_empty"
 const CACHE_EMERALD := "user://test/interior_dc_emerald"
 
 const PINNED_SHA256: Dictionary = {
-	"res://data/interiors/washington-dc/air-and-space.json": "3d57937dad12c63f9476c716dea045c6c6ad7600337ccdda6c13832782368ee9",
+	"res://data/interiors/washington-dc/air-and-space.json": "948a53dadeb4102db9b646b3dcb83cbf5bcc4f565bc69adcace2a6e1e8b1e023",
 	"res://data/interiors/washington-dc/georgetown-ruins.json": "501c13ab10f7fd3f2232808f38f1ffa0e01b8d1176a94c5b2846d30e78afe9fb",
-	"res://data/interiors/washington-dc/library-of-congress.json": "c38256dbae7061c7fae40e334c4bd0fb605915fdb96eef9f8b5115ca22e29bbc",
-	"res://data/interiors/washington-dc/lincoln-memorial.json": "1da6124d38029f3b2ec5593afb7694fef694026af815d146b17d2a8c0059f946",
-	"res://data/interiors/washington-dc/washington-monument.json": "4dcae42fdbcadd64c6fbb0305e4198be5bf4ae3981a9599883d1b61943550e20",
+	"res://data/interiors/washington-dc/library-of-congress.json": "47f8fe26ffc74ca1d25fa4b0dcff1185bd68e394c4ff3e098286bf2c5829c831",
+	"res://data/interiors/washington-dc/lincoln-memorial.json": "1dbf0aa8c046b4c9718d534055d4df1ff51a657b89339780ec253f45a6da3639",
+	"res://data/interiors/washington-dc/washington-monument.json": "66d42ef355aa545a44f32bbe87c22bb2602c0172131f814052bcdacd0845996b",
 	"res://data/interiors/washington-dc/woodley-vet.json": "29e823ce21422026832b1db8e8acb4b68ba1e06dac2bf466e7b3704849fbcb1d",
 }
 

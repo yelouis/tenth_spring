@@ -98,13 +98,11 @@
         {
           "id": "npc_camp_nurse_hana",
           "name": "Nurse Hana",
-          "at": [
-            6,
-            3
-          ],
+          "at": [6, 3],
           "facing": "S",
           "sprite": "healer",
-          "role": "healer"
+          "role": "healer",
+          "text": ["Boiled water's on the corner table, and fresh bandages stay sealed in the tin by the second cot.", "Patch up what you can on the road, and head all the way home when your team truly needs rest."]
         }
       ],
       "items": [

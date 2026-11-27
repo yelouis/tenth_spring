@@ -98,13 +98,11 @@
         {
           "id": "npc_camp_trader_tomas",
           "name": "Trader Tomas",
-          "at": [
-            7,
-            4
-          ],
+          "at": [7, 4],
           "facing": "S",
           "sprite": "shopkeeper",
-          "role": "trader"
+          "role": "trader",
+          "text": ["Lantern oil, twine, and spare batteries move fastest whenever someone opens a new neighbourhood.", "Check the crates if you're hunting scraps, though half the city's goods still sit out in the tall grass."]
         }
       ],
       "items": [],

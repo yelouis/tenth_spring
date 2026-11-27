@@ -83,13 +83,11 @@
         {
           "id": "npc_camp_old_arthur",
           "name": "Old Arthur",
-          "at": [
-            7,
-            5
-          ],
+          "at": [7, 5],
           "facing": "S",
           "sprite": "elder_man",
-          "role": "elder"
+          "role": "elder",
+          "text": ["Ten years since the streetlights went out, and the city still smells like rain on warm brick.", "Keep an eye on the clock when you leave camp — night turns quiet streets unfamiliar fast."]
         }
       ],
       "items": [],

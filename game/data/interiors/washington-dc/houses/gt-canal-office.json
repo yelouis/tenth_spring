@@ -84,13 +84,11 @@
         {
           "id": "npc_gt_hector",
           "name": "Hector Ruiz",
-          "at": [
-            4,
-            5
-          ],
+          "at": [4, 5],
           "facing": "S",
           "sprite": "hiker",
-          "role": "lockkeeper"
+          "role": "lockkeeper",
+          "text": ["The Old Canal Lockhouse down by the water still holds an old keystone behind its iron sluice gate.", "Flip the lock lever along the west wall inside to unbar the chamber — and keep your lantern high after dusk."]
         }
       ],
       "items": [],

@@ -91,13 +91,11 @@
         {
           "id": "npc_dc_marisol",
           "name": "Marisol",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "town_woman",
-          "role": "talk"
+          "role": "talk",
+          "text": ["We log the fountain pressure every Monday so Dupont Circle keeps clean water flowing.", "As long as the pump hums outside, the fog seems reluctant to cross the ring road."]
         }
       ],
       "items": [],

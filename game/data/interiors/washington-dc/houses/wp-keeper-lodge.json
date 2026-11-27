@@ -92,13 +92,11 @@
         {
           "id": "npc_wp_soren",
           "name": "Soren",
-          "at": [
-            7,
-            4
-          ],
+          "at": [7, 4],
           "facing": "W",
           "sprite": "ranger",
-          "role": "talk"
+          "role": "talk",
+          "text": ["When the Stillness hit, the keepers unlatched every paddock gate so nothing would starve behind wire.", "Now wild Pokémon treat Rock Creek and the old enclosures like one big wooded valley."]
         }
       ],
       "items": [],

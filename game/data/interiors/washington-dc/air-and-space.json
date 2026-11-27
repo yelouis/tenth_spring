@@ -75,7 +75,7 @@
         {"fixture": "em_rocket_table_2x2", "at": [16, 11]}
       ],
       "npcs": [
-        {"id": "npc_telemetry_curator", "name": "Curator Lin", "at": [9, 10], "role": "scholar"}
+        {"id": "npc_telemetry_curator", "name": "Curator Lin", "at": [9, 10], "role": "scholar", "text": ["The emergency relay console sits in the east wing, behind the security gate.", "Its lever is across the west doorway, though cracked rubble blocks that passage until a Pokémon can break it."]}
       ],
       "items": [
         {"id": "dc_airspace_magnet", "at": [4, 11], "name": "Magnet"},

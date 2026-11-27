@@ -92,13 +92,11 @@
         {
           "id": "npc_us_nina",
           "name": "Nina",
-          "at": [
-            7,
-            4
-          ],
+          "at": [7, 4],
           "facing": "W",
           "sprite": "town_woman",
-          "role": "talk"
+          "role": "talk",
+          "text": ["Old timetables for Boston and Richmond still hang on those brass hooks like the next train's just delayed.", "The bunkhouse roof never leaked a drop, so scouts heading east from Union Station still shelter here."]
         }
       ],
       "items": [],

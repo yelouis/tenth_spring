@@ -303,4 +303,32 @@ func run_test() -> bool:
 	if total_dc_indoor_items != 50:
 		return _fail("Expected 50 DC indoor items checked by I8, got %d" % total_dc_indoor_items)
 
+	# ------------------------------------------------------------------
+	# 5. ▶ Item 86 / F111 Rule I9 Falsifiers (every indoor person has non-empty "text" array)
+	# ------------------------------------------------------------------
+	var bad_i9_missing := base_doc.duplicate(true)
+	(bad_i9_missing["floors"][0]["npcs"][0] as Dictionary).erase("text")
+	var res_i9a := InteriorCheck.compile_and_check(bad_i9_missing)
+	print("FALSIFIER_I9a: " + InteriorCheck.format_summary(res_i9a))
+	if bool(res_i9a.get("ok", true)) or not (res_i9a.get("failed_rules", []) as Array).has("I9"):
+		return _fail("I9a falsifier (missing text) should fail I9, got: %s" % str(res_i9a))
+
+	var bad_i9_blank := base_doc.duplicate(true)
+	bad_i9_blank["floors"][0]["npcs"][0]["text"] = ["   "]
+	var res_i9b := InteriorCheck.compile_and_check(bad_i9_blank)
+	if bool(res_i9b.get("ok", true)) or not (res_i9b.get("failed_rules", []) as Array).has("I9"):
+		return _fail("I9b falsifier (blank text entry) should fail I9, got: %s" % str(res_i9b))
+
+	var total_dc_indoor_npcs := 0
+	for dp9 in dc_paths:
+		var ddoc9 := InteriorMap.load_json(dp9)
+		for fl9 in (ddoc9.get("floors", []) as Array):
+			for npc9 in ((fl9 as Dictionary).get("npcs", []) as Array):
+				total_dc_indoor_npcs += 1
+				var tv9: Variant = (npc9 as Dictionary).get("text", null)
+				if not (tv9 is Array) or (tv9 as Array).is_empty():
+					return _fail("DC interior %s has NPC without text: %s" % [dp9, str(npc9)])
+	if total_dc_indoor_npcs != 25:
+		return _fail("Expected 25 DC indoor NPCs checked by I9, got %d" % total_dc_indoor_npcs)
+
 	return true

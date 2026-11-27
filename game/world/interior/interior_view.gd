@@ -1157,7 +1157,11 @@ func _dispatch_interior_interact(facing_tile: Vector2i, _standing_tile: Vector2i
 				_force_fallback,
 				_cache_dir
 			)
-		var nlines: Array = npc.get("lines", []) if npc.get("lines") is Array else []
+		var nlines: Array = []
+		if npc.get("text") is Array and not (npc.get("text") as Array).is_empty():
+			nlines = npc.get("text") as Array
+		elif npc.get("lines") is Array and not (npc.get("lines") as Array).is_empty():
+			nlines = npc.get("lines") as Array
 		var nname := str(npc.get("name", "Resident"))
 		if nlines.is_empty():
 			nlines = [_indoor_role_line(str(npc.get("role", "talk")), nname)]

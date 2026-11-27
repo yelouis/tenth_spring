@@ -98,13 +98,11 @@
         {
           "id": "npc_camp_owen_bell",
           "name": "Owen Bell",
-          "at": [
-            7,
-            6
-          ],
+          "at": [7, 6],
           "facing": "W",
           "sprite": "lamplighter",
-          "role": "lamplighter"
+          "role": "lamplighter",
+          "text": ["Every Waypost lamp we light keeps a ring of street clear until sunrise.", "Once you walk a route on foot and light its far lamp, you can travel straight between them."]
         }
       ],
       "items": [

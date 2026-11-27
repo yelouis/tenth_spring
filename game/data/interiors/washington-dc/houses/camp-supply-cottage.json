@@ -105,13 +105,11 @@
         {
           "id": "npc_camp_nia",
           "name": "Caretaker Nia",
-          "at": [
-            5,
-            4
-          ],
+          "at": [5, 4],
           "facing": "S",
           "sprite": "young_woman",
-          "role": "talk"
+          "role": "talk",
+          "text": ["Dry wool blankets hang on the top pegs — shake the mist off your boots by the mat first.", "Most folks crash here after a long Georgetown run so they aren't walking in the dark."]
         }
       ],
       "items": [

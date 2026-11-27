@@ -62,7 +62,7 @@ func _ready() -> void:
 		if not bool(res.get("ok", false)):
 			any_failed = true
 			var rerrs: Dictionary = res.get("rule_errors", {})
-			for r_key in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8"]:
+			for r_key in ["I1", "I2", "I3", "I4", "I5", "I6", "I7", "I8", "I9"]:
 				for msg in (rerrs.get(r_key, []) as Array):
 					printerr("[FAIL] %s %s: %s" % [str(res.get("id", p)), r_key, str(msg)])
 

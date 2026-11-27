@@ -85,13 +85,11 @@
         {
           "id": "npc_gt_elena",
           "name": "Elena Vance",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "scientist",
-          "role": "scholar"
+          "role": "scholar",
+          "text": ["I keep the canal histories by the window and the newer field journals stacked behind the counter.", "Dr. Calder stopped by once before the Stillness asking about high-water marks along the Potomac."]
         }
       ],
       "items": [],

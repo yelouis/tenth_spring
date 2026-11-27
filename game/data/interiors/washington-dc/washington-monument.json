@@ -54,7 +54,7 @@
         {"fixture": "em_trash_can_1x1", "at": [16, 10]}
       ],
       "npcs": [
-        {"id": "npc_monument_keeper", "name": "Shaft Watchman", "at": [5, 8], "role": "warden"}
+        {"id": "npc_monument_keeper", "name": "Shaft Watchman", "at": [5, 8], "role": "warden", "text": ["The lift gate stays locked until you throw the brass lever on the west side of the lobby.", "Once you climb to the second floor, watch the floor grates — the crosswind carries you straight across the shaft."]}
       ],
       "items": [
         {"id": "dc_monument_1f_coat", "at": [15, 9], "name": "Metal Coat"}
@@ -158,7 +158,7 @@
         {"fixture": "em_potted_plant_1x2", "at": [17, 8]}
       ],
       "npcs": [
-        {"id": "npc_apex_scout", "name": "Lookout Scout", "at": [4, 7], "role": "talk"}
+        {"id": "npc_apex_scout", "name": "Lookout Scout", "at": [4, 7], "role": "talk", "text": ["Caught the updrafts all the way up? That wind shaft hasn't slowed down once in ten springs.", "Step up to the north viewing slit when you catch your breath — you can see the whole Mall from here."]}
       ],
       "items": [
         {"id": "dc_monument_3f_scope", "at": [2, 8], "name": "Scope Lens"}

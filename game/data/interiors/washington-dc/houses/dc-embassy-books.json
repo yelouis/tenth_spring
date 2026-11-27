@@ -85,13 +85,11 @@
         {
           "id": "npc_dc_arthur",
           "name": "Arthur",
-          "at": [
-            8,
-            5
-          ],
+          "at": [8, 5],
           "facing": "W",
           "sprite": "gentleman",
-          "role": "talk"
+          "role": "talk",
+          "text": ["Every atlas on these shelves maps a world with open highways and lit borders.", "Strange how walking a single block on foot teaches you more than twenty old street guides."]
         }
       ],
       "items": [],

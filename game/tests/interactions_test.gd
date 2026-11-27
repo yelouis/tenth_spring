@@ -809,8 +809,116 @@ func run_test() -> bool:
 			return false
 
 	mv3._overview_layer = prev_ov_layer
+
+	# 15. Item 86 / F111: All 25 DC indoor NPCs have unique spoken lines (across all indoor & outdoor DC people)
+	#     and every page fits the 960x640 dialogue box (lines_drawn <= lines_visible).
+	var line_sources: Dictionary = {} # line_text -> Array[String]
+	var outdoor_people_checked := 0
+	for aid_p_v in mv3._caricature_compiled_by_area.keys():
+		var aid_p := str(aid_p_v)
+		var comp_p: Dictionary = mv3._caricature_compiled_by_area[aid_p_v]
+		for person_v in comp_p.get("people", []):
+			if not (person_v is Dictionary):
+				continue
+			var person: Dictionary = person_v
+			outdoor_people_checked += 1
+			var pname := str(person.get("name", person.get("id", "Person")))
+			var plines: Array = person.get("lines", []) if person.get("lines") is Array else []
+			for lv in plines:
+				var lt := str(lv).strip_edges()
+				if lt.is_empty():
+					continue
+				if not line_sources.has(lt):
+					line_sources[lt] = []
+				(line_sources[lt] as Array).append("outdoor:%s:%s" % [aid_p, pname])
+
+	var indoor_npcs_checked := 0
+	var box_overflow_errors: Array[String] = []
+	for ipath_n in InteriorMap.list_all_dc_interior_paths():
+		var idoc_n := InteriorMap.load_json(ipath_n)
+		var iid_n := str(idoc_n.get("id", ""))
+		var fls_n: Array = idoc_n.get("floors", []) as Array
+		for fi_n in range(fls_n.size()):
+			var fl_n: Dictionary = fls_n[fi_n]
+			var npcs_n: Array = fl_n.get("npcs", []) as Array
+			if npcs_n.is_empty():
+				continue
+			var iv_n := InteriorView.new()
+			add_child(iv_n)
+			iv_n.load_interior(iid_n, fi_n, AssetDB.DEFAULT_CACHE_DIR, true)
+			iv_n.enable_walking(Vector2i(-1, -1), "N", {}, null, DB)
+			var iw_n: PlayerWalker = iv_n.get_player_walker()
+			iw_n.live_input_enabled = false
+			for npc_v in npcs_n:
+				if not (npc_v is Dictionary):
+					continue
+				var npc_d: Dictionary = npc_v
+				var n_at: Vector2i = InteriorMap._parse_vec2i(npc_d.get("at", null))
+				var n_name := str(npc_d.get("name", npc_d.get("id", "NPC")))
+				iw_n.place_at(Vector2i(n_at.x, n_at.y + 1), "N", false)
+				var interacted := iv_n.trigger_interact_for_walker()
+				var dlg_n := iv_n.get_dialogue_box()
+				if not interacted or dlg_n == null or not dlg_n.is_open():
+					push_error("FAIL [F111]: Could not interact with indoor NPC %s (%s fl=%d)" % [n_name, iid_n, fi_n])
+					remove_child(iv_n)
+					iv_n.free()
+					_cleanup([mv3, main3])
+					return false
+				indoor_npcs_checked += 1
+				var pages: Array = dlg_n.get_all_lines()
+				for p_idx in range(pages.size()):
+					var ptxt := str(pages[p_idx]).strip_edges()
+					if not line_sources.has(ptxt):
+						line_sources[ptxt] = []
+					(line_sources[ptxt] as Array).append("indoor:%s:%s" % [iid_n, n_name])
+					# Verify dialogue box fit at 960x640: lines_drawn <= lines_visible
+					var bp := dlg_n.get_node_or_null("BoxPanel") as PanelContainer
+					var bl := dlg_n.get_node_or_null("BoxPanel/Margin/VBox/BodyLabel") as Label
+					if bp != null and bl != null:
+						bp.size = Vector2(720.0, 116.0)
+						for _pass in range(2):
+							_force_layout_control_tree(bp)
+						var drawn := bl.get_line_count()
+						var vis := bl.get_visible_line_count()
+						if drawn > vis:
+							box_overflow_errors.append("%s (%s) page %d: drawn=%d > visible=%d ('%s')" % [
+								n_name, iid_n, p_idx, drawn, vis, ptxt
+							])
+					dlg_n.advance_or_close()
+			remove_child(iv_n)
+			iv_n.free()
+
+	var dup_errors: Array[String] = []
+	for lt_k in line_sources.keys():
+		var srcs: Array = line_sources[lt_k]
+		if srcs.size() > 1:
+			dup_errors.append("x%d '%s' (%s)" % [srcs.size(), str(lt_k), ", ".join(PackedStringArray(srcs))])
+
+	if indoor_npcs_checked != 25 or outdoor_people_checked < 45:
+		push_error("FAIL [F111]: Expected 25 indoor NPCs (>=45 outdoor), checked indoor=%d outdoor=%d" % [indoor_npcs_checked, outdoor_people_checked])
+		_cleanup([mv3, main3])
+		return false
+	if not dup_errors.is_empty():
+		for de in dup_errors:
+			push_error("FAIL [F111]: Duplicate DC person line: " + de)
+		_cleanup([mv3, main3])
+		return false
+	if not box_overflow_errors.is_empty():
+		for oe in box_overflow_errors:
+			push_error("FAIL [F111]: Dialogue box overflow: " + oe)
+		_cleanup([mv3, main3])
+		return false
+
 	_cleanup([mv3, main3])
 	return not f108_any_failed
+
+func _force_layout_control_tree(n: Node) -> void:
+	if n is Container:
+		(n as Container).notification(Container.NOTIFICATION_SORT_CHILDREN)
+	for ch in n.get_children():
+		_force_layout_control_tree(ch)
+	if n is Control:
+		(n as Control).update_minimum_size()
 
 func _is_f108_ground_class(cls: int) -> bool:
 	return cls in [
