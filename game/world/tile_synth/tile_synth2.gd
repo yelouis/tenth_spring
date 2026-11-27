@@ -3294,14 +3294,12 @@ static func finalize_cell_output(cx: int, cy: int, grid_class: PackedByteArray, 
 				var eidx := er * WORK_SIZE + ec
 				var egc: int = grid_class[eidx]
 				if egc == TILE_ITEM_BALL or egc == TILE_SIGN:
-					var ep := resolve_paving_class_from_neighbors(
+					eff_class[eidx] = resolve_ground_class_from_neighbors(
 						grid_class[(er - 1) * WORK_SIZE + ec],
 						grid_class[er * WORK_SIZE + (ec + 1)],
 						grid_class[(er + 1) * WORK_SIZE + ec],
 						grid_class[er * WORK_SIZE + (ec - 1)]
 					)
-					if ep >= 0:
-						eff_class[eidx] = ep
 
 	for r in range(WORK_CELL_START, WORK_CELL_END):
 		for c in range(WORK_CELL_START, WORK_CELL_END):
@@ -3428,6 +3426,19 @@ static func _get_mask_family(cls: int) -> Array:
 static func is_paving_class(cls: int) -> bool:
 	return cls == TILE_PLAZA or cls == TILE_PATH or cls == TILE_ROAD or cls == TILE_SAND
 
+static func is_object_ground_class(cls: int) -> bool:
+	return cls in [
+		TILE_GRASS,
+		TILE_TALL_GRASS,
+		TILE_SAND,
+		TILE_PATH,
+		TILE_ROAD,
+		TILE_BRIDGE,
+		TILE_PLAZA,
+		TILE_FLOWERS,
+		TILE_CROP,
+	]
+
 static func resolve_paving_class_from_neighbors(n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> int:
 	var counts: Dictionary = {}
 	var hits := 0
@@ -3445,6 +3456,25 @@ static func resolve_paving_class_from_neighbors(n_cls: int, e_cls: int, s_cls: i
 			best_cnt = c
 			best_cls = cand
 	return best_cls
+
+static func resolve_ground_class_from_neighbors(n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> int:
+	var pcls := resolve_paving_class_from_neighbors(n_cls, e_cls, s_cls, w_cls)
+	if pcls >= 0:
+		return pcls
+	var nbs := [n_cls, e_cls, s_cls, w_cls]
+	var counts: Dictionary = {}
+	for nc in nbs:
+		if is_object_ground_class(nc):
+			counts[nc] = int(counts.get(nc, 0)) + 1
+	var best_cls := -1
+	var best_cnt := 0
+	for nc in nbs:
+		if is_object_ground_class(nc):
+			var cnt := int(counts.get(nc, 0))
+			if cnt > best_cnt:
+				best_cnt = cnt
+				best_cls = nc
+	return best_cls if best_cls >= 0 else TILE_GRASS
 
 static func compute_paving_mask_from_neighbors(pave_cls: int, n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> int:
 	var family: Array = _get_mask_family(pave_cls)

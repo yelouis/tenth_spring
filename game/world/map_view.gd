@@ -148,6 +148,12 @@ var _fog_state_sig: String = ""
 var _stamp_base_layer: Node2D = null
 var _stamp_overhang_layer: Node2D = null
 var _cell_stamp_sprites: Dictionary = {} # Vector2i -> Array[Sprite2D]
+var _ball_sprites_by_global: Dictionary = {} # Vector2i global -> Sprite2D
+var _cell_ball_globals: Dictionary = {} # Vector2i cell -> Array[Vector2i]
+var _using_rom_atlas: bool = false
+var _fallback_sign_texture: ImageTexture = null
+var _outdoor_ball_sprite_info: Dictionary = {} # {texture, scale, tex_h}
+static var _fallback_atlas_cache: Dictionary = {} # {texture, json, sign_texture}
 var _stamp_images: Dictionary = {} # stamp_id (int) -> Image
 var _stamp_textures: Dictionary = {} # stamp_id (int) -> ImageTexture
 var _tiled_stamp_textures: Dictionary = {} # Vector3i(stamp_id, w, h) -> ImageTexture
@@ -542,6 +548,8 @@ func _clear_rendered_layers() -> void:
 	for cell_k in _cell_stamp_sprites.keys():
 		_clear_cell_stamps(cell_k)
 	_cell_stamp_sprites.clear()
+	_ball_sprites_by_global.clear()
+	_cell_ball_globals.clear()
 	for s in _overview_sprites.values():
 		if is_instance_valid(s):
 			s.queue_free()
@@ -557,44 +565,60 @@ func _init_tile_sets() -> void:
 	var atlas_data: Variant = null if _force_no_rom else AssetDB.tile_atlas()
 	var texture: Texture2D = null
 	var json_dict: Dictionary = {}
+	_using_rom_atlas = false
+	_fallback_sign_texture = null
+	_outdoor_ball_sprite_info.clear()
 
 	if atlas_data != null and atlas_data is Dictionary and atlas_data.has("texture") and atlas_data.has("json"):
 		texture = atlas_data["texture"]
 		json_dict = atlas_data["json"]
+		_using_rom_atlas = true
 	else:
-		for png_res in ["res://assets/tiles/original_v1.png", "res://assets/tiles/placeholder_v1.png"]:
-			var abs_p := ProjectSettings.globalize_path(png_res)
-			if FileAccess.file_exists(abs_p):
-				var bytes := FileAccess.get_file_as_bytes(abs_p)
-				if not bytes.is_empty():
-					var img := Image.new()
-					if img.load_png_from_buffer(bytes) == OK and not img.is_empty():
-						texture = ImageTexture.create_from_image(img)
-			if texture == null and ResourceLoader.exists(png_res):
-				texture = load(png_res) as Texture2D
-			if texture != null:
-				break
+		if not _fallback_atlas_cache.is_empty():
+			texture = _fallback_atlas_cache.get("texture", null)
+			json_dict = _fallback_atlas_cache.get("json", {})
+			_fallback_sign_texture = _fallback_atlas_cache.get("sign_texture", null)
+		else:
+			var loaded_img: Image = null
+			for png_res in ["res://assets/tiles/original_v1.png", "res://assets/tiles/placeholder_v1.png"]:
+				var abs_p := ProjectSettings.globalize_path(png_res)
+				if FileAccess.file_exists(abs_p):
+					var bytes := FileAccess.get_file_as_bytes(abs_p)
+					if not bytes.is_empty():
+						var img := Image.new()
+						if img.load_png_from_buffer(bytes) == OK and not img.is_empty():
+							loaded_img = img
+							texture = ImageTexture.create_from_image(img)
+				if texture == null and ResourceLoader.exists(png_res):
+					texture = load(png_res) as Texture2D
+				if texture != null:
+					break
 
-		var json_text := ""
-		for json_path in ["res://assets/tiles/original_v1.json", "res://assets/tiles/placeholder_v1.json"]:
-			if FileAccess.file_exists(json_path):
-				var f := FileAccess.open(json_path, FileAccess.READ)
-				if f != null:
-					json_text = f.get_as_text()
-					f.close()
-			else:
-				var abs_jp := ProjectSettings.globalize_path(json_path)
-				if FileAccess.file_exists(abs_jp):
-					var f := FileAccess.open(abs_jp, FileAccess.READ)
+			var json_text := ""
+			for json_path in ["res://assets/tiles/original_v1.json", "res://assets/tiles/placeholder_v1.json"]:
+				if FileAccess.file_exists(json_path):
+					var f := FileAccess.open(json_path, FileAccess.READ)
 					if f != null:
 						json_text = f.get_as_text()
 						f.close()
+				else:
+					var abs_jp := ProjectSettings.globalize_path(json_path)
+					if FileAccess.file_exists(abs_jp):
+						var f := FileAccess.open(abs_jp, FileAccess.READ)
+						if f != null:
+							json_text = f.get_as_text()
+							f.close()
+				if not json_text.is_empty():
+					break
 			if not json_text.is_empty():
-				break
-		if not json_text.is_empty():
-			var parsed = JSON.parse_string(json_text)
-			if parsed is Dictionary:
-				json_dict = parsed
+				var parsed = JSON.parse_string(json_text)
+				if parsed is Dictionary:
+					json_dict = parsed
+			if loaded_img == null and texture != null:
+				loaded_img = texture.get_image()
+			_fallback_atlas_cache["texture"] = texture
+			_fallback_atlas_cache["json"] = json_dict
+			_fallback_atlas_cache["_img_tmp"] = loaded_img
 
 	_class_variant_to_row.clear()
 	_class_any_variant.clear()
@@ -622,6 +646,30 @@ func _init_tile_sets() -> void:
 				max_row = r
 	for fv in _fog_rows.values():
 		max_row = maxi(max_row, int(fv))
+
+	if not _using_rom_atlas and _fallback_sign_texture == null and texture != null:
+		var atlas_img: Image = _fallback_atlas_cache.get("_img_tmp", null) as Image
+		if atlas_img == null:
+			atlas_img = texture.get_image()
+		if atlas_img != null and not atlas_img.is_empty():
+			var sign_coord := get_atlas_coords(TileSynth2.TILE_SIGN, 0, 0)
+			var grass_coord := get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
+			var sign_rect := Rect2i(sign_coord.x * TILE_SIZE_PX, sign_coord.y * TILE_SIZE_PX, TILE_SIZE_PX, TILE_SIZE_PX)
+			var grass_rect := Rect2i(grass_coord.x * TILE_SIZE_PX, grass_coord.y * TILE_SIZE_PX, TILE_SIZE_PX, TILE_SIZE_PX)
+			if sign_rect.end.x <= atlas_img.get_width() and sign_rect.end.y <= atlas_img.get_height() and grass_rect.end.x <= atlas_img.get_width() and grass_rect.end.y <= atlas_img.get_height():
+				var sign_img := atlas_img.get_region(sign_rect)
+				var grass_img := atlas_img.get_region(grass_rect)
+				if sign_img.get_format() != Image.FORMAT_RGBA8:
+					sign_img.convert(Image.FORMAT_RGBA8)
+				if grass_img.get_format() != Image.FORMAT_RGBA8:
+					grass_img.convert(Image.FORMAT_RGBA8)
+				for py in range(TILE_SIZE_PX):
+					for px in range(TILE_SIZE_PX):
+						if sign_img.get_pixel(px, py) == grass_img.get_pixel(px, py):
+							sign_img.set_pixel(px, py, Color(0.0, 0.0, 0.0, 0.0))
+				_fallback_sign_texture = ImageTexture.create_from_image(sign_img)
+				_fallback_atlas_cache["sign_texture"] = _fallback_sign_texture
+		_fallback_atlas_cache.erase("_img_tmp")
 
 	var tileset := TileSet.new()
 	tileset.tile_size = Vector2i(TILE_SIZE_PX, TILE_SIZE_PX)
@@ -820,6 +868,7 @@ func set_data_cache_dir(dir_path: String) -> void:
 func set_force_no_rom(enabled: bool) -> void:
 	var changed := (_force_no_rom != enabled)
 	_force_no_rom = enabled
+	_outdoor_ball_sprite_info.clear()
 	if _player_walker != null:
 		_player_walker.set_force_no_rom(enabled)
 	if changed and is_inside_tree():
@@ -2230,6 +2279,12 @@ func _turn_outdoor_person(global_tile: Vector2i, person_dict: Dictionary, new_fa
 					(sp as Sprite2D).texture = ptex
 
 func _erase_collected_ball_visual(global_tile: Vector2i) -> void:
+	if _ball_sprites_by_global.has(global_tile):
+		var bsp: Variant = _ball_sprites_by_global[global_tile]
+		if bsp != null and is_instance_valid(bsp):
+			(bsp as Sprite2D).visible = false
+			(bsp as Sprite2D).queue_free()
+		_ball_sprites_by_global.erase(global_tile)
 	var cell := CaricatureWalkerGrid.global_tile_to_cell(global_tile.x, global_tile.y)
 	var tx := posmod(global_tile.x, 32)
 	var ty := posmod(global_tile.y, 32)
@@ -2239,16 +2294,11 @@ func _erase_collected_ball_visual(global_tile: Vector2i) -> void:
 		var buf: PackedByteArray = item.get("buf", PackedByteArray())
 		var tidx := (ty * 32 + tx) * 3
 		if tidx + 2 < buf.size():
-			var nb := _paving_under_tile(cell.x, cell.y, tx, ty, buf)
-			if nb.x >= 0:
-				repl_coord = get_atlas_coords(nb.x, 0, nb.y)
-				buf[tidx] = nb.x
-				buf[tidx + 1] = 0
-				buf[tidx + 2] = nb.y
-			else:
-				buf[tidx] = TileSynth2.TILE_GRASS
-				buf[tidx + 1] = 0
-				buf[tidx + 2] = 0
+			var gnd := _ground_under_object(cell.x, cell.y, tx, ty, buf)
+			repl_coord = get_atlas_coords(gnd.x, 0, gnd.y)
+			buf[tidx] = gnd.x
+			buf[tidx + 1] = 0
+			buf[tidx + 2] = gnd.y
 	var rst := _global_to_render_tile(global_tile)
 	if _world_cleared != null and _world_cleared.get_cell_source_id(rst) != -1:
 		_world_cleared.set_cell(rst, 0, repl_coord)
@@ -3109,6 +3159,10 @@ func _blit_cell_to_overview_chunk(cx: int, cy: int, cell_img: Image) -> void:
 	chunk_img_ref.blit_rect(cell_img, Rect2i(0, 0, 32, 32), Vector2i(dst_x, dst_y))
 	_dirty_overview_chunks[chunk_key] = true
 
+static func _resolve_ground_from_neighbors(n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> Vector2i:
+	var gcls := TileSynth2.resolve_ground_class_from_neighbors(n_cls, e_cls, s_cls, w_cls)
+	return Vector2i(gcls, TileSynth2.compute_paving_mask_from_neighbors(gcls, n_cls, e_cls, s_cls, w_cls))
+
 func _effective_class_in_compiled(comp: Dictionary, lx: int, ly: int, resolve_objects: bool = true) -> int:
 	var w := int(comp.get("w", 0))
 	var h := int(comp.get("h", 0))
@@ -3121,23 +3175,25 @@ func _effective_class_in_compiled(comp: Dictionary, lx: int, ly: int, resolve_ob
 		var ec := _effective_class_in_compiled(comp, lx + 1, ly, false)
 		var sc := _effective_class_in_compiled(comp, lx, ly + 1, false)
 		var wc := _effective_class_in_compiled(comp, lx - 1, ly, false)
-		var pcls := TileSynth2.resolve_paving_class_from_neighbors(nc, ec, sc, wc)
-		return pcls if pcls >= 0 else TileSynth2.TILE_GRASS
+		return _resolve_ground_from_neighbors(nc, ec, sc, wc).x
 	return c
 
-func _paving_under_tile(cx: int, cy: int, tx: int, ty: int, tile_buf: PackedByteArray) -> Vector2i:
-	# Decision 82 (Item 82 / F106): Treat the ball or sign tile as the surrounding paving class
-	# and compute its OWN 4-bit edge mask with TileSynth2's exact mask family (never copy a neighbor's mask).
+func _object_neighbor_classes(cx: int, cy: int, tx: int, ty: int, tile_buf: PackedByteArray) -> Array[int]:
 	var n_cls := TileSynth2.TILE_VOID
 	var e_cls := TileSynth2.TILE_VOID
 	var s_cls := TileSynth2.TILE_VOID
 	var w_cls := TileSynth2.TILE_VOID
 	var used_compiled := false
-	if _is_caricature_place and _walker_grid != null:
+	if _is_caricature_place:
+		var comp: Dictionary = {}
 		var gst := _global_screen_tile(cx, cy, tx, ty)
-		var aid := _walker_grid.area_at_global(gst.x, gst.y)
-		if not aid.is_empty() and _caricature_compiled_by_area.has(aid):
-			var comp: Dictionary = _caricature_compiled_by_area[aid]
+		if _walker_grid != null:
+			var aid := _walker_grid.area_at_global(gst.x, gst.y)
+			if not aid.is_empty() and _caricature_compiled_by_area.has(aid):
+				comp = _caricature_compiled_by_area[aid]
+		if comp.is_empty() and _caricature_cells.has(Vector2i(cx, cy)):
+			comp = (_caricature_cells[Vector2i(cx, cy)] as Dictionary).get("compiled", {})
+		if not comp.is_empty():
 			var loc := CaricatureWalkerGrid.global_to_local(comp, gst.x, gst.y)
 			n_cls = _effective_class_in_compiled(comp, loc.x, loc.y - 1, true)
 			e_cls = _effective_class_in_compiled(comp, loc.x + 1, loc.y, true)
@@ -3153,11 +3209,23 @@ func _paving_under_tile(cx: int, cy: int, tx: int, ty: int, tile_buf: PackedByte
 			s_cls = int(tile_buf[((ty + 1) * 32 + tx) * 3])
 		if tx > 0:
 			w_cls = int(tile_buf[(ty * 32 + (tx - 1)) * 3])
-	var pave_cls := TileSynth2.resolve_paving_class_from_neighbors(n_cls, e_cls, s_cls, w_cls)
+	return [n_cls, e_cls, s_cls, w_cls]
+
+func _paving_under_tile(cx: int, cy: int, tx: int, ty: int, tile_buf: PackedByteArray) -> Vector2i:
+	# Decision 82 (Item 82 / F106): Treat the ball or sign tile as the surrounding paving class
+	# and compute its OWN 4-bit edge mask with TileSynth2's exact mask family (never copy a neighbor's mask).
+	var nbs := _object_neighbor_classes(cx, cy, tx, ty, tile_buf)
+	var pave_cls := TileSynth2.resolve_paving_class_from_neighbors(nbs[0], nbs[1], nbs[2], nbs[3])
 	if pave_cls < 0:
 		return Vector2i(-1, 0)
-	var own_mask := TileSynth2.compute_paving_mask_from_neighbors(pave_cls, n_cls, e_cls, s_cls, w_cls)
+	var own_mask := TileSynth2.compute_paving_mask_from_neighbors(pave_cls, nbs[0], nbs[1], nbs[2], nbs[3])
 	return Vector2i(pave_cls, own_mask)
+
+func _ground_under_object(cx: int, cy: int, tx: int, ty: int, tile_buf: PackedByteArray) -> Vector2i:
+	# Decision 83 (Item 83 / F108): Paving via _paving_under_tile first (identical to F106),
+	# else the most common ground neighbour (ties N, E, S, W) with its own 4-bit edge mask, else (GRASS, 0).
+	var nbs := _object_neighbor_classes(cx, cy, tx, ty, tile_buf)
+	return _resolve_ground_from_neighbors(nbs[0], nbs[1], nbs[2], nbs[3])
 
 func _sign_pavement_neighbor(tile_buf: PackedByteArray, tx: int, ty: int) -> Vector2i:
 	var n_cls := int(tile_buf[((ty - 1) * 32 + tx) * 3]) if ty > 0 else TileSynth2.TILE_VOID
@@ -3196,14 +3264,10 @@ func _blit_cell(cx: int, cy: int, item: Dictionary) -> void:
 					var st := _screen_tile(cx, cy, tx, ty)
 					var gst := _global_screen_tile(cx, cy, tx, ty)
 					var base_coord := get_tile_atlas_coords(tile_buf, under_buf, idx)
-					if cls == TileSynth2.TILE_ITEM_BALL and _is_caricature_place and _walker_grid != null:
-						var b_aid := _walker_grid.area_at_global(gst.x, gst.y)
-						if not b_aid.is_empty() and _caricature_compiled_by_area.has(b_aid):
-							var b_loc := CaricatureWalkerGrid.global_to_local(_caricature_compiled_by_area[b_aid], gst.x, gst.y)
-							if _walker_grid.is_ball_collected(b_aid, b_loc.x, b_loc.y):
-								var nb_b := _paving_under_tile(cx, cy, tx, ty, tile_buf)
-								base_coord = get_atlas_coords(nb_b.x, 0, nb_b.y) if nb_b.x >= 0 else get_atlas_coords(TileSynth2.TILE_GRASS, 0, 0)
-					if not _force_no_rom and cls == TileSynth2.TILE_SIGN:
+					if _is_caricature_place and (cls == TileSynth2.TILE_ITEM_BALL or cls == TileSynth2.TILE_SIGN):
+						var gnd := _ground_under_object(cx, cy, tx, ty, tile_buf)
+						base_coord = get_atlas_coords(gnd.x, 0, gnd.y)
+					elif not _force_no_rom and cls == TileSynth2.TILE_SIGN:
 						var nb := _paving_under_tile(cx, cy, tx, ty, tile_buf)
 						if nb.x >= 0:
 							base_coord = get_atlas_coords(nb.x, 0, nb.y)
@@ -3744,6 +3808,10 @@ func evaluate_fog_at_tile(st: Vector2, time_sec: float = 0.0) -> Dictionary:
 	}
 
 func _clear_cell_stamps(cell: Vector2i) -> void:
+	if _cell_ball_globals.has(cell):
+		for bg in (_cell_ball_globals[cell] as Array):
+			_ball_sprites_by_global.erase(bg)
+		_cell_ball_globals.erase(cell)
 	if not _cell_stamp_sprites.has(cell):
 		return
 	var sprites: Array = _cell_stamp_sprites[cell]
@@ -3751,6 +3819,31 @@ func _clear_cell_stamps(cell: Vector2i) -> void:
 		if is_instance_valid(s):
 			s.queue_free()
 	_cell_stamp_sprites.erase(cell)
+
+func _resolve_outdoor_ball_sprite() -> Dictionary:
+	if not _outdoor_ball_sprite_info.is_empty():
+		return _outdoor_ball_sprite_info
+	var bundle: Dictionary = InteriorTiles.resolve_atlas_bundle(AssetDB.DEFAULT_CACHE_DIR, _force_no_rom)
+	var stamp_overrides: Dictionary = bundle.get("stamp_overrides", {})
+	var strip_tex: Texture2D = bundle.get("texture", null)
+	if not _force_no_rom and strip_tex != null and stamp_overrides.has("110"):
+		var ov_coords: Array = stamp_overrides["110"] as Array
+		if ov_coords.size() >= 2:
+			var atex := AtlasTexture.new()
+			atex.atlas = strip_tex
+			atex.region = Rect2(
+				float(int(ov_coords[0]) * TILE_SIZE_PX),
+				float(int(ov_coords[1]) * TILE_SIZE_PX),
+				float(TILE_SIZE_PX),
+				float(TILE_SIZE_PX)
+			)
+			_outdoor_ball_sprite_info = {"texture": atex, "scale": 1.0, "tex_h": TILE_SIZE_PX}
+			return _outdoor_ball_sprite_info
+	var def110: Dictionary = TileSynth2.get_stamp_def(110)
+	var ftex: Texture2D = _get_stamp_texture(110, 1, 1, def110)
+	if ftex != null:
+		_outdoor_ball_sprite_info = {"texture": ftex, "scale": 2.0, "tex_h": 16}
+	return _outdoor_ball_sprite_info
 
 func _load_stamp_image(sid: int, def: Dictionary) -> Image:
 	if _stamp_images.has(sid):
@@ -3859,7 +3952,7 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 	var people: Array = item.get("people", [])
 	var street_pokemon: Array = item.get("street_pokemon", [])
 	var tile_buf: PackedByteArray = item.get("buf", PackedByteArray())
-	if stamps.is_empty() and fixtures.is_empty() and people.is_empty() and street_pokemon.is_empty() and (_force_no_rom or tile_buf.is_empty()):
+	if stamps.is_empty() and fixtures.is_empty() and people.is_empty() and street_pokemon.is_empty() and (tile_buf.is_empty() or (not _is_caricature_place and _force_no_rom)):
 		return
 	var reveal_state: int = int(item.get("reveal_state", 1))
 	if reveal_state <= 0:
@@ -3965,8 +4058,76 @@ func _render_cell_stamps(cx: int, cy: int, item: Dictionary) -> void:
 		_stamp_base_layer.add_child(b_sp)
 		created.append(b_sp)
 
-	# Signs standing on paved/path/road/sand tiles draw transparent wood_sign over the pavement
-	if not _force_no_rom and tile_buf.size() >= 32 * 32 * 3:
+	# Decision 83 (Item 83 / F108): In caricature places, draw every uncollected item ball (stamp 110)
+	# and every sign (Emerald em_wood_sign with ROM, original_v1 cutout without ROM) on _stamp_base_layer
+	# over the tile's surrounding ground class. Street-accurate places keep their existing path unchanged.
+	if _is_caricature_place and tile_buf.size() >= 32 * 32 * 3:
+		var sign_tex: Texture2D = null
+		var sign_tex_resolved := false
+		var ball_info: Dictionary = {}
+		var ball_resolved := false
+		var cell_balls: Array[Vector2i] = []
+		for ty in 32:
+			for tx in 32:
+				var tidx := (ty * 32 + tx) * 3
+				var tcls := int(tile_buf[tidx])
+				if tcls == TileSynth2.TILE_ITEM_BALL:
+					var gst := Vector2i(cx * 32 + tx, cell_r0 + ty)
+					var collected := false
+					if _walker_grid != null:
+						var b_aid := _walker_grid.area_at_global(gst.x, gst.y)
+						if not b_aid.is_empty() and _caricature_compiled_by_area.has(b_aid):
+							var b_loc := CaricatureWalkerGrid.global_to_local(_caricature_compiled_by_area[b_aid], gst.x, gst.y)
+							collected = _walker_grid.is_ball_collected(b_aid, b_loc.x, b_loc.y)
+					if collected:
+						continue
+					if not ball_resolved:
+						ball_info = _resolve_outdoor_ball_sprite()
+						ball_resolved = true
+					var btex: Texture2D = ball_info.get("texture", null)
+					if btex != null:
+						var bscale := float(ball_info.get("scale", 1.0))
+						var btex_h := int(ball_info.get("tex_h", TILE_SIZE_PX))
+						var bsp := Sprite2D.new()
+						bsp.centered = false
+						bsp.texture = btex
+						bsp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+						bsp.scale = Vector2(bscale, bscale)
+						bsp.position = Vector2(
+							float((gst.x - _render_origin_tile.x) * 32),
+							float((gst.y + 1 - _render_origin_tile.y) * 32)
+						)
+						bsp.offset = Vector2(0.0, -float(btex_h))
+						bsp.material = known_mat
+						_stamp_base_layer.add_child(bsp)
+						created.append(bsp)
+						_ball_sprites_by_global[gst] = bsp
+						cell_balls.append(gst)
+				elif tcls == TileSynth2.TILE_SIGN:
+					if not sign_tex_resolved:
+						if _using_rom_atlas and not _force_no_rom:
+							var sign_res := OutdoorFixtures.resolve_texture("em_wood_sign", false)
+							sign_tex = sign_res.get("texture", null)
+						else:
+							sign_tex = _fallback_sign_texture
+						sign_tex_resolved = true
+					if sign_tex != null:
+						var ssp := Sprite2D.new()
+						ssp.centered = false
+						ssp.texture = sign_tex
+						ssp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+						ssp.scale = Vector2(1.0, 1.0)
+						ssp.position = Vector2(
+							float((cx * 32 + tx - _render_origin_tile.x) * 32),
+							float((cell_r0 + ty + 1 - _render_origin_tile.y) * 32)
+						)
+						ssp.offset = Vector2(0.0, -float(TILE_SIZE_PX))
+						ssp.material = known_mat
+						_stamp_base_layer.add_child(ssp)
+						created.append(ssp)
+		if not cell_balls.is_empty():
+			_cell_ball_globals[cell] = cell_balls
+	elif not _force_no_rom and tile_buf.size() >= 32 * 32 * 3:
 		var sign_res: Variant = null
 		var sign_tex: Texture2D = null
 		for ty in 32:

@@ -664,5 +664,204 @@ func run_test() -> bool:
 		_cleanup([mv3, main3])
 		return false
 
+	# 14. Item 83 / F108: Every uncollected outdoor ball (136) and sign (281) across all 21 DC areas
+	#     must draw its surrounding ground class & mask on the World layer (in both ROM and --no-rom modes),
+	#     and draw its sprite on _stamp_base_layer (balls use stamp 110 int_item_ball and disappear on pickup).
+	#     Reuse mv3 (zero extra distort_to_place allocations) so godot_selftest stays well under its 0.5 GiB cap.
+	for a_open in Neighbourhoods.areas_of("city:washington-dc"):
+		var aid_o := str((a_open as Dictionary).get("id", ""))
+		if aid_o != "camp:washington-dc":
+			DB.upsert_neighbourhood_state(aid_o, "city:washington-dc", 2, "pick", 1)
+	for r_open in Neighbourhoods.routes_of("city:washington-dc"):
+		DB.upsert_neighbourhood_state(str((r_open as Dictionary).get("id", "")), "city:washington-dc", 2, "route", 1)
+
+	var f108_any_failed := false
+	var prev_ov_layer: Node = mv3._overview_layer
+	mv3._overview_layer = null
+	for mode_no_rom in [false, true]:
+		mv3.get_walker_grid()._collected_ball_keys.clear()
+		mv3._synth_cache.clear()
+		mv3.set_force_no_rom(mode_no_rom)
+		var f108_balls_wrong_total := 0
+		var f108_balls_wrong_nongrass := 0
+		var f108_balls_paving := 0
+		var f108_balls_tall_grass := 0
+		var f108_balls_other := 0
+		var f108_signs_wrong_total := 0
+		var f108_signs_tall_grass := 0
+		var f108_signs_paving := 0
+		var f108_signs_other := 0
+		var f108_checked_balls := 0
+		var f108_checked_signs := 0
+		var f108_rendered_cells: Dictionary = {}
+
+		for aid_v in mv3._caricature_compiled_by_area.keys():
+			var aid4 := str(aid_v)
+			var comp4: Dictionary = mv3._caricature_compiled_by_area[aid_v]
+			var area4: Dictionary = Neighbourhoods.area(aid4)
+			var w4 := int(comp4["w"])
+			var h4 := int(comp4["h"])
+			var cls4: PackedByteArray = comp4["class"]
+			for ly4 in range(h4):
+				for lx4 in range(w4):
+					var tcls4: int = cls4[ly4 * w4 + lx4]
+					if tcls4 != TileSynth2.TILE_ITEM_BALL and tcls4 != TileSynth2.TILE_SIGN:
+						continue
+					var gpos4 := CaricatureWalkerGrid.local_to_global(comp4, lx4, ly4)
+					var cpos4 := CaricatureWalkerGrid.global_tile_to_cell(gpos4.x, gpos4.y)
+					if not f108_rendered_cells.has(cpos4):
+						var cr4: Dictionary = CaricatureMap.cell_result(comp4, cpos4, area4)
+						mv3._blit_cell(cpos4.x, cpos4.y, {
+							"buf": cr4["tiles"],
+							"under_buf": cr4.get("under_tiles", PackedByteArray()),
+							"reveal_state": 2,
+							"has_data": true,
+							"stamps": [],
+							"fixtures": [],
+							"people": [],
+							"street_pokemon": [],
+						})
+						f108_rendered_cells[cpos4] = true
+					var exp_gnd: Vector2i = _expected_ground_under_object(comp4, lx4, ly4)
+					var exp_coord: Vector2i = mv3.get_atlas_coords(exp_gnd.x, 0, exp_gnd.y)
+					var rst4: Vector2i = mv3._global_to_render_tile(gpos4)
+					var got_coord: Vector2i = mv3._world_cleared.get_cell_atlas_coords(rst4)
+					if got_coord == Vector2i(-1, -1):
+						got_coord = mv3._world_known.get_cell_atlas_coords(rst4)
+					if tcls4 == TileSynth2.TILE_ITEM_BALL:
+						f108_checked_balls += 1
+						if got_coord != exp_coord:
+							f108_balls_wrong_total += 1
+							if exp_gnd.x != TileSynth2.TILE_GRASS:
+								f108_balls_wrong_nongrass += 1
+								if TileSynth2.is_paving_class(exp_gnd.x) and exp_gnd.x != TileSynth2.TILE_SAND:
+									f108_balls_paving += 1
+								elif exp_gnd.x == TileSynth2.TILE_TALL_GRASS:
+									f108_balls_tall_grass += 1
+								else:
+									f108_balls_other += 1
+						elif not mv3._ball_sprites_by_global.has(gpos4):
+							push_error("FAIL [F108 no_rom=%s]: Missing ball sprite at %s (%d,%d)" % [str(mode_no_rom), aid4, lx4, ly4])
+							f108_any_failed = true
+					else:
+						f108_checked_signs += 1
+						if got_coord != exp_coord:
+							f108_signs_wrong_total += 1
+							if exp_gnd.x == TileSynth2.TILE_TALL_GRASS:
+								f108_signs_tall_grass += 1
+							elif TileSynth2.is_paving_class(exp_gnd.x):
+								f108_signs_paving += 1
+							else:
+								f108_signs_other += 1
+			for c_spr_arr in mv3._cell_stamp_sprites.values():
+				for sp_node in (c_spr_arr as Array):
+					if is_instance_valid(sp_node):
+						if sp_node.get_parent() != null:
+							sp_node.get_parent().remove_child(sp_node)
+						sp_node.free()
+			mv3._cell_stamp_sprites.clear()
+			mv3._ball_sprites_by_global.clear()
+			mv3._cell_ball_globals.clear()
+			if mv3._world_cleared != null:
+				mv3._world_cleared.clear()
+			if mv3._world_known != null:
+				mv3._world_known.clear()
+			f108_rendered_cells.clear()
+
+		if f108_checked_balls != 136 or f108_checked_signs != 281:
+			push_error("FAIL [F108 no_rom=%s]: Expected 136 balls and 281 signs, got %d balls and %d signs" % [str(mode_no_rom), f108_checked_balls, f108_checked_signs])
+			mv3._overview_layer = prev_ov_layer
+			_cleanup([mv3, main3])
+			return false
+		if f108_balls_wrong_total > 0 or f108_signs_wrong_total > 0:
+			push_error("FAIL [F108 no_rom=%s]: wrong_balls=%d (non_grass=%d: paving=%d tall_grass=%d other=%d), wrong_signs=%d (tall_grass=%d paving=%d other=%d)" % [
+				str(mode_no_rom), f108_balls_wrong_total, f108_balls_wrong_nongrass,
+				f108_balls_paving, f108_balls_tall_grass, f108_balls_other,
+				f108_signs_wrong_total, f108_signs_tall_grass, f108_signs_paving, f108_signs_other
+			])
+			f108_any_failed = true
+			continue
+
+		# Verify pickup of National Mall (16, 26) removes the ball sprite and keeps TILE_ROAD mask=15 ground
+		var nm_c4: Dictionary = mv3._caricature_compiled_by_area["hood:washington-dc:national-mall"]
+		var g16: Vector2i = CaricatureWalkerGrid.local_to_global(nm_c4, 16, 26)
+		var c16: Vector2i = CaricatureWalkerGrid.global_tile_to_cell(g16.x, g16.y)
+		mv3.place_player_in_area("hood:washington-dc:national-mall", Vector2i(16, 27), "N")
+		mv3._render_cell(c16.x, c16.y)
+		if not mv3._ball_sprites_by_global.has(g16):
+			push_error("FAIL [F108 no_rom=%s]: Uncollected ball sprite missing at National Mall (16, 26)" % str(mode_no_rom))
+			mv3._overview_layer = prev_ov_layer
+			_cleanup([mv3, main3])
+			return false
+		mv3._erase_collected_ball_visual(g16)
+		if mv3._ball_sprites_by_global.has(g16):
+			push_error("FAIL [F108 no_rom=%s]: Ball sprite still tracked after pickup at (16, 26)" % str(mode_no_rom))
+			mv3._overview_layer = prev_ov_layer
+			_cleanup([mv3, main3])
+			return false
+		var after_pick_coord: Vector2i = mv3._world_cleared.get_cell_atlas_coords(mv3._global_to_render_tile(g16))
+		if after_pick_coord != mv3.get_atlas_coords(TileSynth2.TILE_ROAD, 0, 15):
+			push_error("FAIL [F108 no_rom=%s]: Ground after pickup at (16, 26) got %s, expected road mask=15" % [str(mode_no_rom), str(after_pick_coord)])
+			mv3._overview_layer = prev_ov_layer
+			_cleanup([mv3, main3])
+			return false
+
+	mv3._overview_layer = prev_ov_layer
 	_cleanup([mv3, main3])
-	return true
+	return not f108_any_failed
+
+func _is_f108_ground_class(cls: int) -> bool:
+	return cls in [
+		TileSynth2.TILE_GRASS,
+		TileSynth2.TILE_TALL_GRASS,
+		TileSynth2.TILE_SAND,
+		TileSynth2.TILE_PATH,
+		TileSynth2.TILE_ROAD,
+		TileSynth2.TILE_BRIDGE,
+		TileSynth2.TILE_PLAZA,
+		TileSynth2.TILE_FLOWERS,
+		TileSynth2.TILE_CROP,
+	]
+
+func _resolve_f108_ground_from_nbs(n_cls: int, e_cls: int, s_cls: int, w_cls: int) -> Vector2i:
+	var pcls := TileSynth2.resolve_paving_class_from_neighbors(n_cls, e_cls, s_cls, w_cls)
+	if pcls >= 0:
+		return Vector2i(pcls, TileSynth2.compute_paving_mask_from_neighbors(pcls, n_cls, e_cls, s_cls, w_cls))
+	var nbs := [n_cls, e_cls, s_cls, w_cls]
+	var counts: Dictionary = {}
+	for nc in nbs:
+		if _is_f108_ground_class(nc):
+			counts[nc] = int(counts.get(nc, 0)) + 1
+	var best_cls := -1
+	var best_cnt := 0
+	for nc in nbs:
+		if _is_f108_ground_class(nc):
+			var cnt := int(counts.get(nc, 0))
+			if cnt > best_cnt:
+				best_cnt = cnt
+				best_cls = nc
+	if best_cls < 0:
+		return Vector2i(TileSynth2.TILE_GRASS, 0)
+	return Vector2i(best_cls, TileSynth2.compute_paving_mask_from_neighbors(best_cls, n_cls, e_cls, s_cls, w_cls))
+
+func _f108_effective_cls(comp: Dictionary, lx: int, ly: int, resolve_objects: bool) -> int:
+	var w := int(comp["w"])
+	var h := int(comp["h"])
+	if lx < 0 or lx >= w or ly < 0 or ly >= h:
+		return TileSynth2.TILE_VOID
+	var cls_buf: PackedByteArray = comp["class"]
+	var c: int = cls_buf[ly * w + lx]
+	if resolve_objects and (c == TileSynth2.TILE_ITEM_BALL or c == TileSynth2.TILE_SIGN):
+		var nc := _f108_effective_cls(comp, lx, ly - 1, false)
+		var ec := _f108_effective_cls(comp, lx + 1, ly, false)
+		var sc := _f108_effective_cls(comp, lx, ly + 1, false)
+		var wc := _f108_effective_cls(comp, lx - 1, ly, false)
+		return _resolve_f108_ground_from_nbs(nc, ec, sc, wc).x
+	return c
+
+func _expected_ground_under_object(comp: Dictionary, lx: int, ly: int) -> Vector2i:
+	var nc := _f108_effective_cls(comp, lx, ly - 1, true)
+	var ec := _f108_effective_cls(comp, lx + 1, ly, true)
+	var sc := _f108_effective_cls(comp, lx, ly + 1, true)
+	var wc := _f108_effective_cls(comp, lx - 1, ly, true)
+	return _resolve_f108_ground_from_nbs(nc, ec, sc, wc)
