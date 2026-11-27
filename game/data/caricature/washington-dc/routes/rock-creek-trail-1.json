@@ -190,7 +190,7 @@
         25,
         22
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside the rock creek trail#1 trail."
     },
     {
@@ -198,7 +198,7 @@
         55,
         9
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked beside the rock creek trail#1 trail."
     },
     {
@@ -206,7 +206,7 @@
         84,
         23
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked beside the rock creek trail#1 trail."
     },
     {
@@ -214,7 +214,7 @@
         113,
         9
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked beside the rock creek trail#1 trail."
     },
     {
@@ -222,7 +222,7 @@
         141,
         23
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked beside the rock creek trail#1 trail."
     }
   ],

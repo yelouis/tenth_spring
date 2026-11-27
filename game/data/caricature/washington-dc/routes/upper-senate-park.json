@@ -177,7 +177,7 @@
         23,
         18
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked beside the upper senate park#1 trail."
     },
     {
@@ -185,7 +185,7 @@
         9,
         34
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked beside the upper senate park#1 trail."
     },
     {
@@ -193,7 +193,7 @@
         23,
         50
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked beside the upper senate park#1 trail."
     }
   ],

@@ -1283,7 +1283,7 @@
         38,
         25
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Behind a marble balustrade at the west Capitol wing."
     },
     {
@@ -1291,7 +1291,7 @@
         54,
         25
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked beside a cherry root near the Capitol steps."
     },
     {
@@ -1299,7 +1299,7 @@
         90,
         25
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Beneath a granite bench outside the Library of Congress."
     },
     {
@@ -1307,7 +1307,7 @@
         108,
         25
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Inside a dry urn flanking the east Library arch."
     },
     {
@@ -1315,7 +1315,7 @@
         65,
         36
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Under a flagstone edge on the central fanning walk."
     },
     {
@@ -1323,7 +1323,7 @@
         74,
         47
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Behind a streetlamp overlooking the rowhouse avenue."
     },
     {
@@ -1331,7 +1331,7 @@
         50,
         53
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cool flask left on the carriage-house stoop."
     },
     {
@@ -1339,7 +1339,7 @@
         88,
         53
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside the clockmaker's iron railing."
     },
     {
@@ -1347,7 +1347,7 @@
         32,
         8
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1355,7 +1355,7 @@
         46,
         10
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1363,7 +1363,7 @@
         60,
         8
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1371,7 +1371,7 @@
         130,
         10
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1379,7 +1379,7 @@
         26,
         18
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1387,7 +1387,7 @@
         18,
         26
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1395,7 +1395,7 @@
         30,
         14
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1403,7 +1403,7 @@
         28,
         26
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1411,7 +1411,7 @@
         33,
         13
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1419,7 +1419,7 @@
         55,
         13
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1427,7 +1427,7 @@
         112,
         22
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1435,7 +1435,7 @@
         118,
         20
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1443,7 +1443,7 @@
         144,
         24
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked along the outer capitol hill grounds."
     },
     {
@@ -1451,7 +1451,7 @@
         142,
         16
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer capitol hill grounds."
     }
   ],

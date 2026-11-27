@@ -769,7 +769,7 @@
         23,
         22
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked beside the connecticut avenue#1 trail."
     },
     {
@@ -777,7 +777,7 @@
         8,
         45
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked beside the connecticut avenue#1 trail."
     },
     {
@@ -785,7 +785,7 @@
         23,
         67
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside the connecticut avenue#1 trail."
     },
     {
@@ -793,7 +793,7 @@
         9,
         89
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked beside the connecticut avenue#1 trail."
     },
     {
@@ -801,7 +801,7 @@
         22,
         113
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked beside the connecticut avenue#1 trail."
     }
   ],

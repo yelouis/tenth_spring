@@ -78,8 +78,8 @@
         {"id": "npc_telemetry_curator", "name": "Curator Lin", "at": [9, 10], "role": "scholar", "text": ["The emergency relay console sits in the east wing, behind the security gate.", "Its lever is across the west doorway, though cracked rubble blocks that passage until a Pokémon can break it."]}
       ],
       "items": [
-        {"id": "dc_airspace_magnet", "at": [4, 11], "name": "Magnet"},
-        {"id": "dc_airspace_upgrade", "at": [20, 11], "name": "Up-Grade"}
+        {"id": "dc_airspace_magnet", "at": [4, 11], "name": "{item:219}"},
+        {"id": "dc_airspace_upgrade", "at": [20, 11], "name": "{item:229}"}
       ],
       "signs": [
         {"at": [13, 5], "text": "Milestones of Flight — Early Glider & Orbital Return Capsule"},

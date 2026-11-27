@@ -23,6 +23,7 @@ const MapConstants := preload("res://world/map_constants.gd")
 const SpawnDirector := preload("res://encounters/spawn_director.gd")
 const TimeOfDayShader := preload("res://world/shaders/time_of_day.gdshader")
 const InteriorTiles := preload("res://world/interior/interior_tiles.gd")
+const TextTokens := preload("res://ui/text_tokens.gd")
 
 signal door_entered(interior_id: String, return_info: Dictionary)
 
@@ -182,9 +183,9 @@ var _collected_hidden_keys: Dictionary = {} # "hidden:<area_id>:<lx>:<ly>" -> tr
 var _person_facing_overrides: Dictionary = {} # Vector2i global -> "N"|"S"|"E"|"W"
 var _person_sprites_by_global: Dictionary = {} # Vector2i global -> Array[Dictionary]
 
-const OUTDOOR_BALL_ITEM_POOL: Array[String] = [
-	"Potion", "Super Potion", "Poké Ball", "Great Ball",
-	"Antidote", "Escape Rope", "Repel", "Revive",
+const OUTDOOR_BALL_ITEM_IDS: Array[int] = [
+	17, 26, 4, 3,
+	18, 78, 79, 28,
 ]
 var _distortion_field_layer: Node2D = null
 var _distortion_field_rect: ColorRect = null
@@ -2028,7 +2029,12 @@ func open_dialogue(lines: Array, speaker: String = "", extra_line: String = "", 
 	if dlg == null:
 		return null
 	if dlg.has_method("open_lines"):
-		dlg.open_lines(lines, speaker, extra_line, extra_color)
+		dlg.open_lines(
+			TextTokens.resolve_lines(lines, _data_cache_dir),
+			TextTokens.resolve(speaker, _data_cache_dir),
+			TextTokens.resolve(extra_line, _data_cache_dir),
+			extra_color
+		)
 	_sync_modal_input_lock()
 	return dlg
 
@@ -2048,10 +2054,11 @@ static func opposite_facing(dir_str: String) -> String:
 static func hidden_item_key(area_id: String, lx: int, ly: int) -> String:
 	return "hidden:%s:%d:%d" % [area_id, lx, ly]
 
-static func resolve_outdoor_ball_item_name(area_id: String, lx: int, ly: int) -> String:
+static func resolve_outdoor_ball_item_name(area_id: String, lx: int, ly: int, cache_dir: String = AssetDB.DEFAULT_CACHE_DIR) -> String:
 	var raw := "%s|%d|%d|%d" % [area_id, lx, ly, MapConstants.MAP_SEED]
 	var h: int = abs(raw.hash())
-	return OUTDOOR_BALL_ITEM_POOL[h % OUTDOOR_BALL_ITEM_POOL.size()]
+	var iid: int = OUTDOOR_BALL_ITEM_IDS[h % OUTDOOR_BALL_ITEM_IDS.size()]
+	return TextTokens.resolve("{item:%d}" % iid, cache_dir)
 
 func trigger_interact_for_walker() -> bool:
 	if _player_walker == null or not _walk_mode_active:
@@ -2326,8 +2333,8 @@ func _try_collect_hidden_item_at(global_tile: Vector2i) -> bool:
 			if already:
 				return false
 			_collected_hidden_keys[hkey] = true
-			var iname := str(hi.get("item", "Item"))
-			var inote := str(hi.get("note", ""))
+			var iname := TextTokens.resolve(str(hi.get("item", "Item")), _data_cache_dir)
+			var inote := TextTokens.resolve(str(hi.get("note", "")), _data_cache_dir)
 			if db != null and db.is_open() and db.has_method("mark_item_collected"):
 				db.mark_item_collected(hkey, aid, "hidden", iname)
 			var msg := ("Found a hidden %s! — %s" % [iname, inote]) if not inote.is_empty() else ("Found a hidden %s!" % iname)
@@ -2397,7 +2404,7 @@ func _dispatch_walker_interact(facing_tile: Vector2i, standing_tile: Vector2i, f
 			var f_cls: int = cls_buf[f_local.y * w + f_local.x]
 			if f_cls == TileSynth2.TILE_ITEM_BALL and not _walker_grid.is_ball_collected(aid, f_local.x, f_local.y):
 				var bkey := CaricatureWalkerGrid.ball_item_key(aid, f_local.x, f_local.y)
-				var bname := resolve_outdoor_ball_item_name(aid, f_local.x, f_local.y)
+				var bname := resolve_outdoor_ball_item_name(aid, f_local.x, f_local.y, _data_cache_dir)
 				var db = _get_db()
 				if db != null and db.is_open() and db.has_method("mark_item_collected"):
 					db.mark_item_collected(bkey, aid, "ball", bname)

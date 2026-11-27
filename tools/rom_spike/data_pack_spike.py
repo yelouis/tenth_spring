@@ -246,13 +246,9 @@ def compute_rgba_metrics(img: al.Image) -> Dict[str, Any]:
 def sanitize_artist_credit(raw: str, species_names_lower: Set[str]) -> str:
     """Preserve artist credit while abbreviating any token that matches a Pokémon species name."""
     cleaned = " ".join(raw.strip().split())
-    # Explicit known artist handle replacements where a handle contains a species name
-    cleaned = re.sub(r"(?i)\bEspeon\s+Scientist\b", "E. Scientist", cleaned)
-    cleaned = re.sub(r"(?i)\bRadicalCharizard\b", "RadicalC.", cleaned)
-    cleaned = re.sub(r"(?i)\bBasic\s+Vanillite\b", "Basic V.", cleaned)
     # Check against all species names (case-insensitive substring for names >= 3 chars)
     lowered = cleaned.lower()
-    for sname in species_names_lower:
+    for sname in sorted(species_names_lower, key=len, reverse=True):
         if len(sname) >= 3 and sname in lowered:
             pattern = re.compile(re.escape(sname), re.IGNORECASE)
             cleaned = pattern.sub(sname[0].upper() + ".", cleaned)
@@ -292,12 +288,12 @@ def parse_smogon_credits(
                     artists = [a.strip() for a in sanitized.split(",") if a.strip()]
                     dex_credits[str(dex)] = artists
             elif section == "Mega Evolution" and col0.isdigit():
-                # Skip Kangaskhan-baby sub-row so the 48 Mega rows align with the 48 Gen 6 Megas
+                # Skip dex 115 baby sub-row so the 48 Mega rows align with the 48 Gen 6 Megas
                 if "baby" in col1.lower():
                     continue
                 mega_rows_in_sheet.append(spriter)
 
-    # Map the 48 Mega forms (sorted in sheet order by base species_id, with Charizard X/Y and Mewtwo X/Y)
+    # Map the 48 Mega forms (sorted in sheet order by base species_id, with dex 6 X/Y and dex 150 X/Y)
     mega_sorted_sheet_order = sorted(
         mega_forms,
         key=lambda m: (m["species_id"], m["pokemon_id"]),

@@ -70,7 +70,7 @@
         {"id": "npc_marcus_bell", "name": "Marcus Bell", "at": [7, 7], "role": "scholar", "text": ["Take the northeast stairs up to Dr. Calder's stacks when you're ready to see what she left behind.", "The cipher vault stays sealed until you trip the floor latch tucked in the southwest aisle."]}
       ],
       "items": [
-        {"id": "dc_loc_1f_wise", "at": [18, 10], "name": "Wise Glasses"}
+        {"id": "dc_loc_1f_wise", "at": [18, 10], "name": "{item:244}"}
       ],
       "signs": [
         {"at": [11, 9], "text": "Main Reading Room — Silence Keeps the Archive Whole"}
@@ -131,7 +131,7 @@
       ],
       "npcs": [],
       "items": [
-        {"id": "dc_loc_2f_spell", "at": [18, 3], "name": "Spell Tag"}
+        {"id": "dc_loc_2f_spell", "at": [18, 3], "name": "{item:224}"}
       ],
       "signs": [
         {"at": [11, 4], "text": "Rare Book Folio — Calder's Margin Notes Point South-East"}

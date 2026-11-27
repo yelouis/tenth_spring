@@ -454,7 +454,7 @@ static func validate_data_staging(staging_dir: String) -> Dictionary:
 			if not FileAccess.file_exists(p):
 				return {"ok": false, "error": "Missing fan sprite %s/%d.png" % [sub, tid], "failed_check": "fan_sprite_exists"}
 
-	# Check #887 (Dragapult) and normalized #796 (Xurkitree back) dimensions & variance
+	# Check #887 and normalized #796 (back) dimensions & variance
 	for check_pair in [["front", 887], ["back", 796], ["back_shiny", 10041]]:
 		var p := staging_dir.path_join("sprites/%s/%d.png" % [check_pair[0], int(check_pair[1])])
 		var img := Image.new()

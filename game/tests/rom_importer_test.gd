@@ -421,7 +421,7 @@ func _test_manifests_guardrails_and_asset_db() -> bool:
 			push_error("FanSpritesImporter rejected valid sprite ID %d" % allowed_id)
 			return false
 
-	# 3. 96x96 canvas normalization for 90x97 (Xurkitree back) and 94x94 (Mega Pinsir back_shiny)
+	# 3. 96x96 canvas normalization for 90x97 (dex 796 back) and 94x94 (Mega dex 127 back_shiny)
 	for dims in [Vector2i(90, 97), Vector2i(94, 94)]:
 		var raw_img := Image.create(dims.x, dims.y, false, Image.FORMAT_RGBA8)
 		raw_img.fill(Color8(120, 80, 200, 255))
@@ -482,7 +482,7 @@ func _test_manifests_guardrails_and_asset_db() -> bool:
 		push_error("Expected #609 (ROM sprite) to have empty fan sprite credits")
 		return false
 	if AssetDBRef.credits(887).is_empty():
-		push_error("Expected #887 (Dragapult) to have non-empty fan sprite credits")
+		push_error("Expected #887 to have non-empty fan sprite credits")
 		return false
 	if AssetDBRef.credits(94, "mega").is_empty() or AssetDBRef.credits(6, "mega-x").is_empty():
 		push_error("Expected Mega #94 and Mega-X #6 to have non-empty fan sprite credits")

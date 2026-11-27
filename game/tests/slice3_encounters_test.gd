@@ -281,7 +281,7 @@ func _test_species_partition_zero_legendary_and_ub_gate() -> bool:
 		var r: Dictionary = SpawnDirector.roll_encounter(ctx_post, rng)
 		var dex: int = int(r.get("dex", 0))
 		if leg_set.has(dex):
-			push_error("Zero-legendary falsified post-Necrozma: legendary dex %d rolled" % dex)
+			push_error("Zero-legendary falsified post-dex-800: legendary dex %d rolled" % dex)
 			return false
 		if bool(r.get("is_ultra_beast", false)):
 			if not ub_set.has(dex):
@@ -289,7 +289,7 @@ func _test_species_partition_zero_legendary_and_ub_gate() -> bool:
 				return false
 			ub_count += 1
 	if ub_count <= 0:
-		push_error("Expected > 0 Ultra Beast rolls across 4,000 post-Necrozma Distortion Field draws, got 0")
+		push_error("Expected > 0 Ultra Beast rolls across 4,000 post-dex-800 Distortion Field draws, got 0")
 		return false
 
 	return true

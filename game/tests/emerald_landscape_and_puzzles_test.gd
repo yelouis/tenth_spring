@@ -126,7 +126,7 @@ func run_test() -> bool:
 		return _fail("B expected P1 failure with unreached > 0, got %s" % str(m_item))
 
 	# -------------------------------------------------------------
-	# C. Valid Cut + Rock Smash + Strength cliff pockets & ledge-stair loop
+	# C. Valid field-move obstacle cliff pockets & ledge-stair loop
 	# -------------------------------------------------------------
 	var g_ok := _blank_32_grid("T")
 	for y in range(8, 27):

@@ -1955,7 +1955,7 @@
         19,
         45
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Under a cast-iron boot scraper on West M Street."
     },
     {
@@ -1963,7 +1963,7 @@
         36,
         48
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Behind a brick planter along M Street."
     },
     {
@@ -1971,7 +1971,7 @@
         55,
         48
       ],
-      "item": "Escape Rope",
+      "item": "{item:78}",
       "note": "Coiled beside a wooden crate near Georgetown Square."
     },
     {
@@ -1979,7 +1979,7 @@
         78,
         48
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked into a shuttered storefront sill."
     },
     {
@@ -1987,7 +1987,7 @@
         97,
         51
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Set behind a bollard on the east canal bank."
     },
     {
@@ -1995,7 +1995,7 @@
         34,
         66
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Left on a cedar bench beside the west lock."
     },
     {
@@ -2003,7 +2003,7 @@
         60,
         67
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked under the Towpath Dispatch steps."
     },
     {
@@ -2011,7 +2011,7 @@
         86,
         68
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Behind a rope coil along the boathouse quay."
     },
     {
@@ -2019,7 +2019,7 @@
         22,
         24
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Beneath the stone bench in front of Healy Hall."
     },
     {
@@ -2027,7 +2027,7 @@
         38,
         25
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked into ivy on the campus terrace wall."
     },
     {
@@ -2035,7 +2035,7 @@
         80,
         8
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Behind a brick garden post on Upper P Street."
     },
     {
@@ -2043,7 +2043,7 @@
         106,
         18
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Under dry leaves near the Q Street ridge gate."
     },
     {
@@ -2051,7 +2051,7 @@
         94,
         7
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Hidden beside the north bluff oak."
     },
     {
@@ -2059,7 +2059,7 @@
         10,
         26
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the west campus lane."
     },
     {
@@ -2067,7 +2067,7 @@
         18,
         66
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Hidden beside the west canal masonry wall."
     },
     {
@@ -2075,7 +2075,7 @@
         44,
         82
       ],
-      "item": "Hyper Potion",
+      "item": "{item:25}",
       "note": "Inside a rusted iron locker behind the canal ruins."
     },
     {
@@ -2083,7 +2083,7 @@
         114,
         58
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Behind a mossy wall east of the canal."
     },
     {
@@ -2091,7 +2091,7 @@
         95,
         118
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Under a cedar root near the riverfront opening."
     },
     {
@@ -2099,7 +2099,7 @@
         19,
         116
       ],
-      "item": "Pearl",
+      "item": "{item:88}",
       "note": "Washed up beside the Potomac embankment."
     },
     {
@@ -2107,7 +2107,7 @@
         54,
         102
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Under dry reeds facing the Key Bridge piers."
     },
     {
@@ -2115,7 +2115,7 @@
         108,
         92
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Behind a collapsed millstone along the east creek."
     },
     {
@@ -2123,7 +2123,7 @@
         30,
         30
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked under a boxwood hedge below campus."
     },
     {
@@ -2131,7 +2131,7 @@
         83,
         35
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Behind a brick gatepost above East M Street."
     }
   ],

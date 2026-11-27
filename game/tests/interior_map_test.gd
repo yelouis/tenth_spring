@@ -276,7 +276,7 @@ func run_test() -> bool:
 	# 4. ▶ Item 81 / F100 Rule I8 Falsifiers (every indoor item has non-empty "name")
 	# ------------------------------------------------------------------
 	var bad_i8_key := base_doc.duplicate(true)
-	bad_i8_key["floors"][0]["items"] = [{"at": [11, 8], "item": "Full Heal"}]
+	bad_i8_key["floors"][0]["items"] = [{"at": [11, 8], "item": "{item:27}"}]
 	var res_i8a := InteriorCheck.compile_and_check(bad_i8_key)
 	print("FALSIFIER_I8a: " + InteriorCheck.format_summary(res_i8a))
 	if bool(res_i8a.get("ok", true)) or not (res_i8a.get("failed_rules", []) as Array).has("I8"):

@@ -182,7 +182,7 @@
         20,
         22
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked beside the constitution gardens#1 trail."
     },
     {
@@ -190,7 +190,7 @@
         41,
         9
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked beside the constitution gardens#1 trail."
     },
     {
@@ -198,7 +198,7 @@
         61,
         23
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked beside the constitution gardens#1 trail."
     },
     {
@@ -206,7 +206,7 @@
         81,
         9
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked beside the constitution gardens#1 trail."
     }
   ],

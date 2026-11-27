@@ -54,7 +54,7 @@
         {"id": "npc_memorial_warden", "name": "Chamber Envoy", "at": [6, 7], "role": "warden", "text": ["Stairs along the north wall lead down into the pillared undercroft beneath this chamber.", "A switch waits in the far southwest corner down there, if you're ready to open the lower gate."]}
       ],
       "items": [
-        {"id": "dc_lincoln_1f_kings", "at": [1, 9], "name": "King's Rock"}
+        {"id": "dc_lincoln_1f_kings", "at": [1, 9], "name": "{item:198}"}
       ],
       "signs": [
         {"at": [5, 2], "text": "North Inscription — With Malice Toward None"},
@@ -110,7 +110,7 @@
       ],
       "npcs": [],
       "items": [
-        {"id": "dc_lincoln_b1_sacred", "at": [16, 11], "name": "Sacred Sword Scroll"}
+        {"id": "dc_lincoln_b1_sacred", "at": [16, 11], "name": "{move:533} Scroll"}
       ],
       "signs": [
         {"at": [6, 8], "text": "Fair Fights — Only an Equal Stand Opens the Iron Will's Dais"}

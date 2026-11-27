@@ -59,7 +59,7 @@
       ],
       "npcs": [],
       "items": [
-        {"id": "dc_gt_dusk_stone", "at": [18, 4], "name": "Dusk Stone"}
+        {"id": "dc_gt_dusk_stone", "at": [18, 4], "name": "{item:108}"}
       ],
       "signs": [
         {"at": [7, 7], "text": "Lock #4 Sluice Log — Water Still Runs Beneath the Stopped Towpath"}

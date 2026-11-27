@@ -110,7 +110,7 @@
       "sprite": "woman_1",
       "role": "talk",
       "lines": [
-        "Nothing stirs the grass here but river wind and Wingull."
+        "Nothing stirs the grass here but river wind and {species:278}."
       ]
     }
   ],
@@ -170,7 +170,7 @@
         23,
         23
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked beside the west potomac park#2 trail."
     },
     {
@@ -178,7 +178,7 @@
         9,
         47
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked beside the west potomac park#2 trail."
     }
   ],

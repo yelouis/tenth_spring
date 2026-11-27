@@ -12,6 +12,7 @@ const TileSynth2 := preload("res://world/tile_synth/tile_synth2.gd")
 const AssetDB := preload("res://rom/asset_db.gd")
 const InteriorMap := preload("res://world/interior/interior_map.gd")
 const InteriorView := preload("res://world/interior/interior_view.gd")
+const TextTokens := preload("res://ui/text_tokens.gd")
 
 const TEST_DB_PATH: String = "user://test/interactions_test.db"
 const TEST_TMP_PATH: String = "user://test/interactions_test.db.tmp"
@@ -176,13 +177,14 @@ func run_test() -> bool:
 		return false
 	dlg.close()
 
-	# 4. Outdoor hidden item (including newly moved F82 camp Super Potion at [53, 16]!) collected once & persisted
+	# 4. Outdoor hidden item (including newly moved F82 camp item #26 at [53, 16]!) collected once & persisted
 	mv.place_player_in_area("camp:washington-dc", Vector2i(53, 16), "N")
 	if not mv.trigger_interact_for_walker():
-		push_error("FAIL: Hidden Super Potion at camp (53, 16) could not be collected while standing on it")
+		push_error("FAIL: Hidden item #26 at camp (53, 16) could not be collected while standing on it")
 		_cleanup([mv, main_node])
 		return false
-	if not dlg.current_text().contains("Found a hidden Super Potion!") or not dlg.current_text().contains("northeast pine nook"):
+	var exp_item26 := TextTokens.resolve("{item:26}", AssetDB.DEFAULT_CACHE_DIR)
+	if not dlg.current_text().contains("Found a hidden %s!" % exp_item26) or not dlg.current_text().contains("northeast pine nook"):
 		push_error("FAIL: Hidden item dialogue wrong: '%s'" % dlg.current_text())
 		_cleanup([mv, main_node])
 		return false
@@ -328,10 +330,11 @@ func run_test() -> bool:
 		_cleanup([iv, mv, main_node])
 		return false
 	idlg.close()
-	# Indoor item Metal Coat at [15, 9]
+	# Indoor item #210 at [15, 9]
 	iw.place_at(Vector2i(15, 10), "N")
-	if not iv.trigger_interact_for_walker() or idlg.current_text() != "Found Metal Coat!":
-		push_error("FAIL: Indoor item pickup failed: '%s'" % idlg.current_text())
+	var exp_item210 := TextTokens.resolve("{item:210}", AssetDB.DEFAULT_CACHE_DIR)
+	if not iv.trigger_interact_for_walker() or idlg.current_text() != "Found %s!" % exp_item210:
+		push_error("FAIL: Indoor item pickup failed: '%s' (expected 'Found %s!')" % [idlg.current_text(), exp_item210])
 		_cleanup([iv, mv, main_node])
 		return false
 	idlg.close()
@@ -518,7 +521,8 @@ func run_test() -> bool:
 					iv_p.free()
 					_cleanup([mv2, main2])
 					return false
-				# Skip if already picked up earlier in test (dc:washington-monument Metal Coat at [15,9])
+				# Skip if already picked up earlier in test (dc:washington-monument item #210 at [15,9])
+				var exp_it_name := TextTokens.resolve(it_name, AssetDB.DEFAULT_CACHE_DIR)
 				var ikey_p := InteriorView.indoor_item_key(iid_p, str(fl_p.get("floor_id", str(fi_p))), it_d)
 				if not DB.is_item_collected(ikey_p):
 					iw_p.place_at(Vector2i(it_at.x, it_at.y + 1), "N", false)
@@ -527,21 +531,21 @@ func run_test() -> bool:
 						iv_p.trigger_interact_for_walker()
 					var got_nm: String = str(iv_p.get_dialogue_box().current_text())
 					iv_p.get_dialogue_box().close()
-					if got_nm != "Found %s!" % it_name:
-						push_error("FAIL [F100]: Pickup in %s gave '%s', expected 'Found %s!'" % [iid_p, got_nm, it_name])
+					if got_nm != "Found %s!" % exp_it_name:
+						push_error("FAIL [F100]: Pickup in %s gave '%s', expected 'Found %s!'" % [iid_p, got_nm, exp_it_name])
 						remove_child(iv_p)
 						iv_p.free()
 						_cleanup([mv2, main2])
 						return false
-				# Verify DB record carries the real item_name
+				# Verify DB record carries the resolved item_name
 				var db_rows: Array = DB.get_collected_items_in_area(iid_p)
 				var matched_db := false
 				for dr_v in db_rows:
-					if dr_v is Dictionary and str((dr_v as Dictionary).get("item_key", "")) == ikey_p and str((dr_v as Dictionary).get("item_name", "")) == it_name:
+					if dr_v is Dictionary and str((dr_v as Dictionary).get("item_key", "")) == ikey_p and str((dr_v as Dictionary).get("item_name", "")) == exp_it_name:
 						matched_db = true
 						break
 				if not matched_db:
-					push_error("FAIL [F100]: DB collected_item missing real item_name '%s' for key '%s'" % [it_name, ikey_p])
+					push_error("FAIL [F100]: DB collected_item missing real item_name '%s' for key '%s'" % [exp_it_name, ikey_p])
 					remove_child(iv_p)
 					iv_p.free()
 					_cleanup([mv2, main2])
@@ -908,6 +912,69 @@ func run_test() -> bool:
 			push_error("FAIL [F111]: Dialogue box overflow: " + oe)
 		_cleanup([mv3, main3])
 		return false
+
+	# 16. Item 89 / F113: Runtime {species:<dex>} text-token resolution in DC dialogue
+	#     Dupont Circle NPC referencing {species:396} shows name from data cache when present,
+	#     and falls back cleanly to "Pokémon" when the data cache is absent.
+	var dc_comp: Dictionary = mv3._caricature_compiled_by_area.get("hood:washington-dc:dupont-circle", {})
+	var token_person := {}
+	for pe_v in dc_comp.get("people", []):
+		if pe_v is Dictionary:
+			for ln_v in (pe_v as Dictionary).get("lines", []):
+				if str(ln_v).contains("{species:396}"):
+					token_person = pe_v as Dictionary
+					break
+		if not token_person.is_empty():
+			break
+	if token_person.is_empty():
+		push_error("FAIL [F113]: Could not find Dupont Circle NPC with {species:396} token")
+		_cleanup([mv3, main3])
+		return false
+	var grid3: CaricatureWalkerGrid = mv3._walker_grid
+	var tp_pos := Vector2i(int(token_person["x"]), int(token_person["y"]))
+	var tp_nb := _find_standable_neighbor(grid3, "hood:washington-dc:dupont-circle", tp_pos)
+	if tp_nb.is_empty():
+		push_error("FAIL [F113]: No standable neighbour for Dupont Circle {species:396} NPC")
+		_cleanup([mv3, main3])
+		return false
+	var syn_en := ProjectSettings.globalize_path(TEST_NAMES_CACHE_DIR + "/text/en")
+	DirAccess.make_dir_recursive_absolute(syn_en)
+	var sf := FileAccess.open(syn_en.path_join("species.json"), FileAccess.WRITE)
+	sf.store_string("{\"396\": \"Testbird\"}\n")
+	sf.close()
+	AssetDB.clear_memory_cache()
+	mv3.set_data_cache_dir(TEST_NAMES_CACHE_DIR)
+	mv3.place_player_in_area("hood:washington-dc:dupont-circle", tp_nb["stand"], tp_nb["facing"])
+	mv3.trigger_interact_for_walker()
+	var dlg3: Control = mv3.get_dialogue_box()
+	var syn_all := " ".join(PackedStringArray(dlg3.get_all_lines()))
+	dlg3.close()
+	if not syn_all.contains("Testbird") or syn_all.contains("{species:"):
+		push_error("FAIL [F113]: Synthetic cache did not resolve {species:396} to 'Testbird': '%s'" % syn_all)
+		_cleanup([mv3, main3])
+		return false
+	# Cache absent -> "Pokémon"
+	AssetDB.clear_memory_cache()
+	mv3.set_data_cache_dir(TEST_NAMES_EMPTY_DIR)
+	mv3.trigger_interact_for_walker()
+	var empty_all := " ".join(PackedStringArray(dlg3.get_all_lines()))
+	dlg3.close()
+	if not empty_all.contains("Even the stray Pokémon follow the ring road") or empty_all.contains("{species:"):
+		push_error("FAIL [F113]: Empty cache did not fall back {species:396} to 'Pokémon': '%s'" % empty_all)
+		_cleanup([mv3, main3])
+		return false
+	# Real player cache (when present locally on the human's Mac) -> resolves real species #396 name
+	AssetDB.clear_memory_cache()
+	mv3.set_data_cache_dir(AssetDB.DEFAULT_CACHE_DIR)
+	var real_396 := AssetDB.display_name("species", 396, AssetDB.DEFAULT_CACHE_DIR)
+	if not real_396.begins_with("#"):
+		mv3.trigger_interact_for_walker()
+		var real_all := " ".join(PackedStringArray(dlg3.get_all_lines()))
+		dlg3.close()
+		if not real_all.contains(real_396) or real_all.contains("{species:"):
+			push_error("FAIL [F113]: Real cache did not resolve {species:396} to cache name: '%s'" % real_all)
+			_cleanup([mv3, main3])
+			return false
 
 	_cleanup([mv3, main3])
 	return not f108_any_failed

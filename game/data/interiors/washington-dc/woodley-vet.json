@@ -64,7 +64,7 @@
       ],
       "npcs": [],
       "items": [
-        {"id": "dc_vet_reaper", "at": [18, 12], "name": "Reaper Cloth"}
+        {"id": "dc_vet_reaper", "at": [18, 12], "name": "{item:302}"}
       ],
       "signs": [
         {"at": [13, 9], "text": "Quarantine Intake — All Kennels Unlatched Before the Evacuation"}

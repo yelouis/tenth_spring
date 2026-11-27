@@ -557,7 +557,7 @@ func run_test() -> bool:
 	dup_with_town["people"] = []
 	dup_with_town["signs"] = []
 	dup_with_town["hidden_items"] = []
-	dup_with_town["street_pokemon"] = [{"dex": 562, "at": [64, 60], "zone": "ruins"}] # Yamask: ruins only, invalid for Dupont (residential/waterfront)
+	dup_with_town["street_pokemon"] = [{"dex": 562, "at": [64, 60], "zone": "ruins"}] # dex 562: ruins only, invalid for Dupont (residential/waterfront)
 	var c_dup_town := CaricatureMap.compile(dc_dupont_area, dup_with_town)
 	if not bool(c_dup_town.get("ok", false)) or not bool(c_dup_town.get("has_town_rules", false)):
 		_cleanup()
@@ -1083,14 +1083,14 @@ func run_test() -> bool:
 		p15_rows[py] = pr.substr(0, 4) + "TTTTT" + pr.substr(9)
 	var p15_fail_map := rg_map.duplicate(true)
 	p15_fail_map["rows"] = p15_rows
-	p15_fail_map["hidden_items"] = [{"at": [6, 6], "item": "Super Potion", "note": "walled"}]
+	p15_fail_map["hidden_items"] = [{"at": [6, 6], "item": "{item:26}", "note": "walled"}]
 	var m_p15_fail := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p15_fail_map), rg_area)
 	if not (m_p15_fail["failed_rules"] as Array).has("P15") or int(m_p15_fail.get("unreachable_interactables", 0)) < 1:
 		_cleanup()
 		push_error("caricature_check_test: expected walled hidden item to fail P15, got %s" % str(m_p15_fail))
 		return false
 	var p15_pass_map := p15_fail_map.duplicate(true)
-	p15_pass_map["hidden_items"] = [{"at": [10, 10], "item": "Super Potion", "note": "open"}]
+	p15_pass_map["hidden_items"] = [{"at": [10, 10], "item": "{item:26}", "note": "open"}]
 	var m_p15_ok := CaricatureCheck.measure(CaricatureMap.compile(rg_area, p15_pass_map), rg_area)
 	if (m_p15_ok["failed_rules"] as Array).has("P15") or int(m_p15_ok.get("unreachable_interactables", -1)) != 0:
 		_cleanup()

@@ -1,5 +1,7 @@
 #!/bin/sh
 # Tenth Spring pre-commit hook
-# Prevents accidental commit of Nintendo assets or ROM files to public repo.
+# Prevents accidental commit of Nintendo assets, ROM files, or Pokemon names to public repo.
+set -e
 
 python3 -I tools/check_no_nintendo_assets.py --staged
+python3 -I tools/check_no_pokemon_names.py --staged

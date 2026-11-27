@@ -3,6 +3,8 @@ extends Control
 ## game/scenes/dialogue_box.gd — Compact Bottom Pokemon-Style Dialogue Box (Item 73)
 ## Contract: docs/implementation_plan_travel_and_time.md §(h)
 
+const TextTokens := preload("res://ui/text_tokens.gd")
+
 signal advanced(page_index: int)
 signal closed()
 
@@ -20,15 +22,15 @@ var _extra_color: Color = Color.WHITE
 func open_lines(lines: Array, speaker: String = "", extra_line: String = "", extra_color: Color = Color.WHITE) -> void:
 	_lines.clear()
 	for lv in lines:
-		var s := str(lv).strip_edges()
+		var s := TextTokens.resolve(str(lv)).strip_edges()
 		if not s.is_empty():
 			_lines.append(s)
 	if _lines.is_empty():
 		close()
 		return
 	_page_index = 0
-	_speaker = speaker.strip_edges()
-	_extra_line = extra_line.strip_edges()
+	_speaker = TextTokens.resolve(speaker).strip_edges()
+	_extra_line = TextTokens.resolve(extra_line).strip_edges()
 	_extra_color = extra_color
 	visible = true
 	_refresh_view()

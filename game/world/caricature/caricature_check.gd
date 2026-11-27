@@ -483,7 +483,7 @@ static func measure(compiled: Dictionary, area: Dictionary) -> Dictionary:
 	var base_graph := _build_directed_graph(w, h, cls_buf, var_buf, mask_buf, opening_mask, base_flags)
 	var base_trapped_count := _count_trapped_in_graph(total, arr_idx_global, base_flags, base_graph)
 
-	# Build Full movement graph (includes Cut/Rock Smash/Strength clearable obstacles)
+	# Build Full movement graph (includes field-move clearable obstacles)
 	var full_graph := _build_directed_graph(w, h, cls_buf, var_buf, mask_buf, opening_mask, walkable_flags)
 	var fwd_edges: Dictionary = full_graph["fwd"]
 	var rev_edges: Dictionary = full_graph["rev"]

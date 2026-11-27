@@ -925,7 +925,7 @@
       "sprite": "scientist",
       "role": "talk",
       "lines": [
-        "Magnemite and Voltorb hum along the iron rails whenever a storm builds."
+        "{species:81} and {species:100} hum along the iron rails whenever a storm builds."
       ]
     }
   ],
@@ -1224,7 +1224,7 @@
         52,
         53
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Behind a granite column at the west station door."
     },
     {
@@ -1232,7 +1232,7 @@
         74,
         53
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked beside a brass luggage cart near the east arch."
     },
     {
@@ -1240,7 +1240,7 @@
         49,
         63
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Under a stone bench along Columbus Circle."
     },
     {
@@ -1248,7 +1248,7 @@
         75,
         63
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Behind an iron bollard facing the fountain basin."
     },
     {
@@ -1256,7 +1256,7 @@
         41,
         77
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Set on the shaded window sill of the counter room."
     },
     {
@@ -1264,7 +1264,7 @@
         83,
         77
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cool flask behind the telegraph office steps."
     },
     {
@@ -1272,7 +1272,7 @@
         49,
         90
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked into a brick coal chute along South F Street."
     },
     {
@@ -1280,7 +1280,7 @@
         73,
         91
       ],
-      "item": "Escape Rope",
+      "item": "{item:78}",
       "note": "Coiled beside the railhead supply door."
     },
     {
@@ -1288,7 +1288,7 @@
         86,
         10
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1296,7 +1296,7 @@
         114,
         10
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1304,7 +1304,7 @@
         14,
         18
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1312,7 +1312,7 @@
         30,
         14
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1320,7 +1320,7 @@
         30,
         24
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1328,7 +1328,7 @@
         58,
         14
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1336,7 +1336,7 @@
         60,
         26
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1344,7 +1344,7 @@
         68,
         16
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1352,7 +1352,7 @@
         68,
         26
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1360,7 +1360,7 @@
         76,
         26
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked along the outer union station grounds."
     },
     {
@@ -1368,7 +1368,7 @@
         82,
         20
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer union station grounds."
     }
   ],

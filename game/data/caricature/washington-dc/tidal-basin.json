@@ -1360,7 +1360,7 @@
         53,
         33
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cool flask behind a marble bollard by Jefferson's steps."
     },
     {
@@ -1368,7 +1368,7 @@
         73,
         33
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked into a cherry root on the east terrace."
     },
     {
@@ -1376,7 +1376,7 @@
         42,
         26
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Beside the formal garden fence west of Jefferson."
     },
     {
@@ -1384,7 +1384,7 @@
         84,
         26
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Behind a wooden planter near the weather office."
     },
     {
@@ -1392,7 +1392,7 @@
         98,
         46
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Under a coil of dock rope beside the boathouse."
     },
     {
@@ -1400,7 +1400,7 @@
         101,
         74
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Left on a cedar post overlooking the east inlet."
     },
     {
@@ -1408,7 +1408,7 @@
         50,
         101
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Beneath a bench along the south shore steps."
     },
     {
@@ -1416,7 +1416,7 @@
         75,
         101
       ],
-      "item": "Pearl",
+      "item": "{item:88}",
       "note": "Glinting beside the stone stairs facing the basin."
     },
     {
@@ -1424,7 +1424,7 @@
         72,
         8
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1432,7 +1432,7 @@
         82,
         6
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1440,7 +1440,7 @@
         90,
         6
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1448,7 +1448,7 @@
         86,
         10
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1456,7 +1456,7 @@
         16,
         20
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1464,7 +1464,7 @@
         30,
         18
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1472,7 +1472,7 @@
         108,
         24
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1480,7 +1480,7 @@
         102,
         18
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked along the outer tidal basin grounds."
     },
     {
@@ -1488,7 +1488,7 @@
         100,
         26
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer tidal basin grounds."
     }
   ],

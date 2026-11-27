@@ -65,14 +65,14 @@ class DataPackSpikeTests(unittest.TestCase):
             self.assertTrue(isinstance(artists, list) and len(artists) >= 1, f"Missing credit for #{d}")
 
     def test_falsifier_catches_species_name_leak_and_committed_files_have_zero(self) -> None:
-        sample_names = ["Bulbasaur", "Charizard", "Gengar", "Espeon", "Vanillite", "Chandelure", "Mimikyu", "Dragapult", "Enamorus"]
+        sample_names = ["Zorbax", "Pyronyx", "Gloomveil", "Solaria", "Cryomite"]
         with tempfile.TemporaryDirectory() as tmp:
             leaky = Path(tmp) / "leaky.json"
-            leaky.write_text('{"artist": "Espeon Scientist", "form": "gengar-mega"}\n', encoding="utf-8")
+            leaky.write_text('{"artist": "Solaria Scientist", "form": "gloomveil-mega"}\n', encoding="utf-8")
             leaks = dps.verify_no_species_names_in_files([leaky], sample_names)
             leaked_species = {s for _, s in leaks}
-            self.assertIn("Espeon", leaked_species)
-            self.assertIn("Gengar", leaked_species)
+            self.assertIn("Solaria", leaked_species)
+            self.assertIn("Gloomveil", leaked_species)
 
         committed = [
             dps.DATA_SOURCES_PATH,

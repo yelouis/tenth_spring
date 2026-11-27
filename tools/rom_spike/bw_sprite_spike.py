@@ -559,7 +559,7 @@ def run_spike(rom_path_str: Optional[str] = None, out_dir: Path = DEFAULT_OUT_DI
         ncer0_bytes, ncer0_comp = _read_entry(4)
         oam_rects = parse_ncer_cell0(ncer0_bytes)
 
-        # Inspect per-species 20-file layout on #609 (Chandelure) and #94 (Gengar)
+        # Inspect per-species 20-file layout on #609 and #94
         layout_samples: Dict[str, List[Dict[str, object]]] = {}
         for sample_dex in (94, 609):
             base = sample_dex * FILES_PER_SPECIES_ENTRY

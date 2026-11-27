@@ -156,7 +156,7 @@
         23,
         18
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked beside the rock creek trail#2 trail."
     },
     {
@@ -164,7 +164,7 @@
         8,
         33
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked beside the rock creek trail#2 trail."
     },
     {
@@ -172,7 +172,7 @@
         22,
         49
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked beside the rock creek trail#2 trail."
     }
   ],

@@ -1198,7 +1198,7 @@
         70,
         19
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Behind the west marble pillar at Lincoln's steps."
     },
     {
@@ -1206,7 +1206,7 @@
         82,
         19
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked into an alcove by the east marble colonnade."
     },
     {
@@ -1214,7 +1214,7 @@
         56,
         31
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Under a stone bench near the Bridgehead Lamp Shed."
     },
     {
@@ -1222,7 +1222,7 @@
         65,
         46
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cool flask left along the west Reflecting Pool rim."
     },
     {
@@ -1230,7 +1230,7 @@
         86,
         46
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Behind an iron streetlamp along the east pool rim."
     },
     {
@@ -1238,7 +1238,7 @@
         97,
         25
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Beside a brick planter outside the pumphouse."
     },
     {
@@ -1246,7 +1246,7 @@
         114,
         26
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked under a marble block near the mason's shed."
     },
     {
@@ -1254,7 +1254,7 @@
         132,
         31
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Left on a garden step at the east Foggy Bottom edge."
     },
     {
@@ -1262,7 +1262,7 @@
         46,
         6
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1270,7 +1270,7 @@
         54,
         6
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1278,7 +1278,7 @@
         66,
         8
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1286,7 +1286,7 @@
         22,
         18
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1294,7 +1294,7 @@
         14,
         16
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1302,7 +1302,7 @@
         28,
         16
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1310,7 +1310,7 @@
         40,
         22
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1318,7 +1318,7 @@
         140,
         16
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1326,7 +1326,7 @@
         40,
         30
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1334,7 +1334,7 @@
         38,
         36
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1342,7 +1342,7 @@
         32,
         30
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1350,7 +1350,7 @@
         50,
         34
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked along the outer lincoln memorial grounds."
     },
     {
@@ -1358,7 +1358,7 @@
         46,
         40
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked along the outer lincoln memorial grounds."
     }
   ],

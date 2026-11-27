@@ -1278,7 +1278,7 @@
         28,
         56
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Beneath a granite bench at the foot of the Monument."
     },
     {
@@ -1286,7 +1286,7 @@
         42,
         42
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Behind the Independence Press Kiosk steps."
     },
     {
@@ -1294,7 +1294,7 @@
         57,
         41
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked into a flower bed west of the Castle."
     },
     {
@@ -1302,7 +1302,7 @@
         75,
         38
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Under a red sandstone gargoyle beside the Castle."
     },
     {
@@ -1310,7 +1310,7 @@
         87,
         53
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cool flask left on the central Mall promenade."
     },
     {
@@ -1318,7 +1318,7 @@
         100,
         38
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Hidden by the Sculpture Garden bridge railing."
     },
     {
@@ -1326,7 +1326,7 @@
         119,
         42
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Behind a wooden crate near the Flight Signal Annex."
     },
     {
@@ -1334,7 +1334,7 @@
         142,
         41
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside a cherry root east of Air and Space."
     },
     {
@@ -1342,7 +1342,7 @@
         24,
         16
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1350,7 +1350,7 @@
         32,
         24
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1358,7 +1358,7 @@
         28,
         20
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1366,7 +1366,7 @@
         48,
         20
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1374,7 +1374,7 @@
         42,
         18
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1382,7 +1382,7 @@
         46,
         26
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1390,7 +1390,7 @@
         62,
         20
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1398,7 +1398,7 @@
         108,
         26
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1406,7 +1406,7 @@
         116,
         16
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1414,7 +1414,7 @@
         142,
         18
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1422,7 +1422,7 @@
         146,
         26
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1430,7 +1430,7 @@
         150,
         18
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1438,7 +1438,7 @@
         12,
         30
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1446,7 +1446,7 @@
         12,
         40
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1454,7 +1454,7 @@
         8,
         36
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer national mall grounds."
     },
     {
@@ -1462,7 +1462,7 @@
         18,
         36
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked along the outer national mall grounds."
     }
   ],

@@ -80,13 +80,13 @@ func run_test() -> bool:
 		_cleanup_db()
 		return _fail("PlayerWalker.process_priority (%d) must be < MapViewer.process_priority (%d)" % [walker.process_priority, mv.process_priority])
 
-	# 1. Falsifier (F88): Standing just south of camp lamp, Jude, Mall Caterpie, camp bench, and camp cherry tree:
+	# 1. Falsifier (F88): Standing just south of camp lamp, Jude, Mall dex 10, camp bench, and camp cherry tree:
 	# render containing cells synchronously and assert EVERY base sprite north of the player sorts strictly behind
 	# (not Math::is_equal_approx!) and no node in the drawn tree exceeds 1,000,000 px from zero.
 	var f88_spots := [
 		["camp_lamp", "camp:washington-dc", Vector2i(31, 26), Vector2i(31, 25)],
 		["camp_jude", "camp:washington-dc", Vector2i(29, 27), Vector2i(29, 26)],
-		["mall_caterpie", "hood:washington-dc:national-mall", Vector2i(61, 37), Vector2i(61, 36)],
+		["mall_dex10", "hood:washington-dc:national-mall", Vector2i(61, 37), Vector2i(61, 36)],
 		["camp_bench", "camp:washington-dc", Vector2i(28, 23), Vector2i(28, 22)],
 		["camp_cherry", "camp:washington-dc", Vector2i(26, 19), Vector2i(26, 18)],
 	]
@@ -108,8 +108,8 @@ func run_test() -> bool:
 			NeighbourhoodProgress.set_demo_override_for_tests(-1)
 			_cleanup_db()
 			return _fail("F88 %s: Godot is_equal_approx y-sort tie or wrong order! obj_y=%.2f player_y=%.2f" % [lbl, expected_obj_foot_y, player_y])
-		# Verify at least one base sprite exists for non-Pokemon objects (under --no-rom Caterpie icon is omitted)
-		if lbl != "mall_caterpie":
+		# Verify at least one base sprite exists for non-Pokemon objects (under --no-rom dex 10 icon is omitted)
+		if lbl != "mall_dex10":
 			var found_base := false
 			var obj_rx: float = float(obj_g.x - origin_tile.x) * 32.0
 			for ch in base_layer.get_children():

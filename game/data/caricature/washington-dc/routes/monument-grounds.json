@@ -177,7 +177,7 @@
         23,
         18
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked beside the monument grounds#1 trail."
     },
     {
@@ -185,7 +185,7 @@
         9,
         34
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked beside the monument grounds#1 trail."
     },
     {
@@ -193,7 +193,7 @@
         23,
         50
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked beside the monument grounds#1 trail."
     }
   ],

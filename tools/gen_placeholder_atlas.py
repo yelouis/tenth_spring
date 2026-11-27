@@ -944,7 +944,7 @@ class AtlasBuilder:
                         self.set_pixel(col, row, x, y, PALETTE["tall_tips"] if (x + y) % 5 == 0 else PALETTE["tree_canopy"])
 
     def draw_smash_rock(self, row: int, col: int):
-        """Draws cracked Rock Smash boulder over grass (class 26)."""
+        """Draws cracked field-move boulder over grass (class 26, move #249)."""
         self.draw_grass(row, col, 0)
         for y in range(6, 27):
             for x in range(6, 26):

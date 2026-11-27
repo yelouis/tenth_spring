@@ -15,6 +15,7 @@ const AssetDB := preload("res://rom/asset_db.gd")
 const PeopleSprites := preload("res://world/people_sprites.gd")
 const PlayerWalker := preload("res://world/player_walker.gd")
 const WorldClock := preload("res://world/world_clock.gd")
+const TextTokens := preload("res://ui/text_tokens.gd")
 
 const TILE_PX: int = 32
 const STAMP_SCALE: float = 2.0
@@ -745,7 +746,7 @@ func mark_indoor_item_collected(pos: Vector2i) -> void:
 	_collected_item_keys[ikey] = true
 	var db = _get_db()
 	if db != null and db.is_open() and db.has_method("mark_item_collected"):
-		db.mark_item_collected(ikey, interior_id, "indoor", str(it_d.get("name", "Item")))
+		db.mark_item_collected(ikey, interior_id, "indoor", TextTokens.resolve(str(it_d.get("name", "Item")), _cache_dir))
 	if _item_sprites_by_pos.has(pos) and is_instance_valid(_item_sprites_by_pos[pos]):
 		(_item_sprites_by_pos[pos] as Sprite2D).visible = false
 	_rebuild_block_mask()
@@ -1034,7 +1035,7 @@ func open_dialogue(lines: Array, speaker: String = "") -> Control:
 	if dlg == null:
 		return null
 	if dlg.has_method("open_lines"):
-		dlg.open_lines(lines, speaker)
+		dlg.open_lines(TextTokens.resolve_lines(lines, _cache_dir), TextTokens.resolve(speaker, _cache_dir))
 	if _player_walker != null:
 		_player_walker.input_enabled = false
 	return dlg
@@ -1176,7 +1177,7 @@ func _dispatch_interior_interact(facing_tile: Vector2i, _standing_tile: Vector2i
 		var ikey := indoor_item_key(interior_id, floor_id, it_d)
 		if not ikey.is_empty() and not _collected_item_keys.has(ikey):
 			mark_indoor_item_collected(facing_tile)
-			open_dialogue(["Found %s!" % str(it_d.get("name", "Item"))])
+			open_dialogue(["Found %s!" % TextTokens.resolve(str(it_d.get("name", "Item")), _cache_dir)])
 			return true
 
 	# 5. Indoor rubble, boulders & goal pieces / capstones (Decision 82 / Item 81 / F102)

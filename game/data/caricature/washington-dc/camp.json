@@ -942,7 +942,7 @@
         8,
         11
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked under a mossy root near the northwest pine hollow."
     },
     {
@@ -950,7 +950,7 @@
         39,
         10
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Inside an upturned crate behind the infirmary gable."
     },
     {
@@ -958,7 +958,7 @@
         55,
         25
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked in a dry cedar box behind the workshop north wall."
     },
     {
@@ -966,7 +966,7 @@
         53,
         16
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Wedged inside a dry cedar box in the northeast pine nook."
     },
     {
@@ -974,7 +974,7 @@
         25,
         49
       ],
-      "item": "Poke Ball",
+      "item": "{item:4}",
       "note": "Dropped beside the southwest garden lantern post."
     },
     {
@@ -982,7 +982,7 @@
         41,
         52
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cooled bottle set beside the spring pond bench."
     }
   ],

@@ -767,7 +767,7 @@
         26,
         23
       ],
-      "item": "Super Repel",
+      "item": "{item:76}",
       "note": "Tucked beside the q street#1 trail."
     },
     {
@@ -775,7 +775,7 @@
         55,
         9
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked beside the q street#1 trail."
     },
     {
@@ -783,7 +783,7 @@
         84,
         23
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked beside the q street#1 trail."
     },
     {
@@ -791,7 +791,7 @@
         112,
         10
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside the q street#1 trail."
     },
     {
@@ -799,7 +799,7 @@
         140,
         22
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked beside the q street#1 trail."
     }
   ],

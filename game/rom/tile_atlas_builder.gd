@@ -14,7 +14,7 @@ const DEFAULT_EMERALD_MAP_PATH := "res://config/emerald_tile_map.json"
 const INDOOR_STAMP_TO_OBJECT_CLASS := {
 	"110": "28", # int_item_ball -> Emerald item ball
 	"114": "27", # int_push_boulder -> Emerald Strength boulder
-	"115": "26", # int_smash_rubble -> Emerald Rock Smash rock
+	"115": "26", # int_smash_rubble -> Emerald cracked boulder (field move #249)
 }
 
 

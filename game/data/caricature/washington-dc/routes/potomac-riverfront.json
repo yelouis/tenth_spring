@@ -357,7 +357,7 @@
         23,
         22
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
@@ -365,7 +365,7 @@
         9,
         44
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
@@ -373,7 +373,7 @@
         23,
         67
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
@@ -381,7 +381,7 @@
         9,
         89
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked beside the potomac riverfront#1 trail."
     },
     {
@@ -389,7 +389,7 @@
         23,
         112
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked beside the potomac riverfront#1 trail."
     }
   ],

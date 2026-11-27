@@ -393,7 +393,7 @@
         27,
         23
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     },
     {
@@ -401,7 +401,7 @@
         57,
         9
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     },
     {
@@ -409,7 +409,7 @@
         86,
         23
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     },
     {
@@ -417,7 +417,7 @@
         116,
         9
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     },
     {
@@ -425,7 +425,7 @@
         146,
         23
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     },
     {
@@ -433,7 +433,7 @@
         175,
         9
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     },
     {
@@ -441,7 +441,7 @@
         205,
         23
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked beside the massachusetts avenue#1 trail."
     }
   ],

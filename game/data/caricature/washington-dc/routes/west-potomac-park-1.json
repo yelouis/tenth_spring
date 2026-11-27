@@ -168,7 +168,7 @@
         25,
         23
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked beside the west potomac park#1 trail."
     },
     {
@@ -176,7 +176,7 @@
         51,
         9
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked beside the west potomac park#1 trail."
     },
     {
@@ -184,7 +184,7 @@
         78,
         23
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked beside the west potomac park#1 trail."
     }
   ],

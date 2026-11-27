@@ -270,6 +270,23 @@ def main():
 		sys.exit(1)
 	print("[IP GUARD TESTS OK] All IP guard test cases passed.\n")
 
+	# Local Nintendo Name Guard (Item 89 / F113): checks names when local data cache exists, skips cleanly on CI
+	name_guard_path = os.path.join(repo_root, "tools", "check_no_pokemon_names.py")
+	name_guard_tests_path = os.path.join(repo_root, "tools", "test_check_no_pokemon_names.py")
+	if not os.path.exists(name_guard_path) or not os.path.exists(name_guard_tests_path):
+		print("\n[NAME GUARD ERROR] Name guard script or test suite missing")
+		sys.exit(1)
+	print("=== Local Pokemon Name Guard (Item 89 / F113) ===")
+	ng_res = subprocess.run([sys.executable, "-I", name_guard_path], cwd=repo_root)
+	if ng_res.returncode != 0:
+		print("\n[NAME GUARD VIOLATION] Tracked file(s) contain forbidden Pokemon names.")
+		sys.exit(1)
+	ng_test_res = subprocess.run([sys.executable, "-I", name_guard_tests_path], cwd=repo_root)
+	if ng_test_res.returncode != 0:
+		print("\n[NAME GUARD TEST FAIL] Name guard unit tests failed.")
+		sys.exit(1)
+	print("[NAME GUARD TESTS OK] All name guard test cases passed.\n")
+
 	# Test Save Isolation check (F22)
 	isolation_test_path = os.path.join(game_dir, "tests", "test_f22_save_isolation.py")
 	if not os.path.exists(isolation_test_path):

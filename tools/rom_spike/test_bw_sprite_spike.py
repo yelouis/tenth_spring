@@ -189,7 +189,7 @@ class BwSpriteSpikeTests(unittest.TestCase):
             self.assertTrue(report["decode_summary"]["accepted_for_sprites"])
             self.assertTrue((out_dir / "preview.png").is_file())
 
-            # Also verify that injecting a wrong XOR seed on real #609 Chandelure fails
+            # Also verify that injecting a wrong XOR seed on real #609 fails
             rom_path = verify_rom_preconditions(rom_env)
             with open(rom_path, "rb") as f:
                 f.seek(int(report["header"]["fat_offset"]))

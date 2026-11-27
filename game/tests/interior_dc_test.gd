@@ -15,12 +15,12 @@ const CACHE_EMPTY := "user://test/interior_dc_empty"
 const CACHE_EMERALD := "user://test/interior_dc_emerald"
 
 const PINNED_SHA256: Dictionary = {
-	"res://data/interiors/washington-dc/air-and-space.json": "948a53dadeb4102db9b646b3dcb83cbf5bcc4f565bc69adcace2a6e1e8b1e023",
-	"res://data/interiors/washington-dc/georgetown-ruins.json": "501c13ab10f7fd3f2232808f38f1ffa0e01b8d1176a94c5b2846d30e78afe9fb",
-	"res://data/interiors/washington-dc/library-of-congress.json": "47f8fe26ffc74ca1d25fa4b0dcff1185bd68e394c4ff3e098286bf2c5829c831",
-	"res://data/interiors/washington-dc/lincoln-memorial.json": "1dbf0aa8c046b4c9718d534055d4df1ff51a657b89339780ec253f45a6da3639",
-	"res://data/interiors/washington-dc/washington-monument.json": "66d42ef355aa545a44f32bbe87c22bb2602c0172131f814052bcdacd0845996b",
-	"res://data/interiors/washington-dc/woodley-vet.json": "29e823ce21422026832b1db8e8acb4b68ba1e06dac2bf466e7b3704849fbcb1d",
+	"res://data/interiors/washington-dc/air-and-space.json": "84583cb5c8c275eac10bc717feb55d27d2d6ee34ef1e3749284bad1978068bd1",
+	"res://data/interiors/washington-dc/georgetown-ruins.json": "7e5b354eda950c0fcb8312256574775a3ff823b324faae0cba156c76fe71bc55",
+	"res://data/interiors/washington-dc/library-of-congress.json": "2289927e460877e90606031cb024b76f721abfa772c3574fa60b215398befcb1",
+	"res://data/interiors/washington-dc/lincoln-memorial.json": "7c171fd56e8831dcaa0f2d35e47f819776e8437ada29e7a9d531ccee0f08c851",
+	"res://data/interiors/washington-dc/washington-monument.json": "27e510a6f99f475ae8b26995d8cbecb6541f823d9cdaea5436c6bc6f31e1dd28",
+	"res://data/interiors/washington-dc/woodley-vet.json": "90055e096d0815c611704a8bd11a03bdd117151f9b6600e534ff7a2b90951dd9",
 }
 
 const EXPECTED_FLOOR_COUNTS: Dictionary = {
@@ -261,7 +261,7 @@ func run_test() -> bool:
 		if not used_stamp_ids.has(sid):
 			return _fail("Tier-5 interior stamp %d is never placed in any DC interior" % sid)
 
-	# Without-ROM fallback check: 110 (item ball), 114 (boulder), 115 (Rock Smash rock) draw original stamps
+	# Without-ROM fallback check: 110 (item ball), 114 (boulder), 115 (cracked boulder, move #249) draw original stamps
 	const OBJ_CASES := [
 		{"iid": "dc:library-of-congress", "floor": 0, "sid": 110, "obj_cls": "28", "rel": "interiors/int_item_ball.png"},
 		{"iid": "dc:washington-monument", "floor": 1, "sid": 114, "obj_cls": "27", "rel": "interiors/int_push_boulder.png"},

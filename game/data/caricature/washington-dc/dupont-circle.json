@@ -1009,7 +1009,7 @@
       "sprite": "youngster",
       "role": "talk",
       "lines": [
-        "Even the stray Starly follow the ring road around the fountain."
+        "Even the stray {species:396} follow the ring road around the fountain."
       ]
     }
   ],
@@ -1287,7 +1287,7 @@
         60,
         56
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Beside a neatly trimmed flower border on the NW circle lawn."
     },
     {
@@ -1295,7 +1295,7 @@
         68,
         56
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Under a wooden bench facing Dupont Fountain."
     },
     {
@@ -1303,7 +1303,7 @@
         54,
         65
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Behind a cast-iron lamp post on the inner circle."
     },
     {
@@ -1311,7 +1311,7 @@
         74,
         65
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked under a stone planter along the ring road."
     },
     {
@@ -1319,7 +1319,7 @@
         43,
         57
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Cool flask left on the bakery doorstep."
     },
     {
@@ -1327,7 +1327,7 @@
         86,
         58
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Behind an iron railing beside the music parlor."
     },
     {
@@ -1335,7 +1335,7 @@
         43,
         75
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Inside a dry mail slot near the chess club."
     },
     {
@@ -1343,7 +1343,7 @@
         84,
         75
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked beside the apothecary rain barrel."
     },
     {
@@ -1351,7 +1351,7 @@
         22,
         10
       ],
-      "item": "Paralyze Heal",
+      "item": "{item:22}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1359,7 +1359,7 @@
         54,
         8
       ],
-      "item": "Revive",
+      "item": "{item:28}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1367,7 +1367,7 @@
         42,
         10
       ],
-      "item": "Full Heal",
+      "item": "{item:27}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1375,7 +1375,7 @@
         64,
         6
       ],
-      "item": "Ultra Ball",
+      "item": "{item:2}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1383,7 +1383,7 @@
         66,
         12
       ],
-      "item": "Potion",
+      "item": "{item:17}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1391,7 +1391,7 @@
         100,
         8
       ],
-      "item": "Super Potion",
+      "item": "{item:26}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1399,7 +1399,7 @@
         32,
         24
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1407,7 +1407,7 @@
         44,
         16
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1415,7 +1415,7 @@
         46,
         26
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked along the outer dupont circle grounds."
     },
     {
@@ -1423,7 +1423,7 @@
         62,
         26
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked along the outer dupont circle grounds."
     }
   ],

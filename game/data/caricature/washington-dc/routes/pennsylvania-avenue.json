@@ -219,7 +219,7 @@
       "sprite": "youngster",
       "role": "talk",
       "lines": [
-        "Pennsylvania Avenue used to echo with parades \u2014 now only wind and Pidove."
+        "Pennsylvania Avenue used to echo with parades \u2014 now only wind and {species:519}."
       ]
     },
     {
@@ -322,7 +322,7 @@
         26,
         23
       ],
-      "item": "Antidote",
+      "item": "{item:18}",
       "note": "Tucked beside the pennsylvania avenue#1 trail."
     },
     {
@@ -330,7 +330,7 @@
         56,
         10
       ],
-      "item": "Repel",
+      "item": "{item:79}",
       "note": "Tucked beside the pennsylvania avenue#1 trail."
     },
     {
@@ -338,7 +338,7 @@
         84,
         23
       ],
-      "item": "Great Ball",
+      "item": "{item:3}",
       "note": "Tucked beside the pennsylvania avenue#1 trail."
     },
     {
@@ -346,7 +346,7 @@
         112,
         10
       ],
-      "item": "Ether",
+      "item": "{item:38}",
       "note": "Tucked beside the pennsylvania avenue#1 trail."
     },
     {
@@ -354,7 +354,7 @@
         141,
         23
       ],
-      "item": "Fresh Water",
+      "item": "{item:30}",
       "note": "Tucked beside the pennsylvania avenue#1 trail."
     }
   ],
