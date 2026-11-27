@@ -1,7 +1,7 @@
 {
   "version": 1,
   "source_commit": "5cbeb3f3eb55a9b86da52c4869336f9d61fdd6d7",
-  "total_bytes": 12539369,
+  "total_bytes": 12584275,
   "files": {
     "ability_names.csv": {
       "size": 65239,
@@ -31,9 +31,21 @@
       "size": 59564,
       "sha256": "f08cd6dc30b447cb91cbe9232c79052e8521f32f6105bb1489b5bfabf4ca3241"
     },
+    "machines.csv": {
+      "size": 32831,
+      "sha256": "f9df7faaf0a60896fa344abd2b639f83f79c2a24e1fd4bb3560ca7da76e9a6ad"
+    },
     "move_damage_classes.csv": {
       "size": 44,
       "sha256": "b7101ceca4dff152537a2fb5c439ca4030b05f86442c643812c0b7b6ccf16f1b"
+    },
+    "move_flag_map.csv": {
+      "size": 11840,
+      "sha256": "399cf005933418f406b94729903bd1528e9088bddc3bc1966be6c442a625da1b"
+    },
+    "move_flags.csv": {
+      "size": 235,
+      "sha256": "1ebc43dfcbc635afcf4d34913158dbfd4cccbca0a496055c4a03e7ee5b9bc4d4"
     },
     "move_meta.csv": {
       "size": 20555,

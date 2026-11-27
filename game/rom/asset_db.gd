@@ -6,6 +6,17 @@ extends RefCounted
 ## No module outside game/rom/ reads user://rom_cache/ directly.
 
 const DEFAULT_CACHE_DIR := "user://rom_cache"
+const MIN_DATA_IMPORTER_VERSION := 2
+const REQUIRED_DATA_FILES_V2 := [
+	"data/species.json",
+	"data/learnsets.json",
+	"data/tm_learnsets.json",
+	"data/machines.json",
+	"data/battle_forms.json",
+	"data/moves.json",
+	"data/evolutions.json",
+	"data/items.json",
+]
 const TYPE_CHART_PATH := "res://config/type_chart.json"
 const FAN_SPRITE_CREDITS_PATH := "res://config/fan_sprite_credits.json"
 const TEXTURE_LRU_CAPACITY := 64
@@ -236,12 +247,58 @@ static func is_rom_ready(cache_dir: String = DEFAULT_CACHE_DIR) -> bool:
 		return false
 	return int(rom_block.get("frontSpritesDecoded", 0)) == 649 and int(rom_block.get("backSpritesDecoded", 0)) == 649
 
+static func is_data_outdated(cache_dir: String = DEFAULT_CACHE_DIR) -> bool:
+	var man := _load_manifest(cache_dir)
+	var dp_block: Variant = man.get("dataPack", null)
+	if not (dp_block is Dictionary):
+		return false
+	if int(man.get("importerVersion", 0)) < MIN_DATA_IMPORTER_VERSION:
+		return true
+	var cdir := _norm_dir(cache_dir)
+	for rel in REQUIRED_DATA_FILES_V2:
+		if not FileAccess.file_exists(cdir.path_join(rel)):
+			return true
+	return false
+
 static func is_data_ready(cache_dir: String = DEFAULT_CACHE_DIR) -> bool:
 	var man := _load_manifest(cache_dir)
 	var dp_block: Variant = man.get("dataPack", null)
 	if not (dp_block is Dictionary):
 		return false
+	if is_data_outdated(cache_dir):
+		return false
 	return int(dp_block.get("speciesCount", 0)) == 905 and int(dp_block.get("moveCount", 0)) == 778
+
+static func data_status(cache_dir: String = DEFAULT_CACHE_DIR) -> Dictionary:
+	var man := _load_manifest(cache_dir)
+	var dp_block: Variant = man.get("dataPack", null)
+	var ver := int(man.get("importerVersion", 0))
+	if not (dp_block is Dictionary):
+		return {
+			"ready": false,
+			"outdated": false,
+			"importer_version": ver,
+			"required_version": MIN_DATA_IMPORTER_VERSION,
+			"status": "unimported",
+			"message": "Data pack not imported.",
+		}
+	var outdated := is_data_outdated(cache_dir)
+	var ready := is_data_ready(cache_dir)
+	var out: Dictionary = (dp_block as Dictionary).duplicate(true)
+	out["ready"] = ready
+	out["outdated"] = outdated
+	out["importer_version"] = ver
+	out["required_version"] = MIN_DATA_IMPORTER_VERSION
+	if outdated:
+		out["status"] = "outdated"
+		out["message"] = "Data cache is outdated (v%d < v%d) — re-run the data import." % [ver, MIN_DATA_IMPORTER_VERSION]
+	elif ready:
+		out["status"] = "ready"
+		out["message"] = ""
+	else:
+		out["status"] = "incomplete"
+		out["message"] = "Data cache is incomplete — re-run the data import."
+	return out
 
 static func rom_status(cache_dir: String = DEFAULT_CACHE_DIR) -> Dictionary:
 	var man := _load_manifest(cache_dir)
@@ -323,6 +380,56 @@ static func learnset(dex: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Array:
 	var doc := _load_cached_json(cache_dir, "data/learnsets.json")
 	var arr: Variant = doc.get(str(dex), [])
 	return (arr as Array).duplicate(true) if arr is Array else []
+
+static func tm_learnset(dex: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Array[int]:
+	var doc := _load_cached_json(cache_dir, "data/tm_learnsets.json")
+	var arr: Variant = doc.get(str(dex), [])
+	var out: Array[int] = []
+	if arr is Array:
+		for v in arr:
+			out.append(int(v))
+	return out
+
+static func machines(cache_dir: String = DEFAULT_CACHE_DIR) -> Dictionary:
+	var doc := _load_cached_json(cache_dir, "data/machines.json")
+	if doc.is_empty():
+		return {"version_group_id": 20, "by_item": {}, "by_move": {}}
+	var by_item_out := {}
+	var raw_by_item: Variant = doc.get("by_item", {})
+	if raw_by_item is Dictionary:
+		for k in (raw_by_item as Dictionary).keys():
+			by_item_out[str(k)] = int((raw_by_item as Dictionary)[k])
+	var by_move_out := {}
+	var raw_by_move: Variant = doc.get("by_move", {})
+	if raw_by_move is Dictionary:
+		for k in (raw_by_move as Dictionary).keys():
+			var ids: Array[int] = []
+			var raw_list: Variant = (raw_by_move as Dictionary)[k]
+			if raw_list is Array:
+				for item_v in raw_list:
+					ids.append(int(item_v))
+			by_move_out[str(k)] = ids
+	return {
+		"version_group_id": int(doc.get("version_group_id", 20)),
+		"by_item": by_item_out,
+		"by_move": by_move_out,
+	}
+
+static func machine_move_for_item(item_id: int, cache_dir: String = DEFAULT_CACHE_DIR) -> int:
+	var doc := _load_cached_json(cache_dir, "data/machines.json")
+	var by_item: Variant = doc.get("by_item", {})
+	if by_item is Dictionary and (by_item as Dictionary).has(str(item_id)):
+		return int((by_item as Dictionary)[str(item_id)])
+	return 0
+
+static func battle_form(pokemon_id: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Dictionary:
+	var doc := _load_cached_json(cache_dir, "data/battle_forms.json")
+	var entry: Variant = doc.get(str(pokemon_id), {})
+	return (entry as Dictionary).duplicate(true) if entry is Dictionary else {}
+
+static func battle_forms(cache_dir: String = DEFAULT_CACHE_DIR) -> Dictionary:
+	var doc := _load_cached_json(cache_dir, "data/battle_forms.json")
+	return doc.duplicate(true)
 
 static func evolutions(dex: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Array:
 	var doc := _load_cached_json(cache_dir, "data/evolutions.json")

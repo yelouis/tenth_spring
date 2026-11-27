@@ -295,39 +295,60 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		}
 
 	# 6. Mega forms (is_mega == 1 and introduced_in_version_group_id in {15, 16})
+	#    and Gen 8 singles battle-only forms (is_battle_only == 1, non-Mega, non-Gmax/Primal/Ultra/Totem)
 	var mega_forms_by_dex := {}
 	var mega_forms_by_pid := {}
 	var mega_form_count := 0
+	var battle_forms_out := {}
 	for r in _read_csv_dicts(csv_dir.path_join("pokemon_forms.csv")):
-		if int(r.get("is_mega", "0")) != 1:
-			continue
-		var vg := int(r.get("introduced_in_version_group_id", "0"))
-		if vg != 15 and vg != 16:
-			continue
+		var is_mega := int(r.get("is_mega", "0")) == 1
+		var is_battle_only := int(r.get("is_battle_only", "0")) == 1
 		var pid := int(r.get("pokemon_id", "0"))
 		var form_id := int(r.get("id", "0"))
-		var form_ident := str(r.get("form_identifier", "mega"))
+		var form_ident := str(r.get("form_identifier", ""))
 		var pinfo: Dictionary = pokemon_by_id.get(pid, {})
 		var dex := int(pinfo.get("species_id", 0))
 		if dex < 1 or dex > 905:
 			continue
-		var m_abils: Array = abil_by_pid.get(pid, [])
-		var m_ability_id := int(m_abils[0]) if not m_abils.is_empty() else 0
-		var m_entry := {
-			"form_id": form_id,
-			"pokemon_id": pid,
-			"species_dex": dex,
-			"form": form_ident,
-			"identifier": str(r.get("identifier", "")),
-			"base_stats": stats_by_pid.get(pid, {}),
-			"types": types_by_pid.get(pid, []),
-			"ability_id": m_ability_id,
-		}
-		if not mega_forms_by_dex.has(dex):
-			mega_forms_by_dex[dex] = []
-		mega_forms_by_dex[dex].append(m_entry)
-		mega_forms_by_pid[str(pid)] = m_entry
-		mega_form_count += 1
+		if is_mega:
+			var vg := int(r.get("introduced_in_version_group_id", "0"))
+			if vg != 15 and vg != 16:
+				continue
+			var m_abils: Array = abil_by_pid.get(pid, [])
+			var m_ability_id := int(m_abils[0]) if not m_abils.is_empty() else 0
+			var m_entry := {
+				"form_id": form_id,
+				"pokemon_id": pid,
+				"species_dex": dex,
+				"form": form_ident if form_ident != "" else "mega",
+				"identifier": str(r.get("identifier", "")),
+				"base_stats": stats_by_pid.get(pid, {}),
+				"types": types_by_pid.get(pid, []),
+				"ability_id": m_ability_id,
+				"weight_hg": int(pinfo.get("weight", 0)),
+				"height_dm": int(pinfo.get("height", 0)),
+			}
+			if not mega_forms_by_dex.has(dex):
+				mega_forms_by_dex[dex] = []
+			mega_forms_by_dex[dex].append(m_entry)
+			mega_forms_by_pid[str(pid)] = m_entry
+			mega_form_count += 1
+		elif is_battle_only:
+			# Decision 36 excludes Gigantamax (Dynamax), Primal Reversion, Ultra Burst, and Gen 7 Totems.
+			if form_ident in ["gmax", "primal", "ultra"] or form_ident.begins_with("totem"):
+				continue
+			battle_forms_out[str(pid)] = {
+				"pokemon_id": pid,
+				"form_id": form_id,
+				"species_dex": dex,
+				"form_identifier": form_ident,
+				"base_stats": stats_by_pid.get(pid, {}),
+				"types": types_by_pid.get(pid, []),
+				"abilities": abil_by_pid.get(pid, []),
+				"hidden_ability_id": int(hidden_abil_by_pid.get(pid, 0)),
+				"weight_hg": int(pinfo.get("weight", 0)),
+				"height_dm": int(pinfo.get("height", 0)),
+			}
 
 	# 7. Species 1..905
 	var species_out := {}
@@ -348,6 +369,8 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 			"hidden_ability_id": int(hidden_abil_by_pid.get(dex, 0)),
 			"catch_rate": int(r.get("capture_rate", "45")),
 			"base_exp": int(pinfo.get("base_exp", 0)),
+			"weight_hg": int(pinfo.get("weight", 0)),
+			"height_dm": int(pinfo.get("height", 0)),
 			"ev_yield": ev_by_pid.get(dex, {}),
 			"growth_rate_id": int(r.get("growth_rate_id", "2")),
 			"gender_rate": int(r.get("gender_rate", "4")),
@@ -361,6 +384,27 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		}
 
 	# 8. Moves (Gen 1..8, id < 10000, exclude Gen 7 pp==1 Z-Moves and Gen 8 max-* Moves -> 778 moves)
+	var move_flag_ident_by_id := {}
+	for r in _read_csv_dicts(csv_dir.path_join("move_flags.csv")):
+		var flid := int(r.get("id", "0"))
+		var flident := str(r.get("identifier", "")).strip_edges()
+		if flid > 0 and flident != "":
+			move_flag_ident_by_id[flid] = flident
+
+	var move_flags_by_id := {}
+	for r in _read_csv_dicts(csv_dir.path_join("move_flag_map.csv")):
+		var mid := int(r.get("move_id", "0"))
+		var flid := int(r.get("move_flag_id", "0"))
+		if mid <= 0 or not move_flag_ident_by_id.has(flid):
+			continue
+		if not move_flags_by_id.has(mid):
+			move_flags_by_id[mid] = []
+		var flname: String = move_flag_ident_by_id[flid]
+		if not (move_flags_by_id[mid] as Array).has(flname):
+			(move_flags_by_id[mid] as Array).append(flname)
+	for mid in move_flags_by_id.keys():
+		(move_flags_by_id[mid] as Array).sort()
+
 	var move_meta_by_id := {}
 	for r in _read_csv_dicts(csv_dir.path_join("move_meta.csv")):
 		var mid := int(r.get("move_id", "0"))
@@ -425,13 +469,16 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 			"target_id": int(r.get("target_id", "10")),
 			"effect_id": int(r.get("effect_id", "0")),
 			"effect_chance": int(eff_chance_str) if eff_chance_str != "" else 0,
+			"flags": move_flags_by_id.get(mid, []),
 			"meta": move_meta_by_id.get(mid, {}),
 			"stat_changes": move_stat_changes.get(mid, []),
 		}
 
-	# 9. Stream pokemon_moves.csv for level-up learnsets across priority [20, 24, 23, 19, 18]
+	# 9. Stream pokemon_moves.csv for level-up (method 1) and machine/TM (method 4)
+	#    learnsets across priority [20, 24, 23, 19, 18]
 	var allowed_vgs := {20: true, 24: true, 23: true, 19: true, 18: true}
 	var per_dex_vg_moves := {}
+	var per_dex_vg_tm_moves := {}
 	var pm_fh := FileAccess.open(csv_dir.path_join("pokemon_moves.csv"), FileAccess.READ)
 	if pm_fh == null:
 		return {"ok": false, "error": "Cannot open pokemon_moves.csv"}
@@ -441,7 +488,8 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		var row := pm_fh.get_csv_line()
 		if row.size() < 5:
 			continue
-		if row[3] != "1":
+		var method_str := row[3]
+		if method_str != "1" and method_str != "4":
 			continue
 		var vg := int(row[1])
 		if not allowed_vgs.has(vg):
@@ -452,17 +500,27 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		var mid := int(row[2])
 		if not valid_move_ids.has(mid):
 			continue
-		var lvl := int(row[4])
-		var ord := int(row[5]) if (row.size() > 5 and row[5] != "") else 0
-		if not per_dex_vg_moves.has(pid):
-			per_dex_vg_moves[pid] = {}
-		var vg_map: Dictionary = per_dex_vg_moves[pid]
-		if not vg_map.has(vg):
-			vg_map[vg] = []
-		vg_map[vg].append([lvl, ord, mid])
+		if method_str == "1":
+			var lvl := int(row[4])
+			var ord := int(row[5]) if (row.size() > 5 and row[5] != "") else 0
+			if not per_dex_vg_moves.has(pid):
+				per_dex_vg_moves[pid] = {}
+			var vg_map: Dictionary = per_dex_vg_moves[pid]
+			if not vg_map.has(vg):
+				vg_map[vg] = []
+			vg_map[vg].append([lvl, ord, mid])
+		else:
+			if not per_dex_vg_tm_moves.has(pid):
+				per_dex_vg_tm_moves[pid] = {}
+			var tm_vg_map: Dictionary = per_dex_vg_tm_moves[pid]
+			if not tm_vg_map.has(vg):
+				tm_vg_map[vg] = {}
+			(tm_vg_map[vg] as Dictionary)[mid] = true
 	pm_fh.close()
 
 	var learnsets_out := {}
+	var tm_learnsets_out := {}
+	var tm_species_count := 0
 	for dex in range(1, 906):
 		var vg_map: Dictionary = per_dex_vg_moves.get(dex, {})
 		var chosen_list: Array = []
@@ -487,7 +545,43 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 			formatted.append({"level": int(item[0]), "move_id": int(item[2])})
 		learnsets_out[str(dex)] = formatted
 
-	# 10. Evolutions
+		var tm_vg_map: Dictionary = per_dex_vg_tm_moves.get(dex, {})
+		var tm_ids: Array[int] = []
+		for vg in LEARNSET_VG_PRIORITY:
+			if tm_vg_map.has(vg):
+				for mid_key in (tm_vg_map[vg] as Dictionary).keys():
+					tm_ids.append(int(mid_key))
+				break
+		tm_ids.sort()
+		tm_learnsets_out[str(dex)] = tm_ids
+		if not tm_ids.is_empty():
+			tm_species_count += 1
+
+	# 9b. Machines (version_group_id == 20: Sword/Shield TM + TR tables)
+	var machines_by_item := {}
+	var machines_by_move := {}
+	for r in _read_csv_dicts(csv_dir.path_join("machines.csv")):
+		if int(r.get("version_group_id", "0")) != 20:
+			continue
+		var iid := int(r.get("item_id", "0"))
+		var mid := int(r.get("move_id", "0"))
+		if iid <= 0 or not valid_move_ids.has(mid):
+			continue
+		machines_by_item[str(iid)] = mid
+		var mkey := str(mid)
+		if not machines_by_move.has(mkey):
+			machines_by_move[mkey] = []
+		if not (machines_by_move[mkey] as Array).has(iid):
+			(machines_by_move[mkey] as Array).append(iid)
+	for mkey in machines_by_move.keys():
+		(machines_by_move[mkey] as Array).sort()
+	var machines_out := {
+		"version_group_id": 20,
+		"by_item": machines_by_item,
+		"by_move": machines_by_move,
+	}
+
+	# 10. Evolutions (keep all condition fields; relative_physical_stats is -1/0/1 or null when absent)
 	var trigger_by_id := {}
 	for r in _read_csv_dicts(csv_dir.path_join("evolution_triggers.csv")):
 		trigger_by_id[int(r.get("id", "0"))] = str(r.get("identifier", "level-up"))
@@ -510,6 +604,25 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		var known_type_str := str(r.get("known_move_type_id", ""))
 		var gender_str := str(r.get("gender_id", ""))
 		var tod := str(r.get("time_of_day", ""))
+		var loc_str := str(r.get("location_id", ""))
+		var beauty_str := str(r.get("minimum_beauty", ""))
+		var aff_str := str(r.get("minimum_affection", ""))
+		var rel_phys_str := str(r.get("relative_physical_stats", ""))
+		var party_sp_str := str(r.get("party_species_id", ""))
+		var party_type_str := str(r.get("party_type_id", ""))
+		var trade_sp_str := str(r.get("trade_species_id", ""))
+		var rain_str := str(r.get("needs_overworld_rain", ""))
+		var upside_str := str(r.get("turn_upside_down", ""))
+		var rock_str := str(r.get("near_special_rock", ""))
+		var reg_str := str(r.get("region_id", ""))
+		var req_form_str := str(r.get("required_pokemon_form_id", ""))
+		var evo_form_str := str(r.get("evolved_pokemon_form_id", ""))
+		var used_move_str := str(r.get("used_move_id", ""))
+		var min_move_cnt_str := str(r.get("minimum_move_count", ""))
+		var min_dmg_str := str(r.get("minimum_damage_taken", ""))
+		var nat_mask_str := str(r.get("nature_bitmask", ""))
+		var pct_str := str(r.get("percentage_chance", ""))
+		var rel_phys_val: Variant = int(rel_phys_str) if rel_phys_str != "" else null
 		var evo_rule := {
 			"to_dex": evolved_dex,
 			"trigger": str(trigger_by_id.get(trig_id, "level-up")),
@@ -521,6 +634,24 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 			"known_move_type_id": int(known_type_str) if known_type_str != "" else 0,
 			"gender_id": int(gender_str) if gender_str != "" else 0,
 			"time_of_day": tod,
+			"location_id": int(loc_str) if loc_str != "" else 0,
+			"minimum_beauty": int(beauty_str) if beauty_str != "" else 0,
+			"minimum_affection": int(aff_str) if aff_str != "" else 0,
+			"relative_physical_stats": rel_phys_val,
+			"party_species_id": int(party_sp_str) if party_sp_str != "" else 0,
+			"party_type_id": int(party_type_str) if party_type_str != "" else 0,
+			"trade_species_id": int(trade_sp_str) if trade_sp_str != "" else 0,
+			"needs_overworld_rain": int(rain_str) == 1 if rain_str != "" else false,
+			"turn_upside_down": int(upside_str) == 1 if upside_str != "" else false,
+			"near_special_rock": int(rock_str) == 1 if rock_str != "" else false,
+			"region_id": int(reg_str) if reg_str != "" else 0,
+			"required_pokemon_form_id": int(req_form_str) if req_form_str != "" else 0,
+			"evolved_pokemon_form_id": int(evo_form_str) if evo_form_str != "" else 0,
+			"used_move_id": int(used_move_str) if used_move_str != "" else 0,
+			"minimum_move_count": int(min_move_cnt_str) if min_move_cnt_str != "" else 0,
+			"minimum_damage_taken": int(min_dmg_str) if min_dmg_str != "" else 0,
+			"nature_bitmask": int(nat_mask_str) if nat_mask_str != "" else 0,
+			"percentage_chance": int(pct_str) if pct_str != "" else 0,
 		}
 		var from_key := str(from_dex)
 		if not evolutions_out.has(from_key):
@@ -605,6 +736,12 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		return {"ok": false, "error": "Failed to write data/species.json"}
 	if not _write_json_file(data_dir.path_join("learnsets.json"), learnsets_out):
 		return {"ok": false, "error": "Failed to write data/learnsets.json"}
+	if not _write_json_file(data_dir.path_join("tm_learnsets.json"), tm_learnsets_out):
+		return {"ok": false, "error": "Failed to write data/tm_learnsets.json"}
+	if not _write_json_file(data_dir.path_join("machines.json"), machines_out):
+		return {"ok": false, "error": "Failed to write data/machines.json"}
+	if not _write_json_file(data_dir.path_join("battle_forms.json"), battle_forms_out):
+		return {"ok": false, "error": "Failed to write data/battle_forms.json"}
 	if not _write_json_file(data_dir.path_join("moves.json"), moves_out):
 		return {"ok": false, "error": "Failed to write data/moves.json"}
 	if not _write_json_file(data_dir.path_join("evolutions.json"), evolutions_out):
@@ -630,5 +767,68 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		"source_commit": source_commit,
 		"species_count": species_out.size(),
 		"mega_form_count": mega_form_count,
+		"battle_form_count": battle_forms_out.size(),
 		"move_count": moves_out.size(),
+		"tm_species_count": tm_species_count,
+		"machine_count": machines_by_item.size(),
+	}
+
+
+static func audit_evolutions(evolutions_doc: Dictionary) -> Dictionary:
+	var no_cond_rows: Array = []
+	for from_key in evolutions_doc.keys():
+		var rules: Variant = evolutions_doc[from_key]
+		if not (rules is Array):
+			continue
+		for r_var in rules:
+			if not (r_var is Dictionary):
+				continue
+			var r: Dictionary = r_var
+			if str(r.get("trigger", "")) != "level-up":
+				continue
+			var rel_phys: Variant = r.get("relative_physical_stats", null)
+			var has_cond := (
+				int(r.get("minimum_level", 0)) > 0
+				or int(r.get("held_item_id", 0)) > 0
+				or int(r.get("minimum_happiness", 0)) > 0
+				or int(r.get("known_move_id", 0)) > 0
+				or int(r.get("known_move_type_id", 0)) > 0
+				or int(r.get("gender_id", 0)) > 0
+				or str(r.get("time_of_day", "")) != ""
+				or int(r.get("location_id", 0)) > 0
+				or int(r.get("minimum_beauty", 0)) > 0
+				or int(r.get("minimum_affection", 0)) > 0
+				or rel_phys != null
+				or int(r.get("party_species_id", 0)) > 0
+				or int(r.get("party_type_id", 0)) > 0
+				or int(r.get("trade_species_id", 0)) > 0
+				or bool(r.get("needs_overworld_rain", false))
+				or bool(r.get("turn_upside_down", false))
+			)
+			if not has_cond:
+				no_cond_rows.append({"from_dex": int(from_key), "to_dex": int(r.get("to_dex", 0))})
+
+	# Species #236 has three branch targets (106, 107, 237) distinguished by relative_physical_stats (1, -1, 0).
+	var branch_rows: Variant = evolutions_doc.get("236", [])
+	var sigs: Array = []
+	var rel_vals: Array = []
+	if branch_rows is Array:
+		for r_var in branch_rows:
+			if r_var is Dictionary:
+				var d: Dictionary = (r_var as Dictionary).duplicate(true)
+				d.erase("to_dex")
+				sigs.append(JSON.stringify(d))
+				rel_vals.append(r_var.get("relative_physical_stats", null))
+	var rows_identical := sigs.size() >= 2
+	if rows_identical:
+		for i in range(1, sigs.size()):
+			if sigs[i] != sigs[0]:
+				rows_identical = false
+				break
+	return {
+		"level_up_rows_without_condition": no_cond_rows.size(),
+		"no_condition_rows": no_cond_rows,
+		"tyrogue_rows_count": sigs.size(),
+		"tyrogue_rows_identical": rows_identical,
+		"tyrogue_relative_physical_stats": rel_vals,
 	}

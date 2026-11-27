@@ -400,10 +400,10 @@ func _test_nds_header_and_path_guards() -> bool:
 	return true
 
 func _test_manifests_guardrails_and_asset_db() -> bool:
-	# 1. Consent summary
+	# 1. Consent summary (32 PokéAPI CSVs = 12584275 + 1216 fan sprites = 1387217 -> 13971492 bytes)
 	var consent := DataPackImporterRef.get_consent_summary()
-	if int(consent.get("total_bytes", 0)) != 13926586:
-		push_error("Expected total_bytes == 13926586, got %d" % int(consent.get("total_bytes", 0)))
+	if int(consent.get("total_bytes", 0)) != 13971492:
+		push_error("Expected total_bytes == 13971492, got %d" % int(consent.get("total_bytes", 0)))
 		return false
 	if not is_equal_approx(float(consent.get("size_mib", 0.0)), 13.3):
 		push_error("Expected size_mib == 13.3")
@@ -583,6 +583,276 @@ func _test_env_gated_real_imports() -> bool:
 	AssetDBRef.clear_memory_cache()
 	return true
 
+func _write_text_file(path: String, text: String) -> void:
+	var dir_path := path.get_base_dir()
+	if not DirAccess.dir_exists_absolute(dir_path):
+		DirAccess.make_dir_recursive_absolute(dir_path)
+	var fh := FileAccess.open(path, FileAccess.WRITE)
+	fh.store_string(text)
+	fh.close()
+
+
+func _test_data_pack_v2_synthetic_and_outdated() -> bool:
+	var root := ProjectSettings.globalize_path(TEST_ROOT + "/v2_mini")
+	DataPackImporterRef._remove_dir_recursive(root)
+	var csv_dir := root.path_join("csv")
+	var out_dir := root.path_join("staged")
+	DirAccess.make_dir_recursive_absolute(csv_dir)
+	DirAccess.make_dir_recursive_absolute(out_dir)
+
+	# Minimal synthetic CSV fixture covering every Item 90 file & field (zero real names)
+	_write_text_file(csv_dir.path_join("types.csv"), "id,identifier\n1,normal\n10,fire\n11,water\n13,electric\n")
+	_write_text_file(csv_dir.path_join("pokemon.csv"),
+		"id,identifier,species_id,height,weight,base_experience,order,is_default\n"
+		+ "1,sp1,1,7,69,64,1,1\n"
+		+ "2,sp2,2,10,130,142,2,1\n"
+		+ "236,sp236,236,7,210,42,236,1\n"
+		+ "106,sp106,106,15,498,159,106,1\n"
+		+ "107,sp107,107,14,502,159,107,1\n"
+		+ "237,sp237,237,14,480,159,237,1\n"
+		+ "458,sp458,458,10,650,69,458,1\n"
+		+ "226,sp226,226,21,2200,170,226,1\n"
+		+ "10026,sp681-blade,2,17,530,234,999,0\n"
+		+ "10033,sp1-mega,1,24,1555,281,998,0\n"
+		+ "10195,sp1-gmax,1,240,10000,281,997,0\n"
+		+ "10077,sp1-primal,1,98,4300,347,996,0\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_species.csv"),
+		"id,identifier,generation_id,evolves_from_species_id,evolution_chain_id,capture_rate,base_happiness,is_baby,growth_rate_id,gender_rate,is_legendary,is_mythical\n"
+		+ "1,sp1,1,,1,45,70,0,4,1,0,0\n"
+		+ "2,sp2,1,1,1,45,70,0,4,1,0,0\n"
+		+ "236,sp236,2,,10,75,70,1,2,0,0,0\n"
+		+ "106,sp106,1,236,10,45,70,0,2,0,0,0\n"
+		+ "107,sp107,1,236,10,45,70,0,2,0,0,0\n"
+		+ "237,sp237,2,236,10,45,70,0,2,0,0,0\n"
+		+ "458,sp458,4,,20,25,70,1,1,4,0,0\n"
+		+ "226,sp226,2,458,20,25,70,0,1,4,0,0\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_stats.csv"),
+		"pokemon_id,stat_id,base_stat,effort\n"
+		+ "1,1,45,0\n1,2,49,0\n1,3,49,0\n1,4,65,1\n1,5,65,0\n1,6,45,0\n"
+		+ "2,1,60,0\n2,2,50,0\n2,3,140,2\n2,4,50,0\n2,5,140,1\n2,6,60,0\n"
+		+ "10026,1,60,0\n10026,2,140,2\n10026,3,50,0\n10026,4,140,1\n10026,5,50,0\n10026,6,60,0\n"
+		+ "10033,1,80,0\n10033,2,100,0\n10033,3,123,0\n10033,4,122,2\n10033,5,120,1\n10033,6,80,0\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_types.csv"),
+		"pokemon_id,type_id,slot\n"
+		+ "1,1,1\n2,10,1\n10026,10,1\n10026,13,2\n10033,1,1\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_abilities.csv"),
+		"pokemon_id,ability_id,is_hidden,slot\n"
+		+ "1,65,0,1\n1,34,1,3\n10026,176,0,1\n10033,47,0,1\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_forms.csv"),
+		"id,identifier,form_identifier,pokemon_id,introduced_in_version_group_id,is_default,is_battle_only,is_mega,form_order,order\n"
+		+ "10125,sp2-blade,blade,10026,15,1,1,0,2,2\n"
+		+ "10033,sp1-mega,mega,10033,15,1,1,1,2,2\n"
+		+ "10364,sp1-gmax,gmax,10195,20,1,1,0,3,3\n"
+		+ "10179,sp1-primal,primal,10077,16,1,1,0,4,4\n"
+	)
+	_write_text_file(csv_dir.path_join("move_flags.csv"), "id,identifier\n1,contact\n8,punch\n9,sound\n")
+	_write_text_file(csv_dir.path_join("move_flag_map.csv"), "move_id,move_flag_id\n5,8\n5,1\n33,1\n")
+	_write_text_file(csv_dir.path_join("move_meta.csv"), "move_id,meta_category_id,meta_ailment_id,min_hits,max_hits,min_turns,max_turns,drain,healing,crit_rate,ailment_chance,flinch_chance,stat_chance\n5,0,0,,,,,0,0,0,0,0,0\n33,0,0,,,,,0,0,0,0,0,0\n45,2,0,,,,,0,0,0,0,0,0\n")
+	_write_text_file(csv_dir.path_join("move_meta_stat_changes.csv"), "move_id,stat_id,change\n45,2,-1\n")
+	_write_text_file(csv_dir.path_join("moves.csv"),
+		"id,identifier,generation_id,type_id,power,pp,accuracy,priority,target_id,damage_class_id,effect_id,effect_chance\n"
+		+ "5,mv5,1,1,80,20,85,0,10,2,1,\n"
+		+ "33,mv33,1,1,40,35,100,0,10,2,1,\n"
+		+ "45,mv45,1,1,,40,100,0,11,1,19,\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_moves.csv"),
+		"pokemon_id,version_group_id,move_id,pokemon_move_method_id,level,order\n"
+		+ "1,20,33,1,1,1\n"
+		+ "1,20,5,4,0,\n"
+		+ "1,18,45,4,0,\n"
+		+ "2,18,33,1,1,1\n"
+		+ "2,18,45,4,0,\n"
+	)
+	_write_text_file(csv_dir.path_join("machines.csv"),
+		"machine_number,version_group_id,item_id,move_id\n"
+		+ "0,20,1288,5\n"
+		+ "1,18,305,33\n"
+		+ "2,20,306,45\n"
+	)
+	_write_text_file(csv_dir.path_join("evolution_triggers.csv"), "id,identifier\n1,level-up\n2,trade\n3,use-item\n")
+	_write_text_file(csv_dir.path_join("pokemon_evolution.csv"),
+		"id,evolved_species_id,evolution_trigger_id,version_group_id,is_default,trigger_item_id,minimum_level,gender_id,location_id,held_item_id,time_of_day,known_move_id,known_move_type_id,minimum_happiness,minimum_beauty,minimum_affection,relative_physical_stats,party_species_id,party_type_id,trade_species_id,needs_overworld_rain,turn_upside_down,needs_multiplayer,near_special_rock,region_id,required_pokemon_form_id,evolved_pokemon_form_id,used_move_id,minimum_move_count,minimum_steps,minimum_damage_taken,nature_bitmask,condition_expression,percentage_chance\n"
+		+ "1,2,1,8,1,,,1,10,,,,0,0,170,2,,0,17,0,1,1,0,1,7,0,0,828,20,0,49,0,,0\n"
+		+ "2,106,1,3,1,,20,,,,,,,,,,1,,,,0,0,0,0,,,,,,,,,,0\n"
+		+ "3,107,1,3,1,,20,,,,,,,,,,-1,,,,0,0,0,0,,,,,,,,,,0\n"
+		+ "4,237,1,3,1,,20,,,,,,,,,,0,,,,0,0,0,0,,,,,,,,,,0\n"
+		+ "5,226,1,8,1,,,,,,,,,,,,,223,,,0,0,0,0,,,,,,,,,,0\n"
+	)
+	_write_text_file(csv_dir.path_join("item_categories.csv"), "id,pocket_id,identifier\n37,4,all-machines\n")
+	_write_text_file(csv_dir.path_join("items.csv"), "id,identifier,category_id,cost,fling_power\n1288,it1288,37,3000,\n")
+	_write_text_file(csv_dir.path_join("pokemon_species_names.csv"), "pokemon_species_id,local_language_id,name\n1,9,SynthOne\n2,9,SynthTwo\n")
+	_write_text_file(csv_dir.path_join("pokemon_form_names.csv"), "pokemon_form_id,local_language_id,form_name,pokemon_name\n")
+	_write_text_file(csv_dir.path_join("move_names.csv"), "move_id,local_language_id,name\n5,9,SynthMoveFive\n33,9,SynthMoveThirtyThree\n")
+	_write_text_file(csv_dir.path_join("ability_names.csv"), "ability_id,local_language_id,name\n")
+	_write_text_file(csv_dir.path_join("item_names.csv"), "item_id,local_language_id,name\n")
+	_write_text_file(csv_dir.path_join("type_names.csv"), "type_id,local_language_id,name\n1,9,Normal\n")
+
+	var cres := DataPackImporterRef._compile_verified_csvs(csv_dir, out_dir, "synthetic_commit")
+	if not bool(cres.get("ok", false)):
+		push_error("Synthetic v2 compile failed: %s" % str(cres))
+		return false
+
+	AssetDBRef.clear_memory_cache()
+	var staged_res := TEST_ROOT + "/v2_mini/staged"
+	var sp1 := AssetDBRef.species(1, "", staged_res)
+	if int(sp1.get("weight_hg", 0)) != 69 or int(sp1.get("height_dm", 0)) != 7:
+		push_error("Expected synthetic #1 weight_hg=69 height_dm=7, got %s" % str(sp1))
+		return false
+	var mv5 := AssetDBRef.move(5, staged_res)
+	if mv5.get("flags", []) != ["contact", "punch"]:
+		push_error("Expected move #5 flags ['contact', 'punch'], got %s" % str(mv5.get("flags", [])))
+		return false
+	var mv45 := AssetDBRef.move(45, staged_res)
+	if mv45.get("flags", null) != []:
+		push_error("Expected move #45 empty flags array, got %s" % str(mv45.get("flags", null)))
+		return false
+	# VG priority: #1 has VG 20 machine [5] (overrides VG 18 [45]); #2 falls back to VG 18 [45]
+	if AssetDBRef.tm_learnset(1, staged_res) != [5] or AssetDBRef.tm_learnset(2, staged_res) != [45]:
+		push_error("TM learnset VG priority mismatch: #1=%s #2=%s" % [str(AssetDBRef.tm_learnset(1, staged_res)), str(AssetDBRef.tm_learnset(2, staged_res))])
+		return false
+	var mach := AssetDBRef.machines(staged_res)
+	var by_item: Dictionary = mach.get("by_item", {})
+	if by_item.size() != 2 or int(by_item.get("1288", 0)) != 5 or int(by_item.get("306", 0)) != 45 or by_item.has("305"):
+		push_error("Expected VG 20 machines only (1288->5, 306->45), got %s" % str(mach))
+		return false
+	if AssetDBRef.machine_move_for_item(1288, staged_res) != 5:
+		push_error("machine_move_for_item(1288) failed")
+		return false
+	var bfs := AssetDBRef.battle_forms(staged_res)
+	if bfs.size() != 1 or not bfs.has("10026"):
+		push_error("Expected exactly 1 non-Mega/Gmax/Primal battle form (10026), got %s" % str(bfs.keys()))
+		return false
+	var bf := AssetDBRef.battle_form(10026, staged_res)
+	if int(bf.get("species_dex", 0)) != 2 or str(bf.get("form_identifier", "")) != "blade" or int(bf.get("weight_hg", 0)) != 530:
+		push_error("Unexpected battle_form(10026) payload: %s" % str(bf))
+		return false
+
+	# Check all dropped evolution fields preserved
+	var ev1 := AssetDBRef.evolutions(1, staged_res)
+	if ev1.size() != 1:
+		push_error("Expected 1 evolution rule for synthetic #1")
+		return false
+	var r1: Dictionary = ev1[0]
+	if int(r1.get("location_id", 0)) != 10 or int(r1.get("minimum_beauty", 0)) != 170 or int(r1.get("minimum_affection", 0)) != 2 or r1.get("relative_physical_stats", 99) != null or int(r1.get("party_type_id", 0)) != 17 or not bool(r1.get("needs_overworld_rain", false)) or not bool(r1.get("turn_upside_down", false)) or not bool(r1.get("near_special_rock", false)) or int(r1.get("used_move_id", 0)) != 828 or int(r1.get("minimum_move_count", 0)) != 20 or int(r1.get("minimum_damage_taken", 0)) != 49:
+		push_error("Dropped evolution fields missing/mismatch on synthetic #1: %s" % str(r1))
+		return false
+	var ev236 := AssetDBRef.evolutions(236, staged_res)
+	var ev458 := AssetDBRef.evolutions(458, staged_res)
+	if ev236.size() != 3 or int(ev236[0].get("relative_physical_stats", 99)) != 1 or int(ev236[1].get("relative_physical_stats", 99)) != -1 or int(ev236[2].get("relative_physical_stats", 99)) != 0:
+		push_error("Expected #236 relative_physical_stats [1, -1, 0], got %s" % str(ev236))
+		return false
+	if ev458.size() != 1 or int(ev458[0].get("party_species_id", 0)) != 223:
+		push_error("Expected #458 party_species_id=223, got %s" % str(ev458))
+		return false
+
+	var evo_doc: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(out_dir.path_join("data/evolutions.json")))
+	var audit_ok := DataPackImporterRef.audit_evolutions(evo_doc)
+	if int(audit_ok.get("level_up_rows_without_condition", -1)) != 0 or bool(audit_ok.get("tyrogue_rows_identical", true)):
+		push_error("Synthetic v2 evolution audit failed: %s" % str(audit_ok))
+		return false
+
+	# Falsifier on audit_evolutions: stripped rules trigger both checks
+	var broken_evos := {
+		"133": [{"to_dex": 470, "trigger": "level-up", "minimum_level": 0, "held_item_id": 0, "minimum_happiness": 0, "known_move_id": 0, "known_move_type_id": 0, "gender_id": 0, "time_of_day": ""}],
+		"236": [
+			{"to_dex": 106, "trigger": "level-up", "minimum_level": 20},
+			{"to_dex": 107, "trigger": "level-up", "minimum_level": 20},
+			{"to_dex": 237, "trigger": "level-up", "minimum_level": 20},
+		],
+	}
+	var audit_bad := DataPackImporterRef.audit_evolutions(broken_evos)
+	if int(audit_bad.get("level_up_rows_without_condition", 0)) != 1 or not bool(audit_bad.get("tyrogue_rows_identical", false)):
+		push_error("Falsifier failed: audit_evolutions did not catch stripped v1 rows: %s" % str(audit_bad))
+		return false
+
+	# Outdated v1 cache test: AssetDB reports outdated ("re-run the data import") and never crashes
+	var old_v1 := TEST_ROOT + "/v2_mini/old_v1"
+	var old_v1_abs := ProjectSettings.globalize_path(old_v1)
+	DataPackImporterRef._write_json_file(old_v1_abs.path_join("manifest.json"), {
+		"importerVersion": 1,
+		"dataPack": {"speciesCount": 905, "moveCount": 778},
+	})
+	AssetDBRef.clear_memory_cache()
+	if not AssetDBRef.is_data_outdated(old_v1) or AssetDBRef.is_data_ready(old_v1):
+		push_error("Expected v1 cache to be marked outdated and not ready")
+		return false
+	var st := AssetDBRef.data_status(old_v1)
+	if str(st.get("status", "")) != "outdated" or str(st.get("message", "")).find("re-run the data import") == -1:
+		push_error("Unexpected outdated data_status: %s" % str(st))
+		return false
+	if not AssetDBRef.tm_learnset(1, old_v1).is_empty() or not AssetDBRef.battle_form(10026, old_v1).is_empty() or AssetDBRef.machine_move_for_item(1288, old_v1) != 0:
+		push_error("Expected safe empty defaults when reading missing v2 files from old v1 cache")
+		return false
+
+	DataPackImporterRef._remove_dir_recursive(root)
+	AssetDBRef.clear_memory_cache()
+	return true
+
+
+func _test_local_cache_v2_integrity() -> bool:
+	var evo_path := ProjectSettings.globalize_path("user://rom_cache/data/evolutions.json")
+	if not FileAccess.file_exists(evo_path):
+		print("SKIPPED local user://rom_cache v2 audit — no local data cache present")
+		return true
+	var evo_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(evo_path))
+	if not (evo_doc is Dictionary):
+		push_error("Malformed user://rom_cache/data/evolutions.json")
+		return false
+	var audit := DataPackImporterRef.audit_evolutions(evo_doc as Dictionary)
+	var no_cond := int(audit.get("level_up_rows_without_condition", -1))
+	var tyr_ident := bool(audit.get("tyrogue_rows_identical", true))
+	print("LOCAL_CACHE_AUDIT level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [no_cond, str(tyr_ident)])
+	if no_cond != 0 or tyr_ident:
+		push_error("Local data cache failed v2 evolution check: level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [no_cond, str(tyr_ident)])
+		return false
+	AssetDBRef.clear_memory_cache()
+	var st := AssetDBRef.data_status("user://rom_cache")
+	if not bool(st.get("ready", false)) or bool(st.get("outdated", true)):
+		push_error("Local user://rom_cache is outdated or incomplete: %s" % str(st))
+		return false
+	var tyr_rules := AssetDBRef.evolutions(236, "user://rom_cache")
+	var rels: Array = []
+	for r in tyr_rules:
+		var rv: Variant = r.get("relative_physical_stats", null)
+		rels.append(int(rv) if rv != null else null)
+	if tyr_rules.size() != 3 or not (rels.has(1) and rels.has(-1) and rels.has(0)):
+		push_error("Expected #236 relative_physical_stats {1, -1, 0}, got %s" % str(rels))
+		return false
+	var man_rules := AssetDBRef.evolutions(458, "user://rom_cache")
+	if man_rules.is_empty() or int(man_rules[0].get("party_species_id", 0)) != 223:
+		push_error("Expected #458 party_species_id=223, got %s" % str(man_rules))
+		return false
+	var tm_count := 0
+	for dex in range(1, 906):
+		var sp := AssetDBRef.species(dex, "", "user://rom_cache")
+		if int(sp.get("weight_hg", 0)) <= 0 or int(sp.get("height_dm", 0)) <= 0:
+			push_error("Species #%d missing positive weight_hg/height_dm" % dex)
+			return false
+		if not AssetDBRef.tm_learnset(dex, "user://rom_cache").is_empty():
+			tm_count += 1
+	var mach := AssetDBRef.machines("user://rom_cache")
+	var bfs := AssetDBRef.battle_forms("user://rom_cache")
+	var mv_doc: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(ProjectSettings.globalize_path("user://rom_cache/data/moves.json")))
+	var flags_present := 0
+	var contact_count := 0
+	for mk in mv_doc.keys():
+		var fl: Variant = (mv_doc[mk] as Dictionary).get("flags", null)
+		if fl is Array:
+			flags_present += 1
+			if (fl as Array).has("contact"):
+				contact_count += 1
+	if flags_present != 778 or contact_count <= 0 or (mach.get("by_item", {}) as Dictionary).is_empty() or bfs.is_empty() or tm_count <= 0:
+		push_error("Local v2 data metrics invalid: flags=%d/778 contact=%d machines=%d battle_forms=%d tm_species=%d" % [flags_present, contact_count, (mach.get("by_item", {}) as Dictionary).size(), bfs.size(), tm_count])
+		return false
+	print("LOCAL_CACHE_V2_OK tm_species=%d/905 machines_vg20=%d moves_flags=%d/778 contact=%d battle_forms=%d" % [tm_count, (mach.get("by_item", {}) as Dictionary).size(), flags_present, contact_count, bfs.size()])
+	return true
+
+
 func run_test() -> bool:
 	if not _test_lz_decompression():
 		return false
@@ -591,6 +861,10 @@ func run_test() -> bool:
 	if not _test_nds_header_and_path_guards():
 		return false
 	if not _test_manifests_guardrails_and_asset_db():
+		return false
+	if not _test_data_pack_v2_synthetic_and_outdated():
+		return false
+	if not _test_local_cache_v2_integrity():
 		return false
 	if not _test_env_gated_real_imports():
 		return false

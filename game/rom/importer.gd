@@ -15,6 +15,7 @@ const GbaRomRef := preload("res://rom/gba_rom.gd")
 const TileAtlasBuilderRef := preload("res://rom/tile_atlas_builder.gd")
 
 const DEFAULT_CACHE_DIR := "user://rom_cache"
+const IMPORTER_VERSION := 2
 
 const EXPECTED_TYPING_CHECKS := {
 	"36": ["fairy"],
@@ -87,7 +88,7 @@ static func _read_manifest_or_default(dir_path: String) -> Dictionary:
 		if parsed is Dictionary:
 			return parsed
 	return {
-		"importerVersion": 1,
+		"importerVersion": IMPORTER_VERSION,
 		"rom": null,
 		"dataPack": null,
 		"tiles": null,
@@ -115,7 +116,8 @@ static func import_gba_rom(
 		return build_res
 
 	var manifest := _read_manifest_or_default(staging_dir)
-	manifest["importerVersion"] = 1
+	if manifest.get("dataPack", null) == null:
+		manifest["importerVersion"] = IMPORTER_VERSION
 	manifest["tiles"] = {
 		"format": "emerald_v1",
 		"gameCode": str(opened.get("game_code", GbaRomRef.EXPECTED_GAME_CODE)),
@@ -282,7 +284,8 @@ static func import_bw_rom(
 		return val_res
 
 	var manifest := _read_manifest_or_default(staging_dir)
-	manifest["importerVersion"] = 1
+	if manifest.get("dataPack", null) == null:
+		manifest["importerVersion"] = IMPORTER_VERSION
 	manifest["rom"] = {
 		"gameCode": str(hdr["game_code"]),
 		"title": str(hdr["title"]),
@@ -342,14 +345,17 @@ static func import_data_pack(
 		return val_res
 
 	var manifest := _read_manifest_or_default(staging_dir)
-	manifest["importerVersion"] = 1
+	manifest["importerVersion"] = IMPORTER_VERSION
 	manifest["dataPack"] = {
 		"pokeapiCommit": str(dp_res.get("source_commit", "")),
 		"spritesCommit": str(fs_res.get("source_commit", "")),
 		"importedAt": Time.get_datetime_string_from_system(true) + "Z",
 		"speciesCount": int(dp_res.get("species_count", 0)),
 		"megaFormCount": int(dp_res.get("mega_form_count", 0)),
+		"battleFormCount": int(dp_res.get("battle_form_count", 0)),
 		"moveCount": int(dp_res.get("move_count", 0)),
+		"tmSpeciesCount": int(dp_res.get("tm_species_count", 0)),
+		"machineCount": int(dp_res.get("machine_count", 0)),
 		"fanSpritesPresent": int(fs_res.get("target_count", 0)),
 		"pendingSpeciesDex": fs_res.get("pending_species_dex", []),
 		"pendingMegaPokemonIds": fs_res.get("pending_mega_pokemon_ids", []),
@@ -366,7 +372,10 @@ static func import_data_pack(
 		"ok": true,
 		"species_count": int(dp_res.get("species_count", 0)),
 		"mega_form_count": int(dp_res.get("mega_form_count", 0)),
+		"battle_form_count": int(dp_res.get("battle_form_count", 0)),
 		"move_count": int(dp_res.get("move_count", 0)),
+		"tm_species_count": int(dp_res.get("tm_species_count", 0)),
+		"machine_count": int(dp_res.get("machine_count", 0)),
 		"fan_sprites_present": int(fs_res.get("target_count", 0)),
 		"normalized_sprites": int(fs_res.get("normalized_count", 0)),
 	}
@@ -399,15 +408,23 @@ static func validate_data_staging(staging_dir: String) -> Dictionary:
 	var sp_path := staging_dir.path_join("data/species.json")
 	var mv_path := staging_dir.path_join("data/moves.json")
 	var ls_path := staging_dir.path_join("data/learnsets.json")
+	var tm_path := staging_dir.path_join("data/tm_learnsets.json")
+	var mach_path := staging_dir.path_join("data/machines.json")
+	var bf_path := staging_dir.path_join("data/battle_forms.json")
+	var evo_path := staging_dir.path_join("data/evolutions.json")
 	var en_sp_path := staging_dir.path_join("text/en/species.json")
-	if not (FileAccess.file_exists(sp_path) and FileAccess.file_exists(mv_path) and FileAccess.file_exists(ls_path) and FileAccess.file_exists(en_sp_path)):
+	if not (FileAccess.file_exists(sp_path) and FileAccess.file_exists(mv_path) and FileAccess.file_exists(ls_path) and FileAccess.file_exists(tm_path) and FileAccess.file_exists(mach_path) and FileAccess.file_exists(bf_path) and FileAccess.file_exists(evo_path) and FileAccess.file_exists(en_sp_path)):
 		return {"ok": false, "error": "Missing compiled data JSON files in staging.", "failed_check": "data_files_exist"}
 
 	var sp_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(sp_path))
 	var mv_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(mv_path))
 	var ls_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(ls_path))
+	var tm_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(tm_path))
+	var mach_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(mach_path))
+	var bf_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(bf_path))
+	var evo_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(evo_path))
 	var en_sp_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(en_sp_path))
-	if not (sp_doc is Dictionary and mv_doc is Dictionary and ls_doc is Dictionary and en_sp_doc is Dictionary):
+	if not (sp_doc is Dictionary and mv_doc is Dictionary and ls_doc is Dictionary and tm_doc is Dictionary and mach_doc is Dictionary and bf_doc is Dictionary and evo_doc is Dictionary and en_sp_doc is Dictionary):
 		return {"ok": false, "error": "Malformed JSON in staging.", "failed_check": "data_json_parse"}
 
 	var species_map: Dictionary = sp_doc.get("species", {})
@@ -418,11 +435,31 @@ static func validate_data_staging(staging_dir: String) -> Dictionary:
 		return {"ok": false, "error": "Expected 48 Mega forms, got %d" % mega_map.size(), "failed_check": "mega_count"}
 	if (mv_doc as Dictionary).size() != 778:
 		return {"ok": false, "error": "Expected 778 moves, got %d" % (mv_doc as Dictionary).size(), "failed_check": "move_count"}
+	if (bf_doc as Dictionary).is_empty():
+		return {"ok": false, "error": "Expected non-empty battle_forms.json", "failed_check": "battle_forms_non_empty"}
+	if not ((mach_doc as Dictionary).get("by_item", {}) is Dictionary) or ((mach_doc as Dictionary).get("by_item", {}) as Dictionary).is_empty():
+		return {"ok": false, "error": "Expected non-empty machines.json by_item", "failed_check": "machines_non_empty"}
 
 	for dex in range(1, 906):
+		var sp_entry: Dictionary = species_map.get(str(dex), {})
+		if int(sp_entry.get("weight_hg", 0)) <= 0 or int(sp_entry.get("height_dm", 0)) <= 0:
+			return {"ok": false, "error": "Missing positive weight_hg/height_dm for species #%d" % dex, "failed_check": "species_weight_height"}
 		var ls_arr: Variant = (ls_doc as Dictionary).get(str(dex), [])
 		if not (ls_arr is Array) or (ls_arr as Array).is_empty():
 			return {"ok": false, "error": "Empty learnset for species #%d" % dex, "failed_check": "learnsets_non_empty"}
+
+	for mid_key in (mv_doc as Dictionary).keys():
+		var m_entry: Dictionary = (mv_doc as Dictionary)[mid_key]
+		if not (m_entry.get("flags", null) is Array):
+			return {"ok": false, "error": "Missing flags array for move #%s" % str(mid_key), "failed_check": "move_flags"}
+
+	var evo_audit := DataPackImporterRef.audit_evolutions(evo_doc as Dictionary)
+	if int(evo_audit.get("level_up_rows_without_condition", -1)) != 0 or bool(evo_audit.get("tyrogue_rows_identical", true)):
+		return {
+			"ok": false,
+			"error": "Evolution audit failed: level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [int(evo_audit.get("level_up_rows_without_condition", -1)), str(evo_audit.get("tyrogue_rows_identical", true))],
+			"failed_check": "evolutions_audit",
+		}
 
 	# 10 §7 typing checks
 	for dex_str in EXPECTED_TYPING_CHECKS.keys():
