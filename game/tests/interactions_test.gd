@@ -476,8 +476,10 @@ func run_test() -> bool:
 		var iv_c := InteriorView.new()
 		add_child(iv_c)
 		iv_c.load_interior(str(ic["iid"]), int(ic["fl"]), AssetDB.DEFAULT_CACHE_DIR, true)
-		iv_c.enable_walking(ic["stand"] as Vector2i, str(ic["face"]), {}, null, DB)
-		iv_c.get_player_walker().live_input_enabled = false
+		iv_c.enable_walking(Vector2i(-1, -1), "N", {}, null, DB)
+		var iw_c: PlayerWalker = iv_c.get_player_walker()
+		iw_c.live_input_enabled = false
+		iw_c.place_at(ic["stand"] as Vector2i, str(ic["face"]), false)
 		var ok_ic := iv_c.trigger_interact_for_walker()
 		var got_ic: String = str(iv_c.get_dialogue_box().current_text()) if iv_c.get_dialogue_box() != null else ""
 		remove_child(iv_c)

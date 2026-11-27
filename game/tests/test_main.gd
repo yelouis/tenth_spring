@@ -62,7 +62,8 @@ func _ready() -> void:
 		else:
 			print("FAIL %s" % basename)
 			all_passed = false
-		t.queue_free()
+		remove_child(t)
+		t.free()
 
 	# 4. Self-test hook: if TENTH_SPRING_HARNESS_SELFTEST == "1", run harness_selftest.gd
 	if OS.get_environment("TENTH_SPRING_HARNESS_SELFTEST") == "1":
@@ -81,7 +82,8 @@ func _ready() -> void:
 			else:
 				print("FAIL harness_selftest")
 				all_passed = false
-			t.queue_free()
+			remove_child(t)
+			t.free()
 
 	# 5. Real-save and identity check after all tests
 	var save_untouched = true

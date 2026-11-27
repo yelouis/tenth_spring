@@ -750,6 +750,52 @@ func mark_indoor_item_collected(pos: Vector2i) -> void:
 		(_item_sprites_by_pos[pos] as Sprite2D).visible = false
 	_rebuild_block_mask()
 
+func _build_live_masks_with_collected() -> Array:
+	var floors: Array = _compiled.get("floors", [])
+	var interior_id := str(_compiled.get("id", ""))
+	var masks: Array = []
+	for f_idx in range(floors.size()):
+		var fdict: Dictionary = floors[f_idx]
+		var fw := int(fdict["w"])
+		var fh := int(fdict["h"])
+		var lmask := InteriorCheck._build_live_block_mask(fdict, _open_gates)
+		var fid := str(fdict.get("floor_id", str(f_idx)))
+		for it_v in (fdict.get("items", []) as Array):
+			if it_v is Dictionary:
+				var it_d: Dictionary = it_v
+				var ikey := indoor_item_key(interior_id, fid, it_d)
+				if not ikey.is_empty() and _collected_item_keys.has(ikey):
+					var it_at: Variant = InteriorMap._parse_vec2i(it_d.get("at", null))
+					if it_at is Vector2i:
+						var p: Vector2i = it_at
+						if p.x >= 0 and p.x < fw and p.y >= 0 and p.y < fh:
+							lmask[p.y * fw + p.x] = 0
+		masks.append(lmask)
+	return masks
+
+func _build_link_map() -> Array[Dictionary]:
+	var floors: Array = _compiled.get("floors", [])
+	var floor_by_id: Dictionary = _compiled.get("floor_by_id", {})
+	var link_map: Array[Dictionary] = []
+	for f_idx in range(floors.size()):
+		var fdict: Dictionary = floors[f_idx]
+		var ldict: Dictionary = {}
+		for tr_list_key in ["stairs", "warps"]:
+			for tr_v in (fdict.get(tr_list_key, []) as Array):
+				if not (tr_v is Dictionary):
+					continue
+				var tr: Dictionary = tr_v
+				var at_v: Variant = InteriorMap._parse_vec2i(tr.get("at", null))
+				var to_v: Variant = InteriorMap._parse_vec2i(tr.get("to", null))
+				var to_fid := str(tr.get("to_floor", ""))
+				if at_v is Vector2i and to_v is Vector2i and floor_by_id.has(to_fid):
+					var tf_idx := int(floor_by_id[to_fid])
+					if not ldict.has(at_v):
+						ldict[at_v] = []
+					(ldict[at_v] as Array).append({"floor": tf_idx, "pos": to_v as Vector2i})
+		link_map.append(ldict)
+	return link_map
+
 func enable_walking(spawn_tile: Vector2i = Vector2i(-1, -1), facing_str: String = "N", return_info: Dictionary = {}, clock_override = null, db_override = null) -> bool:
 	var floors: Array = _compiled.get("floors", [])
 	if _floor_index < 0 or _floor_index >= floors.size():
@@ -775,14 +821,43 @@ func enable_walking(spawn_tile: Vector2i = Vector2i(-1, -1), facing_str: String 
 
 	var fd: Dictionary = floors[_floor_index]
 	var target_pos := spawn_tile
+	var resolved_facing := facing_str
 	if target_pos.x < 0 or target_pos.y < 0:
 		var dms: Array = fd.get("door_mats", [])
 		if not dms.is_empty():
 			target_pos = dms[0] as Vector2i
 		else:
 			target_pos = Vector2i(int(fd["w"]) / 2, int(fd["h"]) - 2)
+	else:
+		var w := int(fd["w"])
+		var h := int(fd["h"])
+		var live_masks := _build_live_masks_with_collected()
+		var valid_spawn := InteriorCheck._in_bounds(target_pos.x, target_pos.y, w, h)
+		if valid_spawn:
+			valid_spawn = InteriorCheck._is_tile_passable(fd, live_masks[_floor_index] as PackedByteArray, target_pos.x, target_pos.y)
+		if valid_spawn:
+			var link_map := _build_link_map()
+			valid_spawn = InteriorCheck._can_return_to_exit(floors, live_masks, link_map, _floor_index, target_pos)
+		if not valid_spawn:
+			var orig_floor := _floor_index
+			var orig_tile := target_pos
+			if _floor_index != 0:
+				_floor_index = 0
+				_rebuild_scene(_cache_dir, _force_fallback)
+				_load_opened_gates()
+				_rebuild_block_mask()
+			var f0: Dictionary = floors[0]
+			var dms0: Array = f0.get("door_mats", [])
+			if not dms0.is_empty():
+				target_pos = dms0[0] as Vector2i
+			else:
+				target_pos = Vector2i(int(f0["w"]) / 2, int(f0["h"]) - 2)
+			resolved_facing = "N"
+			print("RESUME_FIXED interior=%s floor=%d tile=(%d, %d) -> door_mat=(%d, %d)" % [
+				str(_compiled.get("id", "")), orig_floor, orig_tile.x, orig_tile.y, target_pos.x, target_pos.y
+			])
 
-	_spawn_or_place_walker(target_pos, facing_str)
+	_spawn_or_place_walker(target_pos, resolved_facing)
 	if _camera != null:
 		_camera.zoom = Vector2(_zoom_step, _zoom_step)
 		_camera.position = _player_walker.get_camera_target()

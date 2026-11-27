@@ -10,6 +10,7 @@ const NeighbourhoodProgress := preload("res://world/neighbourhood_progress.gd")
 const InteriorView := preload("res://world/interior/interior_view.gd")
 const WorldClock := preload("res://world/world_clock.gd")
 const PlayerWalker := preload("res://world/player_walker.gd")
+const CaricatureWalkerGrid := preload("res://world/caricature/caricature_walker_grid.gd")
 
 var _warm_map_view: Node = null
 
@@ -264,6 +265,57 @@ func distort_to_place(place_id: String, force_no_rom: bool = false, host_overrid
 		map_view.show_banner(map_view.format_arrival_banner(pname))
 	return map_view
 
+func _is_outdoor_resume_tile_standable(map_view: Node, area_id: String, local_tile: Vector2i) -> bool:
+	if not map_view._caricature_compiled_by_area.has(area_id):
+		return false
+	var comp: Dictionary = map_view._caricature_compiled_by_area[area_id]
+	var w: int = int(comp.get("w", 0))
+	var h: int = int(comp.get("h", 0))
+	if local_tile.x < 0 or local_tile.x >= w or local_tile.y < 0 or local_tile.y >= h:
+		return false
+	var wgrid: CaricatureWalkerGrid = map_view.get_walker_grid()
+	if wgrid == null:
+		return false
+	var gpos := CaricatureWalkerGrid.local_to_global(comp, local_tile.x, local_tile.y)
+	if wgrid.area_at_global(gpos.x, gpos.y) != area_id:
+		return false
+	for offset in [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]:
+		var nbr: Vector2i = gpos + offset
+		var ev: Dictionary = wgrid.evaluate_step(nbr.x, nbr.y, gpos - nbr)
+		if str(ev.get("action", "")) == "step" and (ev.get("to", Vector2i(-999999, -999999)) as Vector2i) == gpos and str(ev.get("to_area", "")) == area_id:
+			return true
+	return false
+
+func _validate_outdoor_resume_tile(map_view: Node, area_id: String, local_tile: Vector2i) -> Vector2i:
+	if map_view.get_walker_grid() == null:
+		map_view._rebuild_walker_grid()
+	if _is_outdoor_resume_tile_standable(map_view, area_id, local_tile):
+		return local_tile
+	var comp: Dictionary = map_view._caricature_compiled_by_area[area_id]
+	var dirs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
+	var visited: Dictionary = {local_tile: 0}
+	var queue: Array[Vector2i] = [local_tile]
+	var head := 0
+	var found := Vector2i(-1, -1)
+	while head < queue.size():
+		var cur: Vector2i = queue[head]
+		head += 1
+		var dist: int = int(visited[cur])
+		if dist > 0 and _is_outdoor_resume_tile_standable(map_view, area_id, cur):
+			found = cur
+			break
+		if dist >= 8:
+			continue
+		for d in dirs:
+			var nxt: Vector2i = cur + d
+			if not visited.has(nxt):
+				visited[nxt] = dist + 1
+				queue.append(nxt)
+	if found.x < 0:
+		found = comp.get("arrival", Vector2i(16, 16)) as Vector2i
+	print("RESUME_FIXED area=%s (%d, %d) -> (%d, %d)" % [area_id, local_tile.x, local_tile.y, found.x, found.y])
+	return found
+
 func resume_from_session(force_no_rom: bool = false, host_override: Node = null) -> Node:
 	var resume_place_id := get_resume_place_id()
 	if resume_place_id.is_empty():
@@ -293,6 +345,9 @@ func resume_from_session(force_no_rom: bool = false, host_override: Node = null)
 		var tx := int(sess.get("tile_x", -1))
 		var ty := int(sess.get("tile_y", -1))
 		var facing_str := str(sess.get("facing", "S"))
+		var valid_tile := _validate_outdoor_resume_tile(map_view, sess_area, Vector2i(tx, ty))
+		tx = valid_tile.x
+		ty = valid_tile.y
 		map_view.enable_walk_mode(sess_area, Vector2i(tx, ty), facing_str)
 		if map_view.has_method("set_route_crossing_state"):
 			map_view.set_route_crossing_state(
@@ -305,11 +360,15 @@ func resume_from_session(force_no_rom: bool = false, host_override: Node = null)
 		if not interior_id.is_empty():
 			var ifloor := int(sess.get("interior_floor", 0))
 			var ipos := Vector2i(int(sess.get("interior_x", -1)), int(sess.get("interior_y", -1)))
+			var ret_area := str(sess.get("return_area_id", sess_area))
+			var ret_tile := Vector2i(int(sess.get("return_x", tx)), int(sess.get("return_y", ty)))
+			if map_view._caricature_compiled_by_area.has(ret_area):
+				ret_tile = _validate_outdoor_resume_tile(map_view, ret_area, ret_tile)
 			var ret_info := {
 				"place_id": resume_place_id,
-				"return_area_id": str(sess.get("return_area_id", sess_area)),
-				"return_x": int(sess.get("return_x", tx)),
-				"return_y": int(sess.get("return_y", ty)),
+				"return_area_id": ret_area,
+				"return_x": ret_tile.x,
+				"return_y": ret_tile.y,
 			}
 			var iv := enter_interior_from_map(map_view, interior_id, ret_info, ifloor, ipos, facing_str, host)
 			if iv != null:
