@@ -131,6 +131,9 @@ def main():
 	EXPECTED = [
 		"area_level_band_test",
 		"battle_data_overrides_test",
+		"battle_event_core_test",
+		"battle_formulas_test",
+		"battle_parity_test",
 		"board_and_lamp_travel_test",
 		"caricature_check_test",
 		"caricature_dc_test",
