@@ -139,11 +139,12 @@ static func get_damage(
 
 	var atk_ev: String = "ModifyAtk" if is_phys else "ModifySpA"
 	var def_ev: String = "ModifyDef" if def_stat == "def" else "ModifySpD"
-	attack = maxi(1, int(event_core.run_event(battle, atk_ev, source, target, move, attack)))
-	defense = maxi(1, int(event_core.run_event(battle, def_ev, target, source, move, defense)))
+	# sim/battle-actions.ts:1710-1718: no floor-1 clamp; defense == 0 gives base_damage 0 (Infinity >>> 0)
+	attack = int(event_core.run_event(battle, atk_ev, source, target, move, attack))
+	defense = int(event_core.run_event(battle, def_ev, target, source, move, defense))
 
 	# Base damage (sim/battle-actions.ts:1718): tr(tr(tr(tr(2 * L / 5 + 2) * P * A) / D) / 50)
-	var base_damage: int = (((((2 * level) / 5 + 2) * base_power * attack) / defense) / 50)
+	var base_damage: int = 0 if defense == 0 else (((((2 * level) / 5 + 2) * base_power * attack) / defense) / 50)
 	return modify_damage(battle, base_damage, source, target, move, is_crit, forced_roll)
 
 
@@ -162,7 +163,7 @@ static func modify_damage(
 	var dmg: int = base_damage + 2
 
 	# Ability #185 2nd hit runs before weather (sim/battle-actions.ts:1737-1741)
-	if str(move.get("multihit_type", "")) == "parentalbond" and int(move.get("hit", 1)) > 1:
+	if int(move.get("multihit_ability_id", 0)) == 185 and int(move.get("hit", 1)) > 1:
 		dmg = EventCoreRef.poke_round(dmg, 1024)
 
 	# Weather modifier (sim/battle-actions.ts:1745)
@@ -192,10 +193,10 @@ static func modify_damage(
 		for _i in range(-type_mod):
 			dmg = dmg / 2
 
-	# Burn physical halving (sim/battle-actions.ts:1810-1814; bypassed by ability #62 and move #263)
+	# Burn physical halving (sim/battle-actions.ts:1810-1816; bypassed by active ability #62 and move #263)
 	var is_phys: bool = str(move.get("damage_class", "physical")).to_lower() == "physical"
 	if int(source.get("status")) == StatsRef.STATUS_BRN and is_phys:
-		if int(source.get("ability_id")) != 62 and int(move.get("id", 0)) != 263:
+		if not bool(source.call("has_ability", 62)) and int(move.get("id", 0)) != 263:
 			dmg = EventCoreRef.poke_round(dmg, 2048)
 
 	# Final modifiers (sim/battle-actions.ts:1820)

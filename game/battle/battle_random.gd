@@ -26,6 +26,12 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 var policy: Dictionary = {}
 var draw_log: Array[Dictionary] = []
 var record_draws: bool = false
+var unforced_draws: Array[String] = []
+
+
+func _record_unforced(draw_name: String) -> void:
+	unforced_draws.append(draw_name)
+	push_error("BattleRandom: unforced draw %s in policy mode" % draw_name)
 
 
 static func create_seeded(seed_val: int) -> RefCounted:
@@ -53,6 +59,7 @@ func random_int(draw_name: String, min_val: int, max_val: int) -> int:
 		elif policy.has(draw_name):
 			result = clampi(int(policy[draw_name]), min_val, max_val)
 		else:
+			_record_unforced(draw_name)
 			result = _rng.randi_range(min_val, max_val)
 	else:
 		result = _rng.randi_range(min_val, max_val)
@@ -70,26 +77,29 @@ func random_chance(draw_name: String, numerator: int, denominator: int) -> bool:
 		return false
 	var result: bool = false
 	if mode == "policy":
-		if draw_name == DRAW_ACCURACY:
-			var am: String = str(policy.get("accuracy_mode", "always"))
+		if draw_name == DRAW_ACCURACY and policy.has("accuracy_mode"):
+			var am: String = str(policy["accuracy_mode"])
 			if am == "always":
 				result = true
 			elif am == "never":
 				result = false
 			else:
+				_record_unforced(draw_name)
 				result = _rng.randi_range(0, denominator - 1) < numerator
-		elif draw_name == DRAW_CRIT:
-			var cm: String = str(policy.get("crit_mode", "never"))
+		elif draw_name == DRAW_CRIT and policy.has("crit_mode"):
+			var cm: String = str(policy["crit_mode"])
 			if cm == "always":
 				result = true
 			elif cm == "never":
 				result = false
 			else:
+				_record_unforced(draw_name)
 				result = _rng.randi_range(0, denominator - 1) < numerator
 		elif policy.has("all_chances"):
 			var ac: String = str(policy["all_chances"])
-			result = (ac == "pass")
+			result = (ac == "pass" or ac == "always")
 		else:
+			_record_unforced(draw_name)
 			result = _rng.randi_range(0, denominator - 1) < numerator
 	else:
 		result = _rng.randi_range(0, denominator - 1) < numerator
@@ -123,6 +133,8 @@ func shuffle_slice(draw_name: String, list: Array, start_idx: int, end_idx: int)
 		if record_draws:
 			draw_log.append({"draw": draw_name, "kind": "shuffle_policy", "pref": tie_pref, "count": count})
 		return
+	if mode == "policy":
+		_record_unforced(draw_name)
 
 	# Standard Fisher-Yates shuffle matching Showdown sim/prng.ts
 	var cur_start: int = start_idx

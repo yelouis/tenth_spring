@@ -67,6 +67,35 @@ func has_living_pokemon() -> bool:
 	return false
 
 
+func remove_side_condition(cond_id: String) -> bool:
+	if not side_conditions.has(cond_id):
+		return false
+	if battle != null:
+		battle.get("event_core").single_event(battle, "SideEnd", battle.get("event_core").get_effect(cond_id), side_conditions[cond_id], self)
+	side_conditions.erase(cond_id)
+	return true
+
+
+func add_slot_condition(slot_idx: int, cond_id: String, duration: int = 0) -> Dictionary:
+	while slot_conditions.size() <= slot_idx:
+		slot_conditions.append({})
+	var st: Dictionary = {"id": cond_id, "is_slot_condition": true}
+	if duration > 0:
+		st["duration"] = duration
+	slot_conditions[slot_idx][cond_id] = st
+	return st
+
+
+func remove_slot_condition(slot_idx: int, cond_id: String) -> bool:
+	if slot_idx < 0 or slot_idx >= slot_conditions.size() or not slot_conditions[slot_idx].has(cond_id):
+		return false
+	var holder: Variant = active[slot_idx] if slot_idx < active.size() else null
+	if battle != null:
+		battle.get("event_core").single_event(battle, "End", battle.get("event_core").get_effect(cond_id), slot_conditions[slot_idx][cond_id], holder)
+	slot_conditions[slot_idx].erase(cond_id)
+	return true
+
+
 func snapshot() -> Dictionary:
 	var act: Object = active_battler()
 	return {

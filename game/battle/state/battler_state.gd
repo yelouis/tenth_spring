@@ -152,6 +152,13 @@ func get_all_types() -> Array[String]:
 	return out
 
 
+func has_ability(id: int) -> bool:
+	# sim/pokemon.ts:1957-1964
+	if ability_id != id:
+		return false
+	return not ignoring_ability()
+
+
 func ignoring_ability() -> bool:
 	if volatiles.has("cond_380"):
 		return true
@@ -163,7 +170,7 @@ func ignoring_ability() -> bool:
 
 
 func ignoring_item() -> bool:
-	if ability_id == 103 and not ignoring_ability():
+	if has_ability(103):
 		return true
 	if volatiles.has("cond_373"):
 		return true
@@ -173,6 +180,37 @@ func ignoring_item() -> bool:
 		if fld != null and bool(fld.call("is_magic_room_active")):
 			return true
 	return false
+
+
+func clear_status() -> bool:
+	if status == StatsRef.STATUS_NONE:
+		return false
+	if side != null and side.get("battle") != null:
+		var b: Object = side.get("battle")
+		b.get("event_core").single_event(b, "End", b.get("event_core").get_effect("status:%d" % status), status_state, self)
+	status = StatsRef.STATUS_NONE
+	status_state = {}
+	return true
+
+
+func remove_volatile(cond_id: String) -> bool:
+	if not volatiles.has(cond_id):
+		return false
+	if side != null and side.get("battle") != null:
+		var b: Object = side.get("battle")
+		b.get("event_core").single_event(b, "End", b.get("event_core").get_effect(cond_id), volatiles[cond_id], self)
+	volatiles.erase(cond_id)
+	return true
+
+
+func clear_ability() -> void:
+	ability_id = 0
+	ability_state = {}
+
+
+func clear_item() -> void:
+	item_id = 0
+	item_state = {}
 
 
 func calculate_stat(stat_name: String, boost: int) -> int:

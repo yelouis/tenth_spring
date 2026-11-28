@@ -16,6 +16,8 @@ const SLICE1_FIXTURE_PATH: String = "res://tests/fixtures/battle_parity_gen8/sli
 func run_test() -> bool:
 	if not _test_synthetic_parity_flow():
 		return false
+	if not _test_unforced_draw_reported():
+		return false
 	return run_fixture_path(SLICE1_FIXTURE_PATH)
 
 
@@ -71,6 +73,9 @@ static func run_fixture_path(fixture_path: String) -> bool:
 			if diff != "":
 				push_error("battle_parity_test: scenario #%d (%s) turn %d mismatch: %s" % [sc_id, sc_tag, t_idx + 1, diff])
 				return false
+		if not rng.unforced_draws.is_empty():
+			push_error("battle_parity_test: scenario #%d (%s) unforced draws: %s" % [sc_id, sc_tag, str(rng.unforced_draws)])
+			return false
 		passed += 1
 
 	var elapsed_ms: float = float(Time.get_ticks_usec() - t0_us) / 1000.0
@@ -159,5 +164,25 @@ func _test_synthetic_parity_flow() -> bool:
 		return false
 	if int(snap["sides"][1]["active"]["hp"]) >= int(snap["sides"][1]["active"]["max_hp"]):
 		push_error("battle_parity_test: synthetic damage not applied")
+		return false
+	if not rng.unforced_draws.is_empty():
+		push_error("battle_parity_test: synthetic scenario recorded unforced draws: %s" % str(rng.unforced_draws))
+		return false
+	return true
+
+
+func _test_unforced_draw_reported() -> bool:
+	# Item 96 gap 13: policy omitting crit_mode makes parity check report unforced draw "crit".
+	var sp_fn := func(dex: int) -> Dictionary:
+		return {"dex": dex, "base_stats": {"hp": 80, "atk": 100, "def": 80, "spa": 80, "spd": 80, "spe": 100}, "types": ["normal"], "weight_hg": 500}
+	var mv_fn := func(mid: int) -> Dictionary:
+		return {"id": mid, "type": "normal", "damage_class": "physical", "power": 50, "accuracy": 100, "pp": 20, "priority": 0, "meta": {"crit_rate": 0}}
+	var rng := BattleRandomRef.create_policy({"accuracy_mode": "always", "damage_roll": 100, "speed_tie": 0})
+	var b := BattleStateRef.new(rng, AssetDBRef.DEFAULT_CACHE_DIR, sp_fn, mv_fn)
+	b.setup_sides([{"dex": 9901, "level": 50, "moves": [9501]}], [{"dex": 9902, "level": 50, "moves": [9501]}])
+	b.run_turn("move 1", "move 1")
+	var unforced_err: String = "" if rng.unforced_draws.is_empty() else ("unforced draws: %s" % str(rng.unforced_draws))
+	if unforced_err == "" or not rng.unforced_draws.has(BattleRandomRef.DRAW_CRIT):
+		push_error("battle_parity_test: expected unforced crit draw to be reported, got %s" % str(rng.unforced_draws))
 		return false
 	return true

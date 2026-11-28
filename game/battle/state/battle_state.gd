@@ -49,6 +49,7 @@ func _init(random_source: RefCounted = null, cache_dir: String = AssetDBRef.DEFA
 	event_core = EventCoreRef.new()
 	queue = ActionQueueRef.new()
 	field = FieldStateRef.new()
+	field.battle = self
 	_species_lookup = custom_species_lookup if custom_species_lookup.is_valid() else Callable(self, "_default_species_lookup")
 	_move_lookup = custom_move_lookup if custom_move_lookup.is_valid() else Callable(self, "_default_move_lookup")
 
@@ -80,14 +81,12 @@ func next_effect_order() -> int:
 
 
 func suppressing_ability(target: Variant = null) -> bool:
-	if active_pokemon == null or active_pokemon == target:
+	# sim/battle.ts:365-368: Gen 8 active_pokemon never suppresses itself
+	if active_pokemon == null or not bool(active_pokemon.get("is_active")):
 		return false
-	if bool(active_move.get("ignore_ability", false)):
-		return true
-	var aid: int = int(active_pokemon.get("ability_id"))
-	if (aid == 104 or aid == 163 or aid == 164) and not bool(active_pokemon.call("ignoring_ability")):
-		return true
-	return false
+	if active_pokemon == target and gen >= 8:
+		return false
+	return bool(active_move.get("ignore_ability", false))
 
 
 func is_ability_active_on_field(target_ability_id: int) -> bool:
@@ -155,7 +154,7 @@ func run_turn(choice_s0: String, choice_s1: String) -> Dictionary:
 			_check_win()
 
 	if not ended:
-		event_core.residual_event(self)
+		event_core.field_event(self, "Residual")
 		_check_win()
 
 	return {
@@ -233,6 +232,10 @@ func _execute_slice1_move(act: Dictionary) -> Dictionary:
 	active_target = null
 	active_move = {}
 	return rec
+
+
+func check_faints() -> void:
+	_check_win()
 
 
 func _check_win() -> void:
