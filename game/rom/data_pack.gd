@@ -259,8 +259,8 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 			tlist.append(str(p[1]))
 		types_by_pid[pid] = tlist
 
-	# 4. Pokemon abilities (pokemon_id -> {abilities: Array[int], hidden_ability_id: int})
-	var raw_abil_by_pid := {}
+	# 4. Pokemon abilities (pokemon_id -> {slot_map, abilities: Array[int], hidden_ability_id: int})
+	var slot_abil_by_pid := {}
 	var hidden_abil_by_pid := {}
 	for r in _read_csv_dicts(csv_dir.path_join("pokemon_abilities.csv")):
 		var pid := int(r.get("pokemon_id", "0"))
@@ -270,17 +270,18 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		if is_hidden == 1:
 			hidden_abil_by_pid[pid] = aid
 		else:
-			if not raw_abil_by_pid.has(pid):
-				raw_abil_by_pid[pid] = []
-			raw_abil_by_pid[pid].append([slot, aid])
+			if not slot_abil_by_pid.has(pid):
+				slot_abil_by_pid[pid] = {}
+			(slot_abil_by_pid[pid] as Dictionary)[slot] = aid
 
 	var abil_by_pid := {}
-	for pid in raw_abil_by_pid.keys():
-		var pairs: Array = raw_abil_by_pid[pid]
-		pairs.sort_custom(func(a, b): return int(a[0]) < int(b[0]))
+	for pid in slot_abil_by_pid.keys():
+		var slot_map: Dictionary = slot_abil_by_pid[pid]
+		var slots: Array = slot_map.keys()
+		slots.sort()
 		var alist: Array[int] = []
-		for p in pairs:
-			alist.append(int(p[1]))
+		for sl in slots:
+			alist.append(int(slot_map[sl]))
 		abil_by_pid[pid] = alist
 
 	# 5. Pokemon table (id -> species_id, base_experience, height, weight)
@@ -473,6 +474,205 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 			"meta": move_meta_by_id.get(mid, {}),
 			"stat_changes": move_stat_changes.get(mid, []),
 		}
+
+	# 8b. Gen 8 (Sword/Shield) rollback from PokéAPI past-value CSVs (Item 92 / F114 / Decision 87)
+	var vg_order_by_id := {}
+	var crown_tundra_order := -1
+	for r in _read_csv_dicts(csv_dir.path_join("version_groups.csv")):
+		var vgid := int(r.get("id", "0"))
+		var vgord := int(r.get("order", "0"))
+		vg_order_by_id[vgid] = vgord
+		if str(r.get("identifier", "")).strip_edges() == "the-crown-tundra":
+			crown_tundra_order = vgord
+
+	var rollback_moves := 0
+	if crown_tundra_order >= 0:
+		var post_ct_rows_by_mid := {}
+		for r in _read_csv_dicts(csv_dir.path_join("move_changelog.csv")):
+			var mid := int(r.get("move_id", "0"))
+			if mid < 1 or mid > 826 or not moves_out.has(str(mid)):
+				continue
+			var vgid := int(r.get("changed_in_version_group_id", "0"))
+			var vgord := int(vg_order_by_id.get(vgid, -1))
+			if vgord <= crown_tundra_order:
+				continue
+			if not post_ct_rows_by_mid.has(mid):
+				post_ct_rows_by_mid[mid] = []
+			(post_ct_rows_by_mid[mid] as Array).append({"ord": vgord, "vg": vgid, "row": r})
+
+		var mc_mids := post_ct_rows_by_mid.keys()
+		mc_mids.sort()
+		for mid_var in mc_mids:
+			var mid := int(mid_var)
+			var entries: Array = post_ct_rows_by_mid[mid]
+			entries.sort_custom(func(a, b):
+				if int(a["ord"]) != int(b["ord"]):
+					return int(a["ord"]) < int(b["ord"])
+				return int(a["vg"]) < int(b["vg"])
+			)
+			var mv: Dictionary = moves_out[str(mid)]
+			var changed := false
+			for field in ["type_id", "power", "pp", "accuracy", "priority", "target_id", "effect_id", "effect_chance"]:
+				var chosen_val := ""
+				for e in entries:
+					var raw_v := str((e["row"] as Dictionary).get(field, "")).strip_edges()
+					if raw_v != "":
+						chosen_val = raw_v
+						break
+				if chosen_val == "":
+					continue
+				if field == "type_id":
+					var ntid := int(chosen_val)
+					if types_by_id.has(ntid) and str(mv.get("type", "")) != str(types_by_id[ntid]):
+						mv["type"] = str(types_by_id[ntid])
+						changed = true
+				else:
+					var nval := int(chosen_val)
+					if int(mv.get(field, 0)) != nval:
+						mv[field] = nval
+						changed = true
+			if changed:
+				rollback_moves += 1
+
+	# Species & battle-form rollback: smallest generation_id >= 8 per pokemon_id (no exception for #899..#905)
+	var rollback_ability_species := 0
+	var abil_past_by_pid := {}
+	var abil_min_gen := {}
+	for r in _read_csv_dicts(csv_dir.path_join("pokemon_abilities_past.csv")):
+		var pid := int(r.get("pokemon_id", "0"))
+		var g := int(r.get("generation_id", "0"))
+		if pid <= 0 or g < 8:
+			continue
+		if not abil_min_gen.has(pid) or g < int(abil_min_gen[pid]):
+			abil_min_gen[pid] = g
+			abil_past_by_pid[pid] = [r]
+		elif g == int(abil_min_gen[pid]):
+			(abil_past_by_pid[pid] as Array).append(r)
+	var abil_pids := abil_past_by_pid.keys()
+	abil_pids.sort()
+	for pid_var in abil_pids:
+		var pid := int(pid_var)
+		var is_sp := pid >= 1 and pid <= 905 and species_out.has(str(pid))
+		var is_bf := (not is_sp) and battle_forms_out.has(str(pid))
+		if not is_sp and not is_bf:
+			continue
+		var target: Dictionary = species_out[str(pid)] if is_sp else battle_forms_out[str(pid)]
+		var slots: Dictionary = (slot_abil_by_pid.get(pid, {}) as Dictionary).duplicate()
+		var hid := int(hidden_abil_by_pid.get(pid, 0))
+		var old_abils: Array = (target.get("abilities", []) as Array).duplicate()
+		var old_hid := int(target.get("hidden_ability_id", 0))
+		for r_var in (abil_past_by_pid[pid] as Array):
+			var r: Dictionary = r_var
+			var is_h := int(r.get("is_hidden", "0")) == 1
+			var sl := int(r.get("slot", "0"))
+			var aid_str := str(r.get("ability_id", "")).strip_edges()
+			if is_h:
+				hid = int(aid_str) if aid_str != "" else 0
+			else:
+				if aid_str == "":
+					slots.erase(sl)
+				else:
+					slots[sl] = int(aid_str)
+		var sorted_slots: Array = slots.keys()
+		sorted_slots.sort()
+		var new_abils: Array[int] = []
+		for sl in sorted_slots:
+			new_abils.append(int(slots[sl]))
+		target["abilities"] = new_abils
+		target["hidden_ability_id"] = hid
+		if new_abils != old_abils or hid != old_hid:
+			if is_sp:
+				rollback_ability_species += 1
+
+	var rollback_type_species := 0
+	var type_past_by_pid := {}
+	var type_min_gen := {}
+	for r in _read_csv_dicts(csv_dir.path_join("pokemon_types_past.csv")):
+		var pid := int(r.get("pokemon_id", "0"))
+		var g := int(r.get("generation_id", "0"))
+		if pid <= 0 or g < 8:
+			continue
+		if not type_min_gen.has(pid) or g < int(type_min_gen[pid]):
+			type_min_gen[pid] = g
+			type_past_by_pid[pid] = [r]
+		elif g == int(type_min_gen[pid]):
+			(type_past_by_pid[pid] as Array).append(r)
+	var type_pids := type_past_by_pid.keys()
+	type_pids.sort()
+	for pid_var in type_pids:
+		var pid := int(pid_var)
+		var is_sp := pid >= 1 and pid <= 905 and species_out.has(str(pid))
+		var is_bf := (not is_sp) and battle_forms_out.has(str(pid))
+		if not is_sp and not is_bf:
+			continue
+		var target: Dictionary = species_out[str(pid)] if is_sp else battle_forms_out[str(pid)]
+		var pairs: Array = []
+		for r_var in (type_past_by_pid[pid] as Array):
+			var r: Dictionary = r_var
+			var tid := int(r.get("type_id", "0"))
+			var sl := int(r.get("slot", "1"))
+			if types_by_id.has(tid):
+				pairs.append([sl, str(types_by_id[tid])])
+		pairs.sort_custom(func(a, b): return int(a[0]) < int(b[0]))
+		var new_types: Array[String] = []
+		for p in pairs:
+			new_types.append(str(p[1]))
+		if not new_types.is_empty() and new_types != target.get("types", []):
+			target["types"] = new_types
+			if is_sp:
+				rollback_type_species += 1
+
+	var rollback_stat_species := 0
+	var rollback_stat_forms := 0
+	var stat_past_by_pid := {}
+	var stat_min_gen := {}
+	for r in _read_csv_dicts(csv_dir.path_join("pokemon_stats_past.csv")):
+		var pid := int(r.get("pokemon_id", "0"))
+		var g := int(r.get("generation_id", "0"))
+		if pid <= 0 or g < 8:
+			continue
+		if not stat_min_gen.has(pid) or g < int(stat_min_gen[pid]):
+			stat_min_gen[pid] = g
+			stat_past_by_pid[pid] = [r]
+		elif g == int(stat_min_gen[pid]):
+			(stat_past_by_pid[pid] as Array).append(r)
+	var stat_pids := stat_past_by_pid.keys()
+	stat_pids.sort()
+	for pid_var in stat_pids:
+		var pid := int(pid_var)
+		var is_sp := pid >= 1 and pid <= 905 and species_out.has(str(pid))
+		var is_bf := (not is_sp) and battle_forms_out.has(str(pid))
+		if not is_sp and not is_bf:
+			continue
+		var target: Dictionary = species_out[str(pid)] if is_sp else battle_forms_out[str(pid)]
+		var bs: Dictionary = (target.get("base_stats", {}) as Dictionary).duplicate()
+		var ev_map: Dictionary = (target.get("ev_yield", {}) as Dictionary).duplicate() if target.has("ev_yield") else {}
+		var changed := false
+		for r_var in (stat_past_by_pid[pid] as Array):
+			var r: Dictionary = r_var
+			var sid := int(r.get("stat_id", "0"))
+			if not STAT_KEY_BY_ID.has(sid):
+				continue
+			var skey: String = STAT_KEY_BY_ID[sid]
+			var new_val := int(r.get("base_stat", "0"))
+			if int(bs.get(skey, -1)) != new_val:
+				bs[skey] = new_val
+				changed = true
+			var eff_str := str(r.get("effort", "")).strip_edges()
+			if target.has("ev_yield") and eff_str != "":
+				ev_map[skey] = int(eff_str)
+		target["base_stats"] = bs
+		if target.has("ev_yield"):
+			target["ev_yield"] = ev_map
+		if changed:
+			if is_sp:
+				rollback_stat_species += 1
+			else:
+				rollback_stat_forms += 1
+
+	print("GEN8_ROLLBACK moves=%d ability_species=%d type_species=%d stat_species=%d stat_forms=%d" % [
+		rollback_moves, rollback_ability_species, rollback_type_species, rollback_stat_species, rollback_stat_forms
+	])
 
 	# 9. Stream pokemon_moves.csv for level-up (method 1) and machine/TM (method 4)
 	#    learnsets across priority [20, 24, 23, 19, 18]
@@ -771,6 +971,13 @@ static func _compile_verified_csvs(csv_dir: String, staging_dir: String, source_
 		"move_count": moves_out.size(),
 		"tm_species_count": tm_species_count,
 		"machine_count": machines_by_item.size(),
+		"gen8_rollback": {
+			"moves": rollback_moves,
+			"ability_species": rollback_ability_species,
+			"type_species": rollback_type_species,
+			"stat_species": rollback_stat_species,
+			"stat_forms": rollback_stat_forms,
+		},
 	}
 
 

@@ -15,6 +15,10 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 GAME_DIR = REPO_ROOT / "game"
 MEMGUARD = REPO_ROOT / "tools" / "memguard.py"
+BIN_ENV_KEY = "GODOT_BIN"
+REFUSE_SCRIPT_AFTER_DDASH_MSG = (
+    "godot.py: refusing --script after --: Godot would open the game on the real save. Put --script before --."
+)
 
 
 def _resolve_script_path(raw_path: str) -> Path:
@@ -51,7 +55,7 @@ def _extends_scenetree_or_mainloop(script_path: Path) -> bool:
 def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
 
-    godot_bin = os.environ.get("GODOT_BIN", "").strip()
+    godot_bin = os.environ.get(BIN_ENV_KEY, "").strip()
     if not godot_bin or not os.path.isfile(godot_bin) or not os.access(godot_bin, os.X_OK):
         print(
             "godot.py: set GODOT_BIN to your Godot 4.3 binary",
@@ -62,10 +66,23 @@ def main(argv: list[str] | None = None) -> int:
     memguard_step: str | None = None
     windowed = False
     passthrough: list[str] = []
+    after_ddash = False
 
     i = 0
     while i < len(args):
         arg = args[i]
+        if after_ddash:
+            if arg in ("--script", "-s") or arg.startswith("--script="):
+                print(REFUSE_SCRIPT_AFTER_DDASH_MSG, file=sys.stderr)
+                return 2
+            passthrough.append(arg)
+            i += 1
+            continue
+        if arg == "--":
+            after_ddash = True
+            passthrough.append(arg)
+            i += 1
+            continue
         if arg == "--memguard-step":
             if i + 1 >= len(args):
                 print("godot.py: --memguard-step requires a step name", file=sys.stderr)

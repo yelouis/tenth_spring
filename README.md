@@ -82,7 +82,7 @@ python3 -I tools/memguard.py run <step> -- <command...>
 ```
 
 ### Launching Godot
-Always launch Godot through `python3 -I tools/godot.py` (which enforces `--headless`, an absolute `--path <repo>/game`, and refuses `--script` files that do not extend `SceneTree` or `MainLoop`).
+Always launch Godot through `python3 -I tools/godot.py` (which enforces `--headless`, an absolute `--path <repo>/game`, refuses `--script` files that do not extend `SceneTree` or `MainLoop`, and refuses `--script`, `-s`, or `--script=...` after `--` so Godot cannot open the game on the real save).
 
 **In a fresh clone or a new git worktree, import the project once before running any test** — otherwise every script that uses `class_name` fails to parse (F58):
 ```bash

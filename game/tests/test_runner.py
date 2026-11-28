@@ -130,6 +130,7 @@ def main():
 
 	EXPECTED = [
 		"area_level_band_test",
+		"battle_data_overrides_test",
 		"board_and_lamp_travel_test",
 		"caricature_check_test",
 		"caricature_dc_test",
@@ -310,6 +311,18 @@ def main():
 		print("\n[MEMGUARD TEST FAIL] Memguard unit tests failed.")
 		sys.exit(1)
 	print("[MEMGUARD TESTS OK] All memguard test cases passed.\n")
+
+	# Godot Launcher Guardrail Test Suite (F57 / F115)
+	godot_tests_path = os.path.join(repo_root, "tools", "test_godot.py")
+	if not os.path.exists(godot_tests_path):
+		print("\n[GODOT LAUNCHER ERROR] Godot launcher test suite missing")
+		sys.exit(1)
+	print("=== Godot Launcher Guardrail Test Suite (F57 / F115) ===")
+	godot_test_res = subprocess.run([sys.executable, "-I", godot_tests_path], cwd=repo_root)
+	if godot_test_res.returncode != 0:
+		print("\n[GODOT LAUNCHER TEST FAIL] Godot launcher unit tests failed.")
+		sys.exit(1)
+	print("[GODOT LAUNCHER TESTS OK] All launcher guardrail test cases passed.\n")
 
 	# Synthetic OSM PBF Generator Reproducibility Test
 	synthetic_pbf_test_path = os.path.join(repo_root, "tools", "test_generate_synthetic_pbf.py")

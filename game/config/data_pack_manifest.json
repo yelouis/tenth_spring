@@ -1,7 +1,7 @@
 {
   "version": 1,
   "source_commit": "5cbeb3f3eb55a9b86da52c4869336f9d61fdd6d7",
-  "total_bytes": 12584275,
+  "total_bytes": 12597495,
   "files": {
     "ability_names.csv": {
       "size": 65239,
@@ -34,6 +34,10 @@
     "machines.csv": {
       "size": 32831,
       "sha256": "f9df7faaf0a60896fa344abd2b639f83f79c2a24e1fd4bb3560ca7da76e9a6ad"
+    },
+    "move_changelog.csv": {
+      "size": 3475,
+      "sha256": "86c1511f6a0e29dcc5a885c5b8f125ffd502afbec9f69c7f2b85a3e0e8b001f8"
     },
     "move_damage_classes.csv": {
       "size": 44,
@@ -71,6 +75,10 @@
       "size": 37224,
       "sha256": "4a79ee53d386a8ad3a89657483ddfd31594e05a5d52400fe131e5e4dfd7ec04a"
     },
+    "pokemon_abilities_past.csv": {
+      "size": 6271,
+      "sha256": "cc77c6d85f8323f5f52047d45671140309d19ec0eb0e5e610b68971dc9c64e02"
+    },
     "pokemon_evolution.csv": {
       "size": 37836,
       "sha256": "e78be51c8805551fffccd5551a556e752e4a76ff1b52482b53b409dd3882e1dd"
@@ -103,9 +111,17 @@
       "size": 94392,
       "sha256": "fa2c44263a3706468682fefc3e0b3c4f5487fe9febed7d4ebcd6939c34b16aa8"
     },
+    "pokemon_stats_past.csv": {
+      "size": 3046,
+      "sha256": "0a074d9581369c1df13d8d4f4015fd7215b896c5dfb58107f3b529f7156950d2"
+    },
     "pokemon_types.csv": {
       "size": 19058,
       "sha256": "f1fc4bfd657a034ea3bf6972423b10276424aa068577b304a78a08996425ba05"
+    },
+    "pokemon_types_past.csv": {
+      "size": 428,
+      "sha256": "02553c38e3871f99c7ed809b944066fea3f42ef6bccd4daba19274aca01fbff0"
     },
     "stat_names.csv": {
       "size": 1130,

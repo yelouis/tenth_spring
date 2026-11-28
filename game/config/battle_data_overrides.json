@@ -1,0 +1,82 @@
+{
+  "format": 1,
+  "moves": {
+    "105": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "135": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "156": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "208": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "295": {
+      "power": 70,
+      "was": {
+        "power": 95
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "303": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "355": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "659": {
+      "pp": 10,
+      "was": {
+        "pp": 5
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "803": {
+      "power": 70,
+      "was": {
+        "power": 55
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "817": {
+      "power": 80,
+      "was": {
+        "power": 75
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    },
+    "824": {
+      "power": 130,
+      "was": {
+        "power": 120
+      },
+      "why": "Gen 8 value; the pack has a later generation's"
+    }
+  }
+}

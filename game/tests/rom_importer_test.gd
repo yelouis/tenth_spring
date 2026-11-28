@@ -400,10 +400,10 @@ func _test_nds_header_and_path_guards() -> bool:
 	return true
 
 func _test_manifests_guardrails_and_asset_db() -> bool:
-	# 1. Consent summary (32 PokéAPI CSVs = 12584275 + 1216 fan sprites = 1387217 -> 13971492 bytes)
+	# 1. Consent summary (36 PokéAPI CSVs = 12597495 + 1216 fan sprites = 1387217 -> 13984712 bytes)
 	var consent := DataPackImporterRef.get_consent_summary()
-	if int(consent.get("total_bytes", 0)) != 13971492:
-		push_error("Expected total_bytes == 13971492, got %d" % int(consent.get("total_bytes", 0)))
+	if int(consent.get("total_bytes", 0)) != 13984712:
+		push_error("Expected total_bytes == 13984712, got %d" % int(consent.get("total_bytes", 0)))
 		return false
 	if not is_equal_approx(float(consent.get("size_mib", 0.0)), 13.3):
 		push_error("Expected size_mib == 13.3")
@@ -612,6 +612,7 @@ func _test_data_pack_v2_synthetic_and_outdated() -> bool:
 		+ "237,sp237,237,14,480,159,237,1\n"
 		+ "458,sp458,458,10,650,69,458,1\n"
 		+ "226,sp226,226,21,2200,170,226,1\n"
+		+ "900,sp900,900,18,890,175,900,1\n"
 		+ "10026,sp681-blade,2,17,530,234,999,0\n"
 		+ "10033,sp1-mega,1,24,1555,281,998,0\n"
 		+ "10195,sp1-gmax,1,240,10000,281,997,0\n"
@@ -627,21 +628,57 @@ func _test_data_pack_v2_synthetic_and_outdated() -> bool:
 		+ "237,sp237,2,236,10,45,70,0,2,0,0,0\n"
 		+ "458,sp458,4,,20,25,70,1,1,4,0,0\n"
 		+ "226,sp226,2,458,20,25,70,0,1,4,0,0\n"
+		+ "900,sp900,8,,30,15,50,0,2,4,0,0\n"
 	)
 	_write_text_file(csv_dir.path_join("pokemon_stats.csv"),
 		"pokemon_id,stat_id,base_stat,effort\n"
 		+ "1,1,45,0\n1,2,49,0\n1,3,49,0\n1,4,65,1\n1,5,65,0\n1,6,45,0\n"
 		+ "2,1,60,0\n2,2,50,0\n2,3,140,2\n2,4,50,0\n2,5,140,1\n2,6,60,0\n"
+		+ "900,1,70,0\n900,2,135,2\n900,3,95,0\n900,4,45,0\n900,5,70,0\n900,6,85,0\n"
 		+ "10026,1,60,0\n10026,2,140,2\n10026,3,50,0\n10026,4,140,1\n10026,5,50,0\n10026,6,60,0\n"
 		+ "10033,1,80,0\n10033,2,100,0\n10033,3,123,0\n10033,4,122,2\n10033,5,120,1\n10033,6,80,0\n"
 	)
 	_write_text_file(csv_dir.path_join("pokemon_types.csv"),
 		"pokemon_id,type_id,slot\n"
-		+ "1,1,1\n2,10,1\n10026,10,1\n10026,13,2\n10033,1,1\n"
+		+ "1,1,1\n2,10,1\n900,10,1\n10026,10,1\n10026,13,2\n10033,1,1\n"
 	)
 	_write_text_file(csv_dir.path_join("pokemon_abilities.csv"),
 		"pokemon_id,ability_id,is_hidden,slot\n"
-		+ "1,65,0,1\n1,34,1,3\n10026,176,0,1\n10033,47,0,1\n"
+		+ "1,65,0,1\n1,292,0,2\n1,34,1,3\n900,68,0,1\n900,125,0,2\n900,292,1,3\n10026,176,0,1\n10033,47,0,1\n"
+	)
+	_write_text_file(csv_dir.path_join("version_groups.csv"),
+		"id,identifier,generation_id,order\n"
+		+ "20,sword-shield,8,20\n"
+		+ "22,the-crown-tundra,8,24\n"
+		+ "25,scarlet-violet,9,27\n"
+		+ "26,post-sv-dlc,9,28\n"
+	)
+	_write_text_file(csv_dir.path_join("move_changelog.csv"),
+		"move_id,changed_in_version_group_id,type_id,power,pp,accuracy,priority,target_id,effect_id,effect_chance\n"
+		+ "5,22,,50,,,,,,\n"
+		+ "5,25,,70,,,,,,\n"
+		+ "5,26,,60,15,,,,,\n"
+		+ "33,20,,99,,,,,,\n"
+		+ "827,25,,10,,,,,,\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_abilities_past.csv"),
+		"pokemon_id,generation_id,ability_id,is_hidden,slot\n"
+		+ "1,7,99,0,1\n"
+		+ "1,8,,0,2\n"
+		+ "900,8,80,1,3\n"
+		+ "10999,8,48,0,1\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_types_past.csv"),
+		"pokemon_id,generation_id,type_id,slot\n"
+		+ "1,7,11,1\n"
+		+ "2,8,11,1\n"
+	)
+	_write_text_file(csv_dir.path_join("pokemon_stats_past.csv"),
+		"pokemon_id,generation_id,stat_id,base_stat,effort\n"
+		+ "1,7,2,10,0\n"
+		+ "900,8,2,140,2\n"
+		+ "10026,8,2,165,2\n"
+		+ "10999,8,2,200,0\n"
 	)
 	_write_text_file(csv_dir.path_join("pokemon_forms.csv"),
 		"id,identifier,form_identifier,pokemon_id,introduced_in_version_group_id,is_default,is_battle_only,is_mega,form_order,order\n"
@@ -659,6 +696,7 @@ func _test_data_pack_v2_synthetic_and_outdated() -> bool:
 		+ "5,mv5,1,1,80,20,85,0,10,2,1,\n"
 		+ "33,mv33,1,1,40,35,100,0,10,2,1,\n"
 		+ "45,mv45,1,1,,40,100,0,11,1,19,\n"
+		+ "827,mv827,8,1,65,10,90,0,10,2,1,\n"
 	)
 	_write_text_file(csv_dir.path_join("pokemon_moves.csv"),
 		"pokemon_id,version_group_id,move_id,pokemon_move_method_id,level,order\n"
@@ -703,13 +741,43 @@ func _test_data_pack_v2_synthetic_and_outdated() -> bool:
 	if int(sp1.get("weight_hg", 0)) != 69 or int(sp1.get("height_dm", 0)) != 7:
 		push_error("Expected synthetic #1 weight_hg=69 height_dm=7, got %s" % str(sp1))
 		return false
-	var mv5 := AssetDBRef.move(5, staged_res)
+	var mv5 := AssetDBRef.move(5, staged_res, "")
 	if mv5.get("flags", []) != ["contact", "punch"]:
 		push_error("Expected move #5 flags ['contact', 'punch'], got %s" % str(mv5.get("flags", [])))
 		return false
-	var mv45 := AssetDBRef.move(45, staged_res)
+	# Gen 8 move_changelog tests (Item 92): earliest post-CT wins (vg 25 power=70 over vg 26 power=60; vg 26 pp=15 fills empty pp)
+	if int(mv5.get("power", 0)) != 70 or int(mv5.get("pp", 0)) != 15:
+		push_error("Expected move #5 post-CT rollback power=70 pp=15, got %s" % str(mv5))
+		return false
+	# Change in or before the-crown-tundra (vg 20 on #33) is ignored
+	var mv33 := AssetDBRef.move(33, staged_res, "")
+	if int(mv33.get("power", 0)) != 40:
+		push_error("Expected move #33 pre-CT row ignored (power=40), got %s" % str(mv33))
+		return false
+	# Move >= 827 is never rolled back
+	var mv827 := AssetDBRef.move(827, staged_res, "")
+	if int(mv827.get("power", 0)) != 65:
+		push_error("Expected move #827 never rolled back (power=65), got %s" % str(mv827))
+		return false
+	var mv45 := AssetDBRef.move(45, staged_res, "")
 	if mv45.get("flags", null) != []:
 		push_error("Expected move #45 empty flags array, got %s" % str(mv45.get("flags", null)))
+		return false
+	# Species & battle-form Gen 8 past rollback tests:
+	# - gen 7 rows on #1 ignored (ability slot 1 stays 65, type stays normal, atk stays 49); gen 8 slot 2 empty clears 292
+	var sp1_abils: Array = sp1.get("abilities", [])
+	if sp1_abils.size() != 1 or int(sp1_abils[0]) != 65 or sp1.get("types", []) != ["normal"] or int((sp1.get("base_stats", {}) as Dictionary).get("atk", 0)) != 49:
+		push_error("Synthetic #1 gen7-ignore / gen8-clear mismatch: %s" % str(sp1))
+		return false
+	# - gen 8 type rollback applies to #2 (fire -> water)
+	var sp2 := AssetDBRef.species(2, "", staged_res)
+	if sp2.get("types", []) != ["water"]:
+		push_error("Synthetic #2 gen8 type rollback mismatch: %s" % str(sp2))
+		return false
+	# - gen 8 ability & stat rows apply to species in 899..905 (#900 hidden 292 -> 80, atk 135 -> 140)
+	var sp900 := AssetDBRef.species(900, "", staged_res)
+	if int(sp900.get("hidden_ability_id", 0)) != 80 or int((sp900.get("base_stats", {}) as Dictionary).get("atk", 0)) != 140:
+		push_error("Synthetic #900 gen8 rollback mismatch: %s" % str(sp900))
 		return false
 	# VG priority: #1 has VG 20 machine [5] (overrides VG 18 [45]); #2 falls back to VG 18 [45]
 	if AssetDBRef.tm_learnset(1, staged_res) != [5] or AssetDBRef.tm_learnset(2, staged_res) != [45]:
@@ -728,8 +796,11 @@ func _test_data_pack_v2_synthetic_and_outdated() -> bool:
 		push_error("Expected exactly 1 non-Mega/Gmax/Primal battle form (10026), got %s" % str(bfs.keys()))
 		return false
 	var bf := AssetDBRef.battle_form(10026, staged_res)
-	if int(bf.get("species_dex", 0)) != 2 or str(bf.get("form_identifier", "")) != "blade" or int(bf.get("weight_hg", 0)) != 530:
-		push_error("Unexpected battle_form(10026) payload: %s" % str(bf))
+	if int(bf.get("species_dex", 0)) != 2 or str(bf.get("form_identifier", "")) != "blade" or int(bf.get("weight_hg", 0)) != 530 or int((bf.get("base_stats", {}) as Dictionary).get("atk", 0)) != 165:
+		push_error("Unexpected battle_form(10026) payload (expected gen8 atk=165): %s" % str(bf))
+		return false
+	if not AssetDBRef.battle_form(10999, staged_res).is_empty():
+		push_error("Untracked pokemon_id 10999 should be ignored")
 		return false
 
 	# Check all dropped evolution fields preserved
@@ -789,15 +860,31 @@ func _test_data_pack_v2_synthetic_and_outdated() -> bool:
 		push_error("Expected safe empty defaults when reading missing v2 files from old v1 cache")
 		return false
 
+	# Outdated v2 cache test (Item 92): AssetDB reports v2 as outdated ("re-run the data import") and never crashes
+	var old_v2 := TEST_ROOT + "/v2_mini/old_v2"
+	var old_v2_abs := ProjectSettings.globalize_path(old_v2)
+	DataPackImporterRef._write_json_file(old_v2_abs.path_join("manifest.json"), {
+		"importerVersion": 2,
+		"dataPack": {"speciesCount": 905, "moveCount": 778},
+	})
+	AssetDBRef.clear_memory_cache()
+	if not AssetDBRef.is_data_outdated(old_v2) or AssetDBRef.is_data_ready(old_v2):
+		push_error("Expected v2 cache to be marked outdated and not ready")
+		return false
+	var st2 := AssetDBRef.data_status(old_v2)
+	if str(st2.get("status", "")) != "outdated" or str(st2.get("message", "")).find("re-run the data import") == -1:
+		push_error("Unexpected outdated v2 data_status: %s" % str(st2))
+		return false
+
 	DataPackImporterRef._remove_dir_recursive(root)
 	AssetDBRef.clear_memory_cache()
 	return true
 
 
-func _test_local_cache_v2_integrity() -> bool:
+func _test_local_cache_v3_integrity() -> bool:
 	var evo_path := ProjectSettings.globalize_path("user://rom_cache/data/evolutions.json")
 	if not FileAccess.file_exists(evo_path):
-		print("SKIPPED local user://rom_cache v2 audit — no local data cache present")
+		print("SKIPPED local user://rom_cache v3 audit — no local data cache present")
 		return true
 	var evo_doc: Variant = JSON.parse_string(FileAccess.get_file_as_string(evo_path))
 	if not (evo_doc is Dictionary):
@@ -808,11 +895,11 @@ func _test_local_cache_v2_integrity() -> bool:
 	var tyr_ident := bool(audit.get("tyrogue_rows_identical", true))
 	print("LOCAL_CACHE_AUDIT level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [no_cond, str(tyr_ident)])
 	if no_cond != 0 or tyr_ident:
-		push_error("Local data cache failed v2 evolution check: level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [no_cond, str(tyr_ident)])
+		push_error("Local data cache failed v3 evolution check: level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [no_cond, str(tyr_ident)])
 		return false
 	AssetDBRef.clear_memory_cache()
 	var st := AssetDBRef.data_status("user://rom_cache")
-	if not bool(st.get("ready", false)) or bool(st.get("outdated", true)):
+	if not bool(st.get("ready", false)) or bool(st.get("outdated", true)) or int(st.get("importer_version", 0)) != 3:
 		push_error("Local user://rom_cache is outdated or incomplete: %s" % str(st))
 		return false
 	var tyr_rules := AssetDBRef.evolutions(236, "user://rom_cache")
@@ -847,9 +934,63 @@ func _test_local_cache_v2_integrity() -> bool:
 			if (fl as Array).has("contact"):
 				contact_count += 1
 	if flags_present != 778 or contact_count <= 0 or (mach.get("by_item", {}) as Dictionary).is_empty() or bfs.is_empty() or tm_count <= 0:
-		push_error("Local v2 data metrics invalid: flags=%d/778 contact=%d machines=%d battle_forms=%d tm_species=%d" % [flags_present, contact_count, (mach.get("by_item", {}) as Dictionary).size(), bfs.size(), tm_count])
+		push_error("Local v3 data metrics invalid: flags=%d/778 contact=%d machines=%d battle_forms=%d tm_species=%d" % [flags_present, contact_count, (mach.get("by_item", {}) as Dictionary).size(), bfs.size(), tm_count])
 		return false
-	print("LOCAL_CACHE_V2_OK tm_species=%d/905 machines_vg20=%d moves_flags=%d/778 contact=%d battle_forms=%d" % [tm_count, (mach.get("by_item", {}) as Dictionary).size(), flags_present, contact_count, bfs.size()])
+
+	# Item 92 (Decision 87) Gen 8 GREEN contract checks via AssetDB
+	var exp_powers := {295: 70, 296: 70, 803: 70, 817: 80, 824: 130}
+	for mid in exp_powers.keys():
+		if int(AssetDBRef.move(int(mid), "user://rom_cache").get("power", -1)) != int(exp_powers[mid]):
+			push_error("Gen 8 move power mismatch for #%d" % int(mid))
+			return false
+	for mid in [105, 135, 156, 208, 303, 355, 659]:
+		if int(AssetDBRef.move(int(mid), "user://rom_cache").get("pp", -1)) != 10:
+			push_error("Gen 8 healing move PP mismatch for #%d (expected 10)" % int(mid))
+			return false
+	for mid in [234, 235, 236]:
+		if int(AssetDBRef.move(int(mid), "user://rom_cache").get("pp", -1)) != 5:
+			push_error("Expected Gen 8 weather-heal move #%d PP=5" % int(mid))
+			return false
+	# Raw moves.json retains PokéAPI values (#803=55, #105=5); overrides live in AssetDB
+	if int((mv_doc["803"] as Dictionary).get("power", -1)) != 55 or int((mv_doc["105"] as Dictionary).get("pp", -1)) != 5 or int((mv_doc["296"] as Dictionary).get("power", -1)) != 70:
+		push_error("Raw v3 moves.json rollback check failed (#803/#105/#296)")
+		return false
+
+	var exp_abils := {
+		275: [[34, 48], 124],
+		393: [[67], 128],
+		394: [[67], 128],
+		395: [[67], 128],
+		475: [[80], 154],
+		900: [[68, 125], 80],
+		902: [[155, 91], 104],
+		903: [[46], 143],
+		905: [[131], 126],
+	}
+	for dex in exp_abils.keys():
+		var sp := AssetDBRef.species(int(dex), "", "user://rom_cache")
+		var got_ab: Array = sp.get("abilities", [])
+		var want_ab: Array = exp_abils[dex][0]
+		var got_ints: Array[int] = []
+		for v in got_ab:
+			got_ints.append(int(v))
+		if got_ints != want_ab or int(sp.get("hidden_ability_id", -1)) != int(exp_abils[dex][1]):
+			push_error("Gen 8 ability rollback mismatch for #%d: got %s/%d" % [int(dex), str(got_ints), int(sp.get("hidden_ability_id", -1))])
+			return false
+
+	var sp488_bs: Dictionary = AssetDBRef.species(488, "", "user://rom_cache").get("base_stats", {})
+	var sp888_bs: Dictionary = AssetDBRef.species(888, "", "user://rom_cache").get("base_stats", {})
+	var sp889_bs: Dictionary = AssetDBRef.species(889, "", "user://rom_cache").get("base_stats", {})
+	var bf10188_bs: Dictionary = AssetDBRef.battle_form(10188, "user://rom_cache").get("base_stats", {})
+	var bf10189_bs: Dictionary = AssetDBRef.battle_form(10189, "user://rom_cache").get("base_stats", {})
+	if int(sp488_bs.get("def", 0)) != 120 or int(sp488_bs.get("spd", 0)) != 130 or int(sp888_bs.get("atk", 0)) != 130 or int(sp889_bs.get("atk", 0)) != 130 or int(bf10188_bs.get("atk", 0)) != 170 or int(bf10189_bs.get("atk", 0)) != 130 or int(bf10189_bs.get("def", 0)) != 145 or int(bf10189_bs.get("spd", 0)) != 145:
+		push_error("Gen 8 stat rollback mismatch (#488/#888/#889/10188/10189)")
+		return false
+
+	var ov_count := (AssetDBRef.battle_data_overrides().get("moves", {}) as Dictionary).size()
+	print("LOCAL_CACHE_V3_OK tm_species=%d/905 machines_vg20=%d moves_flags=%d/778 contact=%d battle_forms=%d importer_version=%d gen8_overrides=%d" % [
+		tm_count, (mach.get("by_item", {}) as Dictionary).size(), flags_present, contact_count, bfs.size(), int(st.get("importer_version", 0)), ov_count
+	])
 	return true
 
 
@@ -864,7 +1005,7 @@ func run_test() -> bool:
 		return false
 	if not _test_data_pack_v2_synthetic_and_outdated():
 		return false
-	if not _test_local_cache_v2_integrity():
+	if not _test_local_cache_v3_integrity():
 		return false
 	if not _test_env_gated_real_imports():
 		return false

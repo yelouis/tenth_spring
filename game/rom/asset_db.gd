@@ -6,7 +6,8 @@ extends RefCounted
 ## No module outside game/rom/ reads user://rom_cache/ directly.
 
 const DEFAULT_CACHE_DIR := "user://rom_cache"
-const MIN_DATA_IMPORTER_VERSION := 2
+const MIN_DATA_IMPORTER_VERSION := 3
+const DEFAULT_BATTLE_OVERRIDES_PATH := "res://config/battle_data_overrides.json"
 const REQUIRED_DATA_FILES_V2 := [
 	"data/species.json",
 	"data/learnsets.json",
@@ -218,9 +219,49 @@ static func _norm_dir(cache_dir: String) -> String:
 	var s := cache_dir.strip_edges().trim_suffix("/")
 	return DEFAULT_CACHE_DIR if s == "" else s
 
-static func _load_cached_json(cache_dir: String, rel_path: String) -> Dictionary:
+static func battle_data_overrides(overrides_path: String = DEFAULT_BATTLE_OVERRIDES_PATH) -> Dictionary:
+	var p := overrides_path.strip_edges()
+	if p == "" or not FileAccess.file_exists(p):
+		return {}
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(p))
+	return parsed if parsed is Dictionary else {}
+
+
+static func _apply_move_overrides(moves_doc: Dictionary, overrides_path: String) -> void:
+	var p := overrides_path.strip_edges()
+	if p == "" or not FileAccess.file_exists(p):
+		return
+	var doc := battle_data_overrides(p)
+	var moves_ov: Variant = doc.get("moves", {})
+	if not (moves_ov is Dictionary):
+		return
+	for mid_key in (moves_ov as Dictionary).keys():
+		var mid_str := str(mid_key)
+		if not moves_doc.has(mid_str) or not (moves_doc[mid_str] is Dictionary):
+			push_error("AssetDB battle_data_overrides: unknown move id %s" % mid_str)
+			continue
+		var entry: Variant = (moves_ov as Dictionary)[mid_key]
+		if not (entry is Dictionary):
+			continue
+		var mv: Dictionary = moves_doc[mid_str]
+		for field_var in (entry as Dictionary).keys():
+			var field := str(field_var)
+			if field == "was" or field == "why":
+				continue
+			if not mv.has(field):
+				push_error("AssetDB battle_data_overrides: unknown field '%s' on move %s" % [field, mid_str])
+				continue
+			mv[field] = (entry as Dictionary)[field_var]
+
+
+static func _load_cached_json(
+	cache_dir: String,
+	rel_path: String,
+	overrides_path: String = DEFAULT_BATTLE_OVERRIDES_PATH
+) -> Dictionary:
 	var cdir := _norm_dir(cache_dir)
-	var key := cdir + "/" + rel_path
+	var eff_ov := overrides_path.strip_edges() if rel_path == "data/moves.json" else ""
+	var key := cdir + "/" + rel_path + ("|" + eff_ov if rel_path == "data/moves.json" else "")
 	if _json_cache_by_dir.has(key):
 		return _json_cache_by_dir[key]
 	var full_path := cdir.path_join(rel_path)
@@ -228,6 +269,8 @@ static func _load_cached_json(cache_dir: String, rel_path: String) -> Dictionary
 		return {}
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(full_path))
 	if parsed is Dictionary:
+		if rel_path == "data/moves.json":
+			_apply_move_overrides(parsed, eff_ov)
 		_json_cache_by_dir[key] = parsed
 		return parsed
 	return {}
@@ -436,8 +479,12 @@ static func evolutions(dex: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Array
 	var arr: Variant = doc.get(str(dex), [])
 	return (arr as Array).duplicate(true) if arr is Array else []
 
-static func move(id: int, cache_dir: String = DEFAULT_CACHE_DIR) -> Dictionary:
-	var doc := _load_cached_json(cache_dir, "data/moves.json")
+static func move(
+	id: int,
+	cache_dir: String = DEFAULT_CACHE_DIR,
+	overrides_path: String = DEFAULT_BATTLE_OVERRIDES_PATH
+) -> Dictionary:
+	var doc := _load_cached_json(cache_dir, "data/moves.json", overrides_path)
 	var entry: Variant = doc.get(str(id), {})
 	return (entry as Dictionary).duplicate(true) if entry is Dictionary else {}
 

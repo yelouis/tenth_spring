@@ -15,7 +15,7 @@ const GbaRomRef := preload("res://rom/gba_rom.gd")
 const TileAtlasBuilderRef := preload("res://rom/tile_atlas_builder.gd")
 
 const DEFAULT_CACHE_DIR := "user://rom_cache"
-const IMPORTER_VERSION := 2
+const IMPORTER_VERSION := 3
 
 const EXPECTED_TYPING_CHECKS := {
 	"36": ["fairy"],
@@ -460,6 +460,22 @@ static func validate_data_staging(staging_dir: String) -> Dictionary:
 			"error": "Evolution audit failed: level_up_rows_without_condition=%d tyrogue_rows_identical=%s" % [int(evo_audit.get("level_up_rows_without_condition", -1)), str(evo_audit.get("tyrogue_rows_identical", true))],
 			"failed_check": "evolutions_audit",
 		}
+
+	# Item 92 (Decision 87): verify the 4 past-value CSVs are pinned in the manifest and rolled back in staging
+	var dp_manifest := DataPackImporterRef.load_json_res(DataPackImporterRef.DATA_PACK_MANIFEST_PATH)
+	var manifest_files: Dictionary = dp_manifest.get("files", {})
+	for past_csv in ["move_changelog.csv", "pokemon_abilities_past.csv", "pokemon_stats_past.csv", "pokemon_types_past.csv"]:
+		if not manifest_files.has(past_csv):
+			return {"ok": false, "error": "Missing past-value CSV in data_pack_manifest.json: %s" % past_csv, "failed_check": "past_manifest_" + past_csv}
+	var mv296: Dictionary = (mv_doc as Dictionary).get("296", {})
+	if int(mv296.get("power", 0)) != 70:
+		return {"ok": false, "error": "Expected Gen 8 rollback move #296 power=70, got %s" % str(mv296.get("power", 0)), "failed_check": "gen8_move_296"}
+	var sp475: Dictionary = species_map.get("475", {})
+	var sp475_abils: Array = sp475.get("abilities", [])
+	var sp900: Dictionary = species_map.get("900", {})
+	var bf10188: Dictionary = (bf_doc as Dictionary).get("10188", {})
+	if sp475_abils.size() != 1 or int(sp475_abils[0]) != 80 or int(sp900.get("hidden_ability_id", 0)) != 80 or int((bf10188.get("base_stats", {}) as Dictionary).get("atk", 0)) != 170:
+		return {"ok": false, "error": "Gen 8 species/form rollback spot check failed (#475/#900/10188)", "failed_check": "gen8_species_rollback"}
 
 	# 10 §7 typing checks
 	for dex_str in EXPECTED_TYPING_CHECKS.keys():
