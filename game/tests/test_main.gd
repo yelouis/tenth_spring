@@ -5,13 +5,10 @@ extends Node
 # records non-destructive hash check of real save files, and exits with 0 or 1.
 
 func _ready() -> void:
-	# 1. Record pre-test state of real save and identity files (F22 real-save check + Item 3a)
+	# 1. Record pre-test state of real save files (F22 real-save check)
 	var protected_files = [
 		"user://tenth_spring.db",
 		"user://tenth_spring.db.tmp",
-		"user://sync_identity/pc.key",
-		"user://sync_identity/pc.crt",
-		"user://sync_identity/pc_id.txt",
 		"user://walk_dc/tenth_spring.db",
 		"user://walk_dc/tenth_spring.db.tmp"
 	]

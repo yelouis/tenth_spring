@@ -91,9 +91,6 @@ PROTECTED_SAVE_FILES = [
 	"tenth_spring.db-shm",
 	"tenth_spring.db.tmp",
 	"tenth_spring.db.jsonbak",
-	"sync_identity/pc.key",
-	"sync_identity/pc.crt",
-	"sync_identity/pc_id.txt",
 	"walk_dc/tenth_spring.db",
 	"walk_dc/tenth_spring.db-wal",
 	"walk_dc/tenth_spring.db-shm",
@@ -143,9 +140,7 @@ def main():
 		"db_test",
 		"distort_and_resume_test",
 		"emerald_landscape_and_puzzles_test",
-		"frame_codec_test",
 		"grid_test",
-		"idempotent_sync_test",
 		"interactions_test",
 		"interior_dc_test",
 		"interior_doors_walk_test",
@@ -154,11 +149,8 @@ def main():
 		"map_view_test",
 		"neighbourhood_progress_test",
 		"neighbourhoods_test",
-		"pairing_codes_test",
-		"pc_identity_test",
 		"player_walker_test",
 		"profile_paths_test",
-		"qr_code_test",
 		"real_save_untouched",
 		"region_import_pause_test",
 		"region_import_test",
@@ -170,8 +162,7 @@ def main():
 		"screenshot_args_test",
 		"seamless_routes_test",
 		"slice3_encounters_test",
-		"sync_ingest_isolation_test",
-		"sync_session_test",
+		"starter_pick_test",
 		"tile_synth2_test",
 		"time_of_day_test",
 		"town_map_test",
@@ -428,23 +419,17 @@ def main():
 	import gzip, hashlib, json
 	game_pack_path = os.path.join(game_dir, "data", "places_pack_v1.json.gz")
 	game_sha_path = os.path.join(game_dir, "data", "places_pack_v1.sha256")
-	comp_pack_path = os.path.join(repo_root, "companion", "assets", "places_pack_v1.json.gz")
 	fp_cfg_path = os.path.join(game_dir, "config", "famous_places.json")
-	if not (os.path.isfile(game_pack_path) and os.path.isfile(game_sha_path) and os.path.isfile(comp_pack_path)):
+	if not (os.path.isfile(game_pack_path) and os.path.isfile(game_sha_path)):
 		print("\n[PLACES PACK FAIL] Bundled places_pack_v1.json.gz or .sha256 missing")
 		sys.exit(1)
 	with open(game_pack_path, "rb") as pf:
 		game_pack_bytes = pf.read()
-	with open(comp_pack_path, "rb") as cpf:
-		comp_pack_bytes = cpf.read()
 	with open(game_sha_path, "r", encoding="utf-8") as sf:
 		recorded_pack_sha = sf.read().strip().split()[0]
 	actual_pack_sha = hashlib.sha256(game_pack_bytes).hexdigest()
 	if actual_pack_sha != recorded_pack_sha:
 		print(f"\n[PLACES PACK FAIL] SHA-256 mismatch: expected {recorded_pack_sha}, got {actual_pack_sha}")
-		sys.exit(1)
-	if comp_pack_bytes != game_pack_bytes:
-		print("\n[PLACES PACK FAIL] companion/assets/places_pack_v1.json.gz does not match game/data/places_pack_v1.json.gz")
 		sys.exit(1)
 	if len(game_pack_bytes) >= 4 * 1024 * 1024:
 		print(f"\n[PLACES PACK FAIL] Pack size {len(game_pack_bytes)} bytes exceeds 4 MiB limit")
@@ -592,6 +577,87 @@ def main():
 
 		print(f"[REAL SAVE CHECK OK] Godot user dir verified: {user_dir} (test/ exists, protected files untouched)\n")
 
+		# Item 95: Verify demo_import.py (--starter / --open / exit 2 on unknown id) and
+		# Golden Invariant 2 (non_null_real_count == 0 across every test profile save created by the battery).
+		demo_ci_dir = os.path.join(test_dir, "demo_ci")
+		if os.path.isdir(demo_ci_dir):
+			shutil.rmtree(demo_ci_dir)
+		demo_import_script = os.path.join(repo_root, "tools", "demo_import.py")
+		di_ok = subprocess.run(
+			[
+				sys.executable, "-I", demo_import_script,
+				"--starter", "city:washington-dc",
+				"--open", "site:yellowstone",
+				"--demo-dir", "user://test/demo_ci",
+			],
+			cwd=repo_root,
+			capture_output=True,
+			text=True,
+			timeout=120,
+		)
+		if di_ok.returncode in (75, 76):
+			print(di_ok.stderr or di_ok.stdout)
+			sys.exit(di_ok.returncode)
+		if di_ok.returncode != 0:
+			print(f"\n[DEMO IMPORT FAIL] demo_import.py exited {di_ok.returncode}:\n{di_ok.stdout}\n{di_ok.stderr}")
+			sys.exit(1)
+		di_bad = subprocess.run(
+			[
+				sys.executable, "-I", demo_import_script,
+				"--starter", "city:washington-dc",
+				"--open", "site:nowhere",
+				"--demo-dir", "user://test/demo_ci",
+			],
+			cwd=repo_root,
+			capture_output=True,
+			text=True,
+			timeout=120,
+		)
+		di_bad_out = (di_bad.stdout or "") + "\n" + (di_bad.stderr or "")
+		if di_bad.returncode != 2 or "[FAIL] unknown place id: site:nowhere" not in di_bad_out:
+			print(f"\n[DEMO IMPORT FAIL] Expected exit 2 with unknown place id message, got code {di_bad.returncode}:\n{di_bad_out}")
+			sys.exit(1)
+		import sqlite3 as _sqlite3
+		demo_ci_db = os.path.join(demo_ci_dir, "tenth_spring.db")
+		if not os.path.isfile(demo_ci_db):
+			print(f"\n[DEMO IMPORT FAIL] Expected {demo_ci_db} to exist")
+			sys.exit(1)
+		con_ci = _sqlite3.connect(demo_ci_db)
+		ci_distort = sorted(r[0] for r in con_ci.execute("SELECT place_id FROM distort_list;"))
+		con_ci.close()
+		if ci_distort != ["city:washington-dc", "site:yellowstone"]:
+			print(f"\n[DEMO IMPORT FAIL] Expected distort_list ['city:washington-dc', 'site:yellowstone'], got {ci_distort}")
+			sys.exit(1)
+		print("[DEMO IMPORT OK] --starter city:washington-dc --open site:yellowstone verified; unknown id exits 2.\n")
+
+		checked_dbs = 0
+		non_null_real_count = 0
+		for db_root, db_dirs, db_files in os.walk(test_dir):
+			db_dirs[:] = [d for d in db_dirs if d != "map_data"]
+			for dbf in sorted(db_files):
+				if not dbf.endswith(".db"):
+					continue
+				dbp = os.path.join(db_root, dbf)
+				con = _sqlite3.connect(dbp)
+				cur = con.cursor()
+				tables = [r[0] for r in cur.execute("SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%';")]
+				if "meta" not in tables or "visit_log" not in tables:
+					con.close()
+					continue
+				checked_dbs += 1
+				for t_name in tables:
+					for col in cur.execute(f"PRAGMA table_info({t_name});"):
+						if "REAL" in str(col[2]).upper():
+							cnt = cur.execute(f"SELECT COUNT(*) FROM {t_name} WHERE {col[1]} IS NOT NULL;").fetchone()[0]
+							if cnt > 0:
+								print(f"\n[GOLDEN INVARIANT 2 VIOLATION] {dbp}: {t_name}.{col[1]} has {cnt} non-NULL REAL value(s)")
+								non_null_real_count += cnt
+				con.close()
+		if checked_dbs < 1 or non_null_real_count != 0:
+			print(f"\n[GOLDEN INVARIANT 2 FAIL] checked_dbs={checked_dbs}, non_null_real_count={non_null_real_count}")
+			sys.exit(1)
+		print(f"[GOLDEN INVARIANT 2 OK] checked {checked_dbs} test save(s), non_null_real_count=0\n")
+
 	print(f"=== Tenth Spring GDScript Static Lint & Invariant Gate ===")
 	print(f"Auditing GDScript codebase in {game_dir}...\n")
 
@@ -613,15 +679,24 @@ def main():
 		else:
 			print(f"[LINT OK]   {rel_path}")
 
-	# Golden Invariant 1 check: Ensure sync_server.gd does not touch inventory_item
-	sync_server_path = os.path.join(game_dir, "autoloads", "sync_server.gd")
-	if os.path.exists(sync_server_path):
-		with open(sync_server_path, 'r', encoding='utf-8') as f:
+	# Golden Invariant 1 check (Item 95 / Decision 86): Ensure reveal_engine.gd and
+	# demo_import_server.gd never touch inventory, items, neighbourhood progress, or session tables.
+	gi1_targets = [
+		os.path.join(game_dir, "world", "reveal_engine.gd"),
+		os.path.join(game_dir, "scenes", "demo_import_server.gd"),
+	]
+	forbidden = ["inventory_item", "base_state", "item_id", "qty", "neighbourhood_state", "collected_item", "opened_gate", "player_session"]
+	for gi1_path in gi1_targets:
+		gi1_rel = os.path.relpath(gi1_path, game_dir)
+		if not os.path.exists(gi1_path):
+			print(f"\n[GOLDEN INVARIANT VIOLATION] Missing guarded file: {gi1_rel}")
+			total_errors += 1
+			continue
+		with open(gi1_path, 'r', encoding='utf-8') as f:
 			content = f.read()
-		forbidden = ["inventory_item", "base_state", "item_id", "qty", "neighbourhood_state", "collected_item", "opened_gate", "player_session"]
 		for token in forbidden:
 			if token in content:
-				print(f"\n[GOLDEN INVARIANT VIOLATION] sync_server.gd contains illegal token '{token}'")
+				print(f"\n[GOLDEN INVARIANT VIOLATION] {gi1_rel} contains illegal token '{token}'")
 				total_errors += 1
 
 	# F19 Static Rule: Ensure db.gd has no lines combining SQL keywords and string formatting/concatenation

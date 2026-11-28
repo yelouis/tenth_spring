@@ -1,13 +1,12 @@
 class_name ProfilePaths
 extends RefCounted
 
-# ProfilePaths: resolves database and sync identity paths for Tenth Spring.
+# ProfilePaths: resolves database and map-data paths for Tenth Spring.
 # Enforces complete isolation between primary save and demo profile.
 # Contract: docs/implementation_plan_world_generation.md §1.1
 
 const DEFAULT_DB_PATH: String = "user://tenth_spring.db"
 const DEFAULT_DB_TMP_PATH: String = "user://tenth_spring.db.tmp"
-const DEFAULT_IDENTITY_DIR: String = "user://sync_identity/"
 const DEFAULT_DEMO_DIR: String = "user://demo"
 const DEFAULT_MAP_DATA_DIR: String = "user://map_data"
 
@@ -43,7 +42,6 @@ static func resolve(args: Array = []) -> Dictionary:
 					"is_demo": true,
 					"db_path": "",
 					"db_tmp_path": "",
-					"identity_dir": "",
 					"map_data_dir": ""
 				}
 		elif arg.begins_with("--demo-dir="):
@@ -59,7 +57,6 @@ static func resolve(args: Array = []) -> Dictionary:
 			"is_demo": false,
 			"db_path": DEFAULT_DB_PATH,
 			"db_tmp_path": DEFAULT_DB_TMP_PATH,
-			"identity_dir": DEFAULT_IDENTITY_DIR,
 			"map_data_dir": DEFAULT_MAP_DATA_DIR
 		}
 
@@ -75,20 +72,17 @@ static func resolve(args: Array = []) -> Dictionary:
 			"is_demo": true,
 			"db_path": "",
 			"db_tmp_path": "",
-			"identity_dir": "",
 			"map_data_dir": ""
 		}
 
 	var candidate_db = demo_dir + "/tenth_spring.db"
-	var candidate_id = demo_dir + "/sync_identity/"
-	if candidate_db == DEFAULT_DB_PATH or candidate_id == DEFAULT_IDENTITY_DIR or demo_dir == "user://sync_identity":
+	if candidate_db == DEFAULT_DB_PATH:
 		return {
 			"ok": false,
 			"error": ERR_COLLIDES_WITH_PRIMARY,
 			"is_demo": true,
 			"db_path": "",
 			"db_tmp_path": "",
-			"identity_dir": "",
 			"map_data_dir": ""
 		}
 
@@ -98,7 +92,6 @@ static func resolve(args: Array = []) -> Dictionary:
 		"is_demo": true,
 		"db_path": candidate_db,
 		"db_tmp_path": candidate_db + ".tmp",
-		"identity_dir": candidate_id,
 		"map_data_dir": demo_dir + "/map_data"
 	}
 

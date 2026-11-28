@@ -908,7 +908,6 @@ def main() -> int:
     default_cache = os.path.expanduser("~/.cache/tenth_spring/overpass")
     default_out = os.path.join(repo_root, "game", "data", "places_pack_v1.json.gz")
     default_sha = os.path.join(repo_root, "game", "data", "places_pack_v1.sha256")
-    default_companion = os.path.join(repo_root, "companion", "assets", "places_pack_v1.json.gz")
 
     parser = argparse.ArgumentParser(description="Build Tenth Spring places pack v1.")
     parser.add_argument("--config", default=default_config, help="Path to famous_places.json")
@@ -917,8 +916,8 @@ def main() -> int:
     parser.add_argument("--sha256-out", default=default_sha, help="Output .sha256 path (empty to skip)")
     parser.add_argument(
         "--companion-out",
-        default=default_companion,
-        help="Companion asset copy path (empty to skip)",
+        default="",
+        help="Optional extra copy path (empty by default; Decision 86)",
     )
     parser.add_argument("--offline", action="store_true", help="Do not make network requests")
     args = parser.parse_args()

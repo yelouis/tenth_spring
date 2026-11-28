@@ -35,15 +35,6 @@ class TestF22SaveIsolation(unittest.TestCase):
         self.assertIn("DB.assert_test_safe()", code, "db_test.gd must call DB.assert_test_safe()")
         self.assertIn("DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)", code)
 
-    def test_idempotent_sync_test_gd_isolated(self):
-        test_path = os.path.join(GAME_DIR, "tests", "idempotent_sync_test.gd")
-        with open(test_path, "r", encoding="utf-8") as f:
-            code = f.read()
-
-        self.assertIn("DB.configure_paths(", code, "idempotent_sync_test.gd must call DB.configure_paths()")
-        self.assertIn("DB.assert_test_safe()", code, "idempotent_sync_test.gd must call DB.assert_test_safe()")
-        self.assertIn("DB.configure_paths(DB.DEFAULT_DB_PATH, DB.DEFAULT_DB_TMP_PATH)", code)
-
     def test_db_migration_test_gd_isolated(self):
         test_path = os.path.join(GAME_DIR, "tests", "db_migration_test.gd")
         with open(test_path, "r", encoding="utf-8") as f:

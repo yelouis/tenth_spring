@@ -261,24 +261,24 @@ func run_test() -> bool:
 		return false
 
 	# -------------------------------------------------------------
-	# (f) An unknown area key is refused at ingest (ERROR bad_row)
+	# (f) An unknown area key in visit_log is ignored without modifying reveals or distort_list
 	# -------------------------------------------------------------
 	var ar_f_pre := DB.get_all_area_reveals()
 	var dl_f_pre := DB.get_all_distort_entries()
 
-	var bad_ingest := SyncServer.process_batch("p1", {
-		"rows": [
-			{
-				"seq": 10,
-				"kind": "explore",
-				"placeId": "city:fixture-city",
-				"areaKey": "osm:n9999999",
-				"tsUtcMs": 4000
-			}
-		]
+	DB.insert_visit_log({
+		"peer_id": "p1",
+		"seq": 10,
+		"place_id": "osm:n9999999",
+		"lat": null,
+		"lon": null,
+		"started_at": 4000,
+		"dwell_seconds": 0,
+		"kind": "explore"
 	})
-	if bad_ingest.get("status", "") != "error" or bad_ingest.get("code", "") != "bad_row":
-		push_error("FAIL (f): Expected bad_row on unknown areaKey at ingest, got %s" % str(bad_ingest))
+	var r_f := RevealEngine.apply(DB)
+	if not r_f.get("ok", false):
+		push_error("FAIL (f): RevealEngine.apply failed on unknown areaKey: %s" % str(r_f))
 		_cleanup()
 		return false
 
@@ -286,7 +286,7 @@ func run_test() -> bool:
 	var dl_f_post := DB.get_all_distort_entries()
 
 	if ar_f_pre.size() != ar_f_post.size() or dl_f_pre.size() != dl_f_post.size():
-		push_error("FAIL (f): Refused unknown areaKey modified area_reveal or distort_list")
+		push_error("FAIL (f): Unknown areaKey modified area_reveal or distort_list")
 		_cleanup()
 		return false
 

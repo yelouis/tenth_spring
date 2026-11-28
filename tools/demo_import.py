@@ -1,64 +1,37 @@
 #!/usr/bin/env python3
 import argparse
-import json
 import os
-import queue
-import shutil
 import subprocess
 import sys
-import threading
-import time
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Import explore points into the Tenth Spring demo profile."
+        description="Seed a Tenth Spring demo profile with a starter city and optional opened places."
     )
     parser.add_argument(
-        "--points",
+        "--starter",
         required=True,
-        help="Path to external JSON points file to import (must reside outside repository tree)."
+        help="Starter city place id (e.g., city:washington-dc).",
+    )
+    parser.add_argument(
+        "--open",
+        default="",
+        help="Optional comma-separated list of place ids to open (e.g., site:yellowstone,city:boston).",
     )
     parser.add_argument(
         "--demo-dir",
         default=None,
-        help="Optional custom demo directory (e.g., user://test/demo). Defaults to user://demo."
-    )
-    parser.add_argument(
-        "--port",
-        type=int,
-        default=7352,
-        help="Dedicated demo sync port (default: 7352)."
+        help="Optional custom demo directory (e.g., user://test/demo_ci). Defaults to user://demo.",
     )
     return parser.parse_args()
+
 
 def main():
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     args = parse_args()
 
-    # 1. Enforce Repo Isolation Rule (Standing Constraint 5)
-    # Refuses execution if points file resides inside repository tree.
-    # Exits with returncode 2 before running memguard or launching any process.
-    points_path = os.path.abspath(args.points)
-    real_points = os.path.realpath(points_path)
-    real_repo = os.path.realpath(repo_root)
-
-    try:
-        common = os.path.commonpath([real_points, real_repo])
-    except ValueError:
-        common = ""
-
-    if common == real_repo:
-        print(
-            f"[FAIL] Repo Isolation Rule: points file must be outside Tenth Spring repository tree: {points_path}",
-            file=sys.stderr
-        )
-        sys.exit(2)
-
-    if not os.path.isfile(real_points):
-        print(f"[FAIL] Points file not found: {points_path}", file=sys.stderr)
-        sys.exit(1)
-
-    # 2. Memory Guard check: ensure execution runs under memguard demo_import step
+    # Memory Guard check: ensure execution runs under memguard demo_import step
     if not os.environ.get("TENTH_SPRING_MEMGUARD_HELD"):
         memguard_script = os.path.join(repo_root, "tools", "memguard.py")
         cmd = [
@@ -77,10 +50,11 @@ def main():
 
     godot_wrapper = os.path.join(repo_root, "tools", "godot.py")
 
-    print("=== Tenth Spring Demo Explore Points Importer ===")
-    print(f"Points: {real_points}")
+    print("=== Tenth Spring Demo Profile Importer ===")
+    print(f"Starter: {args.starter}")
+    if args.open:
+        print(f"Open: {args.open}")
 
-    # 3. Run Godot demo import scene headlessly
     godot_cmd = [
         sys.executable,
         "-I",
@@ -94,18 +68,25 @@ def main():
         godot_cmd.append(f"--demo-dir={args.demo_dir}")
     else:
         godot_cmd.append("--demo")
-    godot_cmd.append(f"--points={real_points}")
+    godot_cmd.append(f"--starter={args.starter}")
+    if args.open:
+        godot_cmd.append(f"--open={args.open}")
 
     res = subprocess.run(
         godot_cmd,
         cwd=repo_root,
         capture_output=True,
         text=True,
-        timeout=120
+        timeout=120,
     )
 
     out_text = (res.stdout or "") + "\n" + (res.stderr or "")
     if res.returncode != 0:
+        for line in out_text.splitlines():
+            if line.strip().startswith("[FAIL]"):
+                print(line.strip(), file=sys.stderr)
+        if res.returncode == 2:
+            sys.exit(2)
         print(f"[FAIL] Godot demo import exited with code {res.returncode}", file=sys.stderr)
         print(out_text, file=sys.stderr)
         sys.exit(res.returncode if res.returncode in (75, 76) else 1)
@@ -123,8 +104,9 @@ def main():
         print(out_text, file=sys.stderr)
         sys.exit(1)
 
-    print(f"Imported {applied_rows} explore/home events into demo profile.")
+    print(f"Imported {applied_rows} place events into demo profile.")
     sys.exit(0)
+
 
 if __name__ == "__main__":
     main()

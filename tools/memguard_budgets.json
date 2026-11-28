@@ -20,20 +20,6 @@
     "machine": "ubuntu-latest x86_64",
     "status": "measured"
   },
-  "flutter_test": {
-    "budget_gib": 2.0,
-    "peak_gib": 1.282,
-    "date": "2026-10-10",
-    "machine": "darwin arm64",
-    "status": "measured"
-  },
-  "sync_e2e": {
-    "budget_gib": 2.5,
-    "peak_gib": 1.65,
-    "date": "2026-10-10",
-    "machine": "ubuntu-latest x86_64",
-    "status": "measured"
-  },
   "demo_import": {
     "budget_gib": 1.5,
     "peak_gib": 1.104,
@@ -68,10 +54,6 @@
     "date": "2026-10-23",
     "machine": "darwin arm64",
     "status": "measured"
-  },
-  "flutter_build_ios": {
-    "budget_gib": 8.0,
-    "status": "UNMEASURED"
   },
   "map_convert": {
     "budget_gib": 2.5,

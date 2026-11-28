@@ -13,7 +13,7 @@ func run_test() -> bool:
 	if not r1.ok or r1.is_demo != false or r1.error != "":
 		push_error("Row 1 failed: expected ok=true, is_demo=false, error='', got: %s" % str(r1))
 		return false
-	if r1.db_path != "user://tenth_spring.db" or r1.db_tmp_path != "user://tenth_spring.db.tmp" or r1.identity_dir != "user://sync_identity/" or r1.get("map_data_dir", "") != "user://map_data":
+	if r1.db_path != "user://tenth_spring.db" or r1.db_tmp_path != "user://tenth_spring.db.tmp" or r1.get("map_data_dir", "") != "user://map_data":
 		push_error("Row 1 failed: incorrect paths: %s" % str(r1))
 		return false
 
@@ -29,7 +29,7 @@ func run_test() -> bool:
 	if not r2.ok or r2.is_demo != true or r2.error != "":
 		push_error("Row 2 failed: expected ok=true, is_demo=true, error='', got: %s" % str(r2))
 		return false
-	if r2.db_path != "user://demo/tenth_spring.db" or r2.db_tmp_path != "user://demo/tenth_spring.db.tmp" or r2.identity_dir != "user://demo/sync_identity/" or r2.get("map_data_dir", "") != "user://demo/map_data":
+	if r2.db_path != "user://demo/tenth_spring.db" or r2.db_tmp_path != "user://demo/tenth_spring.db.tmp" or r2.get("map_data_dir", "") != "user://demo/map_data":
 		push_error("Row 2 failed: incorrect paths: %s" % str(r2))
 		return false
 
@@ -40,7 +40,7 @@ func run_test() -> bool:
 	if not r3.ok or r3.is_demo != true or r3.error != "":
 		push_error("Row 3 failed: expected ok=true, is_demo=true, error='', got: %s" % str(r3))
 		return false
-	if r3.db_path != "user://test/demo/tenth_spring.db" or r3.db_tmp_path != "user://test/demo/tenth_spring.db.tmp" or r3.identity_dir != "user://test/demo/sync_identity/" or r3.get("map_data_dir", "") != "user://test/demo/map_data":
+	if r3.db_path != "user://test/demo/tenth_spring.db" or r3.db_tmp_path != "user://test/demo/tenth_spring.db.tmp" or r3.get("map_data_dir", "") != "user://test/demo/map_data":
 		push_error("Row 3 failed: incorrect paths: %s" % str(r3))
 		return false
 
@@ -70,19 +70,11 @@ func run_test() -> bool:
 		push_error("Row 4 failed: verbatim error mismatch for missing argument. Got '%s'" % r4_missing.error)
 		return false
 
-	# Must refuse identity dir collision
-	var r4_id = ProfilePaths.resolve(["--demo-dir", "user://sync_identity"])
-	if r4_id.ok != false or r4_id.error != "demo directory cannot collide with primary save path":
-		push_error("Row 4 failed: collision with sync_identity not refused properly: %s" % str(r4_id))
-		return false
-
 	# ---------------------------------------------------------
 	# 5. Integration Case (§1.3): Complete Save Isolation
 	# ---------------------------------------------------------
 	var integ_dir = "user://test/demo_profile_integ"
 	var integ_db = integ_dir + "/tenth_spring.db"
-	var integ_tmp = integ_dir + "/tenth_spring.db.tmp"
-	var integ_id = integ_dir + "/sync_identity/"
 
 	# Cleanup test directory before start
 	_cleanup_dir(integ_dir)
@@ -98,27 +90,18 @@ func run_test() -> bool:
 		return false
 
 	DB.configure_paths(p.db_path, p.db_tmp_path)
-	var identity = PcIdentity.new()
-	identity.configure_dir(p.identity_dir)
-	SyncServer.configure_identity(identity)
-
 	DB.init_db()
-	if not identity.load_or_create():
-		push_error("Integration test: failed to load or create identity in %s" % p.identity_dir)
-		DB.close()
-		DB.configure_paths(orig_db_path, orig_tmp_path)
-		return false
 
-	# Insert synthetic record into demo profile
+	# Insert synthetic record into demo profile (NULL coordinates per Golden Invariant 2)
 	var ok_insert = DB.insert_visit_log({
 		"peer_id": "test_peer_1",
 		"seq": 1,
-		"place_id": null,
-		"lat": 0.01,
-		"lon": 0.01,
+		"place_id": "city:washington-dc",
+		"lat": null,
+		"lon": null,
 		"started_at": 1000,
-		"dwell_seconds": 600,
-		"kind": "visit"
+		"dwell_seconds": 0,
+		"kind": "home"
 	})
 	if not ok_insert:
 		push_error("Integration test: failed to insert synthetic visit into demo db")
@@ -128,14 +111,9 @@ func run_test() -> bool:
 
 	DB.close()
 
-	# Assertions: demo DB and cert exist in demo dir
+	# Assertions: demo DB exists in demo dir
 	if not FileAccess.file_exists(integ_db):
 		push_error("Integration test: expected demo db at %s, but file does not exist" % integ_db)
-		DB.configure_paths(orig_db_path, orig_tmp_path)
-		return false
-
-	if not FileAccess.file_exists(integ_id + "pc.crt"):
-		push_error("Integration test: expected demo cert at %spc.crt, but file does not exist" % integ_id)
 		DB.configure_paths(orig_db_path, orig_tmp_path)
 		return false
 
@@ -150,7 +128,6 @@ func run_test() -> bool:
 	# Cleanup test directory and restore paths
 	_cleanup_dir(integ_dir)
 	DB.configure_paths(orig_db_path, orig_tmp_path)
-	SyncServer.configure_identity(null)
 
 	return true
 

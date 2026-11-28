@@ -10,19 +10,6 @@ __pycache__/
 *.pyc
 *.pyo
 
-# Flutter / Dart
-companion/.dart_tool/
-companion/.flutter-plugins
-companion/.flutter-plugins-dependencies
-companion/.packages
-companion/.pub-cache/
-companion/.pub/
-companion/build/
-companion/ios/Pods/
-companion/ios/Runner.xcworkspace/
-companion/ios/Runner.xcodeproj/project.xcworkspace/
-companion/ios/Runner.xcodeproj/xcuserdata/
-
 # Godot
 game/.godot/
 game/.import/
@@ -54,7 +41,6 @@ roms/
 
 # Map data & GPX routes — never commit user routes or OSM downloads (public repo)
 *.gpx
-!companion/test/fixtures/*.gpx
 !game/tests/fixtures/*.gpx
 *.osm.pbf
 !game/tests/fixtures/*.osm.pbf

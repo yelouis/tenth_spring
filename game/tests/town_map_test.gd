@@ -262,9 +262,10 @@ func run_test() -> bool:
 	mv.queue_free()
 
 	# -------------------------------------------------------------
-	# 5. Home Hub Scene:
-	# Buttons exist, Rest/PC Box/Garden disabled with tooltips, Distort/Pair enabled
+	# 5. Home Hub Scene (with starter_place set):
+	# Buttons exist, Rest/PC Box/Garden disabled with tooltips, Distort enabled
 	# -------------------------------------------------------------
+	DB.set_db_meta("starter_place", "city:fixture-city")
 	var hub_scene = load("res://scenes/home_hub.tscn")
 	if hub_scene == null:
 		push_error("FAIL: Could not load home_hub.tscn")
@@ -316,6 +317,7 @@ func run_test() -> bool:
 		_cleanup()
 		return false
 	# Verify live status_label resolves starter DC to "Starter City: Washington DC" (no internal id)
+	DB.set_db_meta("starter_place", "city:washington-dc")
 	DB.insert_distort_entry("city:washington-dc", 1700000001, "starter")
 	var hub_dc = hub_scene.instantiate()
 	add_child(hub_dc)
@@ -323,14 +325,6 @@ func run_test() -> bool:
 	hub_dc.queue_free()
 	if not dc_status.contains("Starter City: Washington DC") or dc_status.contains("city:"):
 		push_error("FAIL [F101]: HomeHub status_label should show 'Starter City: Washington DC', got '%s'" % dc_status)
-		hub.queue_free()
-		city_store.close()
-		site_store.close()
-		_cleanup()
-		return false
-
-	if hub.pair_button == null or hub.pair_button.disabled:
-		push_error("FAIL: Pair button missing or disabled in home_hub")
 		hub.queue_free()
 		city_store.close()
 		site_store.close()

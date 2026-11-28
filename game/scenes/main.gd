@@ -321,12 +321,7 @@ func _ready() -> void:
 				)
 		return
 
-	var identity = PcIdentity.new()
-	identity.configure_dir(profile.identity_dir)
-	SyncServer.configure_identity(identity)
-	SyncServer.start_server()
-
-	# Boot and resume (explore plan §4.4 & Phase 4 §(j)):
+	# Boot and resume (Decision 86 & Phase 4 §(j)):
 	# - if last_place / player_session is active, resume at exact saved tile (or interior) with §5 banner;
 	# - otherwise open the home hub.
 	var resume_place_id := get_resume_place_id()
@@ -607,19 +602,6 @@ func open_town_map() -> Node:
 		add_child(tm)
 		return tm
 	return null
-
-func open_pairing_screen() -> void:
-	clear_current_view()
-	var cl = CanvasLayer.new()
-	cl.name = "CanvasLayer"
-	add_child(cl)
-	var pairing_scene = load("res://scenes/pairing.tscn")
-	if pairing_scene != null:
-		var pairing_node = pairing_scene.instantiate()
-		pairing_node.name = "Pairing"
-		cl.add_child(pairing_node)
-		if pairing_node.has_method("refresh_code"):
-			pairing_node.refresh_code()
 
 func _process(delta: float) -> void:
 	if _wb_active:

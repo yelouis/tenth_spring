@@ -141,6 +141,23 @@ func run_test() -> bool:
 		sv.queue_free()
 		_cleanup()
 		return false
+	# Item 95: StarterPickPanel on fresh save (no starter_place) fits cleanly inside 960x640
+	var sp_panel := hub.get_node_or_null("UI/StarterPickPanel") as PanelContainer
+	if sp_panel == null or not sp_panel.visible:
+		push_error("FAIL [Item 95]: StarterPickPanel missing or hidden on fresh save")
+		sv.queue_free()
+		_cleanup()
+		return false
+	var sp_w: float = sp_panel.offset_right - sp_panel.offset_left
+	var sp_h: float = sp_panel.offset_bottom - sp_panel.offset_top
+	var sp_min := sp_panel.get_combined_minimum_size()
+	var sp_rect := Rect2(480.0 + sp_panel.offset_left, 320.0 + sp_panel.offset_top, sp_w, sp_h)
+	if sp_rect.position.x < 0.0 or sp_rect.position.y < 0.0 or sp_rect.end.x > 960.0 or sp_rect.end.y > 640.0 \
+		or sp_min.x > sp_w + 0.5 or sp_min.y > sp_h + 0.5:
+		push_error("FAIL [Item 95]: StarterPickPanel overflows 960x640: rect=%s min=%s" % [str(sp_rect), str(sp_min)])
+		sv.queue_free()
+		_cleanup()
+		return false
 	sv.queue_free()
 
 	# 3. F95 + Camp Buttons: WalkBannerPanel below WalkHudPanel, ReturnHome & Board hidden while walking in camp.
